@@ -1,0 +1,37 @@
+#!/bin/sh
+# ZCode Pro 启动器（Linux / macOS）
+# 优先用 ZCode 自带的 Node 运行时（ELECTRON_RUN_AS_NODE），无需安装 Node.js。
+set -e
+
+# 解析符号链接得到脚本真实路径（如 /usr/bin/zcode-pro → /usr/lib/zcode-pro/bin/zcode-pro），
+# 否则经 symlink 调用时 $0 目录不是安装目录，找不到 cli.mjs。
+SELF=$(readlink -f -- "$0" 2>/dev/null || printf '%s' "$0")
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$SELF")" && pwd)
+APP_DIR=$(dirname -- "$SCRIPT_DIR")
+ENTRY="$APP_DIR/cli.mjs"
+
+find_zcode_binary() {
+  if [ -n "$ZCODEPRO_ZCODE_PATH" ] && [ -x "$ZCODEPRO_ZCODE_PATH" ]; then
+    printf '%s' "$ZCODEPRO_ZCODE_PATH"
+    return 0
+  fi
+  for c in /opt/ZCode/zcode /usr/lib/zcode/zcode /usr/share/zcode/zcode /usr/local/ZCode/zcode \
+           "/Applications/ZCode.app/Contents/MacOS/ZCode" "$HOME/Applications/ZCode.app/Contents/MacOS/ZCode"; do
+    if [ -x "$c" ]; then
+      printf '%s' "$c"
+      return 0
+    fi
+  done
+  return 1
+}
+
+if command -v node >/dev/null 2>&1; then
+  exec node "$ENTRY" "$@"
+fi
+
+ZCODE_BIN=$(find_zcode_binary) || {
+  echo "[zcodepro] 未找到 node，也未找到 ZCode 可执行文件。请安装 Node.js >= 22 或设置 ZCODEPRO_ZCODE_PATH。" >&2
+  exit 1
+}
+# 用 ZCode 内置的 Node 运行时执行启动器（ELECTRON_RUN_AS_NODE 使其表现为纯 Node）
+ELECTRON_RUN_AS_NODE=1 exec "$ZCODE_BIN" "$ENTRY" "$@"

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=ZCode Pro
+Comment=ZCode 桌面版增强启动器（自定义别名等，不修改应用文件）
+Exec=@bindir@/zcode-pro
+Icon=zcode
+Terminal=false
+Categories=Development;IDE;
+Keywords=zcode;pro;enhance;

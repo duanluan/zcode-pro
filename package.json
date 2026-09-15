@@ -1,0 +1,20 @@
+{
+  "name": "zcode-pro",
+  "version": "0.1.0",
+  "description": "ZCode Pro — 为 ZCode 桌面版增加界面增强（不修改应用文件），核心功能：项目自定义别名",
+  "type": "module",
+  "private": true,
+  "bin": {
+    "zcode-pro": "./bin/zcode-pro"
+  },
+  "scripts": {
+    "build": "esbuild src/inject/index.js --bundle --format=iife --target=chrome120 --outfile=dist/inject.js",
+    "start": "./bin/zcode-pro"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}
