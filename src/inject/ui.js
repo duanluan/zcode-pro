@@ -118,13 +118,15 @@ export function textInput({ value = '', placeholder = '', onInput, onEnter, auto
 }
 
 // 设置项行：名称 + 描述 + 开关
+// 开关样式完全由 ensureStyle 中的自有规则驱动（几何/配色固定写入，
+// 颜色取主题变量），不依赖应用的 Tailwind 工具类——v4 只为应用源码
+// 实际用过的类生成 CSS，注入标记里"长得像"的类名不保证有样式。
 export function settingRow(name, desc, checked, onToggle) {
-  const knob = h('span', {
-    class: 'pointer-events-none block size-4 rounded-full bg-foreground shadow-sm transition-transform ' + (checked ? 'translate-x-4' : 'translate-x-0'),
-  });
+  const knob = h('span', { class: 'zcodepro-switch-knob' });
   const track = h('span', {
-    class: 'flex h-5 w-9 shrink-0 items-center rounded-full border border-transparent transition-colors ' + (checked ? 'bg-primary' : 'bg-border'),
-    'data-state': checked ? 'checked' : 'unchecked',
+    class: 'zcodepro-switch',
+    'data-zcodepro-switch': '',
+    'data-state': checked ? 'on' : 'off',
   }, knob);
   const row = h('div', {
     class: 'flex cursor-pointer items-start gap-3 rounded-lg p-3 transition-colors hover:bg-surface-hover',
@@ -157,5 +159,27 @@ export function ensureStyle() {
       outline: none;
       box-shadow: 0 0 0 1px var(--color-border, rgba(0, 0, 0, 0.1)), 0 25px 50px -12px rgba(0, 0, 0, 0.25);
     }
+    /* 开关（设置弹窗）：几何固定写入，颜色随主题变量 */
+    [data-zcodepro-switch] {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      width: 32px;
+      height: 18px;
+      border-radius: 9999px;
+      padding: 1px;
+      transition: background-color 0.15s ease;
+      background-color: color-mix(in oklab, var(--color-primary, #000) 30%, transparent);
+    }
+    [data-zcodepro-switch][data-state="on"] { background-color: var(--color-primary, #000); }
+    .zcodepro-switch-knob {
+      display: block;
+      width: 16px;
+      height: 16px;
+      border-radius: 9999px;
+      background-color: var(--color-primary-foreground, #fff);
+      transition: transform 0.15s ease;
+    }
+    [data-zcodepro-switch][data-state="on"] .zcodepro-switch-knob { transform: translateX(14px); }
   `));
 }

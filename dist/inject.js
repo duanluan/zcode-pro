@@ -290,12 +290,11 @@
     return input;
   }
   function settingRow(name, desc, checked, onToggle) {
-    const knob = h("span", {
-      class: "pointer-events-none block size-4 rounded-full bg-foreground shadow-sm transition-transform " + (checked ? "translate-x-4" : "translate-x-0")
-    });
+    const knob = h("span", { class: "zcodepro-switch-knob" });
     const track = h("span", {
-      class: "flex h-5 w-9 shrink-0 items-center rounded-full border border-transparent transition-colors " + (checked ? "bg-primary" : "bg-border"),
-      "data-state": checked ? "checked" : "unchecked"
+      class: "zcodepro-switch",
+      "data-zcodepro-switch": "",
+      "data-state": checked ? "on" : "off"
     }, knob);
     const row = h(
       "div",
@@ -334,6 +333,28 @@
       outline: none;
       box-shadow: 0 0 0 1px var(--color-border, rgba(0, 0, 0, 0.1)), 0 25px 50px -12px rgba(0, 0, 0, 0.25);
     }
+    /* \u5F00\u5173\uFF08\u8BBE\u7F6E\u5F39\u7A97\uFF09\uFF1A\u51E0\u4F55\u56FA\u5B9A\u5199\u5165\uFF0C\u989C\u8272\u968F\u4E3B\u9898\u53D8\u91CF */
+    [data-zcodepro-switch] {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      width: 32px;
+      height: 18px;
+      border-radius: 9999px;
+      padding: 1px;
+      transition: background-color 0.15s ease;
+      background-color: color-mix(in oklab, var(--color-primary, #000) 30%, transparent);
+    }
+    [data-zcodepro-switch][data-state="on"] { background-color: var(--color-primary, #000); }
+    .zcodepro-switch-knob {
+      display: block;
+      width: 16px;
+      height: 16px;
+      border-radius: 9999px;
+      background-color: var(--color-primary-foreground, #fff);
+      transition: transform 0.15s ease;
+    }
+    [data-zcodepro-switch][data-state="on"] .zcodepro-switch-knob { transform: translateX(14px); }
   `));
   }
 

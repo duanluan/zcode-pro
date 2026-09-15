@@ -10,7 +10,7 @@ import { taskIndexPath, probeTaskIndexWritable, remapTaskIndexPaths, taskIndexDr
 import { pickFolderSystem } from './pickFolder.mjs';
 import { reorderWorkspaceTasks, reorderGroupMembers } from './taskOrder.mjs';
 
-const VERSION = '0.3.0';
+const VERSION = '0.3.1';
 
 export function defaultConfig() {
   return {
