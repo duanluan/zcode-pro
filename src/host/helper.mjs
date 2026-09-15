@@ -7,8 +7,9 @@ import { existsSync, readFileSync, renameSync, statSync, writeFileSync } from 'n
 import { basename, isAbsolute, join, resolve, sep } from 'node:path';
 import { readSettings, writeSettingsAtomic, remapSettingsPaths, isProjectOpenInTabs } from './settings.mjs';
 import { taskIndexPath, probeTaskIndexWritable, remapTaskIndexPaths, taskIndexDriverAvailable } from './taskIndex.mjs';
+import { pickFolderSystem } from './pickFolder.mjs';
 
-const VERSION = '0.2.0';
+const VERSION = '0.2.1';
 
 export function defaultConfig() {
   return {
@@ -138,6 +139,13 @@ export function startHelper({ port, token, dataRoot, state }) {
       if (req.method === 'POST' && url.pathname === '/project/relocate') {
         const body = await readBody(req);
         json(res, ...(await relocateProject(body, dataRoot)));
+        return;
+      }
+      // 系统原生目录选择器（弹窗式，请求保持至用户选择/取消）；start 仅作为起始目录
+      if (req.method === 'GET' && url.pathname === '/pick-folder') {
+        const start = url.searchParams.get('start') || '/';
+        const title = (url.searchParams.get('title') || '选择文件夹').slice(0, 80);
+        json(res, 200, { ok: true, ...(await pickFolderSystem(start, title)) });
         return;
       }
       json(res, 404, { ok: false, error: 'not found' });

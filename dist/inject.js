@@ -676,22 +676,32 @@
         const input = textInput({ value: project.path, onEnter: () => submit() });
         const submitBtn = btnPrimary(L.relocateConfirm, () => submit(), "min-w-24");
         const picker = typeof window !== "undefined" && window.zcode && typeof window.zcode.selectDirectory === "function" ? () => window.zcode.selectDirectory() : null;
-        const browseBtn = picker ? h("button", {
+        const browse = async () => {
+          browseBtn.setAttribute("disabled", "true");
+          try {
+            let dir = null;
+            const res = await rpc("/pick-folder?start=" + encodeURIComponent(project.path) + "&title=" + encodeURIComponent(L.relocateTitle));
+            if (res && res.ok) {
+              if (res.path) dir = res.path;
+              else if (res.unavailable && picker) dir = await picker();
+            } else if (picker) {
+              dir = await picker();
+            }
+            if (dir) {
+              input.value = dir;
+              input.focus();
+            }
+          } catch {
+          }
+          browseBtn.removeAttribute("disabled");
+        };
+        const browseBtn = h("button", {
           type: "button",
           class: "h-9 shrink-0 whitespace-nowrap rounded-lg border border-border bg-surface px-3 text-ui-sm font-medium text-foreground transition-colors hover:bg-surface-hover",
-          onClick: async () => {
-            browseBtn.setAttribute("disabled", "true");
-            try {
-              const dir = await picker();
-              if (dir) {
-                input.value = dir;
-                input.focus();
-              }
-            } catch {
-            }
-            browseBtn.removeAttribute("disabled");
+          onClick: () => {
+            void browse();
           }
-        }, L.browse) : null;
+        }, L.browse);
         const submit = async () => {
           if (submitting) return;
           const newPath = input.value.trim();
