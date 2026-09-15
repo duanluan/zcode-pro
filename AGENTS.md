@@ -4,6 +4,7 @@
 
 - 版本号三处保持一致：`package.json`、`src/host/helper.mjs` 的 `VERSION`、`packaging/aur/zcodepro/PKGBUILD` 的 `pkgver`。
 - **未推送的改动不要动版本号**；决定推送（发布）时，在推送前一次性升级，同一批改动只升一次。
+- **修复刚发布版本自身的问题（回归/样式补丁）时，覆盖当前版本**：同版本号重打 tag、覆盖 Release 资产、AUR 升 pkgrel，而不是新开版本号；只有面向用户的新功能/独立修复才升版本。
 - 小改（修复/优化）升 patch，新功能升 minor；以用户可感知的变化为准。
 
 ## 发布链路（每次发布依次执行）
