@@ -54,12 +54,13 @@
     aliasSaved: "\u522B\u540D\u5DF2\u66F4\u65B0",
     aliasCleared: "\u5DF2\u6062\u590D\u771F\u5B9E\u540D\u79F0",
     aliasHint: "\u78C1\u76D8\u76EE\u5F55\u540D\u4E0D\u53D8\uFF1A\u7EC8\u7AEF\u3001\u6587\u4EF6\u7BA1\u7406\u5668\u4E0E\u5176\u4ED6\u5F15\u7528\u771F\u5B9E\u8DEF\u5F84\u7684\u754C\u9762\u4ECD\u663E\u793A\u539F\u540D\u3002",
+    browse: "\u6D4F\u89C8",
     relocateItem: "\u5207\u6362\u6587\u4EF6\u5939",
     relocateTitle: "\u5207\u6362\u6587\u4EF6\u5939",
     relocateDesc: "\u5C06\u8BE5\u9879\u76EE\u6307\u5411\u53E6\u4E00\u4E2A\u6587\u4EF6\u5939\uFF1A\u4FA7\u8FB9\u680F\u3001\u5DF2\u6253\u5F00\u6807\u7B7E\u9875\u4E0E\u672C\u5730\u4EFB\u52A1\u5386\u53F2\u4E00\u5E76\u8FC1\u79FB\uFF0C\u76EE\u5F55\u672C\u8EAB\u4E0D\u4F1A\u88AB\u79FB\u52A8\uFF0C\u4F1A\u8BDD\u8BB0\u5F55\u4E0D\u4F1A\u4E22\u5931\u3002",
     relocateNewPathLabel: "\u65B0\u6587\u4EF6\u5939",
     relocateConfirm: "\u79FB\u52A8",
-    relocateHint: "\u76EE\u6807\u6587\u4EF6\u5939\u9700\u5DF2\u5B58\u5728\uFF1B\u5B8C\u6210\u540E\u754C\u9762\u5C06\u81EA\u52A8\u5237\u65B0\u3002",
+    relocateHint: "\u76EE\u6807\u6587\u4EF6\u5939\u9700\u5DF2\u5B58\u5728\uFF0C\u53EF\u8F93\u5165\u8DEF\u5F84\u6216\u70B9\u51FB\u300C\u6D4F\u89C8\u300D\u9009\u62E9\uFF1B\u5B8C\u6210\u540E\u754C\u9762\u5C06\u81EA\u52A8\u5237\u65B0\u3002",
     relocateSuccess: "\u5DF2\u5207\u6362\u6587\u4EF6\u5939\uFF0C\u6B63\u5728\u5237\u65B0\u754C\u9762\u2026",
     relocateIndexSkipped: "\u5DF2\u5207\u6362\u6587\u4EF6\u5939\uFF1B\u4EFB\u52A1\u5386\u53F2\u672A\u80FD\u540C\u6B65\uFF08\u672C\u673A\u7F3A\u5C11 SQLite \u652F\u6301\uFF09\uFF0C\u65E7\u4EFB\u52A1\u6761\u76EE\u53EF\u80FD\u4ECD\u6307\u5411\u65E7\u8DEF\u5F84\u3002",
     relocateSame: "\u65B0\u6587\u4EF6\u5939\u4E0E\u5F53\u524D\u6587\u4EF6\u5939\u76F8\u540C",
@@ -96,12 +97,13 @@
     aliasSaved: "Alias updated.",
     aliasCleared: "Real name restored.",
     aliasHint: "The directory name on disk is unchanged: terminals, file managers and other path-based UI still show the real name.",
+    browse: "Browse",
     relocateItem: "Switch folder",
     relocateTitle: "Switch folder",
     relocateDesc: "Points this project at another folder: the sidebar, open tabs and local task history move along. The directory itself is not moved and no sessions are lost.",
     relocateNewPathLabel: "New folder",
     relocateConfirm: "Move",
-    relocateHint: "The target folder must already exist; the UI refreshes automatically afterwards.",
+    relocateHint: "The target folder must already exist. Enter a path or use Browse; the UI refreshes automatically afterwards.",
     relocateSuccess: "Folder switched. Refreshing\u2026",
     relocateIndexSkipped: "Folder switched, but the task history was not synced (SQLite support missing); old entries may still point to the old path.",
     relocateSame: "The new folder is the same as the current one.",
@@ -264,10 +266,21 @@
     if (onEnter) input.addEventListener("keydown", (e) => {
       if (e.key === "Enter") onEnter();
     });
-    if (autofocus) setTimeout(() => {
-      input.focus();
-      input.select();
-    }, 30);
+    if (autofocus) {
+      const tryFocus = () => {
+        if (!input.isConnected) return;
+        input.focus();
+        if (document.activeElement === input) input.select();
+      };
+      tryFocus();
+      for (const ms of [120, 300, 600]) {
+        setTimeout(() => {
+          if (!input.isConnected) return;
+          const dialog = input.closest('[role="dialog"]');
+          if (dialog && !dialog.contains(document.activeElement)) tryFocus();
+        }, ms);
+      }
+    }
     return input;
   }
   function settingRow(name, desc, checked, onToggle) {
@@ -662,6 +675,23 @@
         };
         const input = textInput({ value: project.path, onEnter: () => submit() });
         const submitBtn = btnPrimary(L.relocateConfirm, () => submit(), "min-w-24");
+        const picker = typeof window !== "undefined" && window.zcode && typeof window.zcode.selectDirectory === "function" ? () => window.zcode.selectDirectory() : null;
+        const browseBtn = picker ? h("button", {
+          type: "button",
+          class: "h-9 shrink-0 whitespace-nowrap rounded-lg border border-border bg-surface px-3 text-ui-sm font-medium text-foreground transition-colors hover:bg-surface-hover",
+          onClick: async () => {
+            browseBtn.setAttribute("disabled", "true");
+            try {
+              const dir = await picker();
+              if (dir) {
+                input.value = dir;
+                input.focus();
+              }
+            } catch {
+            }
+            browseBtn.removeAttribute("disabled");
+          }
+        }, L.browse) : null;
         const submit = async () => {
           if (submitting) return;
           const newPath = input.value.trim();
@@ -700,7 +730,12 @@
               "div",
               {},
               h("div", { class: "mb-1.5 text-ui-sm font-medium text-foreground" }, L.relocateNewPathLabel),
-              input
+              h(
+                "div",
+                { class: "flex gap-2" },
+                h("div", { class: "min-w-0 flex-1" }, input),
+                browseBtn
+              )
             ),
             h(
               "div",

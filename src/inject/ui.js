@@ -97,7 +97,23 @@ export function textInput({ value = '', placeholder = '', onInput, onEnter, auto
   });
   if (onInput) input.addEventListener('input', onInput);
   if (onEnter) input.addEventListener('keydown', (e) => { if (e.key === 'Enter') onEnter(); });
-  if (autofocus) setTimeout(() => { input.focus(); input.select(); }, 30);
+  if (autofocus) {
+    const tryFocus = () => {
+      if (!input.isConnected) return;
+      input.focus();
+      if (document.activeElement === input) input.select();
+    };
+    tryFocus();
+    // 原生弹层（Radix 菜单等）关闭时会把焦点还给触发元素，可能晚于首次聚焦；
+    // 分段检查：只要焦点落到弹窗外就收回输入框，用户点到弹窗内其他控件则不打扰。
+    for (const ms of [120, 300, 600]) {
+      setTimeout(() => {
+        if (!input.isConnected) return;
+        const dialog = input.closest('[role="dialog"]');
+        if (dialog && !dialog.contains(document.activeElement)) tryFocus();
+      }, ms);
+    }
+  }
   return input;
 }
 

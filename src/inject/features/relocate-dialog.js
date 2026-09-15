@@ -60,6 +60,26 @@ export function openRelocateDialog(project) {
       const input = textInput({ value: project.path, onEnter: () => submit() });
       const submitBtn = btnPrimary(L.relocateConfirm, () => submit(), 'min-w-24');
 
+      // ZCode 自带的系统文件夹选择器（含“新建文件夹”）；不可用时不显示按钮
+      const picker = typeof window !== 'undefined' && window.zcode && typeof window.zcode.selectDirectory === 'function'
+        ? () => window.zcode.selectDirectory()
+        : null;
+      const browseBtn = picker ? h('button', {
+        type: 'button',
+        class: 'h-9 shrink-0 whitespace-nowrap rounded-lg border border-border bg-surface px-3 text-ui-sm font-medium text-foreground transition-colors hover:bg-surface-hover',
+        onClick: async () => {
+          browseBtn.setAttribute('disabled', 'true');
+          try {
+            const dir = await picker();
+            if (dir) {
+              input.value = dir;
+              input.focus();
+            }
+          } catch { /* 选择器不可用 */ }
+          browseBtn.removeAttribute('disabled');
+        },
+      }, L.browse) : null;
+
       const submit = async () => {
         if (submitting) return;
         const newPath = input.value.trim();
@@ -92,7 +112,9 @@ export function openRelocateDialog(project) {
         h('div', { class: 'space-y-3' },
           h('div', {},
             h('div', { class: 'mb-1.5 text-ui-sm font-medium text-foreground' }, L.relocateNewPathLabel),
-            input),
+            h('div', { class: 'flex gap-2' },
+              h('div', { class: 'min-w-0 flex-1' }, input),
+              browseBtn)),
           h('div', {},
             h('div', { class: 'mb-1 text-ui-xs text-foreground-subtle' }, L.pathLabel),
             h('div', { class: 'break-all rounded-lg border border-border bg-surface-hover/50 px-3 py-1.5 font-mono text-ui-xs text-foreground-subtle' }, project.path)),
