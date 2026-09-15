@@ -49,6 +49,11 @@ export function openSettingsDialog() {
             // 关闭后立即还原真实名称；开启则按表重新渲染
             await refreshAliases();
           }),
+          settingRow(L.featureRelocate, L.featureRelocateDesc, f.projectRelocate !== false, async () => {
+            const next = !(f.projectRelocate !== false);
+            if (await setFeature('projectRelocate', next)) f.projectRelocate = next;
+            refreshRows();
+          }),
           settingRow(L.featureEntry, L.featureEntryDesc, f.headerSettingsEntry !== false, async () => {
             const next = !(f.headerSettingsEntry !== false);
             if (await setFeature('headerSettingsEntry', next)) f.headerSettingsEntry = next;

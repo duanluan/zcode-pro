@@ -32,7 +32,9 @@
     settingsTitle: "ZCode Pro \u589E\u5F3A\u8BBE\u7F6E",
     settingsSubtitle: "\u754C\u9762\u589E\u5F3A\u968F ZCode Pro \u542F\u52A8\u81EA\u52A8\u751F\u6548\uFF0C\u4E0D\u4FEE\u6539 ZCode \u5E94\u7528\u6587\u4EF6\u3002",
     featureAlias: "\u9879\u76EE\u201C\u66F4\u591A\u201D\u83DC\u5355 \xB7 \u81EA\u5B9A\u4E49\u522B\u540D",
-    featureAliasDesc: "\u53EA\u4E3A\u754C\u9762\u8D77\u4E2A\u987A\u773C\u7684\u522B\u540D\uFF1A\u4FA7\u8FB9\u680F\u663E\u793A\u522B\u540D\uFF0C\u78C1\u76D8\u76EE\u5F55\u4E0E\u6240\u6709\u6570\u636E\u4E0D\u53D8\u3002",
+    featureAliasDesc: "\u4E3A\u9879\u76EE\u8BBE\u7F6E\u4EC5\u754C\u9762\u663E\u793A\u7684\u522B\u540D\uFF1A\u4FA7\u8FB9\u680F\u663E\u793A\u522B\u540D\uFF0C\u78C1\u76D8\u76EE\u5F55\u4E0E\u6240\u6709\u6570\u636E\u4E0D\u53D8\u3002",
+    featureRelocate: "\u9879\u76EE\u201C\u66F4\u591A\u201D\u83DC\u5355 \xB7 \u5207\u6362\u6587\u4EF6\u5939",
+    featureRelocateDesc: "\u5C06\u9879\u76EE\u6307\u5411\u53E6\u4E00\u4E2A\u6587\u4EF6\u5939\uFF1A\u4FA7\u8FB9\u680F\u3001\u6807\u7B7E\u9875\u4E0E\u4EFB\u52A1\u5386\u53F2\u4E00\u5E76\u8FC1\u79FB\uFF0C\u76EE\u5F55\u672C\u8EAB\u4E0D\u52A8\u3002",
     featureEntry: "\u53F3\u4E0A\u89D2\u83DC\u5355 \xB7 \u8BBE\u7F6E\u5165\u53E3",
     featureEntryDesc: "\u5728\u53F3\u4E0A\u89D2\u4E0B\u62C9\u83DC\u5355\u4E2D\u663E\u793A\u201CZCode Pro \u8BBE\u7F6E\u201D\u3002",
     statusOk: "\u8F85\u52A9\u670D\u52A1\u8FD0\u884C\u4E2D",
@@ -42,7 +44,7 @@
     close: "\u5173\u95ED",
     cancel: "\u53D6\u6D88",
     pathLabel: "\u8DEF\u5F84",
-    aliasItem: "\u81EA\u5B9A\u4E49\u522B\u540D\u2026",
+    aliasItem: "\u81EA\u5B9A\u4E49\u522B\u540D",
     aliasTitle: "\u81EA\u5B9A\u4E49\u9879\u76EE\u522B\u540D",
     aliasDesc: "\u4EC5\u5728 ZCode \u754C\u9762\u4E2D\u663E\u793A\u8BE5\u522B\u540D\uFF0C\u4E0D\u4FEE\u6539\u78C1\u76D8\u76EE\u5F55\u4E0E\u4EFB\u4F55\u6570\u636E\uFF0C\u968F\u65F6\u53EF\u6E05\u9664\u6062\u590D\u3002",
     aliasLabel: "\u522B\u540D",
@@ -52,6 +54,18 @@
     aliasSaved: "\u522B\u540D\u5DF2\u66F4\u65B0",
     aliasCleared: "\u5DF2\u6062\u590D\u771F\u5B9E\u540D\u79F0",
     aliasHint: "\u78C1\u76D8\u76EE\u5F55\u540D\u4E0D\u53D8\uFF1A\u7EC8\u7AEF\u3001\u6587\u4EF6\u7BA1\u7406\u5668\u4E0E\u5176\u4ED6\u5F15\u7528\u771F\u5B9E\u8DEF\u5F84\u7684\u754C\u9762\u4ECD\u663E\u793A\u539F\u540D\u3002",
+    relocateItem: "\u5207\u6362\u6587\u4EF6\u5939",
+    relocateTitle: "\u5207\u6362\u6587\u4EF6\u5939",
+    relocateDesc: "\u5C06\u8BE5\u9879\u76EE\u6307\u5411\u53E6\u4E00\u4E2A\u6587\u4EF6\u5939\uFF1A\u4FA7\u8FB9\u680F\u3001\u5DF2\u6253\u5F00\u6807\u7B7E\u9875\u4E0E\u672C\u5730\u4EFB\u52A1\u5386\u53F2\u4E00\u5E76\u8FC1\u79FB\uFF0C\u76EE\u5F55\u672C\u8EAB\u4E0D\u4F1A\u88AB\u79FB\u52A8\uFF0C\u4F1A\u8BDD\u8BB0\u5F55\u4E0D\u4F1A\u4E22\u5931\u3002",
+    relocateNewPathLabel: "\u65B0\u6587\u4EF6\u5939",
+    relocateConfirm: "\u79FB\u52A8",
+    relocateHint: "\u76EE\u6807\u6587\u4EF6\u5939\u9700\u5DF2\u5B58\u5728\uFF1B\u5B8C\u6210\u540E\u754C\u9762\u5C06\u81EA\u52A8\u5237\u65B0\u3002",
+    relocateSuccess: "\u5DF2\u5207\u6362\u6587\u4EF6\u5939\uFF0C\u6B63\u5728\u5237\u65B0\u754C\u9762\u2026",
+    relocateIndexSkipped: "\u5DF2\u5207\u6362\u6587\u4EF6\u5939\uFF1B\u4EFB\u52A1\u5386\u53F2\u672A\u80FD\u540C\u6B65\uFF08\u672C\u673A\u7F3A\u5C11 SQLite \u652F\u6301\uFF09\uFF0C\u65E7\u4EFB\u52A1\u6761\u76EE\u53EF\u80FD\u4ECD\u6307\u5411\u65E7\u8DEF\u5F84\u3002",
+    relocateSame: "\u65B0\u6587\u4EF6\u5939\u4E0E\u5F53\u524D\u6587\u4EF6\u5939\u76F8\u540C",
+    relocateNotFound: "\u76EE\u6807\u6587\u4EF6\u5939\u4E0D\u5B58\u5728",
+    relocateProtected: "\u62D2\u7EDD\u6307\u5411 ZCode \u6570\u636E\u76EE\u5F55\u5185\u90E8\u8DEF\u5F84",
+    relocateIndexBusy: "\u4EFB\u52A1\u7D22\u5F15\u6B63\u88AB ZCode \u5360\u7528\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5\u3002",
     failed: "\u64CD\u4F5C\u5931\u8D25",
     retryHint: "\u8BF7\u91CD\u8BD5"
   };
@@ -61,6 +75,8 @@
     settingsSubtitle: "Enhancements load automatically with ZCode Pro; no app files are modified.",
     featureAlias: 'Project "More" menu \xB7 Custom alias',
     featureAliasDesc: "A UI-only alias: the sidebar shows your custom name while the directory and all data stay untouched.",
+    featureRelocate: 'Project "More" menu \xB7 Switch folder',
+    featureRelocateDesc: "Points a project at another folder; the sidebar, tabs and task history follow. The directory stays untouched.",
     featureEntry: "Header menu \xB7 Settings entry",
     featureEntryDesc: 'Show "ZCode Pro Settings" in the top-right dropdown menu.',
     statusOk: "Helper running",
@@ -70,7 +86,7 @@
     close: "Close",
     cancel: "Cancel",
     pathLabel: "Path",
-    aliasItem: "Custom alias\u2026",
+    aliasItem: "Custom alias",
     aliasTitle: "Custom alias",
     aliasDesc: "Shown in the ZCode UI only. The directory on disk and all data stay untouched; revert anytime.",
     aliasLabel: "Alias",
@@ -80,6 +96,18 @@
     aliasSaved: "Alias updated.",
     aliasCleared: "Real name restored.",
     aliasHint: "The directory name on disk is unchanged: terminals, file managers and other path-based UI still show the real name.",
+    relocateItem: "Switch folder",
+    relocateTitle: "Switch folder",
+    relocateDesc: "Points this project at another folder: the sidebar, open tabs and local task history move along. The directory itself is not moved and no sessions are lost.",
+    relocateNewPathLabel: "New folder",
+    relocateConfirm: "Move",
+    relocateHint: "The target folder must already exist; the UI refreshes automatically afterwards.",
+    relocateSuccess: "Folder switched. Refreshing\u2026",
+    relocateIndexSkipped: "Folder switched, but the task history was not synced (SQLite support missing); old entries may still point to the old path.",
+    relocateSame: "The new folder is the same as the current one.",
+    relocateNotFound: "The target folder does not exist.",
+    relocateProtected: "Refusing to point inside the ZCode data directory.",
+    relocateIndexBusy: "The task index is busy (ZCode may be writing). Please retry shortly.",
     failed: "Operation failed",
     retryHint: "Please retry"
   };
@@ -515,6 +543,11 @@
               refreshRows();
               await refreshAliases();
             }),
+            settingRow(L.featureRelocate, L.featureRelocateDesc, f.projectRelocate !== false, async () => {
+              const next = !(f.projectRelocate !== false);
+              if (await setFeature("projectRelocate", next)) f.projectRelocate = next;
+              refreshRows();
+            }),
             settingRow(L.featureEntry, L.featureEntryDesc, f.headerSettingsEntry !== false, async () => {
               const next = !(f.headerSettingsEntry !== false);
               if (await setFeature("headerSettingsEntry", next)) f.headerSettingsEntry = next;
@@ -573,6 +606,117 @@
     menu.append(item);
   }
 
+  // src/inject/features/relocate-dialog.js
+  function appendRelocateItem(menu, anchorItem, project) {
+    if (menu.querySelector('[data-zcodepro-item="relocate"]')) return;
+    const L = t();
+    const item = anchorItem.cloneNode(true);
+    item.removeAttribute("data-testid");
+    item.removeAttribute("data-highlighted");
+    item.setAttribute("data-zcodepro-item", "relocate");
+    for (const child of [...item.childNodes]) child.remove();
+    const origIcon = anchorItem.querySelector("svg");
+    const iconClass = origIcon ? origIcon.getAttribute("class") : "h-3.5 w-3.5";
+    item.append(hMoveIcon(iconClass), document.createTextNode(L.relocateItem));
+    item.addEventListener("mouseenter", () => {
+      for (const el of menu.querySelectorAll('[role="menuitem"]')) el.removeAttribute("data-highlighted");
+      item.setAttribute("data-highlighted", "");
+    });
+    item.addEventListener("mouseleave", () => item.removeAttribute("data-highlighted"));
+    item.addEventListener("click", () => {
+      closeRadixMenu(menu);
+      setTimeout(() => openRelocateDialog(project), 80);
+    });
+    anchorItem.before(item);
+  }
+  function hMoveIcon(cls) {
+    const ns = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor");
+    svg.setAttribute("stroke-width", "2");
+    svg.setAttribute("stroke-linecap", "round");
+    svg.setAttribute("stroke-linejoin", "round");
+    svg.setAttribute("class", cls);
+    for (const d of ["m16 3 4 4-4 4", "M20 7H4", "m8 21-4-4 4-4", "M4 17h16"]) {
+      const p = document.createElementNS(ns, "path");
+      p.setAttribute("d", d);
+      svg.append(p);
+    }
+    return svg;
+  }
+  function openRelocateDialog(project) {
+    ensureStyle();
+    const L = t();
+    let submitting = false;
+    openDialog({
+      title: L.relocateTitle,
+      description: L.relocateDesc,
+      width: "sm:max-w-md",
+      onMount: ({ body, close }) => {
+        const errLine = h("div", { class: "mt-2 hidden text-ui-sm text-destructive", "data-zcodepro-error": "1" });
+        const showError = (msg) => {
+          errLine.textContent = msg;
+          errLine.classList.remove("hidden");
+        };
+        const input = textInput({ value: project.path, onEnter: () => submit() });
+        const submitBtn = btnPrimary(L.relocateConfirm, () => submit(), "min-w-24");
+        const submit = async () => {
+          if (submitting) return;
+          const newPath = input.value.trim();
+          if (!newPath || newPath === project.path) {
+            close();
+            return;
+          }
+          submitting = true;
+          submitBtn.setAttribute("disabled", "true");
+          errLine.classList.add("hidden");
+          const res = await rpc("/project/relocate", {
+            method: "POST",
+            body: { path: project.path, newPath }
+          });
+          submitting = false;
+          submitBtn.removeAttribute("disabled");
+          if (res.ok) {
+            close();
+            showToast(res.indexSynced === false ? L.relocateIndexSkipped : L.relocateSuccess);
+            setTimeout(() => location.reload(), 900);
+            return;
+          }
+          const byCode = {
+            "same-path": L.relocateSame,
+            "new-not-found": L.relocateNotFound,
+            "protected-path": L.relocateProtected,
+            "index-busy": L.relocateIndexBusy
+          };
+          showError(byCode[res.code] || L.failed + ": " + (res.error || L.retryHint));
+        };
+        body.append(
+          h(
+            "div",
+            { class: "space-y-3" },
+            h(
+              "div",
+              {},
+              h("div", { class: "mb-1.5 text-ui-sm font-medium text-foreground" }, L.relocateNewPathLabel),
+              input
+            ),
+            h(
+              "div",
+              {},
+              h("div", { class: "mb-1 text-ui-xs text-foreground-subtle" }, L.pathLabel),
+              h("div", { class: "break-all rounded-lg border border-border bg-surface-hover/50 px-3 py-1.5 font-mono text-ui-xs text-foreground-subtle" }, project.path)
+            ),
+            h("p", { class: "text-ui-xs/relaxed text-foreground-subtle" }, L.relocateHint),
+            errLine
+          ),
+          dialogFooter(btnSecondary(L.cancel, () => close()), submitBtn)
+        );
+      }
+    });
+  }
+
   // src/inject/features/project-menu.js
   var REMOVE_TEXTS = ["\u79FB\u9664", "Remove"];
   function extractPathFromTestId2(testid) {
@@ -609,6 +753,9 @@
       const project = await resolveProjectPath(removeItem);
       if (!project) return;
       appendAliasItem(content, removeItem, project);
+      if (config.features && config.features.projectRelocate !== false) {
+        appendRelocateItem(content, removeItem, project);
+      }
     })();
   }
 

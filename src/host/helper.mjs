@@ -4,10 +4,11 @@
 
 import { createServer } from 'node:http';
 import { existsSync, readFileSync, renameSync, statSync, writeFileSync } from 'node:fs';
-import { basename, isAbsolute, join, resolve } from 'node:path';
-import { readSettings, isProjectOpenInTabs } from './settings.mjs';
+import { basename, isAbsolute, join, resolve, sep } from 'node:path';
+import { readSettings, writeSettingsAtomic, remapSettingsPaths, isProjectOpenInTabs } from './settings.mjs';
+import { taskIndexPath, probeTaskIndexWritable, remapTaskIndexPaths, taskIndexDriverAvailable } from './taskIndex.mjs';
 
-const VERSION = '0.1.0';
+const VERSION = '0.2.0';
 
 export function defaultConfig() {
   return {
@@ -15,6 +16,7 @@ export function defaultConfig() {
     features: {
       headerSettingsEntry: true, // 右上角下拉菜单中的“增强设置”入口
       projectAlias: true,       // 项目“更多”菜单中的“自定义别名” + 侧边栏按表渲染
+      projectRelocate: true,    // 项目“更多”菜单中的“切换文件夹” + 路径引用同步
     },
     // 项目路径（规范化，无尾分隔符）→ 自定义别名。只影响界面渲染，不改动任何真实数据。
     aliases: {},
@@ -133,6 +135,11 @@ export function startHelper({ port, token, dataRoot, state }) {
         json(res, ...setAlias(body, configFile));
         return;
       }
+      if (req.method === 'POST' && url.pathname === '/project/relocate') {
+        const body = await readBody(req);
+        json(res, ...(await relocateProject(body, dataRoot)));
+        return;
+      }
       json(res, 404, { ok: false, error: 'not found' });
     } catch (err) {
       json(res, 500, { ok: false, error: String(err?.message || err) });
@@ -167,4 +174,99 @@ export function setAlias(body, configFile) {
     return [500, { ok: false, error: '保存配置失败: ' + (err?.message || err) }];
   }
   return [200, { ok: true, path, alias: name, aliases: config.aliases }];
+}
+
+function invalidProjectName(name) {
+  if (typeof name !== 'string') return '名称必须是字符串';
+  const n = name.trim();
+  if (!n) return '名称不能为空';
+  if (n === '.' || n === '..') return '名称不能是 . 或 ..';
+  if (n.length > 100) return '名称过长（最多 100 字符）';
+  if (/[\\/:*?"<>|\0]/.test(n)) return '名称不能包含 \\ / : * ? " < > | 等字符';
+  if (/^\s|\s$/.test(name)) return '名称首尾不能有空格';
+  return null;
+}
+
+// 修改项目位置：把项目的记录（最近项目/标签页/任务索引/别名）重新指向另一个文件夹。
+// 不移动、不修改任何目录；目标文件夹必须已存在。导出以便测试脚本直接驱动。
+export async function relocateProject(body, dataRoot) {
+  const rawOld = typeof body?.path === 'string' ? body.path.trim() : '';
+  const rawNew = typeof body?.newPath === 'string' ? body.newPath.trim() : '';
+  if (!rawOld || !isAbsolute(rawOld)) return [400, { ok: false, error: '无效的项目路径' }];
+  if (!rawNew || !isAbsolute(rawNew)) return [400, { ok: false, code: 'invalid-path', error: '无效的新位置' }];
+  const norm = (p) => p.replace(/[\\/]+$/, '');
+  const oldPath = resolve(rawOld);
+  const newPath = resolve(rawNew);
+  if (norm(newPath) === norm(oldPath)) return [400, { ok: false, code: 'same-path', error: '新位置与当前位置相同' }];
+  const nameError = invalidProjectName(basename(norm(newPath)));
+  if (nameError) return [400, { ok: false, code: 'invalid-path', error: nameError }];
+  // 数据目录护栏：不得指向 ZCode 数据目录内部（优先于存在性检查）
+  if (newPath === dataRoot || newPath.startsWith(norm(dataRoot) + sep)) {
+    return [400, { ok: false, code: 'protected-path', error: '拒绝指向 ZCode 数据目录内部路径' }];
+  }
+
+  let isDir = false;
+  try { isDir = existsSync(newPath) && statSync(newPath).isDirectory(); } catch { /* ignore */ }
+  if (!isDir) return [404, { ok: false, code: 'new-not-found', error: '目标文件夹不存在: ' + newPath }];
+
+  // 任务索引：存在且有驱动时同步。先预检写锁——任何写入前发现拿不到锁直接失败。
+  const indexFile = taskIndexPath(dataRoot);
+  const indexExists = existsSync(indexFile);
+  const syncIndex = indexExists && (await taskIndexDriverAvailable());
+  if (syncIndex) {
+    try {
+      await probeTaskIndexWritable(dataRoot);
+    } catch (err) {
+      return [503, { ok: false, code: err.code || 'index-error', error: String(err?.message || err) }];
+    }
+  }
+
+  // setting.json 路径引用同步（recentProjects / lastWorkspaceSession / webRemoteControl…）
+  const settingsFile = join(dataRoot, 'v2', 'setting.json');
+  try {
+    const settings = readSettings(settingsFile);
+    writeSettingsAtomic(settingsFile, remapSettingsPaths(settings, oldPath, newPath));
+  } catch (err) {
+    return [500, { ok: false, error: '更新 setting.json 失败: ' + (err?.message || err) }];
+  }
+
+  // 任务索引同步；失败则回滚 setting.json，保持两边一致
+  if (syncIndex) {
+    try {
+      await remapTaskIndexPaths(dataRoot, oldPath, newPath);
+    } catch (err) {
+      try {
+        const cur = readSettings(settingsFile);
+        writeSettingsAtomic(settingsFile, remapSettingsPaths(cur, newPath, oldPath));
+      } catch { /* 回滚失败：setting.json.zcodepro-backup 仍有兜底 */ }
+      return [500, {
+        ok: false,
+        code: err.code || 'index-remap-failed',
+        error: '更新任务索引失败（已回滚配置更新）: ' + (err?.message || err),
+      }];
+    }
+  }
+
+  // 别名随迁（仅渲染层数据，失败不影响结果）
+  try {
+    const config = loadConfig(join(dataRoot, 'zcodepro.json'));
+    const aliases = config.aliases || {};
+    if (Object.prototype.hasOwnProperty.call(aliases, oldPath)) {
+      const v = aliases[oldPath];
+      delete aliases[oldPath];
+      aliases[newPath] = v;
+      saveConfig(join(dataRoot, 'zcodepro.json'), config);
+    }
+  } catch { /* ignore */ }
+
+  return [200, {
+    ok: true,
+    oldPath,
+    newPath,
+    reload: true,
+    indexSynced: syncIndex || !indexExists,
+    ...(indexExists && !syncIndex
+      ? { warning: '任务索引未更新：本机缺少 SQLite 支持（需 Node ≥23.4 或 sqlite3 命令），旧任务条目可能仍指向旧路径。' }
+      : {}),
+  }];
 }
