@@ -4,6 +4,7 @@ import { observeRadixPopups } from './core.js';
 import { handleHeaderMenu } from './features/header-menu.js';
 import { handleProjectMenu } from './features/project-menu.js';
 import { startAliasWatcher } from './features/alias.js';
+import { startTaskOrderWatcher } from './features/task-order.js';
 import { ensureStyle } from './ui.js';
 
 (function zcodeproInject() {
@@ -20,6 +21,7 @@ import { ensureStyle } from './ui.js';
       try { handleProjectMenu(content); } catch { /* ignore */ }
     });
     try { void startAliasWatcher(); } catch { /* ignore */ }
+    try { startTaskOrderWatcher(); } catch { /* ignore */ }
   };
 
   if (document.readyState === 'loading') {

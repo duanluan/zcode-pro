@@ -35,6 +35,8 @@
     featureAliasDesc: "\u4E3A\u9879\u76EE\u8BBE\u7F6E\u4EC5\u754C\u9762\u663E\u793A\u7684\u522B\u540D\uFF1A\u4FA7\u8FB9\u680F\u663E\u793A\u522B\u540D\uFF0C\u78C1\u76D8\u76EE\u5F55\u4E0E\u6240\u6709\u6570\u636E\u4E0D\u53D8\u3002",
     featureRelocate: "\u9879\u76EE\u201C\u66F4\u591A\u201D\u83DC\u5355 \xB7 \u5207\u6362\u6587\u4EF6\u5939",
     featureRelocateDesc: "\u5C06\u9879\u76EE\u6307\u5411\u53E6\u4E00\u4E2A\u6587\u4EF6\u5939\uFF1A\u4FA7\u8FB9\u680F\u3001\u6807\u7B7E\u9875\u4E0E\u4EFB\u52A1\u5386\u53F2\u4E00\u5E76\u8FC1\u79FB\uFF0C\u76EE\u5F55\u672C\u8EAB\u4E0D\u52A8\u3002",
+    featureTaskOrder: "\u4FA7\u8FB9\u680F\u4F1A\u8BDD\u62D6\u52A8\u6392\u5E8F",
+    featureTaskOrderDesc: "\u8BA9\u7F6E\u9876\u3001\u9879\u76EE\u4E0E\u5206\u7EC4\u4E2D\u7684\u4F1A\u8BDD\u62D6\u52A8\u540E\u8BB0\u4F4F\u987A\u5E8F\uFF0C\u5237\u65B0\u540E\u4FDD\u6301\u3002",
     featureEntry: "\u53F3\u4E0A\u89D2\u83DC\u5355 \xB7 \u8BBE\u7F6E\u5165\u53E3",
     featureEntryDesc: "\u5728\u53F3\u4E0A\u89D2\u4E0B\u62C9\u83DC\u5355\u4E2D\u663E\u793A\u201CZCode Pro \u8BBE\u7F6E\u201D\u3002",
     statusOk: "\u8F85\u52A9\u670D\u52A1\u8FD0\u884C\u4E2D",
@@ -54,6 +56,7 @@
     aliasSaved: "\u522B\u540D\u5DF2\u66F4\u65B0",
     aliasCleared: "\u5DF2\u6062\u590D\u771F\u5B9E\u540D\u79F0",
     aliasHint: "\u78C1\u76D8\u76EE\u5F55\u540D\u4E0D\u53D8\uFF1A\u7EC8\u7AEF\u3001\u6587\u4EF6\u7BA1\u7406\u5668\u4E0E\u5176\u4ED6\u5F15\u7528\u771F\u5B9E\u8DEF\u5F84\u7684\u754C\u9762\u4ECD\u663E\u793A\u539F\u540D\u3002",
+    taskOrderSaved: "\u987A\u5E8F\u5DF2\u66F4\u65B0",
     browse: "\u6D4F\u89C8",
     relocateItem: "\u5207\u6362\u6587\u4EF6\u5939",
     relocateTitle: "\u5207\u6362\u6587\u4EF6\u5939",
@@ -78,6 +81,8 @@
     featureAliasDesc: "A UI-only alias: the sidebar shows your custom name while the directory and all data stay untouched.",
     featureRelocate: 'Project "More" menu \xB7 Switch folder',
     featureRelocateDesc: "Points a project at another folder; the sidebar, tabs and task history follow. The directory stays untouched.",
+    featureTaskOrder: "Sidebar session drag ordering",
+    featureTaskOrderDesc: "Makes session drags in Pinned, Projects and Groups persist across refreshes.",
     featureEntry: "Header menu \xB7 Settings entry",
     featureEntryDesc: 'Show "ZCode Pro Settings" in the top-right dropdown menu.',
     statusOk: "Helper running",
@@ -97,6 +102,7 @@
     aliasSaved: "Alias updated.",
     aliasCleared: "Real name restored.",
     aliasHint: "The directory name on disk is unchanged: terminals, file managers and other path-based UI still show the real name.",
+    taskOrderSaved: "Order updated.",
     browse: "Browse",
     relocateItem: "Switch folder",
     relocateTitle: "Switch folder",
@@ -561,6 +567,11 @@
               if (await setFeature("projectRelocate", next)) f.projectRelocate = next;
               refreshRows();
             }),
+            settingRow(L.featureTaskOrder, L.featureTaskOrderDesc, f.taskOrder !== false, async () => {
+              const next = !(f.taskOrder !== false);
+              if (await setFeature("taskOrder", next)) f.taskOrder = next;
+              refreshRows();
+            }),
             settingRow(L.featureEntry, L.featureEntryDesc, f.headerSettingsEntry !== false, async () => {
               const next = !(f.headerSettingsEntry !== false);
               if (await setFeature("headerSettingsEntry", next)) f.headerSettingsEntry = next;
@@ -804,6 +815,69 @@
     })();
   }
 
+  // src/inject/features/task-order.js
+  var installed = false;
+  var dragKey = null;
+  function startTaskOrderWatcher() {
+    if (installed || typeof document === "undefined") return;
+    installed = true;
+    ensureStyle();
+    document.addEventListener("dragstart", (e) => {
+      const row = e.target.closest && e.target.closest("[data-task-item-key]");
+      dragKey = row ? row.getAttribute("data-task-item-key") : null;
+    }, true);
+    document.addEventListener("dragend", () => {
+      dragKey = null;
+    }, true);
+    document.addEventListener("dragover", (e) => {
+      if (!dragKey) return;
+      const row = e.target.closest && e.target.closest("[data-task-item-key]");
+      if (!row || row.getAttribute("data-task-item-key") === dragKey) return;
+      e.preventDefault();
+      if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+      const rect = row.getBoundingClientRect();
+      const before = e.clientY < rect.top + rect.height / 2;
+      const src = [...row.parentElement.querySelectorAll("[data-task-item-key]")].find((el) => el.getAttribute("data-task-item-key") === dragKey);
+      if (src && src !== row) {
+        row.parentNode.insertBefore(src, before ? row : row.nextSibling);
+      }
+    }, true);
+    document.addEventListener("drop", (e) => {
+      if (!dragKey) return;
+      const row = e.target.closest && e.target.closest("[data-task-item-key]");
+      const list = row ? row.parentElement : null;
+      if (!list) return;
+      const rows = [...list.querySelectorAll("[data-task-item-key]")];
+      if (rows.length < 2) return;
+      e.preventDefault();
+      e.stopPropagation();
+      dragKey = null;
+      void persistOrder(rows.map((el) => el.getAttribute("data-task-item-key")));
+    }, true);
+  }
+  var persisting = false;
+  async function persistOrder(ordered) {
+    if (persisting) return;
+    persisting = true;
+    try {
+      const config = await getConfig();
+      if (config.features && config.features.taskOrder === false) return;
+      ensureStyle();
+      const L = t();
+      const workspaces = new Set(ordered.map((k) => k.slice(0, k.lastIndexOf(":"))));
+      const scope = workspaces.size === 1 ? "workspace" : "group-members";
+      const res = await rpc("/task-order", { method: "POST", body: { scope, ordered } });
+      if (res && res.ok) {
+        showToast(L.taskOrderSaved);
+        setTimeout(() => location.reload(), 600);
+      } else {
+        showToast(L.failed + ": " + (res && res.error || L.retryHint), "error");
+      }
+    } finally {
+      persisting = false;
+    }
+  }
+
   // src/inject/index.js
   (function zcodeproInject() {
     if (typeof window === "undefined") return;
@@ -823,6 +897,10 @@
       });
       try {
         void startAliasWatcher();
+      } catch {
+      }
+      try {
+        startTaskOrderWatcher();
       } catch {
       }
     };

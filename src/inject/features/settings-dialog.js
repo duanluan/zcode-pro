@@ -54,6 +54,11 @@ export function openSettingsDialog() {
             if (await setFeature('projectRelocate', next)) f.projectRelocate = next;
             refreshRows();
           }),
+          settingRow(L.featureTaskOrder, L.featureTaskOrderDesc, f.taskOrder !== false, async () => {
+            const next = !(f.taskOrder !== false);
+            if (await setFeature('taskOrder', next)) f.taskOrder = next;
+            refreshRows();
+          }),
           settingRow(L.featureEntry, L.featureEntryDesc, f.headerSettingsEntry !== false, async () => {
             const next = !(f.headerSettingsEntry !== false);
             if (await setFeature('headerSettingsEntry', next)) f.headerSettingsEntry = next;

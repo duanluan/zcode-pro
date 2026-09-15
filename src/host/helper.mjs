@@ -8,6 +8,7 @@ import { basename, isAbsolute, join, resolve, sep } from 'node:path';
 import { readSettings, writeSettingsAtomic, remapSettingsPaths, isProjectOpenInTabs } from './settings.mjs';
 import { taskIndexPath, probeTaskIndexWritable, remapTaskIndexPaths, taskIndexDriverAvailable } from './taskIndex.mjs';
 import { pickFolderSystem } from './pickFolder.mjs';
+import { reorderWorkspaceTasks, reorderGroupMembers } from './taskOrder.mjs';
 
 const VERSION = '0.2.1';
 
@@ -18,6 +19,7 @@ export function defaultConfig() {
       headerSettingsEntry: true, // 右上角下拉菜单中的“增强设置”入口
       projectAlias: true,       // 项目“更多”菜单中的“自定义别名” + 侧边栏按表渲染
       projectRelocate: true,    // 项目“更多”菜单中的“切换文件夹” + 路径引用同步
+      taskOrder: true,          // 侧边栏会话拖动排序持久化
     },
     // 项目路径（规范化，无尾分隔符）→ 自定义别名。只影响界面渲染，不改动任何真实数据。
     aliases: {},
@@ -146,6 +148,29 @@ export function startHelper({ port, token, dataRoot, state }) {
         const start = url.searchParams.get('start') || '/';
         const title = (url.searchParams.get('title') || '选择文件夹').slice(0, 80);
         json(res, 200, { ok: true, ...(await pickFolderSystem(start, title)) });
+        return;
+      }
+      // 会话拖动排序持久化：scope = workspace（置顶/项目列表，重盖 updated_at）
+      // 或 group-members（分组会话，重写 members.sort_order）
+      if (req.method === 'POST' && url.pathname === '/task-order') {
+        const body = await readBody(req);
+        const ordered = Array.isArray(body?.ordered) ? body.ordered.filter((k) => typeof k === 'string') : [];
+        if (ordered.length === 0) {
+          json(res, 400, { ok: false, error: 'ordered 不能为空' });
+          return;
+        }
+        let result;
+        if (body.scope === 'workspace') result = await reorderWorkspaceTasks(dataRoot, ordered);
+        else if (body.scope === 'group-members') result = await reorderGroupMembers(dataRoot, ordered);
+        else {
+          json(res, 400, { ok: false, error: '无效的 scope' });
+          return;
+        }
+        if (result.error) {
+          json(res, 400, { ok: false, error: result.error });
+          return;
+        }
+        json(res, 200, { ok: true, reload: true, ...result });
         return;
       }
       json(res, 404, { ok: false, error: 'not found' });
