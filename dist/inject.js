@@ -36,6 +36,8 @@
     featureRelocateDesc: "\u5C06\u9879\u76EE\u6307\u5411\u53E6\u4E00\u4E2A\u6587\u4EF6\u5939\uFF1A\u4FA7\u8FB9\u680F\u3001\u6807\u7B7E\u9875\u4E0E\u4EFB\u52A1\u5386\u53F2\u4E00\u5E76\u8FC1\u79FB\uFF0C\u76EE\u5F55\u672C\u8EAB\u4E0D\u52A8\u3002",
     featureTaskOrder: "\u4FA7\u8FB9\u680F\u4F1A\u8BDD\u62D6\u52A8\u6392\u5E8F",
     featureTaskOrderDesc: "\u8BA9\u7F6E\u9876\u3001\u9879\u76EE\u4E0E\u5206\u7EC4\u4E2D\u7684\u4F1A\u8BDD\u62D6\u52A8\u540E\u8BB0\u4F4F\u987A\u5E8F\uFF0C\u5237\u65B0\u540E\u4FDD\u6301\u3002",
+    featurePinnedExpand: "\u7F6E\u9876\u4F1A\u8BDD\u4FDD\u6301\u9879\u76EE\u6298\u53E0\uFF08\u5B9E\u9A8C\u6027\uFF09",
+    featurePinnedExpandDesc: "\u70B9\u51FB\u6298\u53E0\u9879\u76EE\u7684\u7F6E\u9876\u4F1A\u8BDD\u540E\u5C06\u5176\u4FDD\u6301\u6298\u53E0\u3002\u53D7\u9650\u4E8E\u5E94\u7528\u673A\u5236\uFF0C\u9879\u76EE\u4F1A\u5148\u77ED\u6682\u5C55\u5F00\u518D\u7F29\u8D77\u3002",
     version: "\u7248\u672C",
     close: "\u5173\u95ED",
     cancel: "\u53D6\u6D88",
@@ -78,6 +80,8 @@
     featureRelocateDesc: "Points a project at another folder; the sidebar, tabs and task history follow. The directory stays untouched.",
     featureTaskOrder: "Sidebar session drag ordering",
     featureTaskOrderDesc: "Makes session drags in Pinned, Projects and Groups persist across refreshes.",
+    featurePinnedExpand: "Keep projects collapsed for pinned sessions (experimental)",
+    featurePinnedExpandDesc: "Keeps the project collapsed after clicking a pinned session. Note: it briefly expands first, then collapses.",
     version: "Version",
     close: "Close",
     cancel: "Cancel",
@@ -223,7 +227,7 @@
     }, content);
     content.append(
       h("h2", { class: "text-lg font-semibold leading-none tracking-tight text-foreground" }, title),
-      description ? h("p", { class: "mt-2 text-ui-sm/relaxed text-foreground-subtle" }, description) : null
+      ...description ? [h("p", { class: "mt-2 text-ui-sm/relaxed text-foreground-subtle" }, description)] : []
     );
     const body = h("div", { class: "mt-4" });
     content.append(body);
@@ -580,6 +584,11 @@
               const next = !(f.taskOrder !== false);
               if (await setFeature("taskOrder", next)) f.taskOrder = next;
               refreshRows();
+            }),
+            settingRow(L.featurePinnedExpand, L.featurePinnedExpandDesc, f.pinnedKeepCollapsed !== false, async () => {
+              const next = !(f.pinnedKeepCollapsed !== false);
+              if (await setFeature("pinnedKeepCollapsed", next)) f.pinnedKeepCollapsed = next;
+              refreshRows();
             })
           );
         };
@@ -915,6 +924,81 @@
     }
   }
 
+  // src/inject/features/pinned-expand.js
+  var installed2 = false;
+  var keepCollapsed = false;
+  async function refreshConfig() {
+    try {
+      const res = await rpc("/config");
+      if (res && res.ok && res.config && res.config.features) {
+        keepCollapsed = res.config.features.pinnedKeepCollapsed !== false;
+      }
+    } catch {
+    }
+  }
+  function startPinnedExpandSuppression() {
+    if (installed2 || typeof document === "undefined") return;
+    installed2 = true;
+    void refreshConfig();
+    setInterval(refreshConfig, 5e3);
+    document.addEventListener("click", (e) => {
+      if (!keepCollapsed) return;
+      const taskRow = e.target.closest && e.target.closest('[data-testid^="task-item-"]');
+      if (!taskRow) return;
+      const key = taskRow.getAttribute("data-task-item-key") || "";
+      const sep = key.lastIndexOf(":");
+      if (sep <= 0) return;
+      const wsKey = key.slice(0, sep);
+      const wsRow = document.querySelector(`[data-testid="workspace-item-${cssEscape(wsKey)}"]`);
+      if (!wsRow || wsRow.getAttribute("aria-expanded") !== "false") return;
+      const head = wsRow.matches("[aria-expanded]") ? wsRow : wsRow.querySelector("[aria-expanded]");
+      if (!head) return;
+      collapseAfterContentLoaded(wsRow);
+    }, true);
+    document.addEventListener("click", (e) => {
+      const row = e.target.closest && e.target.closest('[data-testid^="workspace-item-"]');
+      if (row) row.__zcodeproUserTouched = Date.now();
+    }, true);
+  }
+  function collapseAfterContentLoaded(wsRow) {
+    const deadline = Date.now() + 25e3;
+    let lastLen = (document.querySelector("main") || document.body).innerText.length;
+    let grewAt = 0;
+    let settledAt = 0;
+    const headOf = () => {
+      const h2 = wsRow.matches("[aria-expanded]") ? wsRow : wsRow.querySelector("[aria-expanded]");
+      return h2 || null;
+    };
+    const userTouched = () => wsRow.__zcodeproUserTouched && Date.now() - wsRow.__zcodeproUserTouched < 800;
+    const tick = () => {
+      if (!keepCollapsed || Date.now() > deadline || !wsRow.isConnected) return done();
+      const len = (document.querySelector("main") || document.body).innerText.length;
+      if (len > lastLen) grewAt = Date.now();
+      if (grewAt && Date.now() - grewAt >= 1e3) settledAt = settledAt || Date.now();
+      lastLen = len;
+      const head = headOf();
+      if (head && head.getAttribute("aria-expanded") === "true" && !userTouched()) {
+        head.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+      }
+      if (settledAt && Date.now() - settledAt >= 1e3) {
+        const h2 = headOf();
+        if (h2 && h2.getAttribute("aria-expanded") === "true" && !userTouched()) {
+          h2.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+        }
+        return done();
+      }
+      setTimeout(tick, 200);
+    };
+    const done = () => {
+      wsRow.__zcodeproSuppending = false;
+    };
+    wsRow.__zcodeproSuppending = true;
+    setTimeout(tick, 400);
+  }
+  function cssEscape(s) {
+    return String(s).replace(/(["\\\]])/g, "\\$1");
+  }
+
   // src/inject/index.js
   (function zcodeproInject() {
     if (typeof window === "undefined") return;
@@ -938,6 +1022,10 @@
       }
       try {
         startTaskOrderWatcher();
+      } catch {
+      }
+      try {
+        startPinnedExpandSuppression();
       } catch {
       }
     };

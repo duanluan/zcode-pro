@@ -54,7 +54,8 @@ export function openDialog({ title, description, onMount, onClose, width = 'sm:m
 
   content.append(
     h('h2', { class: 'text-lg font-semibold leading-none tracking-tight text-foreground' }, title),
-    description ? h('p', { class: 'mt-2 text-ui-sm/relaxed text-foreground-subtle' }, description) : null
+    // 注意不能把 null 直接传给 append：DOM 会把 null 渲染成字面量 "null" 文本
+    ...(description ? [h('p', { class: 'mt-2 text-ui-sm/relaxed text-foreground-subtle' }, description)] : [])
   );
   const body = h('div', { class: 'mt-4' });
   content.append(body);

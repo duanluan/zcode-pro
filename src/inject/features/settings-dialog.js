@@ -55,6 +55,11 @@ export function openSettingsDialog() {
             if (await setFeature('taskOrder', next)) f.taskOrder = next;
             refreshRows();
           }),
+          settingRow(L.featurePinnedExpand, L.featurePinnedExpandDesc, f.pinnedKeepCollapsed !== false, async () => {
+            const next = !(f.pinnedKeepCollapsed !== false);
+            if (await setFeature('pinnedKeepCollapsed', next)) f.pinnedKeepCollapsed = next;
+            refreshRows();
+          }),
         );
       };
       refreshRows();

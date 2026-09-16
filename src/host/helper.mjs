@@ -19,6 +19,7 @@ export function defaultConfig() {
       projectAlias: true,       // 项目“更多”菜单中的“自定义别名” + 侧边栏按表渲染
       projectRelocate: true,    // 项目“更多”菜单中的“切换文件夹” + 路径引用同步
       taskOrder: true,          // 侧边栏会话拖动排序持久化
+      pinnedKeepCollapsed: false, // 点击置顶会话保持项目折叠（实验性：会先展开再缩起，有闪烁）
     },
     // 项目路径（规范化，无尾分隔符）→ 自定义别名。只影响界面渲染，不改动任何真实数据。
     aliases: {},
