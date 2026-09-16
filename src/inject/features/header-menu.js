@@ -1,6 +1,7 @@
 // 功能一：右上角窗口下拉菜单中新增“ZCode Pro 设置”入口。
 // 菜单是 Radix DropdownMenu（门户渲染到 body），打开时动态克隆一个原生菜单项。
-import { t, getConfig, closeRadixMenu, itemsOf, itemText } from '../core.js';
+// 入口常驻（不做开关）：关掉它将无法再打开设置。
+import { t, closeRadixMenu, itemsOf, itemText } from '../core.js';
 import { openSettingsDialog } from './settings-dialog.js';
 
 // 用应用自身菜单文案（多语言）识别“窗口菜单”：同时命中首两项才认定
@@ -17,11 +18,7 @@ export function handleHeaderMenu(content) {
   const isNewTask = NEW_TASK_TEXTS.some((x) => first.startsWith(x));
   const isOpenWs = OPEN_WS_TEXTS.some((x) => head.includes(x));
   if (!(isNewTask && isOpenWs)) return;
-  void (async () => {
-    const config = await getConfig();
-    if (config.features && config.features.headerSettingsEntry === false) return;
-    appendSettingsItem(content, items[0]);
-  })();
+  appendSettingsItem(content, items[0]);
 }
 
 function appendSettingsItem(menu, firstItem) {

@@ -30,18 +30,12 @@
   var zh = {
     settingsEntry: "ZCode Pro \u8BBE\u7F6E",
     settingsTitle: "ZCode Pro \u589E\u5F3A\u8BBE\u7F6E",
-    settingsSubtitle: "\u754C\u9762\u589E\u5F3A\u968F ZCode Pro \u542F\u52A8\u81EA\u52A8\u751F\u6548\uFF0C\u4E0D\u4FEE\u6539 ZCode \u5E94\u7528\u6587\u4EF6\u3002",
     featureAlias: "\u9879\u76EE\u201C\u66F4\u591A\u201D\u83DC\u5355 \xB7 \u81EA\u5B9A\u4E49\u522B\u540D",
     featureAliasDesc: "\u4E3A\u9879\u76EE\u8BBE\u7F6E\u4EC5\u754C\u9762\u663E\u793A\u7684\u522B\u540D\uFF1A\u4FA7\u8FB9\u680F\u663E\u793A\u522B\u540D\uFF0C\u78C1\u76D8\u76EE\u5F55\u4E0E\u6240\u6709\u6570\u636E\u4E0D\u53D8\u3002",
     featureRelocate: "\u9879\u76EE\u201C\u66F4\u591A\u201D\u83DC\u5355 \xB7 \u5207\u6362\u6587\u4EF6\u5939",
     featureRelocateDesc: "\u5C06\u9879\u76EE\u6307\u5411\u53E6\u4E00\u4E2A\u6587\u4EF6\u5939\uFF1A\u4FA7\u8FB9\u680F\u3001\u6807\u7B7E\u9875\u4E0E\u4EFB\u52A1\u5386\u53F2\u4E00\u5E76\u8FC1\u79FB\uFF0C\u76EE\u5F55\u672C\u8EAB\u4E0D\u52A8\u3002",
     featureTaskOrder: "\u4FA7\u8FB9\u680F\u4F1A\u8BDD\u62D6\u52A8\u6392\u5E8F",
     featureTaskOrderDesc: "\u8BA9\u7F6E\u9876\u3001\u9879\u76EE\u4E0E\u5206\u7EC4\u4E2D\u7684\u4F1A\u8BDD\u62D6\u52A8\u540E\u8BB0\u4F4F\u987A\u5E8F\uFF0C\u5237\u65B0\u540E\u4FDD\u6301\u3002",
-    featureEntry: "\u53F3\u4E0A\u89D2\u83DC\u5355 \xB7 \u8BBE\u7F6E\u5165\u53E3",
-    featureEntryDesc: "\u5728\u53F3\u4E0A\u89D2\u4E0B\u62C9\u83DC\u5355\u4E2D\u663E\u793A\u201CZCode Pro \u8BBE\u7F6E\u201D\u3002",
-    statusOk: "\u8F85\u52A9\u670D\u52A1\u8FD0\u884C\u4E2D",
-    statusDown: "\u8F85\u52A9\u670D\u52A1\u4E0D\u53EF\u7528",
-    injectedPages: "\u5DF2\u589E\u5F3A\u9875\u9762",
     version: "\u7248\u672C",
     close: "\u5173\u95ED",
     cancel: "\u53D6\u6D88",
@@ -57,6 +51,8 @@
     aliasCleared: "\u5DF2\u6062\u590D\u771F\u5B9E\u540D\u79F0",
     aliasHint: "\u78C1\u76D8\u76EE\u5F55\u540D\u4E0D\u53D8\uFF1A\u7EC8\u7AEF\u3001\u6587\u4EF6\u7BA1\u7406\u5668\u4E0E\u5176\u4ED6\u5F15\u7528\u771F\u5B9E\u8DEF\u5F84\u7684\u754C\u9762\u4ECD\u663E\u793A\u539F\u540D\u3002",
     taskOrderSaved: "\u987A\u5E8F\u5DF2\u66F4\u65B0",
+    plugTitle: "\u63D2\u4EF6\u63A8\u8350\uFF1Aduanluan-zcode-plugins",
+    plugDesc: "\u4E3A ZCode \u6253\u9020\u7684\u63D2\u4EF6\u5408\u96C6\uFF1AAI \u4EE3\u7801\u8BC4\u5BA1\u3001\u8BF7\u6C42\u538B\u7F29\u8282\u7701 token\u3001\u547D\u4EE4\u8F93\u51FA\u538B\u7F29\u3002\u70B9\u51FB\u8BBF\u95EE GitHub \u4ED3\u5E93\u3002",
     browse: "\u6D4F\u89C8",
     relocateItem: "\u5207\u6362\u6587\u4EF6\u5939",
     relocateTitle: "\u5207\u6362\u6587\u4EF6\u5939",
@@ -76,18 +72,12 @@
   var en = {
     settingsEntry: "ZCode Pro Settings",
     settingsTitle: "ZCode Pro Enhancements",
-    settingsSubtitle: "Enhancements load automatically with ZCode Pro; no app files are modified.",
     featureAlias: 'Project "More" menu \xB7 Custom alias',
     featureAliasDesc: "A UI-only alias: the sidebar shows your custom name while the directory and all data stay untouched.",
     featureRelocate: 'Project "More" menu \xB7 Switch folder',
     featureRelocateDesc: "Points a project at another folder; the sidebar, tabs and task history follow. The directory stays untouched.",
     featureTaskOrder: "Sidebar session drag ordering",
     featureTaskOrderDesc: "Makes session drags in Pinned, Projects and Groups persist across refreshes.",
-    featureEntry: "Header menu \xB7 Settings entry",
-    featureEntryDesc: 'Show "ZCode Pro Settings" in the top-right dropdown menu.',
-    statusOk: "Helper running",
-    statusDown: "Helper unavailable",
-    injectedPages: "Pages enhanced",
     version: "Version",
     close: "Close",
     cancel: "Cancel",
@@ -103,6 +93,8 @@
     aliasCleared: "Real name restored.",
     aliasHint: "The directory name on disk is unchanged: terminals, file managers and other path-based UI still show the real name.",
     taskOrderSaved: "Order updated.",
+    plugTitle: "Plugin pick: duanluan-zcode-plugins",
+    plugDesc: "A plugin collection for ZCode: AI code review, request compression to save tokens, and command output compression. Click to visit the GitHub repo.",
     browse: "Browse",
     relocateItem: "Switch folder",
     relocateTitle: "Switch folder",
@@ -545,7 +537,6 @@
     const L = t();
     openDialog({
       title: L.settingsTitle,
-      description: L.settingsSubtitle,
       width: "max-w-lg",
       onMount: async ({ body, close }) => {
         const health = await rpc("/health");
@@ -564,14 +555,11 @@
         const statusLine = h(
           "div",
           {
-            class: "flex items-center gap-2 text-ui-sm " + (health.ok ? "text-foreground-subtle" : "text-destructive"),
+            class: "flex items-center gap-2 text-ui-sm text-foreground-subtle",
             "data-zcodepro-status": "1"
           },
-          h("span", {
-            class: "inline-block size-2 rounded-full " + (health.ok ? "bg-emerald-500" : "bg-destructive")
-          }),
-          health.ok ? L.statusOk : L.statusDown,
-          health.ok ? h("span", { class: "text-foreground-subtle/70" }, ` \xB7 ${L.version} ${health.version} \xB7 ${L.injectedPages} ${health.injectedPages ?? 0}`) : null
+          h("span", { class: "inline-block size-2 rounded-full bg-emerald-500" }),
+          h("span", { class: "text-foreground-subtle/70" }, `${L.version} ${health.version} \xB7 ${HELPER_URL}`)
         );
         const rows = h("div", { class: "divide-y divide-border rounded-xl border border-border" });
         const refreshRows = () => {
@@ -592,19 +580,51 @@
               const next = !(f.taskOrder !== false);
               if (await setFeature("taskOrder", next)) f.taskOrder = next;
               refreshRows();
-            }),
-            settingRow(L.featureEntry, L.featureEntryDesc, f.headerSettingsEntry !== false, async () => {
-              const next = !(f.headerSettingsEntry !== false);
-              if (await setFeature("headerSettingsEntry", next)) f.headerSettingsEntry = next;
-              refreshRows();
             })
           );
         };
         refreshRows();
+        let pluginCard = null;
+        if (typeof window !== "undefined" && typeof window.zcode?.openExternal === "function") {
+          const ns = "http://www.w3.org/2000/svg";
+          const icon = h("svg", {
+            viewBox: "0 0 24 24",
+            fill: "none",
+            stroke: "currentColor",
+            "stroke-width": "2",
+            "stroke-linecap": "round",
+            "stroke-linejoin": "round",
+            class: "size-4 shrink-0 text-foreground-subtle"
+          });
+          for (const d of ["M15 3h6v6", "M10 14 21 3", "M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"]) {
+            const p2 = document.createElementNS(ns, "path");
+            p2.setAttribute("d", d);
+            icon.append(p2);
+          }
+          pluginCard = h(
+            "div",
+            {
+              class: "mt-3 flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-border p-3 transition-colors hover:bg-surface-hover",
+              onClick: () => {
+                try {
+                  void window.zcode.openExternal("https://github.com/duanluan/zcode-plugins");
+                } catch {
+                }
+              }
+            },
+            h(
+              "div",
+              { class: "min-w-0 flex-1" },
+              h("div", { class: "text-ui-sm font-medium text-foreground" }, L.plugTitle),
+              h("div", { class: "mt-0.5 text-ui-xs/relaxed text-foreground-subtle" }, L.plugDesc)
+            ),
+            icon
+          );
+        }
         body.append(
           statusLine,
           h("div", { class: "mt-4" }, rows),
-          h("p", { class: "mt-3 text-ui-xs/relaxed text-foreground-subtle" }, HELPER_URL)
+          ...pluginCard ? [pluginCard] : []
         );
         body.append(
           dialogFooter(btnPrimary(L.close, () => close()))
@@ -625,11 +645,7 @@
     const isNewTask = NEW_TASK_TEXTS.some((x) => first.startsWith(x));
     const isOpenWs = OPEN_WS_TEXTS.some((x) => head.includes(x));
     if (!(isNewTask && isOpenWs)) return;
-    void (async () => {
-      const config = await getConfig();
-      if (config.features && config.features.headerSettingsEntry === false) return;
-      appendSettingsItem(content, items[0]);
-    })();
+    appendSettingsItem(content, items[0]);
   }
   function appendSettingsItem(menu, firstItem) {
     const L = t();

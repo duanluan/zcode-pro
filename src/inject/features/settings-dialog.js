@@ -9,7 +9,6 @@ export function openSettingsDialog() {
   const L = t();
   openDialog({
     title: L.settingsTitle,
-    description: L.settingsSubtitle,
     width: 'max-w-lg',
     onMount: async ({ body, close }) => {
       const health = await rpc('/health');
@@ -28,14 +27,11 @@ export function openSettingsDialog() {
       };
 
       const statusLine = h('div', {
-        class: 'flex items-center gap-2 text-ui-sm ' + (health.ok ? 'text-foreground-subtle' : 'text-destructive'),
+        class: 'flex items-center gap-2 text-ui-sm text-foreground-subtle',
         'data-zcodepro-status': '1',
       },
-        h('span', {
-          class: 'inline-block size-2 rounded-full ' + (health.ok ? 'bg-emerald-500' : 'bg-destructive'),
-        }),
-        health.ok ? L.statusOk : L.statusDown,
-        health.ok ? h('span', { class: 'text-foreground-subtle/70' }, ` · ${L.version} ${health.version} · ${L.injectedPages} ${health.injectedPages ?? 0}`) : null
+        h('span', { class: 'inline-block size-2 rounded-full bg-emerald-500' }),
+        h('span', { class: 'text-foreground-subtle/70' }, `${L.version} ${health.version} · ${HELPER_URL}`)
       );
 
       const rows = h('div', { class: 'divide-y divide-border rounded-xl border border-border' });
@@ -59,19 +55,38 @@ export function openSettingsDialog() {
             if (await setFeature('taskOrder', next)) f.taskOrder = next;
             refreshRows();
           }),
-          settingRow(L.featureEntry, L.featureEntryDesc, f.headerSettingsEntry !== false, async () => {
-            const next = !(f.headerSettingsEntry !== false);
-            if (await setFeature('headerSettingsEntry', next)) f.headerSettingsEntry = next;
-            refreshRows();
-          })
         );
       };
       refreshRows();
 
+      // 推荐卡片：作者自己的 ZCode 插件合集（依赖宿主 openExternal 打开系统浏览器）
+      let pluginCard = null;
+      if (typeof window !== 'undefined' && typeof window.zcode?.openExternal === 'function') {
+        const ns = 'http://www.w3.org/2000/svg';
+        const icon = h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor',
+          'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round',
+          class: 'size-4 shrink-0 text-foreground-subtle' });
+        for (const d of ['M15 3h6v6', 'M10 14 21 3', 'M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6']) {
+          const p2 = document.createElementNS(ns, 'path');
+          p2.setAttribute('d', d);
+          icon.append(p2);
+        }
+        pluginCard = h('div', {
+          class: 'mt-3 flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-border p-3 transition-colors hover:bg-surface-hover',
+          onClick: () => {
+            try { void window.zcode.openExternal('https://github.com/duanluan/zcode-plugins'); } catch { /* ignore */ }
+          },
+        },
+          h('div', { class: 'min-w-0 flex-1' },
+            h('div', { class: 'text-ui-sm font-medium text-foreground' }, L.plugTitle),
+            h('div', { class: 'mt-0.5 text-ui-xs/relaxed text-foreground-subtle' }, L.plugDesc)),
+          icon);
+      }
+
       body.append(
         statusLine,
         h('div', { class: 'mt-4' }, rows),
-        h('p', { class: 'mt-3 text-ui-xs/relaxed text-foreground-subtle' }, HELPER_URL)
+        ...(pluginCard ? [pluginCard] : [])
       );
       body.append(
         dialogFooter(btnPrimary(L.close, () => close()))

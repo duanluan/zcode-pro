@@ -16,7 +16,6 @@ export function defaultConfig() {
   return {
     version: VERSION,
     features: {
-      headerSettingsEntry: true, // 右上角下拉菜单中的“增强设置”入口
       projectAlias: true,       // 项目“更多”菜单中的“自定义别名” + 侧边栏按表渲染
       projectRelocate: true,    // 项目“更多”菜单中的“切换文件夹” + 路径引用同步
       taskOrder: true,          // 侧边栏会话拖动排序持久化
