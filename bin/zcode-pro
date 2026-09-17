@@ -25,11 +25,13 @@ find_zcode_binary() {
   return 1
 }
 
-if command -v node >/dev/null 2>&1; then
-  exec node "$ENTRY" "$@"
-fi
-
+# 优先用 ZCode 内置的 Node 运行时（版本恒与 ZCode 匹配，含 node:sqlite/全局 WebSocket），
+# 避免系统 node 过旧（<22.5 缺 node:sqlite、<22 缺全局 WebSocket）时启动失败；
+# 找不到 ZCode 可执行文件时才退回系统 node。
 ZCODE_BIN=$(find_zcode_binary) || {
+  if command -v node >/dev/null 2>&1; then
+    exec node "$ENTRY" "$@"
+  fi
   echo "[zcodepro] 未找到 node，也未找到 ZCode 可执行文件。请安装 Node.js >= 22 或设置 ZCODEPRO_ZCODE_PATH。" >&2
   exit 1
 }

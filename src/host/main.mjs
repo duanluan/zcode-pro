@@ -4,7 +4,7 @@
 //    （若 ZCode 已在运行但没有调试端口，绝不主动杀进程，只提示用户手动重启）
 // 3. 连接 CDP，向所有页面注入增强脚本（新文档自动注入 + 已加载页面立即注入）
 // 4. 启动本地辅助 HTTP 服务并常驻，CDP 断开时自动重连
-import { spawn, execSync } from 'node:child_process';
+import { spawn, execSync, spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -56,6 +56,15 @@ function parseArgs(argv) {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// 桌面快捷方式启动（Terminal=false）时 stderr 不可见，致命错误用桌面通知兜底；
+// 终端运行或有通知服务缺失时静默退回纯 stderr。
+function guiNotify(title, body) {
+  if (process.platform !== 'linux' || process.stderr.isTTY) return;
+  try {
+    spawnSync('notify-send', ['-a', 'ZCode Pro', '-i', 'zcode', title, body], { stdio: 'ignore', timeout: 4000 });
+  } catch { /* ignore */ }
+}
+
 async function cdpAlive(port) {
   try { await fetchBrowserWsUrl(port, 1200); return true; } catch { return false; }
 }
@@ -79,10 +88,14 @@ function zcodeAppProcessExists() {
 }
 
 function launchZcode(exe, cdpPort, verbose) {
+  // 启动器自身可能以 ELECTRON_RUN_AS_NODE=1 复用 zcode 二进制运行（无系统 node 时的回退），
+  // 该变量绝不能带给拉起的 ZCode——否则新实例同样以纯 Node 模式启动，窗口永远不出现。
+  const env = { ...process.env };
+  delete env.ELECTRON_RUN_AS_NODE;
   const child = spawn(exe, [`--remote-debugging-port=${cdpPort}`], {
     detached: true,
     stdio: 'ignore',
-    env: process.env,
+    env,
   });
   child.unref();
   if (verbose) console.log(`[zcodepro] 已启动 ZCode (pid=${child.pid})，调试端口 ${cdpPort}`);
@@ -111,7 +124,13 @@ export async function run(argv) {
   if (args.help) { console.log(usage()); return; }
   const log = (...a) => { if (args.verbose) console.log('[zcodepro]', ...a); };
 
-  const exe = resolveZcodeExecutable(args.zcodePath);
+  let exe;
+  try {
+    exe = resolveZcodeExecutable(args.zcodePath);
+  } catch (err) {
+    if (err.code === 'ZCODE_NOT_FOUND') guiNotify('ZCode Pro 启动失败', '未找到 ZCode 可执行文件，详见终端输出。');
+    throw err;
+  }
   const dataRoot = resolveDataRootDir();
   const token = randomBytes(16).toString('hex');
   const state = { injectedPages: 0 };
@@ -130,6 +149,9 @@ export async function run(argv) {
       if (zcodeAppProcessExists()) {
         console.error('[zcodepro] 检测到 ZCode 已在运行，但未开启调试端口，无法注入。');
         console.error('[zcodepro] 请手动退出当前 ZCode（zcodepro 不会替你关闭正在运行的实例），然后重新运行 zcodepro。');
+        guiNotify('ZCode Pro 暂无法注入', 'ZCode 已在运行但未开启调试端口，请退出 ZCode 后重新打开 ZCode Pro。');
+      } else {
+        guiNotify('ZCode Pro 启动失败', `等待 ZCode 调试端口 ${args.cdpPort} 超时。`);
       }
       process.exit(1);
     }
