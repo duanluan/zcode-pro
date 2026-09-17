@@ -40,8 +40,10 @@
     listItemSpacingDesc: "\u5217\u8868\u4E2D\u76F8\u90BB\u5217\u8868\u9879\u4E4B\u95F4\u7684\u95F4\u8DDD\u3002",
     quoteCodeSpacingName: "\u5F15\u7528\u4E0E\u4EE3\u7801\u5757\u95F4\u8DDD",
     quoteCodeSpacingDesc: "\u5F15\u7528\u3001\u4EE3\u7801\u5757\u4E0A\u4E0B\u7684\u7559\u767D\u3002",
-    lineHeightName: "\u6BB5\u5185\u884C\u9AD8",
-    lineHeightDesc: "\u6BB5\u843D\u5185\u6587\u5B57\u7684\u884C\u9AD8\uFF08\u500D\u6570\uFF09\u3002",
+    lineHeightName: "\u56DE\u7B54\u884C\u9AD8",
+    lineHeightDesc: "\u56DE\u7B54\u6B63\u6587\u7684\u884C\u9AD8\uFF08\u500D\u6570\uFF09\u3002",
+    userLineHeightName: "\u63D0\u95EE\u884C\u9AD8",
+    userLineHeightDesc: "\u63D0\u95EE\u5185\u5BB9\u7684\u884C\u9AD8\uFF08\u500D\u6570\uFF09\u3002",
     defaultValue: "\u9ED8\u8BA4",
     resetDefault: "\u6062\u590D\u9ED8\u8BA4",
     featureAlias: "\u9879\u76EE\u201C\u66F4\u591A\u201D\u83DC\u5355 \xB7 \u81EA\u5B9A\u4E49\u522B\u540D",
@@ -98,8 +100,10 @@
     listItemSpacingDesc: "Spacing between adjacent list items.",
     quoteCodeSpacingName: "Quote & code spacing",
     quoteCodeSpacingDesc: "Space above and below quotes and code blocks.",
-    lineHeightName: "Line height",
-    lineHeightDesc: "Line height of paragraph text (multiplier).",
+    lineHeightName: "Answer line height",
+    lineHeightDesc: "Line height of answer text (multiplier).",
+    userLineHeightName: "Question line height",
+    userLineHeightDesc: "Line height of question text (multiplier).",
     defaultValue: "default",
     resetDefault: "Reset to default",
     featureAlias: 'Project "More" menu \xB7 Custom alias',
@@ -741,8 +745,10 @@
     // 列表项之间的间距（space-y-1.5）
     quoteCodeSpacing: 12,
     // 引用/代码块上下留白（my-3）
-    lineHeight: 1.75
-    // 段内行高（leading-[1.75]，挂在内容容器上）
+    lineHeight: 1.75,
+    // 回答行高（leading-[1.75]，挂在答案内容容器上）
+    userLineHeight: 1.5
+    // 提问行高（用户消息文本容器，默认 normal=1.5）
   };
   var styleEl = null;
   var CONV = '[class*="@md/conversation"]';
@@ -780,6 +786,10 @@
     const lh = styles.lineHeight;
     if (typeof lh === "number" && Number.isFinite(lh) && lh >= 0.8) {
       parts.push(`${CONV} .space-y-4{line-height:${lh} !important;}`);
+    }
+    const ulh = styles.userLineHeight;
+    if (typeof ulh === "number" && Number.isFinite(ulh) && ulh >= 0.8) {
+      parts.push(`${CONV} [class*="user-row"] .whitespace-pre-wrap{line-height:${ulh} !important;}`);
     }
     return parts.join("");
   }
@@ -970,10 +980,11 @@
         };
         const cells = [
           styleCell(L.rowGapName, L.rowGapDesc, "rowGap"),
+          styleCell(L.quoteCodeSpacingName, L.quoteCodeSpacingDesc, "quoteCodeSpacing"),
+          styleCell(L.userLineHeightName, L.userLineHeightDesc, "userLineHeight", { min: 1, max: 3, step: 0.05, unit: "x" }),
           styleCell(L.lineHeightName, L.lineHeightDesc, "lineHeight", { min: 1, max: 3, step: 0.05, unit: "x" }),
           styleCell(L.listSpacingName, L.listSpacingDesc, "listSpacing"),
-          styleCell(L.listItemSpacingName, L.listItemSpacingDesc, "listItemSpacing"),
-          styleCell(L.quoteCodeSpacingName, L.quoteCodeSpacingDesc, "quoteCodeSpacing")
+          styleCell(L.listItemSpacingName, L.listItemSpacingDesc, "listItemSpacing")
         ];
         paneStyles.append(
           h(
@@ -986,7 +997,7 @@
             { class: "mt-2 flex justify-end" },
             btnSecondary(L.resetDefault, () => {
               for (const c of cells) c.field.reset();
-              persistStyles({ rowGap: null, listSpacing: null, listItemSpacing: null, quoteCodeSpacing: null, lineHeight: null });
+              persistStyles({ rowGap: null, listSpacing: null, listItemSpacing: null, quoteCodeSpacing: null, lineHeight: null, userLineHeight: null });
             }, "h-7 px-3 text-ui-xs")
           )
         );

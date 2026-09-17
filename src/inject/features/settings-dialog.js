@@ -153,10 +153,11 @@ export function openSettingsDialog() {
       };
       const cells = [
         styleCell(L.rowGapName, L.rowGapDesc, 'rowGap'),
+        styleCell(L.quoteCodeSpacingName, L.quoteCodeSpacingDesc, 'quoteCodeSpacing'),
+        styleCell(L.userLineHeightName, L.userLineHeightDesc, 'userLineHeight', { min: 1, max: 3, step: 0.05, unit: 'x' }),
         styleCell(L.lineHeightName, L.lineHeightDesc, 'lineHeight', { min: 1, max: 3, step: 0.05, unit: 'x' }),
         styleCell(L.listSpacingName, L.listSpacingDesc, 'listSpacing'),
         styleCell(L.listItemSpacingName, L.listItemSpacingDesc, 'listItemSpacing'),
-        styleCell(L.quoteCodeSpacingName, L.quoteCodeSpacingDesc, 'quoteCodeSpacing'),
       ];
       paneStyles.append(
         h('div', { class: 'grid grid-cols-2 gap-2 rounded-xl border border-border p-1.5' },
@@ -164,7 +165,7 @@ export function openSettingsDialog() {
         h('div', { class: 'mt-2 flex justify-end' },
           btnSecondary(L.resetDefault, () => {
             for (const c of cells) c.field.reset();
-            persistStyles({ rowGap: null, listSpacing: null, listItemSpacing: null, quoteCodeSpacing: null, lineHeight: null });
+            persistStyles({ rowGap: null, listSpacing: null, listItemSpacing: null, quoteCodeSpacing: null, lineHeight: null, userLineHeight: null });
           }, 'h-7 px-3 text-ui-xs')),
       );
 

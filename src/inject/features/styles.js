@@ -13,7 +13,8 @@ export const STYLE_DEFAULTS = {
   listSpacing: 12,      // 列表上下留白（my-3）
   listItemSpacing: 6,   // 列表项之间的间距（space-y-1.5）
   quoteCodeSpacing: 12, // 引用/代码块上下留白（my-3）
-  lineHeight: 1.75,     // 段内行高（leading-[1.75]，挂在内容容器上）
+  lineHeight: 1.75,     // 回答行高（leading-[1.75]，挂在答案内容容器上）
+  userLineHeight: 1.5,  // 提问行高（用户消息文本容器，默认 normal=1.5）
 };
 
 let styleEl = null;
@@ -56,6 +57,11 @@ function buildCss(styles) {
   if (typeof lh === 'number' && Number.isFinite(lh) && lh >= 0.8) {
     // 行高挂在内容容器上，段落/列表项继承；代码块等自带行高的元素不受影响
     parts.push(`${CONV} .space-y-4{line-height:${lh} !important;}`);
+  }
+  const ulh = styles.userLineHeight;
+  if (typeof ulh === 'number' && Number.isFinite(ulh) && ulh >= 0.8) {
+    // 用户提问是独立的 whitespace-pre-wrap 文本容器，行高默认与回答不同（1.5 vs 1.75）
+    parts.push(`${CONV} [class*="user-row"] .whitespace-pre-wrap{line-height:${ulh} !important;}`);
   }
   return parts.join('');
 }

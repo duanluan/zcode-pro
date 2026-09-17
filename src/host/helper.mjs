@@ -27,7 +27,8 @@ export function defaultConfig() {
       listSpacing: null,      // 列表上下留白（应用默认 12px）
       listItemSpacing: null,  // 列表项之间的间距（应用默认 6px）
       quoteCodeSpacing: null, // 引用/代码块上下留白（应用默认 12px）
-      lineHeight: null,       // 段内行高，倍数（应用默认 1.75）
+      lineHeight: null,       // 回答行高，倍数（应用默认 1.75）
+      userLineHeight: null,   // 提问行高，倍数（应用默认 1.5）
     },
     // 项目路径（规范化，无尾分隔符）→ 自定义别名。只影响界面渲染，不改动任何真实数据。
     aliases: {},
@@ -142,6 +143,11 @@ export function startHelper({ port, token, dataRoot, state }) {
             const v = body.styles.lineHeight;
             if (v === null) current.styles.lineHeight = null;
             else if (typeof v === 'number' && Number.isFinite(v) && v >= 0.8 && v <= 4) current.styles.lineHeight = Math.round(v * 100) / 100;
+          }
+          if ('userLineHeight' in body.styles) {
+            const v = body.styles.userLineHeight;
+            if (v === null) current.styles.userLineHeight = null;
+            else if (typeof v === 'number' && Number.isFinite(v) && v >= 0.8 && v <= 4) current.styles.userLineHeight = Math.round(v * 100) / 100;
           }
         }
         saveConfig(configFile, current);
