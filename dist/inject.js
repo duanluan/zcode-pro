@@ -30,6 +30,20 @@
   var zh = {
     settingsEntry: "ZCode Pro \u8BBE\u7F6E",
     settingsTitle: "ZCode Pro \u589E\u5F3A\u8BBE\u7F6E",
+    tabFeatures: "\u529F\u80FD",
+    tabStyles: "\u6837\u5F0F\u8C03\u6574",
+    rowGapName: "\u6BB5\u843D\u95F4\u8DDD",
+    rowGapDesc: "\u4F1A\u8BDD\u4E2D\u6BB5\u843D\u7B49\u6587\u672C\u5757\u4E4B\u95F4\u7684\u5782\u76F4\u95F4\u8DDD\uFF08\u56DE\u5408\u4E4B\u95F4\u3001\u7B54\u6848\u5185\u90E8\uFF09\u3002",
+    listSpacingName: "\u5217\u8868\u95F4\u8DDD",
+    listSpacingDesc: "\u7B54\u6848\u4E2D\u5217\u8868\u4E0A\u4E0B\u7684\u7559\u767D\u3002",
+    listItemSpacingName: "\u5217\u8868\u9879\u95F4\u8DDD",
+    listItemSpacingDesc: "\u5217\u8868\u4E2D\u76F8\u90BB\u5217\u8868\u9879\u4E4B\u95F4\u7684\u95F4\u8DDD\u3002",
+    quoteCodeSpacingName: "\u5F15\u7528\u4E0E\u4EE3\u7801\u5757\u95F4\u8DDD",
+    quoteCodeSpacingDesc: "\u5F15\u7528\u3001\u4EE3\u7801\u5757\u4E0A\u4E0B\u7684\u7559\u767D\u3002",
+    lineHeightName: "\u6BB5\u5185\u884C\u9AD8",
+    lineHeightDesc: "\u6BB5\u843D\u5185\u6587\u5B57\u7684\u884C\u9AD8\uFF08\u500D\u6570\uFF09\u3002",
+    defaultValue: "\u9ED8\u8BA4",
+    resetDefault: "\u6062\u590D\u9ED8\u8BA4",
     featureAlias: "\u9879\u76EE\u201C\u66F4\u591A\u201D\u83DC\u5355 \xB7 \u81EA\u5B9A\u4E49\u522B\u540D",
     featureAliasDesc: "\u4E3A\u9879\u76EE\u8BBE\u7F6E\u4EC5\u754C\u9762\u663E\u793A\u7684\u522B\u540D\uFF1A\u4FA7\u8FB9\u680F\u663E\u793A\u522B\u540D\uFF0C\u78C1\u76D8\u76EE\u5F55\u4E0E\u6240\u6709\u6570\u636E\u4E0D\u53D8\u3002",
     featureRelocate: "\u9879\u76EE\u201C\u66F4\u591A\u201D\u83DC\u5355 \xB7 \u5207\u6362\u6587\u4EF6\u5939",
@@ -74,6 +88,20 @@
   var en = {
     settingsEntry: "ZCode Pro Settings",
     settingsTitle: "ZCode Pro Enhancements",
+    tabFeatures: "Features",
+    tabStyles: "Styles",
+    rowGapName: "Paragraph spacing",
+    rowGapDesc: "Vertical spacing between text blocks (turns, paragraphs inside answers).",
+    listSpacingName: "List spacing",
+    listSpacingDesc: "Space above and below lists.",
+    listItemSpacingName: "List item spacing",
+    listItemSpacingDesc: "Spacing between adjacent list items.",
+    quoteCodeSpacingName: "Quote & code spacing",
+    quoteCodeSpacingDesc: "Space above and below quotes and code blocks.",
+    lineHeightName: "Line height",
+    lineHeightDesc: "Line height of paragraph text (multiplier).",
+    defaultValue: "default",
+    resetDefault: "Reset to default",
     featureAlias: 'Project "More" menu \xB7 Custom alias',
     featureAliasDesc: "A UI-only alias: the sidebar shows your custom name while the directory and all data stay untouched.",
     featureRelocate: 'Project "More" menu \xB7 Switch folder',
@@ -191,13 +219,16 @@
     toastTimer = setTimeout(() => el.remove(), kind === "error" ? 5e3 : 2600);
   }
   var overlayClass = "fixed inset-0 isolate z-50 flex items-center justify-center bg-black/60 supports-backdrop-filter:backdrop-blur-xs duration-100 p-4 platform-linux-desktop:top-12";
+  var overlayClassBare = "fixed inset-0 isolate z-50 flex items-center justify-center duration-100 p-4 platform-linux-desktop:top-12";
   var contentClass = "w-full sm:max-w-md rounded-2xl border-none bg-popover/98 p-5 text-ui-base/relaxed text-foreground ring-border shadow-2xl";
-  function openDialog({ title, description, onMount, onClose, width = "sm:max-w-md" }) {
+  function openDialog({ title, description, onMount, onClose, width = "sm:max-w-md", overlay = "dim", draggable = false, posKey = "", dismissOnOutside = true }) {
     const L = t();
     const prevActive = document.activeElement;
+    let cleanupDrag = null;
     const close = () => {
-      overlay.remove();
+      overlayEl.remove();
       document.removeEventListener("keydown", onKey);
+      if (cleanupDrag) cleanupDrag();
       if (prevActive && prevActive.focus) {
         try {
           prevActive.focus();
@@ -218,21 +249,79 @@
       id: "zcodepro-card",
       class: contentClass.replace("sm:max-w-md", width)
     });
-    const overlay = h("div", {
+    const overlayEl = h("div", {
       id: "zcodepro-overlay",
-      class: overlayClass,
+      "data-overlay": overlay,
+      class: overlay === "none" ? overlayClassBare : overlayClass,
       onMousedown: (e) => {
-        if (e.target === overlay) close();
+        if (dismissOnOutside && e.target === overlayEl) close();
       }
     }, content);
+    if (!dismissOnOutside) {
+      overlayEl.style.pointerEvents = "none";
+      content.style.pointerEvents = "auto";
+    }
+    const titleEl = h("h2", { class: "text-lg font-semibold leading-none tracking-tight text-foreground" }, title);
     content.append(
-      h("h2", { class: "text-lg font-semibold leading-none tracking-tight text-foreground" }, title),
+      titleEl,
       ...description ? [h("p", { class: "mt-2 text-ui-sm/relaxed text-foreground-subtle" }, description)] : []
     );
     const body = h("div", { class: "mt-4" });
     content.append(body);
+    if (draggable) {
+      titleEl.style.cursor = "move";
+      titleEl.style.userSelect = "none";
+      let dragging = false, sx = 0, sy = 0, ox = 0, oy = 0;
+      const clampPos = (x, y) => {
+        const mx = Math.max(0, (window.innerWidth - content.offsetWidth) / 2 - 8);
+        const my = Math.max(0, (window.innerHeight - content.offsetHeight) / 2 - 8);
+        return [Math.min(mx, Math.max(-mx, x)), Math.min(my, Math.max(-my, y))];
+      };
+      const restore = () => {
+        if (!posKey) return;
+        try {
+          const saved = JSON.parse(localStorage.getItem("zcodepro-dialog-pos:" + posKey) || "null");
+          if (saved && Number.isFinite(saved.x) && Number.isFinite(saved.y)) {
+            [ox, oy] = clampPos(saved.x, saved.y);
+            if (ox || oy) content.style.transform = `translate(${ox}px, ${oy}px)`;
+          }
+        } catch {
+        }
+      };
+      const onDown = (e) => {
+        if (e.button !== 0) return;
+        dragging = true;
+        sx = e.clientX - ox;
+        sy = e.clientY - oy;
+        e.preventDefault();
+      };
+      const onMove = (e) => {
+        if (!dragging) return;
+        [ox, oy] = clampPos(e.clientX - sx, e.clientY - sy);
+        content.style.transform = `translate(${ox}px, ${oy}px)`;
+      };
+      const onUp = () => {
+        if (!dragging) return;
+        dragging = false;
+        if (posKey) {
+          try {
+            localStorage.setItem("zcodepro-dialog-pos:" + posKey, JSON.stringify({ x: ox, y: oy }));
+          } catch {
+          }
+        }
+      };
+      titleEl.addEventListener("mousedown", onDown);
+      document.addEventListener("mousemove", onMove);
+      document.addEventListener("mouseup", onUp);
+      cleanupDrag = () => {
+        titleEl.removeEventListener("mousedown", onDown);
+        document.removeEventListener("mousemove", onMove);
+        document.removeEventListener("mouseup", onUp);
+      };
+      restore();
+    }
     document.addEventListener("keydown", onKey, true);
-    document.body.append(overlay);
+    document.body.append(overlayEl);
     try {
       onMount && onMount({ body, close, content });
     } catch (err) {
@@ -285,6 +374,64 @@
     }
     return input;
   }
+  function numberField({ value = null, fallback = 0, min = 0, max = 48, step = 1, onCommit }) {
+    let current = typeof value === "number" && Number.isFinite(value) ? value : fallback;
+    const input = h("input", {
+      type: "text",
+      inputmode: "decimal",
+      value: String(current),
+      class: "h-8 w-16 rounded-lg border border-border bg-input px-2 text-right text-ui-sm tabular-nums text-foreground outline-none transition-shadow focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
+    });
+    const clamp = (v) => Math.min(max, Math.max(min, v));
+    const display = (v) => {
+      input.value = String(v);
+    };
+    const commit = (v) => {
+      const next = clamp(v);
+      if (next === current) {
+        display(next);
+        return;
+      }
+      current = next;
+      display(next);
+      onCommit && onCommit(next);
+    };
+    input.addEventListener("wheel", (e) => {
+      e.preventDefault();
+      const dir = (e.deltaY || 0) < 0 ? 1 : -1;
+      const raw = current + dir * step;
+      commit(step < 1 ? Math.round(raw / step) * step : Math.round(raw));
+    }, { passive: false });
+    const submitTyped = () => {
+      const parsed = parseFloat(String(input.value).trim());
+      if (!Number.isFinite(parsed)) {
+        display(current);
+        return;
+      }
+      commit(step < 1 ? Math.round(parsed / step) * step : parsed);
+    };
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        submitTyped();
+      }
+    });
+    input.addEventListener("blur", submitTyped);
+    return {
+      el: input,
+      set(v) {
+        current = clamp(v);
+        display(current);
+      },
+      reset() {
+        current = fallback;
+        display(current);
+      },
+      get() {
+        return current;
+      }
+    };
+  }
   function settingRow(name, desc, checked, onToggle) {
     const knob = h("span", { class: "zcodepro-switch-knob" });
     const track = h("span", {
@@ -323,6 +470,7 @@
     @keyframes zcodepro-fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
     /* \u5F39\u7A97\u906E\u7F69/\u9762\u677F\u515C\u5E95\uFF1A\u4E0D\u4F9D\u8D56\u5E94\u7528 Tailwind \u7C7B\u662F\u5426\u4ECD\u5B58\u5728\uFF1B\u4E3B\u9898\u8272\u8D70 --color-* \u53D8\u91CF\uFF0C\u7F3A\u5931\u65F6\u56DE\u9000\u5B57\u9762\u91CF */
     #zcodepro-overlay { background-color: rgba(0, 0, 0, 0.6); }
+    #zcodepro-overlay[data-overlay="none"] { background-color: transparent; }
     #zcodepro-card {
       background-color: var(--color-popover, #fff);
       border-radius: 16px;
@@ -351,6 +499,54 @@
       transition: transform 0.15s ease;
     }
     [data-zcodepro-switch][data-state="on"] .zcodepro-switch-knob { transform: translateX(14px); }
+    /* \u6807\u7B7E\u9875\u5207\u6362\uFF08\u8BBE\u7F6E\u5F39\u7A97\uFF09\uFF1A\u80F6\u56CA\u5BB9\u5668 + \u6FC0\u6D3B\u9AD8\u4EAE\uFF0C\u89C6\u89C9\u53C2\u8003\u4FA7\u680F\u300C\u5206\u7EC4/\u9879\u76EE\u300D\u5207\u6362\uFF1B
+       \u4E0E\u5F00\u5173\u540C\u7406\uFF0C\u51E0\u4F55/\u914D\u8272\u5199\u5165\u81EA\u6709\u89C4\u5219\u5E76\u53D6\u4E3B\u9898\u53D8\u91CF\uFF0C\u4E0D\u4F9D\u8D56\u5E94\u7528 Tailwind \u7C7B */
+    .zcodepro-tablist {
+      display: inline-flex;
+      align-items: center;
+      height: 28px;
+      padding: 2px;
+      border-radius: 9999px;
+      background-color: color-mix(in oklab, var(--color-foreground, #888) 8%, transparent);
+    }
+    .zcodepro-tab {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 24px;
+      padding: 0 14px;
+      border: none;
+      border-radius: 9999px;
+      background: transparent;
+      cursor: pointer;
+      font-size: 12px;
+      line-height: 1;
+      color: var(--color-muted-foreground, #888);
+      transition: color 0.15s ease, background-color 0.15s ease;
+    }
+    .zcodepro-tab[data-state="active"] {
+      background-color: var(--color-background, #fff);
+      color: var(--color-foreground, #111);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+    }
+    /* \u884C\u9AD8\u6ED1\u6746\uFF08\u6837\u5F0F\u8C03\u6574\u6807\u7B7E\u9875\uFF09 */
+    .zcodepro-range {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 4px;
+      border-radius: 9999px;
+      background: color-mix(in oklab, var(--color-foreground, #888) 18%, transparent);
+      outline: none;
+    }
+    .zcodepro-range::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 9999px;
+      background: var(--color-primary, #111);
+      cursor: pointer;
+    }
   `));
   }
 
@@ -535,6 +731,75 @@
     });
   }
 
+  // src/inject/features/styles.js
+  var STYLE_DEFAULTS = {
+    rowGap: 20,
+    // 段落间距：会话内各块之间的垂直间距
+    listSpacing: 12,
+    // 列表上下留白（my-3）
+    listItemSpacing: 6,
+    // 列表项之间的间距（space-y-1.5）
+    quoteCodeSpacing: 12,
+    // 引用/代码块上下留白（my-3）
+    lineHeight: 1.75
+    // 段内行高（leading-[1.75]，挂在内容容器上）
+  };
+  var styleEl = null;
+  var CONV = '[class*="@md/conversation"]';
+  var SPECIAL = ":is(ul, ol, blockquote, pre, table)";
+  function buildCss(styles) {
+    const parts = [];
+    const n = styles.rowGap;
+    if (typeof n === "number" && Number.isFinite(n) && n >= 0) {
+      parts.push(
+        // 回合内外各级容器（SECTION 自身或后代，二者都覆盖）
+        `${CONV}.pb-5,${CONV} .pb-5{padding-bottom:${n}px !important;}`,
+        `${CONV}.pt-5,${CONV} .pt-5{padding-top:${n}px !important;}`,
+        `${CONV} .flex.flex-col.gap-5{gap:${n}px !important;}`,
+        `${CONV} .flex.flex-col.gap-4{gap:${n}px !important;}`,
+        // 答案内相邻文本块之间（特殊块除外，走各自间距项）
+        `${CONV} .space-y-4 > * + *:not(${SPECIAL}){margin-block-start:${n}px !important;margin-top:${n}px !important;}`,
+        // 特殊块后接文本块：去掉文本块的段落间距，避免与特殊块自身留白叠加
+        `${CONV} .space-y-4 > ${SPECIAL} + *:not(${SPECIAL}){margin-block-start:0 !important;margin-top:0 !important;}`,
+        // 回合内部条目之间（思考触发条 ↔ 正文等）
+        `.history-message.flex.flex-col > * + *:not([data-slot="collapsible-content"]){margin-block-start:${n}px !important;margin-top:${n}px !important;}`
+      );
+    }
+    const ls = styles.listSpacing;
+    if (typeof ls === "number" && Number.isFinite(ls) && ls >= 0) {
+      parts.push(`${CONV} .space-y-4 > :is(ul, ol){margin-block:${ls}px !important;}`);
+    }
+    const li = styles.listItemSpacing;
+    if (typeof li === "number" && Number.isFinite(li) && li >= 0) {
+      parts.push(`${CONV} :is(ul, ol) > li + li{margin-block-start:${li}px !important;margin-top:${li}px !important;}`);
+    }
+    const qc = styles.quoteCodeSpacing;
+    if (typeof qc === "number" && Number.isFinite(qc) && qc >= 0) {
+      parts.push(`${CONV} .space-y-4 > :is(blockquote, pre, table){margin-block:${qc}px !important;}`);
+    }
+    const lh = styles.lineHeight;
+    if (typeof lh === "number" && Number.isFinite(lh) && lh >= 0.8) {
+      parts.push(`${CONV} .space-y-4{line-height:${lh} !important;}`);
+    }
+    return parts.join("");
+  }
+  function applyStyles(styles) {
+    if (!styleEl) return;
+    styleEl.textContent = styles && typeof styles === "object" ? buildCss(styles) : "";
+  }
+  function startStyleAdjustments() {
+    const root = document.head || document.documentElement;
+    if (!root) return;
+    styleEl = document.getElementById("__zcodepro_styles__");
+    if (!styleEl) {
+      styleEl = document.createElement("style");
+      styleEl.id = "__zcodepro_styles__";
+      root.append(styleEl);
+    }
+    void getConfig().then((cfg) => applyStyles(cfg.styles)).catch(() => {
+    });
+  }
+
   // src/inject/features/settings-dialog.js
   function openSettingsDialog() {
     ensureStyle();
@@ -542,9 +807,13 @@
     openDialog({
       title: L.settingsTitle,
       width: "max-w-lg",
+      overlay: "none",
+      draggable: true,
+      posKey: "settings",
+      dismissOnOutside: false,
       onMount: async ({ body, close }) => {
         const health = await rpc("/health");
-        const config = health.ok ? { features: health.features } : await getConfig();
+        const config = await getConfig(true);
         const setFeature = async (key, value) => {
           const res = await rpc("/config", { method: "POST", body: { features: { [key]: value } } });
           clearConfigCache();
@@ -630,10 +899,102 @@
             icon
           );
         }
+        let activeTab = "features";
+        const paneFeatures = h(
+          "div",
+          { role: "tabpanel", class: "mt-4" },
+          h("div", {}, rows),
+          ...pluginCard ? [pluginCard] : []
+        );
+        const paneStyles = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
+        const tablist = h("div", { role: "tablist", "aria-orientation": "horizontal", class: "zcodepro-tablist mt-4" });
+        const renderTabs = () => tablist.replaceChildren(
+          h("button", {
+            type: "button",
+            role: "tab",
+            class: "zcodepro-tab",
+            "aria-selected": String(activeTab === "features"),
+            "data-state": activeTab === "features" ? "active" : "inactive",
+            onClick: () => switchTab("features")
+          }, L.tabFeatures),
+          h("button", {
+            type: "button",
+            role: "tab",
+            class: "zcodepro-tab",
+            "aria-selected": String(activeTab === "styles"),
+            "data-state": activeTab === "styles" ? "active" : "inactive",
+            onClick: () => switchTab("styles")
+          }, L.tabStyles)
+        );
+        const switchTab = (name) => {
+          activeTab = name;
+          paneFeatures.style.display = name === "features" ? "" : "none";
+          paneStyles.style.display = name === "styles" ? "" : "none";
+          renderTabs();
+        };
+        renderTabs();
+        const savedStyles = config.styles || {};
+        let saveTimer = null;
+        const persistStyles = (partial) => {
+          clearTimeout(saveTimer);
+          saveTimer = setTimeout(async () => {
+            const res = await rpc("/config", { method: "POST", body: { styles: partial } });
+            clearConfigCache();
+            if (res.ok) applyStyles(res.config && res.config.styles || savedStyles);
+            else showToast(L.failed + ": " + (res.error || ""), "error");
+          }, 150);
+        };
+        const styleCell = (name, tip, key, { min = 0, max = 48, step = 1, unit = "px" } = {}) => {
+          const field = numberField({
+            value: typeof savedStyles[key] === "number" ? savedStyles[key] : null,
+            fallback: STYLE_DEFAULTS[key],
+            min,
+            max,
+            step,
+            onCommit: (v) => persistStyles({ [key]: v })
+          });
+          return {
+            field,
+            el: h(
+              "div",
+              { class: "flex items-center justify-between gap-2 p-2.5" },
+              h("span", { class: "min-w-0 truncate text-ui-sm font-medium text-foreground", title: tip }, name),
+              h(
+                "span",
+                { class: "flex shrink-0 items-center gap-1" },
+                field.el,
+                h("span", { class: "w-3 text-ui-xs text-foreground-subtle" }, unit)
+              )
+            )
+          };
+        };
+        const cells = [
+          styleCell(L.rowGapName, L.rowGapDesc, "rowGap"),
+          styleCell(L.lineHeightName, L.lineHeightDesc, "lineHeight", { min: 1, max: 3, step: 0.05, unit: "x" }),
+          styleCell(L.listSpacingName, L.listSpacingDesc, "listSpacing"),
+          styleCell(L.listItemSpacingName, L.listItemSpacingDesc, "listItemSpacing"),
+          styleCell(L.quoteCodeSpacingName, L.quoteCodeSpacingDesc, "quoteCodeSpacing")
+        ];
+        paneStyles.append(
+          h(
+            "div",
+            { class: "grid grid-cols-2 gap-2 rounded-xl border border-border p-1.5" },
+            ...cells.map((c) => h("div", { class: "rounded-lg transition-colors hover:bg-surface-hover" }, c.el))
+          ),
+          h(
+            "div",
+            { class: "mt-2 flex justify-end" },
+            btnSecondary(L.resetDefault, () => {
+              for (const c of cells) c.field.reset();
+              persistStyles({ rowGap: null, listSpacing: null, listItemSpacing: null, quoteCodeSpacing: null, lineHeight: null });
+            }, "h-7 px-3 text-ui-xs")
+          )
+        );
         body.append(
           statusLine,
-          h("div", { class: "mt-4" }, rows),
-          ...pluginCard ? [pluginCard] : []
+          tablist,
+          paneFeatures,
+          paneStyles
         );
         body.append(
           dialogFooter(btnPrimary(L.close, () => close()))
@@ -1026,6 +1387,10 @@
       }
       try {
         startPinnedExpandSuppression();
+      } catch {
+      }
+      try {
+        startStyleAdjustments();
       } catch {
       }
     };

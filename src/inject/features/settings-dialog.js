@@ -1,8 +1,9 @@
-// “ZCode Pro 增强设置”弹窗：功能开关 + 运行状态。
-// 开关立即写入 helper 的配置文件（~/.zcode/zcodepro.json），下次打开菜单即生效。
+// “ZCode Pro 增强设置”弹窗：功能开关 + 样式调整 + 运行状态。
+// 顶部标签页切换（视觉参考侧栏「分组/项目」切换）；配置写入 helper（~/.zcode/zcodepro.json）。
 import { h, t, rpc, getConfig, clearConfigCache, HELPER_URL } from '../core.js';
-import { openDialog, dialogFooter, btnPrimary, settingRow, ensureStyle } from '../ui.js';
+import { openDialog, dialogFooter, btnPrimary, btnSecondary, settingRow, ensureStyle, showToast, numberField } from '../ui.js';
 import { refreshAliases } from './alias.js';
+import { applyStyles, STYLE_DEFAULTS } from './styles.js';
 
 export function openSettingsDialog() {
   ensureStyle();
@@ -10,9 +11,13 @@ export function openSettingsDialog() {
   openDialog({
     title: L.settingsTitle,
     width: 'max-w-lg',
+    overlay: 'none',
+    draggable: true,
+    posKey: 'settings',
+    dismissOnOutside: false,
     onMount: async ({ body, close }) => {
       const health = await rpc('/health');
-      const config = health.ok ? { features: health.features } : await getConfig();
+      const config = await getConfig(true);
 
       const setFeature = async (key, value) => {
         const res = await rpc('/config', { method: 'POST', body: { features: { [key]: value } } });
@@ -88,10 +93,86 @@ export function openSettingsDialog() {
           icon);
       }
 
+      // 标签页切换：功能（现有内容）/ 样式调整
+      let activeTab = 'features';
+      const paneFeatures = h('div', { role: 'tabpanel', class: 'mt-4' },
+        h('div', {}, rows),
+        ...(pluginCard ? [pluginCard] : []),
+      );
+      const paneStyles = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
+      const tablist = h('div', { role: 'tablist', 'aria-orientation': 'horizontal', class: 'zcodepro-tablist mt-4' });
+      const renderTabs = () => tablist.replaceChildren(
+        h('button', {
+          type: 'button', role: 'tab', class: 'zcodepro-tab',
+          'aria-selected': String(activeTab === 'features'),
+          'data-state': activeTab === 'features' ? 'active' : 'inactive',
+          onClick: () => switchTab('features'),
+        }, L.tabFeatures),
+        h('button', {
+          type: 'button', role: 'tab', class: 'zcodepro-tab',
+          'aria-selected': String(activeTab === 'styles'),
+          'data-state': activeTab === 'styles' ? 'active' : 'inactive',
+          onClick: () => switchTab('styles'),
+        }, L.tabStyles),
+      );
+      const switchTab = (name) => {
+        activeTab = name;
+        paneFeatures.style.display = name === 'features' ? '' : 'none';
+        paneStyles.style.display = name === 'styles' ? '' : 'none';
+        renderTabs();
+      };
+      renderTabs();
+
+      // 「样式调整」：一行两项、相关项同行；无描述文字，悬停名称显示 tip；
+      // 数字框滚轮/手输调节，改完即存即生效
+      const savedStyles = config.styles || {};
+      let saveTimer = null;
+      const persistStyles = (partial) => {
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(async () => {
+          const res = await rpc('/config', { method: 'POST', body: { styles: partial } });
+          clearConfigCache();
+          if (res.ok) applyStyles((res.config && res.config.styles) || savedStyles);
+          else showToast(L.failed + ': ' + (res.error || ''), 'error');
+        }, 150);
+      };
+      const styleCell = (name, tip, key, { min = 0, max = 48, step = 1, unit = 'px' } = {}) => {
+        const field = numberField({
+          value: typeof savedStyles[key] === 'number' ? savedStyles[key] : null,
+          fallback: STYLE_DEFAULTS[key],
+          min, max, step,
+          onCommit: (v) => persistStyles({ [key]: v }),
+        });
+        return {
+          field,
+          el: h('div', { class: 'flex items-center justify-between gap-2 p-2.5' },
+            h('span', { class: 'min-w-0 truncate text-ui-sm font-medium text-foreground', title: tip }, name),
+            h('span', { class: 'flex shrink-0 items-center gap-1' }, field.el,
+              h('span', { class: 'w-3 text-ui-xs text-foreground-subtle' }, unit))),
+        };
+      };
+      const cells = [
+        styleCell(L.rowGapName, L.rowGapDesc, 'rowGap'),
+        styleCell(L.lineHeightName, L.lineHeightDesc, 'lineHeight', { min: 1, max: 3, step: 0.05, unit: 'x' }),
+        styleCell(L.listSpacingName, L.listSpacingDesc, 'listSpacing'),
+        styleCell(L.listItemSpacingName, L.listItemSpacingDesc, 'listItemSpacing'),
+        styleCell(L.quoteCodeSpacingName, L.quoteCodeSpacingDesc, 'quoteCodeSpacing'),
+      ];
+      paneStyles.append(
+        h('div', { class: 'grid grid-cols-2 gap-2 rounded-xl border border-border p-1.5' },
+          ...cells.map((c) => h('div', { class: 'rounded-lg transition-colors hover:bg-surface-hover' }, c.el))),
+        h('div', { class: 'mt-2 flex justify-end' },
+          btnSecondary(L.resetDefault, () => {
+            for (const c of cells) c.field.reset();
+            persistStyles({ rowGap: null, listSpacing: null, listItemSpacing: null, quoteCodeSpacing: null, lineHeight: null });
+          }, 'h-7 px-3 text-ui-xs')),
+      );
+
       body.append(
         statusLine,
-        h('div', { class: 'mt-4' }, rows),
-        ...(pluginCard ? [pluginCard] : [])
+        tablist,
+        paneFeatures,
+        paneStyles,
       );
       body.append(
         dialogFooter(btnPrimary(L.close, () => close()))

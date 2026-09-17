@@ -21,6 +21,14 @@ export function defaultConfig() {
       taskOrder: true,          // 侧边栏会话拖动排序持久化
       pinnedKeepCollapsed: false, // 点击置顶会话保持项目折叠（实验性：会先展开再缩起，有闪烁）
     },
+    // 样式调整（设置弹窗「样式调整」标签页）。null = 不覆盖，跟随应用默认。
+    styles: {
+      rowGap: null,           // 段落间距：会话内各块之间的垂直间距（应用默认 20px）
+      listSpacing: null,      // 列表上下留白（应用默认 12px）
+      listItemSpacing: null,  // 列表项之间的间距（应用默认 6px）
+      quoteCodeSpacing: null, // 引用/代码块上下留白（应用默认 12px）
+      lineHeight: null,       // 段内行高，倍数（应用默认 1.75）
+    },
     // 项目路径（规范化，无尾分隔符）→ 自定义别名。只影响界面渲染，不改动任何真实数据。
     aliases: {},
   };
@@ -34,6 +42,7 @@ export function loadConfig(configFile) {
       ...defaultConfig(),
       ...saved,
       features: { ...defaultConfig().features, ...(saved.features || {}) },
+      styles: { ...defaultConfig().styles, ...(saved.styles && typeof saved.styles === 'object' ? saved.styles : {}) },
       aliases: { ...((saved.aliases && typeof saved.aliases === 'object') ? saved.aliases : {}) },
     };
   } catch {
@@ -117,6 +126,22 @@ export function startHelper({ port, token, dataRoot, state }) {
         if (body && typeof body === 'object' && body.features && typeof body.features === 'object') {
           for (const key of Object.keys(defaultConfig().features)) {
             if (typeof body.features[key] === 'boolean') current.features[key] = body.features[key];
+          }
+        }
+        if (body && typeof body === 'object' && body.styles && typeof body.styles === 'object') {
+          if (!current.styles || typeof current.styles !== 'object') current.styles = {};
+          // 各样式键：null 恢复默认；px 类 0–96 取整；行距 0.8–4 保留两位小数
+          for (const key of ['rowGap', 'listSpacing', 'listItemSpacing', 'quoteCodeSpacing']) {
+            if (key in body.styles) {
+              const v = body.styles[key];
+              if (v === null) current.styles[key] = null;
+              else if (typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 96) current.styles[key] = Math.round(v);
+            }
+          }
+          if ('lineHeight' in body.styles) {
+            const v = body.styles.lineHeight;
+            if (v === null) current.styles.lineHeight = null;
+            else if (typeof v === 'number' && Number.isFinite(v) && v >= 0.8 && v <= 4) current.styles.lineHeight = Math.round(v * 100) / 100;
           }
         }
         saveConfig(configFile, current);
