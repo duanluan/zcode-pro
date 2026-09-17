@@ -222,6 +222,56 @@ export function numberField({ value = null, fallback = 0, min = 0, max = 48, ste
   };
 }
 
+// 数值+单位同框的输入框（内容宽度等需要 px/% 切换的设置项，交互对齐 gemini-pro）：
+// 框内显示如「900px」「85%」；滚轮按单位各自步进（px 大步、% 小步）；
+// 手输可带单位（缺省沿用当前单位），非法或越界回退。onCommit 回调 { value, unit }。
+export function unitField({ value = null, fallback = { value: 100, unit: '%' }, step = { px: 10, '%': 1 }, onCommit }) {
+  const RANGES = { px: [320, 3840], '%': [20, 100] };
+  const norm = (v) => {
+    if (!v || !RANGES[v.unit]) return null;
+    const [min, max] = RANGES[v.unit];
+    const n = v.unit === 'px' ? Math.round(v.value) : Math.round(v.value * 10) / 10;
+    return Number.isFinite(n) ? { value: Math.min(max, Math.max(min, n)), unit: v.unit } : null;
+  };
+  let current = norm(value) || norm(fallback) || { value: 100, unit: '%' };
+  const input = h('input', {
+    type: 'text',
+    inputmode: 'decimal',
+    value: `${current.value}${current.unit}`,
+    class: 'h-8 w-20 rounded-lg border border-border bg-input px-2 text-right text-ui-sm tabular-nums text-foreground outline-none transition-shadow focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40',
+  });
+  const display = () => { input.value = `${current.value}${current.unit}`; };
+  const commit = (v) => {
+    const next = norm(v);
+    if (!next || (next.value === current.value && next.unit === current.unit)) { display(); return; }
+    current = next;
+    display();
+    onCommit && onCommit({ ...current });
+  };
+  input.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const dir = (e.deltaY || 0) < 0 ? 1 : -1;
+    commit({ value: current.value + dir * (step[current.unit] || 1), unit: current.unit });
+  }, { passive: false });
+  const parseTyped = (s) => {
+    const m = String(s).trim().match(/^(\d+(?:\.\d+)?)\s*(px|%)?$/i);
+    if (!m) return null;
+    return { value: parseFloat(m[1]), unit: (m[2] || current.unit).toLowerCase() === 'px' ? 'px' : '%' };
+  };
+  const submitTyped = () => {
+    const parsed = parseTyped(input.value);
+    if (!parsed) { display(); return; }
+    commit(parsed);
+  };
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); submitTyped(); } });
+  input.addEventListener('blur', submitTyped);
+  return {
+    el: input,
+    reset() { current = norm(fallback) || current; display(); },
+    get() { return { ...current } },
+  };
+}
+
 // 设置项行：名称 + 描述 + 开关
 // 开关样式完全由 ensureStyle 中的自有规则驱动（几何/配色固定写入，
 // 颜色取主题变量），不依赖应用的 Tailwind 工具类——v4 只为应用源码

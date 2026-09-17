@@ -44,6 +44,8 @@
     lineHeightDesc: "\u56DE\u7B54\u6B63\u6587\u7684\u884C\u9AD8\uFF08\u500D\u6570\uFF09\u3002",
     userLineHeightName: "\u63D0\u95EE\u884C\u9AD8",
     userLineHeightDesc: "\u63D0\u95EE\u5185\u5BB9\u7684\u884C\u9AD8\uFF08\u500D\u6570\uFF09\u3002",
+    contentWidthName: "\u5185\u5BB9\u5BBD\u5EA6",
+    contentWidthDesc: "\u4F1A\u8BDD\u5185\u5BB9\u7684\u6700\u5927\u5BBD\u5EA6\uFF0C\u53EF\u8F93\u5165 px \u6216 %\uFF08\u5982 900px\u300185%\uFF09\uFF1B\u9ED8\u8BA4\u663E\u793A\u5F53\u524D\u5B9E\u9645\u5BBD\u5EA6\uFF0C% \u76F8\u5BF9\u4F1A\u8BDD\u533A\u57DF\u3002",
     defaultValue: "\u9ED8\u8BA4",
     resetDefault: "\u6062\u590D\u9ED8\u8BA4",
     featureAlias: "\u9879\u76EE\u201C\u66F4\u591A\u201D\u83DC\u5355 \xB7 \u81EA\u5B9A\u4E49\u522B\u540D",
@@ -104,6 +106,8 @@
     lineHeightDesc: "Line height of answer text (multiplier).",
     userLineHeightName: "Question line height",
     userLineHeightDesc: "Line height of question text (multiplier).",
+    contentWidthName: "Content width",
+    contentWidthDesc: "Max width of conversation content; accepts px or % (e.g. 900px, 85%).",
     defaultValue: "default",
     resetDefault: "Reset to default",
     featureAlias: 'Project "More" menu \xB7 Custom alias',
@@ -436,6 +440,70 @@
       }
     };
   }
+  function unitField({ value = null, fallback = { value: 100, unit: "%" }, step = { px: 10, "%": 1 }, onCommit }) {
+    const RANGES = { px: [320, 3840], "%": [20, 100] };
+    const norm2 = (v) => {
+      if (!v || !RANGES[v.unit]) return null;
+      const [min, max] = RANGES[v.unit];
+      const n = v.unit === "px" ? Math.round(v.value) : Math.round(v.value * 10) / 10;
+      return Number.isFinite(n) ? { value: Math.min(max, Math.max(min, n)), unit: v.unit } : null;
+    };
+    let current = norm2(value) || norm2(fallback) || { value: 100, unit: "%" };
+    const input = h("input", {
+      type: "text",
+      inputmode: "decimal",
+      value: `${current.value}${current.unit}`,
+      class: "h-8 w-20 rounded-lg border border-border bg-input px-2 text-right text-ui-sm tabular-nums text-foreground outline-none transition-shadow focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
+    });
+    const display = () => {
+      input.value = `${current.value}${current.unit}`;
+    };
+    const commit = (v) => {
+      const next = norm2(v);
+      if (!next || next.value === current.value && next.unit === current.unit) {
+        display();
+        return;
+      }
+      current = next;
+      display();
+      onCommit && onCommit({ ...current });
+    };
+    input.addEventListener("wheel", (e) => {
+      e.preventDefault();
+      const dir = (e.deltaY || 0) < 0 ? 1 : -1;
+      commit({ value: current.value + dir * (step[current.unit] || 1), unit: current.unit });
+    }, { passive: false });
+    const parseTyped = (s) => {
+      const m = String(s).trim().match(/^(\d+(?:\.\d+)?)\s*(px|%)?$/i);
+      if (!m) return null;
+      return { value: parseFloat(m[1]), unit: (m[2] || current.unit).toLowerCase() === "px" ? "px" : "%" };
+    };
+    const submitTyped = () => {
+      const parsed = parseTyped(input.value);
+      if (!parsed) {
+        display();
+        return;
+      }
+      commit(parsed);
+    };
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        submitTyped();
+      }
+    });
+    input.addEventListener("blur", submitTyped);
+    return {
+      el: input,
+      reset() {
+        current = norm2(fallback) || current;
+        display();
+      },
+      get() {
+        return { ...current };
+      }
+    };
+  }
   function settingRow(name, desc, checked, onToggle) {
     const knob = h("span", { class: "zcodepro-switch-knob" });
     const track = h("span", {
@@ -747,8 +815,10 @@
     // 引用/代码块上下留白（my-3）
     lineHeight: 1.75,
     // 回答行高（leading-[1.75]，挂在答案内容容器上）
-    userLineHeight: 1.5
+    userLineHeight: 1.5,
     // 提问行高（用户消息文本容器，默认 normal=1.5）
+    contentWidth: null
+    // 内容宽度：默认 100%（跟随应用，不覆盖）
   };
   var styleEl = null;
   var CONV = '[class*="@md/conversation"]';
@@ -790,6 +860,10 @@
     const ulh = styles.userLineHeight;
     if (typeof ulh === "number" && Number.isFinite(ulh) && ulh >= 0.8) {
       parts.push(`${CONV} [class*="user-row"] .whitespace-pre-wrap{line-height:${ulh} !important;}`);
+    }
+    const cw = styles.contentWidth;
+    if (cw && (cw.unit === "px" || cw.unit === "%") && Number.isFinite(cw.value)) {
+      parts.push(`[data-v4-timeline-content-column]{max-width:${cw.value}${cw.unit} !important;}`);
     }
     return parts.join("");
   }
@@ -978,13 +1052,30 @@
             )
           };
         };
+        const column = document.querySelector("[data-v4-timeline-content-column]");
+        const currentWidth = column ? Math.round(column.getBoundingClientRect().width) : 0;
+        const widthField = unitField({
+          value: savedStyles.contentWidth || null,
+          fallback: { value: currentWidth > 0 ? currentWidth : 1152, unit: "px" },
+          onCommit: (v) => persistStyles({ contentWidth: v })
+        });
+        const widthCell = {
+          field: widthField,
+          el: h(
+            "div",
+            { class: "flex items-center justify-between gap-2 p-2.5" },
+            h("span", { class: "min-w-0 truncate text-ui-sm font-medium text-foreground", title: L.contentWidthDesc }, L.contentWidthName),
+            widthField.el
+          )
+        };
         const cells = [
+          widthCell,
           styleCell(L.rowGapName, L.rowGapDesc, "rowGap"),
-          styleCell(L.quoteCodeSpacingName, L.quoteCodeSpacingDesc, "quoteCodeSpacing"),
           styleCell(L.userLineHeightName, L.userLineHeightDesc, "userLineHeight", { min: 1, max: 3, step: 0.05, unit: "x" }),
           styleCell(L.lineHeightName, L.lineHeightDesc, "lineHeight", { min: 1, max: 3, step: 0.05, unit: "x" }),
           styleCell(L.listSpacingName, L.listSpacingDesc, "listSpacing"),
-          styleCell(L.listItemSpacingName, L.listItemSpacingDesc, "listItemSpacing")
+          styleCell(L.listItemSpacingName, L.listItemSpacingDesc, "listItemSpacing"),
+          styleCell(L.quoteCodeSpacingName, L.quoteCodeSpacingDesc, "quoteCodeSpacing")
         ];
         paneStyles.append(
           h(
@@ -997,7 +1088,7 @@
             { class: "mt-2 flex justify-end" },
             btnSecondary(L.resetDefault, () => {
               for (const c of cells) c.field.reset();
-              persistStyles({ rowGap: null, listSpacing: null, listItemSpacing: null, quoteCodeSpacing: null, lineHeight: null, userLineHeight: null });
+              persistStyles({ rowGap: null, listSpacing: null, listItemSpacing: null, quoteCodeSpacing: null, lineHeight: null, userLineHeight: null, contentWidth: null });
             }, "h-7 px-3 text-ui-xs")
           )
         );

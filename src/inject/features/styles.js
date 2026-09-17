@@ -15,6 +15,7 @@ export const STYLE_DEFAULTS = {
   quoteCodeSpacing: 12, // 引用/代码块上下留白（my-3）
   lineHeight: 1.75,     // 回答行高（leading-[1.75]，挂在答案内容容器上）
   userLineHeight: 1.5,  // 提问行高（用户消息文本容器，默认 normal=1.5）
+  contentWidth: null,   // 内容宽度：默认 100%（跟随应用，不覆盖）
 };
 
 let styleEl = null;
@@ -62,6 +63,13 @@ function buildCss(styles) {
   if (typeof ulh === 'number' && Number.isFinite(ulh) && ulh >= 0.8) {
     // 用户提问是独立的 whitespace-pre-wrap 文本容器，行高默认与回答不同（1.5 vs 1.75）
     parts.push(`${CONV} [class*="user-row"] .whitespace-pre-wrap{line-height:${ulh} !important;}`);
+  }
+  const cw = styles.contentWidth;
+  if (cw && (cw.unit === 'px' || cw.unit === '%') && Number.isFinite(cw.value)) {
+    // 内容列（data-v4-timeline-content-column）是应用自己的宽度控制器：
+    // 宽屏下 w-[calc(100%-24rem)] + max-w-6xl + 位移。盖它的 max-width，
+    // % 相对会话区域可用宽度，且沿用应用自带的居中与过渡。
+    parts.push(`[data-v4-timeline-content-column]{max-width:${cw.value}${cw.unit} !important;}`);
   }
   return parts.join('');
 }

@@ -29,6 +29,7 @@ export function defaultConfig() {
       quoteCodeSpacing: null, // 引用/代码块上下留白（应用默认 12px）
       lineHeight: null,       // 回答行高，倍数（应用默认 1.75）
       userLineHeight: null,   // 提问行高，倍数（应用默认 1.5）
+      contentWidth: null,     // 内容宽度：{ value, unit }，unit 为 'px'（320–3840）或 '%'（20–100）
     },
     // 项目路径（规范化，无尾分隔符）→ 自定义别名。只影响界面渲染，不改动任何真实数据。
     aliases: {},
@@ -148,6 +149,13 @@ export function startHelper({ port, token, dataRoot, state }) {
             const v = body.styles.userLineHeight;
             if (v === null) current.styles.userLineHeight = null;
             else if (typeof v === 'number' && Number.isFinite(v) && v >= 0.8 && v <= 4) current.styles.userLineHeight = Math.round(v * 100) / 100;
+          }
+          if ('contentWidth' in body.styles) {
+            const v = body.styles.contentWidth;
+            const ok = v && (v.unit === 'px' || v.unit === '%') && typeof v.value === 'number' && Number.isFinite(v.value)
+              && v.value >= (v.unit === 'px' ? 320 : 20) && v.value <= (v.unit === 'px' ? 3840 : 100);
+            if (v === null) current.styles.contentWidth = null;
+            else if (ok) current.styles.contentWidth = { value: v.unit === 'px' ? Math.round(v.value) : Math.round(v.value * 10) / 10, unit: v.unit };
           }
         }
         saveConfig(configFile, current);

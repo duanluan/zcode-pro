@@ -1,7 +1,7 @@
 // “ZCode Pro 增强设置”弹窗：功能开关 + 样式调整 + 运行状态。
 // 顶部标签页切换（视觉参考侧栏「分组/项目」切换）；配置写入 helper（~/.zcode/zcodepro.json）。
 import { h, t, rpc, getConfig, clearConfigCache, HELPER_URL } from '../core.js';
-import { openDialog, dialogFooter, btnPrimary, btnSecondary, settingRow, ensureStyle, showToast, numberField } from '../ui.js';
+import { openDialog, dialogFooter, btnPrimary, btnSecondary, settingRow, ensureStyle, showToast, numberField, unitField } from '../ui.js';
 import { refreshAliases } from './alias.js';
 import { applyStyles, STYLE_DEFAULTS } from './styles.js';
 
@@ -151,13 +151,29 @@ export function openSettingsDialog() {
               h('span', { class: 'w-3 text-ui-xs text-foreground-subtle' }, unit))),
         };
       };
+      // 内容宽度：数值+单位同框（px/%），交互参考 gemini-pro。
+      // 默认值不是固定数——应用按窗口宽度自适应，打开弹窗时实测当前内容列宽度作为默认显示。
+      const column = document.querySelector('[data-v4-timeline-content-column]');
+      const currentWidth = column ? Math.round(column.getBoundingClientRect().width) : 0;
+      const widthField = unitField({
+        value: savedStyles.contentWidth || null,
+        fallback: { value: currentWidth > 0 ? currentWidth : 1152, unit: 'px' },
+        onCommit: (v) => persistStyles({ contentWidth: v }),
+      });
+      const widthCell = {
+        field: widthField,
+        el: h('div', { class: 'flex items-center justify-between gap-2 p-2.5' },
+          h('span', { class: 'min-w-0 truncate text-ui-sm font-medium text-foreground', title: L.contentWidthDesc }, L.contentWidthName),
+          widthField.el),
+      };
       const cells = [
+        widthCell,
         styleCell(L.rowGapName, L.rowGapDesc, 'rowGap'),
-        styleCell(L.quoteCodeSpacingName, L.quoteCodeSpacingDesc, 'quoteCodeSpacing'),
         styleCell(L.userLineHeightName, L.userLineHeightDesc, 'userLineHeight', { min: 1, max: 3, step: 0.05, unit: 'x' }),
         styleCell(L.lineHeightName, L.lineHeightDesc, 'lineHeight', { min: 1, max: 3, step: 0.05, unit: 'x' }),
         styleCell(L.listSpacingName, L.listSpacingDesc, 'listSpacing'),
         styleCell(L.listItemSpacingName, L.listItemSpacingDesc, 'listItemSpacing'),
+        styleCell(L.quoteCodeSpacingName, L.quoteCodeSpacingDesc, 'quoteCodeSpacing'),
       ];
       paneStyles.append(
         h('div', { class: 'grid grid-cols-2 gap-2 rounded-xl border border-border p-1.5' },
@@ -165,7 +181,7 @@ export function openSettingsDialog() {
         h('div', { class: 'mt-2 flex justify-end' },
           btnSecondary(L.resetDefault, () => {
             for (const c of cells) c.field.reset();
-            persistStyles({ rowGap: null, listSpacing: null, listItemSpacing: null, quoteCodeSpacing: null, lineHeight: null, userLineHeight: null });
+            persistStyles({ rowGap: null, listSpacing: null, listItemSpacing: null, quoteCodeSpacing: null, lineHeight: null, userLineHeight: null, contentWidth: null });
           }, 'h-7 px-3 text-ui-xs')),
       );
 
