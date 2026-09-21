@@ -5,6 +5,8 @@ ZCode 桌面版界面增强工具。通过「ZCode Pro」启动 ZCode 时自动�
 ![平台](https://img.shields.io/badge/platform-win%20%7C%20mac%20%7C%20linux%20%7C%20AUR-blue)
 ![依赖](https://img.shields.io/badge/runtime-零依赖（复用%20ZCode%20内置%20Node）-green)
 
+> **打开设置：启动 ZCode Pro 后，右键点击 ZCode 侧边栏底部的设置按钮（齿轮）即可打开 ZCode Pro 设置窗口。**
+
 ## 功能
 
 ### 项目自定义别名
@@ -47,11 +49,11 @@ ZCode 桌面版界面增强工具。通过「ZCode Pro」启动 ZCode 时自动�
 
 ### 设置入口
 
-在 ZCode 设置页左侧导航底部提供「ZCode Pro」入口，分为「功能」「样式调整」与「全局提示词」三个标签页，可开关各项增强功能、调整界面样式、编辑全局提示词并查看运行状态，设置即时生效。
+右键点击 ZCode 侧边栏底部的设置按钮即可打开 ZCode Pro 设置窗口（左键仍打开 ZCode 设置页），分为「功能」「样式调整」与「全局提示词」三个标签页，可开关各项增强功能、调整界面样式、编辑全局提示词并查看运行状态，设置即时生效。
 
 ## 安装与使用
 
-安装后，通过应用菜单 / 开始菜单中的「ZCode Pro」快捷方式或终端命令 `zcode-pro` 启动 ZCode，增强在该方式下自动生效；使用原有 ZCode 入口启动时不加载增强。
+安装后，通过应用菜单 / 开始菜单中的「ZCode Pro」快捷方式或终端命令 `zcode-pro` 启动 ZCode，增强在该方式下自动生效；使用原有 ZCode 入口启动时不加载增强。启动后右键点击 ZCode 侧边栏底部的设置按钮即可打开 ZCode Pro 设置窗口。
 
 ### Linux / macOS（一键脚本）
 

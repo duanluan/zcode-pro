@@ -32,7 +32,7 @@
     tabFeatures: "\u529F\u80FD",
     tabStyles: "\u6837\u5F0F\u8C03\u6574",
     tabAgents: "\u5168\u5C40\u63D0\u793A\u8BCD",
-    agentsDesc: "\u5199\u5165 ~/.zcode/AGENTS.md\uFF0C\u4F5C\u4E3A\u9ED8\u8BA4\u6307\u4EE4\u6CE8\u5165\u6240\u6709\u9879\u76EE\u7684\u6BCF\u6B21\u4F1A\u8BDD\uFF1B\u4FDD\u5B58\u540E\u4ECE\u65B0\u4F1A\u8BDD\u8D77\u751F\u6548\uFF0C\u9879\u76EE\u5185\u7684 AGENTS.md \u53EF\u8865\u5145\u6216\u8986\u76D6\u3002",
+    agentsDesc: "\u5199\u5165 ~/.zcode/AGENTS.md\uFF0C\u4F5C\u4E3A\u9ED8\u8BA4\u6307\u4EE4\u6CE8\u5165\u6240\u6709\u9879\u76EE\u7684\u6BCF\u6B21\u4F1A\u8BDD\uFF1B\u4FDD\u5B58\u540E\u4ECE\u65B0\u4F1A\u8BDD\u8D77\u751F\u6548\uFF0C\u9879\u76EE\u5185\u7684 AGENTS.md \u53EF\u8865\u5145\u6216\u8986\u76D6\u3002\u5185\u5BB9\u8D85\u8FC7 100KB \u4F1A\u88AB\u5E94\u7528\u622A\u65AD\u3002",
     agentsPlaceholder: "\u586B\u5199\u5E0C\u671B\u6240\u6709\u9879\u76EE\u9ED8\u8BA4\u9075\u5FAA\u7684\u6307\u4EE4\uFF1B\u6E05\u7A7A\u5E76\u4FDD\u5B58\u5373\u79FB\u9664\u5168\u5C40\u63D0\u793A\u8BCD",
     agentsSave: "\u4FDD\u5B58",
     agentsSaved: "\u5168\u5C40\u63D0\u793A\u8BCD\u5DF2\u4FDD\u5B58",
@@ -99,7 +99,7 @@
     tabFeatures: "Features",
     tabStyles: "Styles",
     tabAgents: "Global Prompt",
-    agentsDesc: "Written to ~/.zcode/AGENTS.md and injected as default instructions into every session across all projects. Takes effect for new sessions; per-project AGENTS.md can extend or override it.",
+    agentsDesc: "Written to ~/.zcode/AGENTS.md and injected as default instructions into every session across all projects. Takes effect for new sessions; per-project AGENTS.md can extend or override it. Content over 100 KB is truncated by the app.",
     agentsPlaceholder: "Instructions followed by all projects by default; save empty to remove the global prompt",
     agentsSave: "Save",
     agentsSaved: "Global prompt saved.",
@@ -1031,8 +1031,8 @@
     // 列表上下留白（my-3）
     listItemSpacing: 6,
     // 列表项之间的间距（space-y-1.5）
-    quoteCodeSpacing: 12,
-    // 引用/代码块上下留白（my-3）
+    quoteCodeSpacing: 16,
+    // 引用/代码块上下留白（my-4）
     lineHeight: 1.75,
     // 回答行高（leading-[1.75]，挂在答案内容容器上）
     userLineHeight: 1.5,
@@ -1361,88 +1361,19 @@
     });
   }
 
-  // src/inject/features/settings-nav.js
-  var SECTION_LABELS = [
-    "\u5E38\u89C4",
-    "\u5916\u89C2",
-    "\u6A21\u578B\u8BBE\u7F6E",
-    "\u952E\u76D8\u5FEB\u6377\u952E",
-    "\u4F7F\u7528\u7EDF\u8BA1",
-    "General",
-    "Appearance",
-    "Model Provider",
-    "Keyboard Shortcuts",
-    "Usage stats"
-  ];
-  function handleSettingsNav() {
-    let nav = null;
-    for (const btn of document.querySelectorAll("nav button[aria-label]")) {
-      if (SECTION_LABELS.includes((btn.getAttribute("aria-label") || "").trim())) {
-        nav = btn.closest("nav");
-        break;
-      }
-    }
-    if (!nav || !nav.isConnected) return;
-    if (nav.querySelector('[data-zcodepro-item="settings-nav"]')) return;
-    const model = nav.querySelector("button.border-dashed") || nav.querySelector("button[aria-label]");
-    if (!model) return;
-    const item = model.cloneNode(true);
-    item.removeAttribute("data-testid");
-    item.removeAttribute("aria-current");
-    item.removeAttribute("aria-describedby");
-    item.setAttribute("data-zcodepro-item", "settings-nav");
-    const oldIcon = item.querySelector("svg");
-    if (oldIcon) {
-      const ns = "http://www.w3.org/2000/svg";
-      const icon = document.createElementNS(ns, "svg");
-      for (const attr of ["class", "width", "height", "viewBox", "fill", "stroke", "stroke-width", "stroke-linecap", "stroke-linejoin"]) {
-        const v = oldIcon.getAttribute(attr);
-        if (v !== null) icon.setAttribute(attr, v);
-      }
-      const gear = document.createElementNS(ns, "path");
-      gear.setAttribute("d", "M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z");
-      const circle = document.createElementNS(ns, "circle");
-      circle.setAttribute("cx", "12");
-      circle.setAttribute("cy", "12");
-      circle.setAttribute("r", "3");
-      icon.append(gear, circle);
-      oldIcon.replaceWith(icon);
-    }
-    const modelLabel = (model.getAttribute("aria-label") || "").trim();
-    let labelSpan = null;
-    for (const span of item.querySelectorAll("span")) {
-      if (!span.querySelector("svg") && span.textContent.trim() === modelLabel) labelSpan = span;
-    }
-    if (labelSpan) labelSpan.textContent = "ZCode Pro";
-    item.setAttribute("aria-label", "ZCode Pro");
-    item.addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      openSettingsDialog();
-    });
-    const onboarding = nav.querySelector("button.border-dashed");
-    if (onboarding) onboarding.before(item);
-    else nav.append(item);
+  // src/inject/features/settings-entry.js
+  var SETTINGS_BUTTON_TESTID = "task-settings-button";
+  function handleSettingsContextmenu(e) {
+    const target = e.target;
+    if (!(target instanceof Element)) return;
+    if (!target.closest(`[data-testid="${SETTINGS_BUTTON_TESTID}"]`)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (document.getElementById("zcodepro-overlay")) return;
+    openSettingsDialog();
   }
-  function startSettingsNavWatcher() {
-    let scheduled = false;
-    const tryInject = () => {
-      try {
-        handleSettingsNav();
-      } catch {
-      }
-    };
-    const schedule = () => {
-      if (scheduled) return;
-      scheduled = true;
-      requestAnimationFrame(() => {
-        scheduled = false;
-        tryInject();
-      });
-    };
-    const observer2 = new MutationObserver(schedule);
-    observer2.observe(document.documentElement, { childList: true, subtree: true });
-    tryInject();
+  function startSettingsEntry() {
+    document.addEventListener("contextmenu", handleSettingsContextmenu, true);
   }
 
   // src/inject/features/task-order.js
@@ -1613,7 +1544,7 @@
       } catch {
       }
       try {
-        startSettingsNavWatcher();
+        startSettingsEntry();
       } catch {
       }
     };

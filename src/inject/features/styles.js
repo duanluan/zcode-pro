@@ -12,7 +12,7 @@ export const STYLE_DEFAULTS = {
   rowGap: 20,           // 段落间距：会话内各块之间的垂直间距
   listSpacing: 12,      // 列表上下留白（my-3）
   listItemSpacing: 6,   // 列表项之间的间距（space-y-1.5）
-  quoteCodeSpacing: 12, // 引用/代码块上下留白（my-3）
+  quoteCodeSpacing: 16, // 引用/代码块上下留白（my-4）
   lineHeight: 1.75,     // 回答行高（leading-[1.75]，挂在答案内容容器上）
   userLineHeight: 1.5,  // 提问行高（用户消息文本容器，默认 normal=1.5）
   contentWidth: null,   // 内容宽度：默认 100%（跟随应用，不覆盖）

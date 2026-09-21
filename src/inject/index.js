@@ -2,7 +2,7 @@
 // 幂等守卫：页面刷新/重复注入时只初始化一次。
 import { observeRadixPopups } from './core.js';
 import { handleProjectMenu } from './features/project-menu.js';
-import { startSettingsNavWatcher } from './features/settings-nav.js';
+import { startSettingsEntry } from './features/settings-entry.js';
 import { startAliasWatcher } from './features/alias.js';
 import { startTaskOrderWatcher } from './features/task-order.js';
 import { startPinnedExpandSuppression } from './features/pinned-expand.js';
@@ -25,7 +25,7 @@ import { ensureStyle } from './ui.js';
     try { startTaskOrderWatcher(); } catch { /* ignore */ }
     try { startPinnedExpandSuppression(); } catch { /* ignore */ }
     try { startStyleAdjustments(); } catch { /* ignore */ }
-    try { startSettingsNavWatcher(); } catch { /* ignore */ }
+    try { startSettingsEntry(); } catch { /* ignore */ }
   };
 
   if (document.readyState === 'loading') {

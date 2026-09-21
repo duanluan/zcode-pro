@@ -5,12 +5,19 @@
 import { createServer } from 'node:http';
 import { copyFileSync, existsSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { basename, isAbsolute, join, resolve, sep } from 'node:path';
+import { homedir } from 'node:os';
 import { readSettings, writeSettingsAtomic, remapSettingsPaths, isProjectOpenInTabs } from './settings.mjs';
 import { taskIndexPath, probeTaskIndexWritable, remapTaskIndexPaths, taskIndexDriverAvailable } from './taskIndex.mjs';
 import { pickFolderSystem } from './pickFolder.mjs';
 import { reorderWorkspaceTasks, reorderGroupMembers } from './taskOrder.mjs';
 
 const VERSION = '0.5.0';
+
+// 全局提示词固定在用户主目录：官方加载器按 HOME/USERPROFILE 拼 .zcode/AGENTS.md，
+// 不读 ZCODE_DATA_BASE_DIR（数据根迁走时全局指令仍在原位）。
+function defaultAgentsFile() {
+  return join(homedir(), '.zcode', 'AGENTS.md');
+}
 
 export function defaultConfig() {
   return {
@@ -26,7 +33,7 @@ export function defaultConfig() {
       rowGap: null,           // 段落间距：会话内各块之间的垂直间距（应用默认 20px）
       listSpacing: null,      // 列表上下留白（应用默认 12px）
       listItemSpacing: null,  // 列表项之间的间距（应用默认 6px）
-      quoteCodeSpacing: null, // 引用/代码块上下留白（应用默认 12px）
+      quoteCodeSpacing: null, // 引用/代码块上下留白（应用默认 16px，my-4）
       lineHeight: null,       // 回答行高，倍数（应用默认 1.75）
       userLineHeight: null,   // 提问行高，倍数（应用默认 1.5）
       contentWidth: null,     // 内容宽度：{ value, unit }，unit 为 'px'（320–3840）或 '%'（20–100）
@@ -91,10 +98,9 @@ function readBody(req) {
   });
 }
 
-export function startHelper({ port, token, dataRoot, state }) {
+export function startHelper({ port, token, dataRoot, state, agentsFile = defaultAgentsFile() }) {
   const configFile = join(dataRoot, 'zcodepro.json');
   const settingsFile = join(dataRoot, 'v2', 'setting.json');
-  const agentsFile = join(dataRoot, 'AGENTS.md');
 
   const server = createServer(async (req, res) => {
     const url = new URL(req.url, `http://127.0.0.1:${port}`);
