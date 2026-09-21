@@ -40,7 +40,7 @@ function spliceSubset(current, orderedSubset) {
 
 export async function reorderWorkspaceTasks(dataRoot, orderedKeys) {
   const first = splitKey(orderedKeys[0] || '');
-  if (!first) return { error: '无效的会话标识' };
+  if (!first) return { code: 'invalid-request', error: '无效的会话标识' };
   const workspace = first[0];
 
   return withDb(dataRoot, (db) => {
@@ -49,7 +49,7 @@ export async function reorderWorkspaceTasks(dataRoot, orderedKeys) {
        WHERE workspace_key = ? AND deleted = 0
        ORDER BY updated_at DESC, created_at DESC, task_id DESC`
     ).all(workspace).map((r) => r.task_id);
-    if (current.length === 0) return { error: '工作区不存在或没有会话' };
+    if (current.length === 0) return { code: 'workspace-empty', error: '工作区不存在或没有会话' };
 
     const next = spliceSubset(current, orderedKeys.map((k) => splitKey(k)[1]));
     const now = Date.now();
@@ -63,7 +63,7 @@ export async function reorderWorkspaceTasks(dataRoot, orderedKeys) {
       db.exec('COMMIT');
     } catch (err) {
       try { db.exec('ROLLBACK'); } catch { /* ignore */ }
-      return { error: '写入排序失败: ' + (err?.message || err) };
+      return { code: 'order-write', error: '写入排序失败: ' + (err?.message || err) };
     }
     return { reordered: Math.min(orderedKeys.length, current.length), workspace };
   });
@@ -76,14 +76,16 @@ export async function reorderGroupMembers(dataRoot, orderedKeys) {
     const stmt = db.prepare(`SELECT group_id FROM task_group_members WHERE workspace_key = ? AND task_id = ?`);
     for (const k of orderedKeys) {
       const pair = splitKey(k);
-      if (!pair) return { error: '无效的会话标识: ' + k };
+      if (!pair) return { code: 'invalid-request', error: '无效的会话标识: ' + k };
       for (const r of stmt.all(...pair)) {
         counts.set(r.group_id, (counts.get(r.group_id) || 0) + 1);
       }
     }
     const groupIds = [...counts.entries()].filter(([, c]) => c === orderedKeys.length).map(([g]) => g);
     if (groupIds.length !== 1) {
-      return { error: groupIds.length === 0 ? '未找到包含这些会话的分组' : '无法唯一确定分组' };
+      return groupIds.length === 0
+        ? { code: 'group-not-found', error: '未找到包含这些会话的分组' }
+        : { code: 'group-ambiguous', error: '无法唯一确定分组' };
     }
     const groupId = groupIds[0];
 
@@ -108,7 +110,7 @@ export async function reorderGroupMembers(dataRoot, orderedKeys) {
       db.exec('COMMIT');
     } catch (err) {
       try { db.exec('ROLLBACK'); } catch { /* ignore */ }
-      return { error: '写入分组排序失败: ' + (err?.message || err) };
+      return { code: 'order-write', error: '写入分组排序失败: ' + (err?.message || err) };
     }
     return { reordered: Math.min(orderedKeys.length, current.length), groupId };
   });

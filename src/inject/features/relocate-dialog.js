@@ -1,6 +1,6 @@
 // 「切换文件夹」：把项目记录（侧边栏条目/标签页/任务历史）重新指向另一个已存在的文件夹。
 // 不移动、不修改任何目录；本地任务索引与 setting.json 的路径引用同步更新，会话不丢失。
-import { h, t, rpc, getConfig, closeRadixMenu, itemsOf, itemText } from '../core.js';
+import { h, t, rpc, getConfig, closeRadixMenu, itemsOf, itemText, errText } from '../core.js';
 import { openDialog, dialogFooter, btnPrimary, btnSecondary, textInput, showToast, ensureStyle } from '../ui.js';
 
 export function appendRelocateItem(menu, anchorItem, project) {
@@ -115,7 +115,7 @@ export function openRelocateDialog(project) {
           'protected-path': L.relocateProtected,
           'index-busy': L.relocateIndexBusy,
         };
-        showError(byCode[res.code] || L.failed + ': ' + (res.error || L.retryHint));
+        showError(byCode[res.code] || L.failed + ': ' + (errText(res) || L.retryHint));
       };
 
       body.append(

@@ -2,7 +2,7 @@
 // 存储：helper 的 zcodepro.json aliases 表（路径规范化无尾分隔符 → 名称）。
 // 渲染：侧边栏项目行有唯一文本叶子 div.min-w-0.truncate（逆向确认），
 // 按行 testid（workspace-item-<绝对路径>）查表替换；React 重渲染后由 MutationObserver 重新套用。
-import { h, t, rpc, getConfig, clearConfigCache } from '../core.js';
+import { h, t, rpc, getConfig, clearConfigCache, errText } from '../core.js';
 import { openDialog, dialogFooter, btnPrimary, btnSecondary, textInput, showToast, ensureStyle } from '../ui.js';
 
 const norm = (p) => String(p || '').replace(/[\\/]+$/, '');
@@ -154,7 +154,7 @@ export function openAliasDialog(project) {
           showToast(name ? L.aliasSaved : L.aliasCleared);
           return;
         }
-        showToast((L.failed) + ': ' + (res.error || L.retryHint), 'error');
+        showToast((L.failed) + ': ' + (errText(res) || L.retryHint), 'error');
       };
 
       body.append(
@@ -181,7 +181,7 @@ export function openAliasDialog(project) {
                 clearConfigCache();
                 await refreshAliases();
                 showToast(L.aliasCleared);
-              } else showToast((L.failed) + ': ' + (res.error || L.retryHint), 'error');
+              } else showToast((L.failed) + ': ' + (errText(res) || L.retryHint), 'error');
             }));
           }
           footer.append(btnSecondary(L.cancel, () => close()), submitBtn);

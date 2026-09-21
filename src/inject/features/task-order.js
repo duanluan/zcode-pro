@@ -5,6 +5,7 @@
 // sort_order），随后刷新界面使新顺序生效。
 import { t, rpc, getConfig } from '../core.js';
 import { showToast, ensureStyle } from '../ui.js';
+import { errText } from '../core.js';
 
 let installed = false;
 let dragKey = null; // 拖动源会话键（dragstart 记录，dragend 清除）
@@ -69,7 +70,7 @@ async function persistOrder(ordered) {
       showToast(L.taskOrderSaved);
       setTimeout(() => location.reload(), 600);
     } else {
-      showToast(L.failed + ': ' + ((res && res.error) || L.retryHint), 'error');
+      showToast(L.failed + ': ' + (errText(res) || L.retryHint), 'error');
     }
   } finally {
     persisting = false;

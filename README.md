@@ -1,5 +1,7 @@
 # ZCode Pro
 
+[English](README.en.md) | 简体中文
+
 ZCode 桌面版界面增强工具。通过「ZCode Pro」启动 ZCode 时自动启用增强；不修改官方应用文件，退出后 ZCode 恢复原状。
 
 ![平台](https://img.shields.io/badge/platform-win%20%7C%20mac%20%7C%20linux%20%7C%20AUR-blue)

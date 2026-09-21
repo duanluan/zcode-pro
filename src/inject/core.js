@@ -178,6 +178,36 @@ export function t() {
   return /^zh/i.test(navigator.language || 'zh-CN') ? zh : en;
 }
 
+// helper 错误消息的英文映射（code → 文案）：helper 原文为中文，非中文界面按 code 显示英文，
+// 无映射或中文界面回退 helper 原文
+const errEn = {
+  'invalid-path': 'Invalid project path',
+  'invalid-request': 'Invalid request',
+  'invalid-content': 'content must be a string',
+  'agents-read': 'Failed to read AGENTS.md',
+  'agents-write': 'Failed to write AGENTS.md',
+  'config-save': 'Failed to save config',
+  'settings-write': 'Failed to update setting.json',
+  'workspace-empty': 'Workspace not found or has no sessions',
+  'order-write': 'Failed to persist ordering',
+  'group-not-found': 'No group contains these sessions',
+  'group-ambiguous': 'Cannot determine the group uniquely',
+  'name-too-long': 'Alias too long (max 100 characters)',
+  'name-invalid-chars': 'Alias must not contain newlines or control characters',
+  'index-remap-failed': 'Failed to update the task index (config changes rolled back)',
+  'index-error': 'Task index error',
+  'index-busy': 'The task index is busy. Please retry shortly.',
+};
+
+export function errText(res) {
+  if (!res) return '';
+  if (!/^zh/i.test(navigator.language || 'zh-CN')) {
+    const en = res.code && errEn[res.code];
+    if (en) return en;
+  }
+  return res.error || '';
+}
+
 export function h(tag, attrs, ...children) {
   const el = document.createElement(tag);
   if (attrs) {

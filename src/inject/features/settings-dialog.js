@@ -1,6 +1,6 @@
 // “ZCode Pro 增强设置”弹窗：功能开关 + 样式调整 + 运行状态。
 // 顶部标签页切换（视觉参考侧栏「分组/项目」切换）；配置写入 helper（~/.zcode/zcodepro.json）。
-import { h, t, rpc, getConfig, clearConfigCache, HELPER_URL } from '../core.js';
+import { h, t, rpc, getConfig, clearConfigCache, errText, HELPER_URL } from '../core.js';
 import { openDialog, dialogFooter, btnPrimary, btnSecondary, settingRow, ensureStyle, showToast, numberField, unitField } from '../ui.js';
 import { refreshAliases } from './alias.js';
 import { applyStyles, STYLE_DEFAULTS } from './styles.js';
@@ -25,7 +25,7 @@ export function openSettingsDialog() {
         clearConfigCache();
         if (!res.ok) {
           body.querySelector('[data-zcodepro-status]').replaceChildren(
-            h('span', { class: 'text-ui-sm text-destructive' }, L.failed + ': ' + (res.error || ''))
+            h('span', { class: 'text-ui-sm text-destructive' }, L.failed + ': ' + errText(res))
           );
           return false;
         }
@@ -138,7 +138,7 @@ export function openSettingsDialog() {
           const res = await rpc('/config', { method: 'POST', body: { styles: partial } });
           clearConfigCache();
           if (res.ok) applyStyles((res.config && res.config.styles) || savedStyles);
-          else showToast(L.failed + ': ' + (res.error || ''), 'error');
+          else showToast(L.failed + ': ' + errText(res), 'error');
         }, 150);
       };
       const styleCell = (name, tip, key, { min = 0, max = 48, step = 1, unit = 'px' } = {}) => {
@@ -218,14 +218,14 @@ export function openSettingsDialog() {
           agentsOriginal = typeof res.content === 'string' ? res.content : agentsArea.value;
           showToast(L.agentsSaved);
         } else {
-          showToast(L.failed + ': ' + (res.error || ''), 'error');
+          showToast(L.failed + ': ' + errText(res), 'error');
           agentsSaveBtn.disabled = false;
         }
       };
       paneAgents.append(
         h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.agentsDesc),
         ...(agentsFailed
-          ? [h('p', { class: 'mt-2 text-ui-sm text-destructive' }, L.agentsLoadFailed + ': ' + (agentsRes.error || ''))]
+          ? [h('p', { class: 'mt-2 text-ui-sm text-destructive' }, L.agentsLoadFailed + ': ' + errText(agentsRes))]
           : []),
         h('div', { class: 'mt-3' }, agentsArea),
         h('div', { class: 'mt-3 flex justify-end' }, agentsSaveBtn),

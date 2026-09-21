@@ -172,6 +172,32 @@
   function t() {
     return /^zh/i.test(navigator.language || "zh-CN") ? zh : en;
   }
+  var errEn = {
+    "invalid-path": "Invalid project path",
+    "invalid-request": "Invalid request",
+    "invalid-content": "content must be a string",
+    "agents-read": "Failed to read AGENTS.md",
+    "agents-write": "Failed to write AGENTS.md",
+    "config-save": "Failed to save config",
+    "settings-write": "Failed to update setting.json",
+    "workspace-empty": "Workspace not found or has no sessions",
+    "order-write": "Failed to persist ordering",
+    "group-not-found": "No group contains these sessions",
+    "group-ambiguous": "Cannot determine the group uniquely",
+    "name-too-long": "Alias too long (max 100 characters)",
+    "name-invalid-chars": "Alias must not contain newlines or control characters",
+    "index-remap-failed": "Failed to update the task index (config changes rolled back)",
+    "index-error": "Task index error",
+    "index-busy": "The task index is busy. Please retry shortly."
+  };
+  function errText(res) {
+    if (!res) return "";
+    if (!/^zh/i.test(navigator.language || "zh-CN")) {
+      const en2 = res.code && errEn[res.code];
+      if (en2) return en2;
+    }
+    return res.error || "";
+  }
   function h(tag, attrs, ...children) {
     const el = document.createElement(tag);
     if (attrs) {
@@ -801,7 +827,7 @@
             showToast(name ? L.aliasSaved : L.aliasCleared);
             return;
           }
-          showToast(L.failed + ": " + (res.error || L.retryHint), "error");
+          showToast(L.failed + ": " + (errText(res) || L.retryHint), "error");
         };
         body.append(
           h(
@@ -835,7 +861,7 @@
                   clearConfigCache();
                   await refreshAliases();
                   showToast(L.aliasCleared);
-                } else showToast(L.failed + ": " + (res.error || L.retryHint), "error");
+                } else showToast(L.failed + ": " + (errText(res) || L.retryHint), "error");
               }));
             }
             footer.append(btnSecondary(L.cancel, () => close()), submitBtn);
@@ -957,7 +983,7 @@
             "protected-path": L.relocateProtected,
             "index-busy": L.relocateIndexBusy
           };
-          showError(byCode[res.code] || L.failed + ": " + (res.error || L.retryHint));
+          showError(byCode[res.code] || L.failed + ": " + (errText(res) || L.retryHint));
         };
         body.append(
           h(
@@ -1266,7 +1292,7 @@
           clearConfigCache();
           if (!res.ok) {
             body.querySelector("[data-zcodepro-status]").replaceChildren(
-              h("span", { class: "text-ui-sm text-destructive" }, L.failed + ": " + (res.error || ""))
+              h("span", { class: "text-ui-sm text-destructive" }, L.failed + ": " + errText(res))
             );
             return false;
           }
@@ -1389,7 +1415,7 @@
             const res = await rpc("/config", { method: "POST", body: { styles: partial } });
             clearConfigCache();
             if (res.ok) applyStyles(res.config && res.config.styles || savedStyles);
-            else showToast(L.failed + ": " + (res.error || ""), "error");
+            else showToast(L.failed + ": " + errText(res), "error");
           }, 150);
         };
         const styleCell = (name, tip, key, { min = 0, max = 48, step = 1, unit = "px" } = {}) => {
@@ -1484,13 +1510,13 @@
             agentsOriginal = typeof res.content === "string" ? res.content : agentsArea.value;
             showToast(L.agentsSaved);
           } else {
-            showToast(L.failed + ": " + (res.error || ""), "error");
+            showToast(L.failed + ": " + errText(res), "error");
             agentsSaveBtn.disabled = false;
           }
         };
         paneAgents.append(
           h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.agentsDesc),
-          ...agentsFailed ? [h("p", { class: "mt-2 text-ui-sm text-destructive" }, L.agentsLoadFailed + ": " + (agentsRes.error || ""))] : [],
+          ...agentsFailed ? [h("p", { class: "mt-2 text-ui-sm text-destructive" }, L.agentsLoadFailed + ": " + errText(agentsRes))] : [],
           h("div", { class: "mt-3" }, agentsArea),
           h("div", { class: "mt-3 flex justify-end" }, agentsSaveBtn)
         );
@@ -1579,7 +1605,7 @@
         showToast(L.taskOrderSaved);
         setTimeout(() => location.reload(), 600);
       } else {
-        showToast(L.failed + ": " + (res && res.error || L.retryHint), "error");
+        showToast(L.failed + ": " + (errText(res) || L.retryHint), "error");
       }
     } finally {
       persisting = false;

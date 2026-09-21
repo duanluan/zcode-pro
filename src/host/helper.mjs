@@ -13,7 +13,7 @@ import { taskIndexPath, probeTaskIndexWritable, remapTaskIndexPaths, taskIndexDr
 import { pickFolderSystem } from './pickFolder.mjs';
 import { reorderWorkspaceTasks, reorderGroupMembers } from './taskOrder.mjs';
 
-const VERSION = '0.6.0';
+const VERSION = '0.6.1';
 
 // 全局提示词固定在用户主目录：官方加载器按 HOME/USERPROFILE 拼 .zcode/AGENTS.md，
 // 不读 ZCODE_DATA_BASE_DIR（数据根迁走时全局指令仍在原位）。
@@ -221,18 +221,18 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         const body = await readBody(req);
         const ordered = Array.isArray(body?.ordered) ? body.ordered.filter((k) => typeof k === 'string') : [];
         if (ordered.length === 0) {
-          json(res, 400, { ok: false, error: 'ordered 不能为空' });
+          json(res, 400, { ok: false, code: 'invalid-request', error: 'ordered 不能为空' });
           return;
         }
         let result;
         if (body.scope === 'workspace') result = await reorderWorkspaceTasks(dataRoot, ordered);
         else if (body.scope === 'group-members') result = await reorderGroupMembers(dataRoot, ordered);
         else {
-          json(res, 400, { ok: false, error: '无效的 scope' });
+          json(res, 400, { ok: false, code: 'invalid-request', error: '无效的 scope' });
           return;
         }
         if (result.error) {
-          json(res, 400, { ok: false, error: result.error });
+          json(res, 400, { ok: false, code: result.code, error: result.error });
           return;
         }
         json(res, 200, { ok: true, reload: true, ...result });
@@ -255,7 +255,7 @@ export function readAgents(agentsFile) {
   try {
     return [200, { ok: true, content: existsSync(agentsFile) ? readFileSync(agentsFile, 'utf8') : '' }];
   } catch (err) {
-    return [500, { ok: false, error: '读取 AGENTS.md 失败: ' + (err?.message || err) }];
+    return [500, { ok: false, code: 'agents-read', error: '读取 AGENTS.md 失败: ' + (err?.message || err) }];
   }
 }
 
@@ -263,7 +263,7 @@ export function readAgents(agentsFile) {
 // 导出以便测试脚本直接驱动。
 export function writeAgents(body, agentsFile) {
   if (!body || typeof body.content !== 'string') {
-    return [400, { ok: false, error: 'content 必须是字符串' }];
+    return [400, { ok: false, code: 'invalid-content', error: 'content 必须是字符串' }];
   }
   const empty = body.content.trim() === '';
   try {
@@ -280,7 +280,7 @@ export function writeAgents(body, agentsFile) {
     writeFileSync(tmp, body.content, 'utf8');
     renameSync(tmp, agentsFile);
   } catch (err) {
-    return [500, { ok: false, error: '写入 AGENTS.md 失败: ' + (err?.message || err) }];
+    return [500, { ok: false, code: 'agents-write', error: '写入 AGENTS.md 失败: ' + (err?.message || err) }];
   }
   return [200, { ok: true, content: body.content }];
 }
@@ -292,7 +292,7 @@ export function revealInFileManager(rawPath) {
   return new Promise((resolveReveal) => {
     const p = typeof rawPath === 'string' ? rawPath.trim() : '';
     if (!p || !isAbsolute(p)) {
-      resolveReveal([400, { ok: false, error: '无效的路径' }]);
+      resolveReveal([400, { ok: false, code: 'invalid-path', error: '无效的路径' }]);
       return;
     }
     if (process.platform === 'darwin') {
@@ -326,8 +326,8 @@ export function setAlias(body, configFile) {
   const path = resolve(raw);
   const name = typeof body?.alias === 'string' ? body.alias.trim() : '';
   if (name) {
-    if (name.length > 100) return [400, { ok: false, error: '别名过长（最多 100 字符）', code: 'invalid-name' }];
-    if (/[\r\n\0]/.test(name)) return [400, { ok: false, error: '别名不能包含换行等控制字符', code: 'invalid-name' }];
+    if (name.length > 100) return [400, { ok: false, error: '别名过长（最多 100 字符）', code: 'name-too-long' }];
+    if (/[\r\n\0]/.test(name)) return [400, { ok: false, error: '别名不能包含换行等控制字符', code: 'name-invalid-chars' }];
   }
   const config = loadConfig(configFile);
   if (!config.aliases || typeof config.aliases !== 'object') config.aliases = {};
@@ -336,7 +336,7 @@ export function setAlias(body, configFile) {
   try {
     saveConfig(configFile, config);
   } catch (err) {
-    return [500, { ok: false, error: '保存配置失败: ' + (err?.message || err) }];
+    return [500, { ok: false, code: 'config-save', error: '保存配置失败: ' + (err?.message || err) }];
   }
   return [200, { ok: true, path, alias: name, aliases: config.aliases }];
 }
