@@ -3,15 +3,17 @@
 // 仅绑定 127.0.0.1，并通过每次启动随机生成的 token 鉴权。
 
 import { createServer } from 'node:http';
+import { execFile, spawn } from 'node:child_process';
 import { copyFileSync, existsSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
-import { basename, isAbsolute, join, resolve, sep } from 'node:path';
+import { basename, dirname, isAbsolute, join, resolve, sep } from 'node:path';
 import { homedir } from 'node:os';
+import { pathToFileURL } from 'node:url';
 import { readSettings, writeSettingsAtomic, remapSettingsPaths, isProjectOpenInTabs } from './settings.mjs';
 import { taskIndexPath, probeTaskIndexWritable, remapTaskIndexPaths, taskIndexDriverAvailable } from './taskIndex.mjs';
 import { pickFolderSystem } from './pickFolder.mjs';
 import { reorderWorkspaceTasks, reorderGroupMembers } from './taskOrder.mjs';
 
-const VERSION = '0.5.0';
+const VERSION = '0.6.0';
 
 // 全局提示词固定在用户主目录：官方加载器按 HOME/USERPROFILE 拼 .zcode/AGENTS.md，
 // 不读 ZCODE_DATA_BASE_DIR（数据根迁走时全局指令仍在原位）。
@@ -26,6 +28,7 @@ export function defaultConfig() {
       projectAlias: true,       // 项目“更多”菜单中的“自定义别名” + 侧边栏按表渲染
       projectRelocate: true,    // 项目“更多”菜单中的“切换文件夹” + 路径引用同步
       taskOrder: true,          // 侧边栏会话拖动排序持久化
+      fileActions: true,        // 文件菜单：默认应用打开 / 打开所在目录
       pinnedKeepCollapsed: false, // 点击置顶会话保持项目折叠（实验性：会先展开再缩起，有闪烁）
     },
     // 样式调整（设置弹窗「样式调整」标签页）。null = 不覆盖，跟随应用默认。
@@ -174,6 +177,12 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         json(res, ...readAgents(agentsFile));
         return;
       }
+      // 在文件管理器中定位文件（宿主 openInFileManager 在 Linux/Windows 只是打开路径，不是定位）
+      if (req.method === 'POST' && url.pathname === '/reveal-path') {
+        const body = await readBody(req);
+        json(res, ...await revealInFileManager(body?.path));
+        return;
+      }
       if (req.method === 'POST' && url.pathname === '/agents') {
         const body = await readBody(req);
         json(res, ...writeAgents(body, agentsFile));
@@ -274,6 +283,38 @@ export function writeAgents(body, agentsFile) {
     return [500, { ok: false, error: '写入 AGENTS.md 失败: ' + (err?.message || err) }];
   }
   return [200, { ok: true, content: body.content }];
+}
+
+// 在系统文件管理器中定位文件：
+// Linux 走 freedesktop FileManager1.ShowItems（Dolphin/Nautilus 均支持），无会话服务时回退打开所在目录；
+// macOS 用 open -R；Windows 用 explorer /select。导出以便测试脚本直接驱动。
+export function revealInFileManager(rawPath) {
+  return new Promise((resolveReveal) => {
+    const p = typeof rawPath === 'string' ? rawPath.trim() : '';
+    if (!p || !isAbsolute(p)) {
+      resolveReveal([400, { ok: false, error: '无效的路径' }]);
+      return;
+    }
+    if (process.platform === 'darwin') {
+      execFile('open', ['-R', p], { timeout: 5000 }, (err) => resolveReveal(err ? [500, { ok: false, error: err.message }] : [200, { ok: true }]));
+      return;
+    }
+    if (process.platform === 'win32') {
+      const child = spawn('explorer.exe', ['/select,' + p], { detached: true, stdio: 'ignore' });
+      child.on('error', (err) => resolveReveal([500, { ok: false, error: err.message }]));
+      child.on('close', () => resolveReveal([200, { ok: true }]));
+      return;
+    }
+    const uri = pathToFileURL(p).href;
+    execFile('dbus-send', ['--session', '--print-reply', '--dest=org.freedesktop.FileManager1', '/org/freedesktop/FileManager1', 'org.freedesktop.FileManager1.ShowItems', `array:string:${uri}`, 'string:'], { timeout: 5000 }, (err) => {
+      if (!err) {
+        resolveReveal([200, { ok: true }]);
+        return;
+      }
+      // 无 freedesktop 文件管理器服务时退而打开所在目录
+      execFile('xdg-open', [dirname(p)], { timeout: 5000 }, (err2) => resolveReveal(err2 ? [500, { ok: false, error: err2.message }] : [200, { ok: true }]));
+    });
+  });
 }
 
 // 设置/清除项目自定义别名（纯渲染层，不动磁盘与任何 ZCode 数据）。

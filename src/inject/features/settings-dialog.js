@@ -61,6 +61,11 @@ export function openSettingsDialog() {
             if (await setFeature('taskOrder', next)) f.taskOrder = next;
             refreshRows();
           }),
+          settingRow(L.featureFileActions, L.featureFileActionsDesc, f.fileActions !== false, async () => {
+            const next = !(f.fileActions !== false);
+            if (await setFeature('fileActions', next)) f.fileActions = next;
+            refreshRows();
+          }),
           settingRow(L.featurePinnedExpand, L.featurePinnedExpandDesc, f.pinnedKeepCollapsed !== false, async () => {
             const next = !(f.pinnedKeepCollapsed !== false);
             if (await setFeature('pinnedKeepCollapsed', next)) f.pinnedKeepCollapsed = next;

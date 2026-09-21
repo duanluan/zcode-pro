@@ -59,6 +59,10 @@
     featureRelocateDesc: "\u5C06\u9879\u76EE\u6307\u5411\u53E6\u4E00\u4E2A\u6587\u4EF6\u5939\uFF1A\u4FA7\u8FB9\u680F\u3001\u6807\u7B7E\u9875\u4E0E\u4EFB\u52A1\u5386\u53F2\u4E00\u5E76\u8FC1\u79FB\uFF0C\u76EE\u5F55\u672C\u8EAB\u4E0D\u52A8\u3002",
     featureTaskOrder: "\u4FA7\u8FB9\u680F\u4F1A\u8BDD\u62D6\u52A8\u6392\u5E8F",
     featureTaskOrderDesc: "\u8BA9\u7F6E\u9876\u3001\u9879\u76EE\u4E0E\u5206\u7EC4\u4E2D\u7684\u4F1A\u8BDD\u62D6\u52A8\u540E\u8BB0\u4F4F\u987A\u5E8F\uFF0C\u5237\u65B0\u540E\u4FDD\u6301\u3002",
+    featureFileActions: "\u6587\u4EF6\u83DC\u5355\u589E\u5F3A",
+    featureFileActionsDesc: "\u5728\u4F1A\u8BDD\u4E2D\u6587\u4EF6\u94FE\u63A5\u7684\u53F3\u952E\u83DC\u5355\u91CC\u65B0\u589E\u300C\u9ED8\u8BA4\u5E94\u7528\u6253\u5F00\u300D\u4E0E\u300C\u6253\u5F00\u6240\u5728\u76EE\u5F55\u300D\u3002",
+    fileOpenDefault: "\u9ED8\u8BA4\u5E94\u7528\u6253\u5F00",
+    fileReveal: "\u6253\u5F00\u6240\u5728\u76EE\u5F55",
     featurePinnedExpand: "\u7F6E\u9876\u4F1A\u8BDD\u4FDD\u6301\u9879\u76EE\u6298\u53E0\uFF08\u5B9E\u9A8C\u6027\uFF09",
     featurePinnedExpandDesc: "\u70B9\u51FB\u6298\u53E0\u9879\u76EE\u7684\u7F6E\u9876\u4F1A\u8BDD\u540E\u5C06\u5176\u4FDD\u6301\u6298\u53E0\u3002\u53D7\u9650\u4E8E\u5E94\u7528\u673A\u5236\uFF0C\u9879\u76EE\u4F1A\u5148\u77ED\u6682\u5C55\u5F00\u518D\u7F29\u8D77\u3002",
     version: "\u7248\u672C",
@@ -126,6 +130,10 @@
     featureRelocateDesc: "Points a project at another folder; the sidebar, tabs and task history follow. The directory stays untouched.",
     featureTaskOrder: "Sidebar session drag ordering",
     featureTaskOrderDesc: "Makes session drags in Pinned, Projects and Groups persist across refreshes.",
+    featureFileActions: "File menu actions",
+    featureFileActionsDesc: 'Adds "Open with default app" and "Reveal in file manager" to the right-click menu of file links in chat.',
+    fileOpenDefault: "Open with default app",
+    fileReveal: "Reveal in file manager",
     featurePinnedExpand: "Keep projects collapsed for pinned sessions (experimental)",
     featurePinnedExpandDesc: "Keeps the project collapsed after clicking a pinned session. Note: it briefly expands first, then collapses.",
     version: "Version",
@@ -1023,6 +1031,140 @@
     })();
   }
 
+  // src/inject/features/file-menu.js
+  var COPY_ABS_TEXTS = ["\u590D\u5236\u7EDD\u5BF9\u8DEF\u5F84", "Copy absolute path"];
+  var NO_APPS_TEXTS = ["\u672A\u627E\u5230\u53EF\u7528 App", "No apps found"];
+  var ICON_OPEN_DEFAULT = [
+    { rect: { x: "2", y: "4", width: "20", height: "16", rx: "2" } },
+    { d: "M10 4v4" },
+    { d: "M2 8h20" },
+    { d: "M6 4v4" }
+  ];
+  var ICON_REVEAL = [
+    { d: "m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.22a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2" }
+  ];
+  function buildIcon(cls, shapes) {
+    const ns = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor");
+    svg.setAttribute("stroke-width", "2");
+    svg.setAttribute("stroke-linecap", "round");
+    svg.setAttribute("stroke-linejoin", "round");
+    if (cls) svg.setAttribute("class", cls);
+    for (const s of shapes) {
+      if (s.rect) {
+        const r = document.createElementNS(ns, "rect");
+        for (const [k, v] of Object.entries(s.rect)) r.setAttribute(k, v);
+        svg.append(r);
+      } else {
+        const p = document.createElementNS(ns, "path");
+        p.setAttribute("d", s.d);
+        svg.append(p);
+      }
+    }
+    return svg;
+  }
+  function looksLikePath(v) {
+    return typeof v === "string" && (/^[\\/]/.test(v) || /^[A-Za-z]:[\\/]/.test(v));
+  }
+  function pathFromReactFiber(el) {
+    try {
+      const key = Object.keys(el).find((k) => k.startsWith("__reactFiber$"));
+      let fiber = key ? el[key] : null;
+      for (let i = 0; fiber && i < 40; i++, fiber = fiber.return) {
+        const props = fiber.memoizedProps;
+        if (!props || typeof props !== "object") continue;
+        for (const k of ["target", "fileLink", "row"]) {
+          const v = props[k];
+          if (v && looksLikePath(v.path)) return v.path;
+        }
+        if (looksLikePath(props.path)) return props.path;
+      }
+    } catch {
+    }
+    return null;
+  }
+  function resolveTargetPath(content) {
+    const id = content.id;
+    if (id) {
+      try {
+        const trigger = document.querySelector(`[aria-controls="${CSS.escape(id)}"]`);
+        const p = trigger?.getAttribute("title");
+        if (looksLikePath(p)) return p;
+        const fromFiber = trigger && pathFromReactFiber(trigger);
+        if (fromFiber) return fromFiber;
+      } catch {
+      }
+    }
+    const open = document.querySelector('[data-slot="context-menu-trigger"][data-state="open"]');
+    const p2 = open?.getAttribute("title");
+    if (looksLikePath(p2)) return p2;
+    return pathFromReactFiber(content);
+  }
+  function appendMenuItem(content, template, anchor, { marker, label, icon, onPick }) {
+    const item = template.cloneNode(true);
+    item.removeAttribute("data-testid");
+    item.removeAttribute("data-highlighted");
+    item.removeAttribute("data-disabled");
+    item.removeAttribute("aria-disabled");
+    item.setAttribute("data-zcodepro-item", marker);
+    for (const child of [...item.childNodes]) child.remove();
+    const origIcon = template.querySelector("svg");
+    item.append(buildIcon(origIcon?.getAttribute("class") || "size-4", icon), document.createTextNode(label));
+    item.addEventListener("mouseenter", () => {
+      for (const el of content.querySelectorAll('[role="menuitem"]')) el.removeAttribute("data-highlighted");
+      item.setAttribute("data-highlighted", "");
+    });
+    item.addEventListener("mouseleave", () => item.removeAttribute("data-highlighted"));
+    item.addEventListener("click", () => {
+      closeRadixMenu(content);
+      onPick();
+    });
+    anchor.before(item);
+    return item;
+  }
+  function handleFileMenu(content) {
+    if (content.dataset.zcodeproFileMenu) return;
+    const items = itemsOf(content);
+    const copyAbs = items.find((el) => COPY_ABS_TEXTS.some((x) => itemText(el).startsWith(x)));
+    if (!copyAbs) return;
+    if (typeof window === "undefined" || typeof window.zcode?.openExternalFile !== "function" || typeof window.zcode?.openInFileManager !== "function") return;
+    content.dataset.zcodeproFileMenu = "1";
+    void (async () => {
+      const config = await getConfig();
+      if (config.features && config.features.fileActions === false) return;
+      const path = resolveTargetPath(content);
+      if (!path) return;
+      const L = t();
+      const noApps = items.find((el) => NO_APPS_TEXTS.some((x) => itemText(el) === x)) || content.querySelector('[data-disabled][role="menuitem"]');
+      const openAnchor = noApps && content.contains(noApps) ? noApps : copyAbs;
+      appendMenuItem(content, copyAbs, openAnchor, {
+        marker: "file-open-default",
+        label: L.fileOpenDefault,
+        icon: ICON_OPEN_DEFAULT,
+        onPick: () => {
+          try {
+            void window.zcode.openExternalFile(path);
+          } catch {
+          }
+        }
+      });
+      appendMenuItem(content, copyAbs, copyAbs, {
+        marker: "file-reveal",
+        label: L.fileReveal,
+        icon: ICON_REVEAL,
+        onPick: () => {
+          try {
+            void rpc("/reveal-path", { method: "POST", body: { path } });
+          } catch {
+          }
+        }
+      });
+    })();
+  }
+
   // src/inject/features/styles.js
   var STYLE_DEFAULTS = {
     rowGap: 20,
@@ -1157,6 +1299,11 @@
             settingRow(L.featureTaskOrder, L.featureTaskOrderDesc, f.taskOrder !== false, async () => {
               const next = !(f.taskOrder !== false);
               if (await setFeature("taskOrder", next)) f.taskOrder = next;
+              refreshRows();
+            }),
+            settingRow(L.featureFileActions, L.featureFileActionsDesc, f.fileActions !== false, async () => {
+              const next = !(f.fileActions !== false);
+              if (await setFeature("fileActions", next)) f.fileActions = next;
               refreshRows();
             }),
             settingRow(L.featurePinnedExpand, L.featurePinnedExpandDesc, f.pinnedKeepCollapsed !== false, async () => {
@@ -1524,6 +1671,10 @@
       observeRadixPopups((content) => {
         try {
           handleProjectMenu(content);
+        } catch {
+        }
+        try {
+          handleFileMenu(content);
         } catch {
         }
       });

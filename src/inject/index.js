@@ -2,6 +2,7 @@
 // 幂等守卫：页面刷新/重复注入时只初始化一次。
 import { observeRadixPopups } from './core.js';
 import { handleProjectMenu } from './features/project-menu.js';
+import { handleFileMenu } from './features/file-menu.js';
 import { startSettingsEntry } from './features/settings-entry.js';
 import { startAliasWatcher } from './features/alias.js';
 import { startTaskOrderWatcher } from './features/task-order.js';
@@ -20,6 +21,7 @@ import { ensureStyle } from './ui.js';
     ensureStyle();
     observeRadixPopups((content) => {
       try { handleProjectMenu(content); } catch { /* 单个功能失败不影响其他 */ }
+      try { handleFileMenu(content); } catch { /* ignore */ }
     });
     try { void startAliasWatcher(); } catch { /* ignore */ }
     try { startTaskOrderWatcher(); } catch { /* ignore */ }
