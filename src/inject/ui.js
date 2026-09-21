@@ -367,6 +367,31 @@ export function ensureStyle() {
       color: var(--color-foreground, #111);
       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
     }
+    /* 全局提示词编辑框（设置弹窗）：与开关/标签页同理，几何/配色写入自有规则并取主题变量。
+       边框用 border 而非 box-shadow：应用全局样式对 :focus/:focus-visible 强制
+       box-shadow:none !important、outline:none !important，box-shadow 边框聚焦瞬间会被清掉；
+       应用自身输入框的聚焦反馈同样只走 border 变色 */
+    .zcodepro-textarea {
+      display: block;
+      width: 100%;
+      min-height: 11rem;
+      max-height: 22rem;
+      resize: vertical;
+      padding: 10px 12px;
+      border: 1px solid var(--color-border, rgba(0, 0, 0, 0.12));
+      border-radius: 10px;
+      outline: none;
+      background-color: var(--color-input, var(--color-popover, #fff));
+      color: var(--color-foreground, #111);
+      font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .zcodepro-textarea:focus-visible {
+      border-color: var(--color-primary, #111);
+    }
+    .zcodepro-textarea::placeholder { color: var(--color-muted-foreground, #888); }
+    .zcodepro-textarea:disabled { opacity: 0.5; }
     /* 行高滑杆（样式调整标签页） */
     .zcodepro-range {
       -webkit-appearance: none;

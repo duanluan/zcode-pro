@@ -18,6 +18,7 @@ export function openSettingsDialog() {
     onMount: async ({ body, close }) => {
       const health = await rpc('/health');
       const config = await getConfig(true);
+      const agentsRes = await rpc('/agents');
 
       const setFeature = async (key, value) => {
         const res = await rpc('/config', { method: 'POST', body: { features: { [key]: value } } });
@@ -93,32 +94,31 @@ export function openSettingsDialog() {
           icon);
       }
 
-      // 标签页切换：功能（现有内容）/ 样式调整
+      // 标签页切换：功能（现有内容）/ 样式调整 / 全局提示词
       let activeTab = 'features';
       const paneFeatures = h('div', { role: 'tabpanel', class: 'mt-4' },
         h('div', {}, rows),
         ...(pluginCard ? [pluginCard] : []),
       );
       const paneStyles = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
+      const paneAgents = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
+      const panes = { features: paneFeatures, styles: paneStyles, agents: paneAgents };
+      const tabDefs = [
+        ['features', L.tabFeatures],
+        ['styles', L.tabStyles],
+        ['agents', L.tabAgents],
+      ];
       const tablist = h('div', { role: 'tablist', 'aria-orientation': 'horizontal', class: 'zcodepro-tablist mt-4' });
-      const renderTabs = () => tablist.replaceChildren(
+      const renderTabs = () => tablist.replaceChildren(...tabDefs.map(([id, label]) =>
         h('button', {
           type: 'button', role: 'tab', class: 'zcodepro-tab',
-          'aria-selected': String(activeTab === 'features'),
-          'data-state': activeTab === 'features' ? 'active' : 'inactive',
-          onClick: () => switchTab('features'),
-        }, L.tabFeatures),
-        h('button', {
-          type: 'button', role: 'tab', class: 'zcodepro-tab',
-          'aria-selected': String(activeTab === 'styles'),
-          'data-state': activeTab === 'styles' ? 'active' : 'inactive',
-          onClick: () => switchTab('styles'),
-        }, L.tabStyles),
-      );
+          'aria-selected': String(activeTab === id),
+          'data-state': activeTab === id ? 'active' : 'inactive',
+          onClick: () => switchTab(id),
+        }, label)));
       const switchTab = (name) => {
         activeTab = name;
-        paneFeatures.style.display = name === 'features' ? '' : 'none';
-        paneStyles.style.display = name === 'styles' ? '' : 'none';
+        for (const [id, pane] of Object.entries(panes)) pane.style.display = id === name ? '' : 'none';
         renderTabs();
       };
       renderTabs();
@@ -185,11 +185,53 @@ export function openSettingsDialog() {
           }, 'h-7 px-3 text-ui-xs')),
       );
 
+      // 「全局提示词」：编辑 ~/.zcode/AGENTS.md（helper /agents 端点读写）。
+      // 大段文本不做即存即生效——显式保存；未修改时保存按钮禁用
+      const agentsArea = h('textarea', {
+        class: 'zcodepro-textarea',
+        placeholder: L.agentsPlaceholder,
+        spellcheck: 'false',
+      });
+      const agentsSaveBtn = btnPrimary(L.agentsSave, () => { void saveAgents(); }, 'h-7 px-3 text-ui-xs');
+      let agentsOriginal = '';
+      let agentsFailed = false;
+      if (agentsRes.ok) {
+        agentsOriginal = agentsRes.content || '';
+        agentsArea.value = agentsOriginal;
+      } else {
+        agentsFailed = true;
+        agentsArea.disabled = true;
+      }
+      agentsSaveBtn.disabled = true;
+      agentsArea.addEventListener('input', () => {
+        agentsSaveBtn.disabled = agentsFailed || agentsArea.value === agentsOriginal;
+      });
+      const saveAgents = async () => {
+        agentsSaveBtn.disabled = true;
+        const res = await rpc('/agents', { method: 'POST', body: { content: agentsArea.value } });
+        if (res.ok) {
+          agentsOriginal = typeof res.content === 'string' ? res.content : agentsArea.value;
+          showToast(L.agentsSaved);
+        } else {
+          showToast(L.failed + ': ' + (res.error || ''), 'error');
+          agentsSaveBtn.disabled = false;
+        }
+      };
+      paneAgents.append(
+        h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.agentsDesc),
+        ...(agentsFailed
+          ? [h('p', { class: 'mt-2 text-ui-sm text-destructive' }, L.agentsLoadFailed + ': ' + (agentsRes.error || ''))]
+          : []),
+        h('div', { class: 'mt-3' }, agentsArea),
+        h('div', { class: 'mt-3 flex justify-end' }, agentsSaveBtn),
+      );
+
       body.append(
         statusLine,
         tablist,
         paneFeatures,
         paneStyles,
+        paneAgents,
       );
       body.append(
         dialogFooter(btnPrimary(L.close, () => close()))

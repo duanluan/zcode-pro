@@ -31,10 +31,15 @@ export async function getConfig(force = false) {
 export function clearConfigCache() { configCache = { value: null, at: 0 }; }
 
 const zh = {
-  settingsEntry: 'ZCode Pro 设置',
   settingsTitle: 'ZCode Pro 增强设置',
   tabFeatures: '功能',
   tabStyles: '样式调整',
+  tabAgents: '全局提示词',
+  agentsDesc: '写入 ~/.zcode/AGENTS.md，作为默认指令注入所有项目的每次会话；保存后从新会话起生效，项目内的 AGENTS.md 可补充或覆盖。',
+  agentsPlaceholder: '填写希望所有项目默认遵循的指令；清空并保存即移除全局提示词',
+  agentsSave: '保存',
+  agentsSaved: '全局提示词已保存',
+  agentsLoadFailed: '读取全局提示词失败',
   rowGapName: '段落间距',
   rowGapDesc: '会话中段落等文本块之间的垂直间距（回合之间、答案内部）。',
   listSpacingName: '列表间距',
@@ -94,10 +99,15 @@ const zh = {
 };
 
 const en = {
-  settingsEntry: 'ZCode Pro Settings',
   settingsTitle: 'ZCode Pro Enhancements',
   tabFeatures: 'Features',
   tabStyles: 'Styles',
+  tabAgents: 'Global Prompt',
+  agentsDesc: 'Written to ~/.zcode/AGENTS.md and injected as default instructions into every session across all projects. Takes effect for new sessions; per-project AGENTS.md can extend or override it.',
+  agentsPlaceholder: 'Instructions followed by all projects by default; save empty to remove the global prompt',
+  agentsSave: 'Save',
+  agentsSaved: 'Global prompt saved.',
+  agentsLoadFailed: 'Failed to load the global prompt',
   rowGapName: 'Paragraph spacing',
   rowGapDesc: 'Vertical spacing between text blocks (turns, paragraphs inside answers).',
   listSpacingName: 'List spacing',

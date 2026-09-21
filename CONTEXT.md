@@ -7,3 +7,4 @@
 - **回答行高（answer line height）**：回答正文的行高，以字号倍数表示。
 - **提问行高（question line height）**：用户提问内容的行高，以字号倍数表示（应用默认与回答不同：1.5 对 1.75）。
 - **内容宽度（content width）**：会话内容的最大宽度，px 绝对值或可用宽度的百分比。
+- **全局提示词（global prompt）**：写入 `~/.zcode/AGENTS.md` 的默认指令，注入所有项目的每次会话；项目级 `AGENTS.md` 可补充或覆盖。

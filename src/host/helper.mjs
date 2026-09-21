@@ -3,14 +3,14 @@
 // 仅绑定 127.0.0.1，并通过每次启动随机生成的 token 鉴权。
 
 import { createServer } from 'node:http';
-import { existsSync, readFileSync, renameSync, statSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { basename, isAbsolute, join, resolve, sep } from 'node:path';
 import { readSettings, writeSettingsAtomic, remapSettingsPaths, isProjectOpenInTabs } from './settings.mjs';
 import { taskIndexPath, probeTaskIndexWritable, remapTaskIndexPaths, taskIndexDriverAvailable } from './taskIndex.mjs';
 import { pickFolderSystem } from './pickFolder.mjs';
 import { reorderWorkspaceTasks, reorderGroupMembers } from './taskOrder.mjs';
 
-const VERSION = '0.4.0';
+const VERSION = '0.5.0';
 
 export function defaultConfig() {
   return {
@@ -94,6 +94,7 @@ function readBody(req) {
 export function startHelper({ port, token, dataRoot, state }) {
   const configFile = join(dataRoot, 'zcodepro.json');
   const settingsFile = join(dataRoot, 'v2', 'setting.json');
+  const agentsFile = join(dataRoot, 'AGENTS.md');
 
   const server = createServer(async (req, res) => {
     const url = new URL(req.url, `http://127.0.0.1:${port}`);
@@ -162,6 +163,16 @@ export function startHelper({ port, token, dataRoot, state }) {
         json(res, 200, { ok: true, config: current });
         return;
       }
+      // 全局提示词（~/.zcode/AGENTS.md）：设置弹窗「全局提示词」标签页读写
+      if (req.method === 'GET' && url.pathname === '/agents') {
+        json(res, ...readAgents(agentsFile));
+        return;
+      }
+      if (req.method === 'POST' && url.pathname === '/agents') {
+        const body = await readBody(req);
+        json(res, ...writeAgents(body, agentsFile));
+        return;
+      }
       if (req.method === 'GET' && url.pathname === '/projects') {
         const settings = readSettings(settingsFile);
         const projects = (settings.recentProjects || []).map((p) => {
@@ -222,6 +233,41 @@ export function startHelper({ port, token, dataRoot, state }) {
     server.once('error', rejectStarted);
     server.listen(port, '127.0.0.1', () => resolveStarted(server));
   });
+}
+
+// 读全局提示词（~/.zcode/AGENTS.md）；文件不存在视为空内容。
+export function readAgents(agentsFile) {
+  try {
+    return [200, { ok: true, content: existsSync(agentsFile) ? readFileSync(agentsFile, 'utf8') : '' }];
+  } catch (err) {
+    return [500, { ok: false, error: '读取 AGENTS.md 失败: ' + (err?.message || err) }];
+  }
+}
+
+// 写全局提示词：覆盖前备份，临时文件 + 改名原子写；内容为空时移除文件（= 无全局提示词）。
+// 导出以便测试脚本直接驱动。
+export function writeAgents(body, agentsFile) {
+  if (!body || typeof body.content !== 'string') {
+    return [400, { ok: false, error: 'content 必须是字符串' }];
+  }
+  const empty = body.content.trim() === '';
+  try {
+    if (existsSync(agentsFile)) {
+      try { copyFileSync(agentsFile, agentsFile + '.zcodepro-backup'); } catch { /* 备份失败不阻塞 */ }
+      if (empty) {
+        unlinkSync(agentsFile);
+        return [200, { ok: true, content: '' }];
+      }
+    } else if (empty) {
+      return [200, { ok: true, content: '' }];
+    }
+    const tmp = agentsFile + '.zcodepro-tmp';
+    writeFileSync(tmp, body.content, 'utf8');
+    renameSync(tmp, agentsFile);
+  } catch (err) {
+    return [500, { ok: false, error: '写入 AGENTS.md 失败: ' + (err?.message || err) }];
+  }
+  return [200, { ok: true, content: body.content }];
 }
 
 // 设置/清除项目自定义别名（纯渲染层，不动磁盘与任何 ZCode 数据）。

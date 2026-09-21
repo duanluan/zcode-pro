@@ -1,8 +1,8 @@
 // ZCode Pro 注入脚本入口（由 esbuild 打包为 dist/inject.js，launcher 拼上启动参数后注入页面）。
 // 幂等守卫：页面刷新/重复注入时只初始化一次。
 import { observeRadixPopups } from './core.js';
-import { handleHeaderMenu } from './features/header-menu.js';
 import { handleProjectMenu } from './features/project-menu.js';
+import { startSettingsNavWatcher } from './features/settings-nav.js';
 import { startAliasWatcher } from './features/alias.js';
 import { startTaskOrderWatcher } from './features/task-order.js';
 import { startPinnedExpandSuppression } from './features/pinned-expand.js';
@@ -19,13 +19,13 @@ import { ensureStyle } from './ui.js';
   const start = () => {
     ensureStyle();
     observeRadixPopups((content) => {
-      try { handleHeaderMenu(content); } catch { /* 单个功能失败不影响其他 */ }
-      try { handleProjectMenu(content); } catch { /* ignore */ }
+      try { handleProjectMenu(content); } catch { /* 单个功能失败不影响其他 */ }
     });
     try { void startAliasWatcher(); } catch { /* ignore */ }
     try { startTaskOrderWatcher(); } catch { /* ignore */ }
     try { startPinnedExpandSuppression(); } catch { /* ignore */ }
     try { startStyleAdjustments(); } catch { /* ignore */ }
+    try { startSettingsNavWatcher(); } catch { /* ignore */ }
   };
 
   if (document.readyState === 'loading') {

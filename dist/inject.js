@@ -28,10 +28,15 @@
     configCache = { value: null, at: 0 };
   }
   var zh = {
-    settingsEntry: "ZCode Pro \u8BBE\u7F6E",
     settingsTitle: "ZCode Pro \u589E\u5F3A\u8BBE\u7F6E",
     tabFeatures: "\u529F\u80FD",
     tabStyles: "\u6837\u5F0F\u8C03\u6574",
+    tabAgents: "\u5168\u5C40\u63D0\u793A\u8BCD",
+    agentsDesc: "\u5199\u5165 ~/.zcode/AGENTS.md\uFF0C\u4F5C\u4E3A\u9ED8\u8BA4\u6307\u4EE4\u6CE8\u5165\u6240\u6709\u9879\u76EE\u7684\u6BCF\u6B21\u4F1A\u8BDD\uFF1B\u4FDD\u5B58\u540E\u4ECE\u65B0\u4F1A\u8BDD\u8D77\u751F\u6548\uFF0C\u9879\u76EE\u5185\u7684 AGENTS.md \u53EF\u8865\u5145\u6216\u8986\u76D6\u3002",
+    agentsPlaceholder: "\u586B\u5199\u5E0C\u671B\u6240\u6709\u9879\u76EE\u9ED8\u8BA4\u9075\u5FAA\u7684\u6307\u4EE4\uFF1B\u6E05\u7A7A\u5E76\u4FDD\u5B58\u5373\u79FB\u9664\u5168\u5C40\u63D0\u793A\u8BCD",
+    agentsSave: "\u4FDD\u5B58",
+    agentsSaved: "\u5168\u5C40\u63D0\u793A\u8BCD\u5DF2\u4FDD\u5B58",
+    agentsLoadFailed: "\u8BFB\u53D6\u5168\u5C40\u63D0\u793A\u8BCD\u5931\u8D25",
     rowGapName: "\u6BB5\u843D\u95F4\u8DDD",
     rowGapDesc: "\u4F1A\u8BDD\u4E2D\u6BB5\u843D\u7B49\u6587\u672C\u5757\u4E4B\u95F4\u7684\u5782\u76F4\u95F4\u8DDD\uFF08\u56DE\u5408\u4E4B\u95F4\u3001\u7B54\u6848\u5185\u90E8\uFF09\u3002",
     listSpacingName: "\u5217\u8868\u95F4\u8DDD",
@@ -90,10 +95,15 @@
     retryHint: "\u8BF7\u91CD\u8BD5"
   };
   var en = {
-    settingsEntry: "ZCode Pro Settings",
     settingsTitle: "ZCode Pro Enhancements",
     tabFeatures: "Features",
     tabStyles: "Styles",
+    tabAgents: "Global Prompt",
+    agentsDesc: "Written to ~/.zcode/AGENTS.md and injected as default instructions into every session across all projects. Takes effect for new sessions; per-project AGENTS.md can extend or override it.",
+    agentsPlaceholder: "Instructions followed by all projects by default; save empty to remove the global prompt",
+    agentsSave: "Save",
+    agentsSaved: "Global prompt saved.",
+    agentsLoadFailed: "Failed to load the global prompt",
     rowGapName: "Paragraph spacing",
     rowGapDesc: "Vertical spacing between text blocks (turns, paragraphs inside answers).",
     listSpacingName: "List spacing",
@@ -601,6 +611,31 @@
       color: var(--color-foreground, #111);
       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
     }
+    /* \u5168\u5C40\u63D0\u793A\u8BCD\u7F16\u8F91\u6846\uFF08\u8BBE\u7F6E\u5F39\u7A97\uFF09\uFF1A\u4E0E\u5F00\u5173/\u6807\u7B7E\u9875\u540C\u7406\uFF0C\u51E0\u4F55/\u914D\u8272\u5199\u5165\u81EA\u6709\u89C4\u5219\u5E76\u53D6\u4E3B\u9898\u53D8\u91CF\u3002
+       \u8FB9\u6846\u7528 border \u800C\u975E box-shadow\uFF1A\u5E94\u7528\u5168\u5C40\u6837\u5F0F\u5BF9 :focus/:focus-visible \u5F3A\u5236
+       box-shadow:none !important\u3001outline:none !important\uFF0Cbox-shadow \u8FB9\u6846\u805A\u7126\u77AC\u95F4\u4F1A\u88AB\u6E05\u6389\uFF1B
+       \u5E94\u7528\u81EA\u8EAB\u8F93\u5165\u6846\u7684\u805A\u7126\u53CD\u9988\u540C\u6837\u53EA\u8D70 border \u53D8\u8272 */
+    .zcodepro-textarea {
+      display: block;
+      width: 100%;
+      min-height: 11rem;
+      max-height: 22rem;
+      resize: vertical;
+      padding: 10px 12px;
+      border: 1px solid var(--color-border, rgba(0, 0, 0, 0.12));
+      border-radius: 10px;
+      outline: none;
+      background-color: var(--color-input, var(--color-popover, #fff));
+      color: var(--color-foreground, #111);
+      font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .zcodepro-textarea:focus-visible {
+      border-color: var(--color-primary, #111);
+    }
+    .zcodepro-textarea::placeholder { color: var(--color-muted-foreground, #888); }
+    .zcodepro-textarea:disabled { opacity: 0.5; }
     /* \u884C\u9AD8\u6ED1\u6746\uFF08\u6837\u5F0F\u8C03\u6574\u6807\u7B7E\u9875\uFF09 */
     .zcodepro-range {
       -webkit-appearance: none;
@@ -803,342 +838,6 @@
     });
   }
 
-  // src/inject/features/styles.js
-  var STYLE_DEFAULTS = {
-    rowGap: 20,
-    // 段落间距：会话内各块之间的垂直间距
-    listSpacing: 12,
-    // 列表上下留白（my-3）
-    listItemSpacing: 6,
-    // 列表项之间的间距（space-y-1.5）
-    quoteCodeSpacing: 12,
-    // 引用/代码块上下留白（my-3）
-    lineHeight: 1.75,
-    // 回答行高（leading-[1.75]，挂在答案内容容器上）
-    userLineHeight: 1.5,
-    // 提问行高（用户消息文本容器，默认 normal=1.5）
-    contentWidth: null
-    // 内容宽度：默认 100%（跟随应用，不覆盖）
-  };
-  var styleEl = null;
-  var CONV = '[class*="@md/conversation"]';
-  var SPECIAL = ":is(ul, ol, blockquote, pre, table)";
-  function buildCss(styles) {
-    const parts = [];
-    const n = styles.rowGap;
-    if (typeof n === "number" && Number.isFinite(n) && n >= 0) {
-      parts.push(
-        // 回合内外各级容器（SECTION 自身或后代，二者都覆盖）
-        `${CONV}.pb-5,${CONV} .pb-5{padding-bottom:${n}px !important;}`,
-        `${CONV}.pt-5,${CONV} .pt-5{padding-top:${n}px !important;}`,
-        `${CONV} .flex.flex-col.gap-5{gap:${n}px !important;}`,
-        `${CONV} .flex.flex-col.gap-4{gap:${n}px !important;}`,
-        // 答案内相邻文本块之间（特殊块除外，走各自间距项）
-        `${CONV} .space-y-4 > * + *:not(${SPECIAL}){margin-block-start:${n}px !important;margin-top:${n}px !important;}`,
-        // 特殊块后接文本块：去掉文本块的段落间距，避免与特殊块自身留白叠加
-        `${CONV} .space-y-4 > ${SPECIAL} + *:not(${SPECIAL}){margin-block-start:0 !important;margin-top:0 !important;}`,
-        // 回合内部条目之间（思考触发条 ↔ 正文等）
-        `.history-message.flex.flex-col > * + *:not([data-slot="collapsible-content"]){margin-block-start:${n}px !important;margin-top:${n}px !important;}`
-      );
-    }
-    const ls = styles.listSpacing;
-    if (typeof ls === "number" && Number.isFinite(ls) && ls >= 0) {
-      parts.push(`${CONV} .space-y-4 > :is(ul, ol){margin-block:${ls}px !important;}`);
-    }
-    const li = styles.listItemSpacing;
-    if (typeof li === "number" && Number.isFinite(li) && li >= 0) {
-      parts.push(`${CONV} :is(ul, ol) > li + li{margin-block-start:${li}px !important;margin-top:${li}px !important;}`);
-    }
-    const qc = styles.quoteCodeSpacing;
-    if (typeof qc === "number" && Number.isFinite(qc) && qc >= 0) {
-      parts.push(`${CONV} .space-y-4 > :is(blockquote, pre, table){margin-block:${qc}px !important;}`);
-    }
-    const lh = styles.lineHeight;
-    if (typeof lh === "number" && Number.isFinite(lh) && lh >= 0.8) {
-      parts.push(`${CONV} .space-y-4{line-height:${lh} !important;}`);
-    }
-    const ulh = styles.userLineHeight;
-    if (typeof ulh === "number" && Number.isFinite(ulh) && ulh >= 0.8) {
-      parts.push(`${CONV} [class*="user-row"] .whitespace-pre-wrap{line-height:${ulh} !important;}`);
-    }
-    const cw = styles.contentWidth;
-    if (cw && (cw.unit === "px" || cw.unit === "%") && Number.isFinite(cw.value)) {
-      parts.push(`[data-v4-timeline-content-column]{max-width:${cw.value}${cw.unit} !important;}`);
-    }
-    return parts.join("");
-  }
-  function applyStyles(styles) {
-    if (!styleEl) return;
-    styleEl.textContent = styles && typeof styles === "object" ? buildCss(styles) : "";
-  }
-  function startStyleAdjustments() {
-    const root = document.head || document.documentElement;
-    if (!root) return;
-    styleEl = document.getElementById("__zcodepro_styles__");
-    if (!styleEl) {
-      styleEl = document.createElement("style");
-      styleEl.id = "__zcodepro_styles__";
-      root.append(styleEl);
-    }
-    void getConfig().then((cfg) => applyStyles(cfg.styles)).catch(() => {
-    });
-  }
-
-  // src/inject/features/settings-dialog.js
-  function openSettingsDialog() {
-    ensureStyle();
-    const L = t();
-    openDialog({
-      title: L.settingsTitle,
-      width: "max-w-lg",
-      overlay: "none",
-      draggable: true,
-      posKey: "settings",
-      dismissOnOutside: false,
-      onMount: async ({ body, close }) => {
-        const health = await rpc("/health");
-        const config = await getConfig(true);
-        const setFeature = async (key, value) => {
-          const res = await rpc("/config", { method: "POST", body: { features: { [key]: value } } });
-          clearConfigCache();
-          if (!res.ok) {
-            body.querySelector("[data-zcodepro-status]").replaceChildren(
-              h("span", { class: "text-ui-sm text-destructive" }, L.failed + ": " + (res.error || ""))
-            );
-            return false;
-          }
-          return true;
-        };
-        const statusLine = h(
-          "div",
-          {
-            class: "flex items-center gap-2 text-ui-sm text-foreground-subtle",
-            "data-zcodepro-status": "1"
-          },
-          h("span", { class: "inline-block size-2 rounded-full bg-emerald-500" }),
-          h("span", { class: "text-foreground-subtle/70" }, `${L.version} ${health.version} \xB7 ${HELPER_URL}`)
-        );
-        const rows = h("div", { class: "divide-y divide-border rounded-xl border border-border" });
-        const refreshRows = () => {
-          const f = config.features || {};
-          rows.replaceChildren(
-            settingRow(L.featureAlias, L.featureAliasDesc, f.projectAlias !== false, async () => {
-              const next = !(f.projectAlias !== false);
-              if (await setFeature("projectAlias", next)) f.projectAlias = next;
-              refreshRows();
-              await refreshAliases();
-            }),
-            settingRow(L.featureRelocate, L.featureRelocateDesc, f.projectRelocate !== false, async () => {
-              const next = !(f.projectRelocate !== false);
-              if (await setFeature("projectRelocate", next)) f.projectRelocate = next;
-              refreshRows();
-            }),
-            settingRow(L.featureTaskOrder, L.featureTaskOrderDesc, f.taskOrder !== false, async () => {
-              const next = !(f.taskOrder !== false);
-              if (await setFeature("taskOrder", next)) f.taskOrder = next;
-              refreshRows();
-            }),
-            settingRow(L.featurePinnedExpand, L.featurePinnedExpandDesc, f.pinnedKeepCollapsed !== false, async () => {
-              const next = !(f.pinnedKeepCollapsed !== false);
-              if (await setFeature("pinnedKeepCollapsed", next)) f.pinnedKeepCollapsed = next;
-              refreshRows();
-            })
-          );
-        };
-        refreshRows();
-        let pluginCard = null;
-        if (typeof window !== "undefined" && typeof window.zcode?.openExternal === "function") {
-          const ns = "http://www.w3.org/2000/svg";
-          const icon = h("svg", {
-            viewBox: "0 0 24 24",
-            fill: "none",
-            stroke: "currentColor",
-            "stroke-width": "2",
-            "stroke-linecap": "round",
-            "stroke-linejoin": "round",
-            class: "size-4 shrink-0 text-foreground-subtle"
-          });
-          for (const d of ["M15 3h6v6", "M10 14 21 3", "M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"]) {
-            const p2 = document.createElementNS(ns, "path");
-            p2.setAttribute("d", d);
-            icon.append(p2);
-          }
-          pluginCard = h(
-            "div",
-            {
-              class: "mt-3 flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-border p-3 transition-colors hover:bg-surface-hover",
-              onClick: () => {
-                try {
-                  void window.zcode.openExternal("https://github.com/duanluan/zcode-plugins");
-                } catch {
-                }
-              }
-            },
-            h(
-              "div",
-              { class: "min-w-0 flex-1" },
-              h("div", { class: "text-ui-sm font-medium text-foreground" }, L.plugTitle),
-              h("div", { class: "mt-0.5 text-ui-xs/relaxed text-foreground-subtle" }, L.plugDesc)
-            ),
-            icon
-          );
-        }
-        let activeTab = "features";
-        const paneFeatures = h(
-          "div",
-          { role: "tabpanel", class: "mt-4" },
-          h("div", {}, rows),
-          ...pluginCard ? [pluginCard] : []
-        );
-        const paneStyles = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
-        const tablist = h("div", { role: "tablist", "aria-orientation": "horizontal", class: "zcodepro-tablist mt-4" });
-        const renderTabs = () => tablist.replaceChildren(
-          h("button", {
-            type: "button",
-            role: "tab",
-            class: "zcodepro-tab",
-            "aria-selected": String(activeTab === "features"),
-            "data-state": activeTab === "features" ? "active" : "inactive",
-            onClick: () => switchTab("features")
-          }, L.tabFeatures),
-          h("button", {
-            type: "button",
-            role: "tab",
-            class: "zcodepro-tab",
-            "aria-selected": String(activeTab === "styles"),
-            "data-state": activeTab === "styles" ? "active" : "inactive",
-            onClick: () => switchTab("styles")
-          }, L.tabStyles)
-        );
-        const switchTab = (name) => {
-          activeTab = name;
-          paneFeatures.style.display = name === "features" ? "" : "none";
-          paneStyles.style.display = name === "styles" ? "" : "none";
-          renderTabs();
-        };
-        renderTabs();
-        const savedStyles = config.styles || {};
-        let saveTimer = null;
-        const persistStyles = (partial) => {
-          clearTimeout(saveTimer);
-          saveTimer = setTimeout(async () => {
-            const res = await rpc("/config", { method: "POST", body: { styles: partial } });
-            clearConfigCache();
-            if (res.ok) applyStyles(res.config && res.config.styles || savedStyles);
-            else showToast(L.failed + ": " + (res.error || ""), "error");
-          }, 150);
-        };
-        const styleCell = (name, tip, key, { min = 0, max = 48, step = 1, unit = "px" } = {}) => {
-          const field = numberField({
-            value: typeof savedStyles[key] === "number" ? savedStyles[key] : null,
-            fallback: STYLE_DEFAULTS[key],
-            min,
-            max,
-            step,
-            onCommit: (v) => persistStyles({ [key]: v })
-          });
-          return {
-            field,
-            el: h(
-              "div",
-              { class: "flex items-center justify-between gap-2 p-2.5" },
-              h("span", { class: "min-w-0 truncate text-ui-sm font-medium text-foreground", title: tip }, name),
-              h(
-                "span",
-                { class: "flex shrink-0 items-center gap-1" },
-                field.el,
-                h("span", { class: "w-3 text-ui-xs text-foreground-subtle" }, unit)
-              )
-            )
-          };
-        };
-        const column = document.querySelector("[data-v4-timeline-content-column]");
-        const currentWidth = column ? Math.round(column.getBoundingClientRect().width) : 0;
-        const widthField = unitField({
-          value: savedStyles.contentWidth || null,
-          fallback: { value: currentWidth > 0 ? currentWidth : 1152, unit: "px" },
-          onCommit: (v) => persistStyles({ contentWidth: v })
-        });
-        const widthCell = {
-          field: widthField,
-          el: h(
-            "div",
-            { class: "flex items-center justify-between gap-2 p-2.5" },
-            h("span", { class: "min-w-0 truncate text-ui-sm font-medium text-foreground", title: L.contentWidthDesc }, L.contentWidthName),
-            widthField.el
-          )
-        };
-        const cells = [
-          widthCell,
-          styleCell(L.rowGapName, L.rowGapDesc, "rowGap"),
-          styleCell(L.userLineHeightName, L.userLineHeightDesc, "userLineHeight", { min: 1, max: 3, step: 0.05, unit: "x" }),
-          styleCell(L.lineHeightName, L.lineHeightDesc, "lineHeight", { min: 1, max: 3, step: 0.05, unit: "x" }),
-          styleCell(L.listSpacingName, L.listSpacingDesc, "listSpacing"),
-          styleCell(L.listItemSpacingName, L.listItemSpacingDesc, "listItemSpacing"),
-          styleCell(L.quoteCodeSpacingName, L.quoteCodeSpacingDesc, "quoteCodeSpacing")
-        ];
-        paneStyles.append(
-          h(
-            "div",
-            { class: "grid grid-cols-2 gap-2 rounded-xl border border-border p-1.5" },
-            ...cells.map((c) => h("div", { class: "rounded-lg transition-colors hover:bg-surface-hover" }, c.el))
-          ),
-          h(
-            "div",
-            { class: "mt-2 flex justify-end" },
-            btnSecondary(L.resetDefault, () => {
-              for (const c of cells) c.field.reset();
-              persistStyles({ rowGap: null, listSpacing: null, listItemSpacing: null, quoteCodeSpacing: null, lineHeight: null, userLineHeight: null, contentWidth: null });
-            }, "h-7 px-3 text-ui-xs")
-          )
-        );
-        body.append(
-          statusLine,
-          tablist,
-          paneFeatures,
-          paneStyles
-        );
-        body.append(
-          dialogFooter(btnPrimary(L.close, () => close()))
-        );
-      }
-    });
-  }
-
-  // src/inject/features/header-menu.js
-  var NEW_TASK_TEXTS = ["\u65B0\u5EFA\u4EFB\u52A1", "New task", "New Task"];
-  var OPEN_WS_TEXTS = ["\u6253\u5F00\u5DE5\u4F5C\u533A", "Open workspace", "Open Workspace"];
-  function handleHeaderMenu(content) {
-    if (content.querySelector('[data-zcodepro-item="settings"]')) return;
-    const items = itemsOf(content);
-    if (items.length < 2) return;
-    const first = itemText(items[0]);
-    const head = items.slice(0, 3).map(itemText).join(" ");
-    const isNewTask = NEW_TASK_TEXTS.some((x) => first.startsWith(x));
-    const isOpenWs = OPEN_WS_TEXTS.some((x) => head.includes(x));
-    if (!(isNewTask && isOpenWs)) return;
-    appendSettingsItem(content, items[0]);
-  }
-  function appendSettingsItem(menu, firstItem) {
-    const L = t();
-    const item = firstItem.cloneNode(true);
-    item.removeAttribute("data-testid");
-    item.removeAttribute("data-highlighted");
-    item.setAttribute("data-zcodepro-item", "settings");
-    for (const child of [...item.childNodes]) child.remove();
-    item.append(document.createTextNode(L.settingsEntry));
-    item.addEventListener("mouseenter", () => {
-      for (const el of menu.querySelectorAll('[role="menuitem"]')) el.removeAttribute("data-highlighted");
-      item.setAttribute("data-highlighted", "");
-    });
-    item.addEventListener("mouseleave", () => item.removeAttribute("data-highlighted"));
-    item.addEventListener("click", () => {
-      closeRadixMenu(menu);
-      setTimeout(() => openSettingsDialog(), 80);
-    });
-    menu.append(item);
-  }
-
   // src/inject/features/relocate-dialog.js
   function appendRelocateItem(menu, anchorItem, project) {
     if (menu.querySelector('[data-zcodepro-item="relocate"]')) return;
@@ -1324,6 +1023,428 @@
     })();
   }
 
+  // src/inject/features/styles.js
+  var STYLE_DEFAULTS = {
+    rowGap: 20,
+    // 段落间距：会话内各块之间的垂直间距
+    listSpacing: 12,
+    // 列表上下留白（my-3）
+    listItemSpacing: 6,
+    // 列表项之间的间距（space-y-1.5）
+    quoteCodeSpacing: 12,
+    // 引用/代码块上下留白（my-3）
+    lineHeight: 1.75,
+    // 回答行高（leading-[1.75]，挂在答案内容容器上）
+    userLineHeight: 1.5,
+    // 提问行高（用户消息文本容器，默认 normal=1.5）
+    contentWidth: null
+    // 内容宽度：默认 100%（跟随应用，不覆盖）
+  };
+  var styleEl = null;
+  var CONV = '[class*="@md/conversation"]';
+  var SPECIAL = ":is(ul, ol, blockquote, pre, table)";
+  function buildCss(styles) {
+    const parts = [];
+    const n = styles.rowGap;
+    if (typeof n === "number" && Number.isFinite(n) && n >= 0) {
+      parts.push(
+        // 回合内外各级容器（SECTION 自身或后代，二者都覆盖）
+        `${CONV}.pb-5,${CONV} .pb-5{padding-bottom:${n}px !important;}`,
+        `${CONV}.pt-5,${CONV} .pt-5{padding-top:${n}px !important;}`,
+        `${CONV} .flex.flex-col.gap-5{gap:${n}px !important;}`,
+        `${CONV} .flex.flex-col.gap-4{gap:${n}px !important;}`,
+        // 答案内相邻文本块之间（特殊块除外，走各自间距项）
+        `${CONV} .space-y-4 > * + *:not(${SPECIAL}){margin-block-start:${n}px !important;margin-top:${n}px !important;}`,
+        // 特殊块后接文本块：去掉文本块的段落间距，避免与特殊块自身留白叠加
+        `${CONV} .space-y-4 > ${SPECIAL} + *:not(${SPECIAL}){margin-block-start:0 !important;margin-top:0 !important;}`,
+        // 回合内部条目之间（思考触发条 ↔ 正文等）
+        `.history-message.flex.flex-col > * + *:not([data-slot="collapsible-content"]){margin-block-start:${n}px !important;margin-top:${n}px !important;}`
+      );
+    }
+    const ls = styles.listSpacing;
+    if (typeof ls === "number" && Number.isFinite(ls) && ls >= 0) {
+      parts.push(`${CONV} .space-y-4 > :is(ul, ol){margin-block:${ls}px !important;}`);
+    }
+    const li = styles.listItemSpacing;
+    if (typeof li === "number" && Number.isFinite(li) && li >= 0) {
+      parts.push(`${CONV} :is(ul, ol) > li + li{margin-block-start:${li}px !important;margin-top:${li}px !important;}`);
+    }
+    const qc = styles.quoteCodeSpacing;
+    if (typeof qc === "number" && Number.isFinite(qc) && qc >= 0) {
+      parts.push(`${CONV} .space-y-4 > :is(blockquote, pre, table){margin-block:${qc}px !important;}`);
+    }
+    const lh = styles.lineHeight;
+    if (typeof lh === "number" && Number.isFinite(lh) && lh >= 0.8) {
+      parts.push(`${CONV} .space-y-4{line-height:${lh} !important;}`);
+    }
+    const ulh = styles.userLineHeight;
+    if (typeof ulh === "number" && Number.isFinite(ulh) && ulh >= 0.8) {
+      parts.push(`${CONV} [class*="user-row"] .whitespace-pre-wrap{line-height:${ulh} !important;}`);
+    }
+    const cw = styles.contentWidth;
+    if (cw && (cw.unit === "px" || cw.unit === "%") && Number.isFinite(cw.value)) {
+      parts.push(`[data-v4-timeline-content-column]{max-width:${cw.value}${cw.unit} !important;}`);
+    }
+    return parts.join("");
+  }
+  function applyStyles(styles) {
+    if (!styleEl) return;
+    styleEl.textContent = styles && typeof styles === "object" ? buildCss(styles) : "";
+  }
+  function startStyleAdjustments() {
+    const root = document.head || document.documentElement;
+    if (!root) return;
+    styleEl = document.getElementById("__zcodepro_styles__");
+    if (!styleEl) {
+      styleEl = document.createElement("style");
+      styleEl.id = "__zcodepro_styles__";
+      root.append(styleEl);
+    }
+    void getConfig().then((cfg) => applyStyles(cfg.styles)).catch(() => {
+    });
+  }
+
+  // src/inject/features/settings-dialog.js
+  function openSettingsDialog() {
+    ensureStyle();
+    const L = t();
+    openDialog({
+      title: L.settingsTitle,
+      width: "max-w-lg",
+      overlay: "none",
+      draggable: true,
+      posKey: "settings",
+      dismissOnOutside: false,
+      onMount: async ({ body, close }) => {
+        const health = await rpc("/health");
+        const config = await getConfig(true);
+        const agentsRes = await rpc("/agents");
+        const setFeature = async (key, value) => {
+          const res = await rpc("/config", { method: "POST", body: { features: { [key]: value } } });
+          clearConfigCache();
+          if (!res.ok) {
+            body.querySelector("[data-zcodepro-status]").replaceChildren(
+              h("span", { class: "text-ui-sm text-destructive" }, L.failed + ": " + (res.error || ""))
+            );
+            return false;
+          }
+          return true;
+        };
+        const statusLine = h(
+          "div",
+          {
+            class: "flex items-center gap-2 text-ui-sm text-foreground-subtle",
+            "data-zcodepro-status": "1"
+          },
+          h("span", { class: "inline-block size-2 rounded-full bg-emerald-500" }),
+          h("span", { class: "text-foreground-subtle/70" }, `${L.version} ${health.version} \xB7 ${HELPER_URL}`)
+        );
+        const rows = h("div", { class: "divide-y divide-border rounded-xl border border-border" });
+        const refreshRows = () => {
+          const f = config.features || {};
+          rows.replaceChildren(
+            settingRow(L.featureAlias, L.featureAliasDesc, f.projectAlias !== false, async () => {
+              const next = !(f.projectAlias !== false);
+              if (await setFeature("projectAlias", next)) f.projectAlias = next;
+              refreshRows();
+              await refreshAliases();
+            }),
+            settingRow(L.featureRelocate, L.featureRelocateDesc, f.projectRelocate !== false, async () => {
+              const next = !(f.projectRelocate !== false);
+              if (await setFeature("projectRelocate", next)) f.projectRelocate = next;
+              refreshRows();
+            }),
+            settingRow(L.featureTaskOrder, L.featureTaskOrderDesc, f.taskOrder !== false, async () => {
+              const next = !(f.taskOrder !== false);
+              if (await setFeature("taskOrder", next)) f.taskOrder = next;
+              refreshRows();
+            }),
+            settingRow(L.featurePinnedExpand, L.featurePinnedExpandDesc, f.pinnedKeepCollapsed !== false, async () => {
+              const next = !(f.pinnedKeepCollapsed !== false);
+              if (await setFeature("pinnedKeepCollapsed", next)) f.pinnedKeepCollapsed = next;
+              refreshRows();
+            })
+          );
+        };
+        refreshRows();
+        let pluginCard = null;
+        if (typeof window !== "undefined" && typeof window.zcode?.openExternal === "function") {
+          const ns = "http://www.w3.org/2000/svg";
+          const icon = h("svg", {
+            viewBox: "0 0 24 24",
+            fill: "none",
+            stroke: "currentColor",
+            "stroke-width": "2",
+            "stroke-linecap": "round",
+            "stroke-linejoin": "round",
+            class: "size-4 shrink-0 text-foreground-subtle"
+          });
+          for (const d of ["M15 3h6v6", "M10 14 21 3", "M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"]) {
+            const p2 = document.createElementNS(ns, "path");
+            p2.setAttribute("d", d);
+            icon.append(p2);
+          }
+          pluginCard = h(
+            "div",
+            {
+              class: "mt-3 flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-border p-3 transition-colors hover:bg-surface-hover",
+              onClick: () => {
+                try {
+                  void window.zcode.openExternal("https://github.com/duanluan/zcode-plugins");
+                } catch {
+                }
+              }
+            },
+            h(
+              "div",
+              { class: "min-w-0 flex-1" },
+              h("div", { class: "text-ui-sm font-medium text-foreground" }, L.plugTitle),
+              h("div", { class: "mt-0.5 text-ui-xs/relaxed text-foreground-subtle" }, L.plugDesc)
+            ),
+            icon
+          );
+        }
+        let activeTab = "features";
+        const paneFeatures = h(
+          "div",
+          { role: "tabpanel", class: "mt-4" },
+          h("div", {}, rows),
+          ...pluginCard ? [pluginCard] : []
+        );
+        const paneStyles = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
+        const paneAgents = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
+        const panes = { features: paneFeatures, styles: paneStyles, agents: paneAgents };
+        const tabDefs = [
+          ["features", L.tabFeatures],
+          ["styles", L.tabStyles],
+          ["agents", L.tabAgents]
+        ];
+        const tablist = h("div", { role: "tablist", "aria-orientation": "horizontal", class: "zcodepro-tablist mt-4" });
+        const renderTabs = () => tablist.replaceChildren(...tabDefs.map(([id, label]) => h("button", {
+          type: "button",
+          role: "tab",
+          class: "zcodepro-tab",
+          "aria-selected": String(activeTab === id),
+          "data-state": activeTab === id ? "active" : "inactive",
+          onClick: () => switchTab(id)
+        }, label)));
+        const switchTab = (name) => {
+          activeTab = name;
+          for (const [id, pane] of Object.entries(panes)) pane.style.display = id === name ? "" : "none";
+          renderTabs();
+        };
+        renderTabs();
+        const savedStyles = config.styles || {};
+        let saveTimer = null;
+        const persistStyles = (partial) => {
+          clearTimeout(saveTimer);
+          saveTimer = setTimeout(async () => {
+            const res = await rpc("/config", { method: "POST", body: { styles: partial } });
+            clearConfigCache();
+            if (res.ok) applyStyles(res.config && res.config.styles || savedStyles);
+            else showToast(L.failed + ": " + (res.error || ""), "error");
+          }, 150);
+        };
+        const styleCell = (name, tip, key, { min = 0, max = 48, step = 1, unit = "px" } = {}) => {
+          const field = numberField({
+            value: typeof savedStyles[key] === "number" ? savedStyles[key] : null,
+            fallback: STYLE_DEFAULTS[key],
+            min,
+            max,
+            step,
+            onCommit: (v) => persistStyles({ [key]: v })
+          });
+          return {
+            field,
+            el: h(
+              "div",
+              { class: "flex items-center justify-between gap-2 p-2.5" },
+              h("span", { class: "min-w-0 truncate text-ui-sm font-medium text-foreground", title: tip }, name),
+              h(
+                "span",
+                { class: "flex shrink-0 items-center gap-1" },
+                field.el,
+                h("span", { class: "w-3 text-ui-xs text-foreground-subtle" }, unit)
+              )
+            )
+          };
+        };
+        const column = document.querySelector("[data-v4-timeline-content-column]");
+        const currentWidth = column ? Math.round(column.getBoundingClientRect().width) : 0;
+        const widthField = unitField({
+          value: savedStyles.contentWidth || null,
+          fallback: { value: currentWidth > 0 ? currentWidth : 1152, unit: "px" },
+          onCommit: (v) => persistStyles({ contentWidth: v })
+        });
+        const widthCell = {
+          field: widthField,
+          el: h(
+            "div",
+            { class: "flex items-center justify-between gap-2 p-2.5" },
+            h("span", { class: "min-w-0 truncate text-ui-sm font-medium text-foreground", title: L.contentWidthDesc }, L.contentWidthName),
+            widthField.el
+          )
+        };
+        const cells = [
+          widthCell,
+          styleCell(L.rowGapName, L.rowGapDesc, "rowGap"),
+          styleCell(L.userLineHeightName, L.userLineHeightDesc, "userLineHeight", { min: 1, max: 3, step: 0.05, unit: "x" }),
+          styleCell(L.lineHeightName, L.lineHeightDesc, "lineHeight", { min: 1, max: 3, step: 0.05, unit: "x" }),
+          styleCell(L.listSpacingName, L.listSpacingDesc, "listSpacing"),
+          styleCell(L.listItemSpacingName, L.listItemSpacingDesc, "listItemSpacing"),
+          styleCell(L.quoteCodeSpacingName, L.quoteCodeSpacingDesc, "quoteCodeSpacing")
+        ];
+        paneStyles.append(
+          h(
+            "div",
+            { class: "grid grid-cols-2 gap-2 rounded-xl border border-border p-1.5" },
+            ...cells.map((c) => h("div", { class: "rounded-lg transition-colors hover:bg-surface-hover" }, c.el))
+          ),
+          h(
+            "div",
+            { class: "mt-2 flex justify-end" },
+            btnSecondary(L.resetDefault, () => {
+              for (const c of cells) c.field.reset();
+              persistStyles({ rowGap: null, listSpacing: null, listItemSpacing: null, quoteCodeSpacing: null, lineHeight: null, userLineHeight: null, contentWidth: null });
+            }, "h-7 px-3 text-ui-xs")
+          )
+        );
+        const agentsArea = h("textarea", {
+          class: "zcodepro-textarea",
+          placeholder: L.agentsPlaceholder,
+          spellcheck: "false"
+        });
+        const agentsSaveBtn = btnPrimary(L.agentsSave, () => {
+          void saveAgents();
+        }, "h-7 px-3 text-ui-xs");
+        let agentsOriginal = "";
+        let agentsFailed = false;
+        if (agentsRes.ok) {
+          agentsOriginal = agentsRes.content || "";
+          agentsArea.value = agentsOriginal;
+        } else {
+          agentsFailed = true;
+          agentsArea.disabled = true;
+        }
+        agentsSaveBtn.disabled = true;
+        agentsArea.addEventListener("input", () => {
+          agentsSaveBtn.disabled = agentsFailed || agentsArea.value === agentsOriginal;
+        });
+        const saveAgents = async () => {
+          agentsSaveBtn.disabled = true;
+          const res = await rpc("/agents", { method: "POST", body: { content: agentsArea.value } });
+          if (res.ok) {
+            agentsOriginal = typeof res.content === "string" ? res.content : agentsArea.value;
+            showToast(L.agentsSaved);
+          } else {
+            showToast(L.failed + ": " + (res.error || ""), "error");
+            agentsSaveBtn.disabled = false;
+          }
+        };
+        paneAgents.append(
+          h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.agentsDesc),
+          ...agentsFailed ? [h("p", { class: "mt-2 text-ui-sm text-destructive" }, L.agentsLoadFailed + ": " + (agentsRes.error || ""))] : [],
+          h("div", { class: "mt-3" }, agentsArea),
+          h("div", { class: "mt-3 flex justify-end" }, agentsSaveBtn)
+        );
+        body.append(
+          statusLine,
+          tablist,
+          paneFeatures,
+          paneStyles,
+          paneAgents
+        );
+        body.append(
+          dialogFooter(btnPrimary(L.close, () => close()))
+        );
+      }
+    });
+  }
+
+  // src/inject/features/settings-nav.js
+  var SECTION_LABELS = [
+    "\u5E38\u89C4",
+    "\u5916\u89C2",
+    "\u6A21\u578B\u8BBE\u7F6E",
+    "\u952E\u76D8\u5FEB\u6377\u952E",
+    "\u4F7F\u7528\u7EDF\u8BA1",
+    "General",
+    "Appearance",
+    "Model Provider",
+    "Keyboard Shortcuts",
+    "Usage stats"
+  ];
+  function handleSettingsNav() {
+    let nav = null;
+    for (const btn of document.querySelectorAll("nav button[aria-label]")) {
+      if (SECTION_LABELS.includes((btn.getAttribute("aria-label") || "").trim())) {
+        nav = btn.closest("nav");
+        break;
+      }
+    }
+    if (!nav || !nav.isConnected) return;
+    if (nav.querySelector('[data-zcodepro-item="settings-nav"]')) return;
+    const model = nav.querySelector("button.border-dashed") || nav.querySelector("button[aria-label]");
+    if (!model) return;
+    const item = model.cloneNode(true);
+    item.removeAttribute("data-testid");
+    item.removeAttribute("aria-current");
+    item.removeAttribute("aria-describedby");
+    item.setAttribute("data-zcodepro-item", "settings-nav");
+    const oldIcon = item.querySelector("svg");
+    if (oldIcon) {
+      const ns = "http://www.w3.org/2000/svg";
+      const icon = document.createElementNS(ns, "svg");
+      for (const attr of ["class", "width", "height", "viewBox", "fill", "stroke", "stroke-width", "stroke-linecap", "stroke-linejoin"]) {
+        const v = oldIcon.getAttribute(attr);
+        if (v !== null) icon.setAttribute(attr, v);
+      }
+      const gear = document.createElementNS(ns, "path");
+      gear.setAttribute("d", "M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z");
+      const circle = document.createElementNS(ns, "circle");
+      circle.setAttribute("cx", "12");
+      circle.setAttribute("cy", "12");
+      circle.setAttribute("r", "3");
+      icon.append(gear, circle);
+      oldIcon.replaceWith(icon);
+    }
+    const modelLabel = (model.getAttribute("aria-label") || "").trim();
+    let labelSpan = null;
+    for (const span of item.querySelectorAll("span")) {
+      if (!span.querySelector("svg") && span.textContent.trim() === modelLabel) labelSpan = span;
+    }
+    if (labelSpan) labelSpan.textContent = "ZCode Pro";
+    item.setAttribute("aria-label", "ZCode Pro");
+    item.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openSettingsDialog();
+    });
+    const onboarding = nav.querySelector("button.border-dashed");
+    if (onboarding) onboarding.before(item);
+    else nav.append(item);
+  }
+  function startSettingsNavWatcher() {
+    let scheduled = false;
+    const tryInject = () => {
+      try {
+        handleSettingsNav();
+      } catch {
+      }
+    };
+    const schedule = () => {
+      if (scheduled) return;
+      scheduled = true;
+      requestAnimationFrame(() => {
+        scheduled = false;
+        tryInject();
+      });
+    };
+    const observer2 = new MutationObserver(schedule);
+    observer2.observe(document.documentElement, { childList: true, subtree: true });
+    tryInject();
+  }
+
   // src/inject/features/task-order.js
   var installed = false;
   var dragKey = null;
@@ -1471,10 +1592,6 @@
       ensureStyle();
       observeRadixPopups((content) => {
         try {
-          handleHeaderMenu(content);
-        } catch {
-        }
-        try {
           handleProjectMenu(content);
         } catch {
         }
@@ -1493,6 +1610,10 @@
       }
       try {
         startStyleAdjustments();
+      } catch {
+      }
+      try {
+        startSettingsNavWatcher();
       } catch {
       }
     };
