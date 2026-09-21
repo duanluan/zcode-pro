@@ -1,9 +1,8 @@
-# ZCode Pro (zcode-pro)
+# ZCode Pro
 
 ZCode 桌面版界面增强工具。通过「ZCode Pro」启动 ZCode 时自动启用增强；不修改官方应用文件，退出后 ZCode 恢复原状。
 
 ![平台](https://img.shields.io/badge/platform-win%20%7C%20mac%20%7C%20linux%20%7C%20AUR-blue)
-![依赖](https://img.shields.io/badge/runtime-零依赖（复用%20ZCode%20内置%20Node）-green)
 
 > **打开设置：启动 ZCode Pro 后，右键点击 ZCode 侧边栏底部的设置按钮（齿轮）即可打开 ZCode Pro 设置窗口。**
 
@@ -64,18 +63,21 @@ ZCode 桌面版界面增强工具。通过「ZCode Pro」启动 ZCode 时自动�
 
 安装后，通过应用菜单 / 开始菜单中的「ZCode Pro」快捷方式或终端命令 `zcode-pro` 启动 ZCode，增强在该方式下自动生效；使用原有 ZCode 入口启动时不加载增强。启动后右键点击 ZCode 侧边栏底部的设置按钮即可打开 ZCode Pro 设置窗口。
 
-### Linux / macOS（一键脚本）
+### Linux / macOS
+
+- 安装至 `~/.local`，可通过 `PREFIX=` 指定其他位置；
+- Linux 会注册应用菜单快捷方式「ZCode Pro」（图标复用已安装的 ZCode）；
+- 卸载：`./scripts/install.sh --uninstall`。
 
 ```bash
 git clone https://github.com/duanluan/zcode-pro.git
 cd zcode-pro && ./scripts/install.sh
 ```
 
-- 安装至 `~/.local`，可通过 `PREFIX=` 指定其他位置；
-- Linux 会注册应用菜单快捷方式「ZCode Pro」（图标复用已安装的 ZCode）；
-- 卸载：`./scripts/install.sh --uninstall`。
+### Windows
 
-### Windows（一键脚本）
+- 程序安装至 `%LOCALAPPDATA%\ZCodePro`，快捷方式静默启动，不显示控制台窗口；
+- 卸载：`powershell -ExecutionPolicy Bypass -File scripts\install.ps1 -Uninstall`。
 
 ```powershell
 git clone https://github.com/duanluan/zcode-pro.git
@@ -84,26 +86,26 @@ powershell -ExecutionPolicy Bypass -File scripts\install.ps1          # 开始�
 powershell -ExecutionPolicy Bypass -File scripts\install.ps1 -Desktop # 加桌面快捷方式
 ```
 
-- 程序安装至 `%LOCALAPPDATA%\ZCodePro`，快捷方式静默启动，不显示控制台窗口；
-- 卸载：`powershell -ExecutionPolicy Bypass -File scripts\install.ps1 -Uninstall`。
+### AUR
 
-### AUR（Arch / Manjaro）
+安装 `/usr/bin/zcode-pro` 与系统级应用菜单快捷方式，依赖 AUR 的 [zcode](https://aur.archlinux.org/packages/zcode) 包。
 
 ```bash
+yay -S zcode-pro
+paru -S zcode-pro
+# 手动安装方式
 git clone https://aur.archlinux.org/zcode-pro.git && cd zcode-pro && makepkg -si
 ```
 
-安装 `/usr/bin/zcode-pro` 与系统级应用菜单快捷方式，依赖 AUR 的 `zcode` 包。
-
 ### 手动运行（不安装）
+
+无需单独安装 Node.js：缺少系统 Node 时自动使用 ZCode 内置运行时。
 
 ```bash
 git clone https://github.com/duanluan/zcode-pro.git && cd zcode-pro
 ./bin/zcode-pro            # Linux / macOS（自动探测 /opt/ZCode、/Applications/ZCode.app）
 bin\zcode-pro.cmd          # Windows（自动探测 %LOCALAPPDATA%\Programs\ZCode\ZCode.exe）
 ```
-
-无需单独安装 Node.js：缺少系统 Node 时自动使用 ZCode 内置运行时。
 
 ## 命令行选项
 
