@@ -61,6 +61,12 @@
     featureTaskOrderDesc: "\u8BA9\u7F6E\u9876\u3001\u9879\u76EE\u4E0E\u5206\u7EC4\u4E2D\u7684\u4F1A\u8BDD\u62D6\u52A8\u540E\u8BB0\u4F4F\u987A\u5E8F\uFF0C\u5237\u65B0\u540E\u4FDD\u6301\u3002",
     featureFileActions: "\u6587\u4EF6\u83DC\u5355\u589E\u5F3A",
     featureFileActionsDesc: "\u5728\u4F1A\u8BDD\u4E2D\u6587\u4EF6\u94FE\u63A5\u7684\u53F3\u952E\u83DC\u5355\u91CC\u65B0\u589E\u300C\u9ED8\u8BA4\u5E94\u7528\u6253\u5F00\u300D\u4E0E\u300C\u6253\u5F00\u6240\u5728\u76EE\u5F55\u300D\u3002",
+    featureImageCopy: "\u56FE\u7247\u53F3\u952E\u590D\u5236",
+    featureImageCopyDesc: "\u53F3\u952E\u4F1A\u8BDD\u4E2D\u7684\u56FE\u7247\u6216\u70B9\u51FB\u653E\u5927\u7684\u9884\u89C8\u56FE\uFF0C\u53EF\u5C06\u56FE\u7247\u590D\u5236\u5230\u526A\u8D34\u677F\u3002",
+    imageCopy: "\u590D\u5236\u56FE\u7247",
+    imageCopied: "\u56FE\u7247\u5DF2\u590D\u5236\u5230\u526A\u8D34\u677F",
+    imageCopyFailed: "\u590D\u5236\u56FE\u7247\u5931\u8D25",
+    openFolderItem: "\u6253\u5F00\u6587\u4EF6\u5939",
     fileOpenDefault: "\u9ED8\u8BA4\u5E94\u7528\u6253\u5F00",
     fileReveal: "\u6253\u5F00\u6240\u5728\u76EE\u5F55",
     featurePinnedExpand: "\u7F6E\u9876\u4F1A\u8BDD\u4FDD\u6301\u9879\u76EE\u6298\u53E0\uFF08\u5B9E\u9A8C\u6027\uFF09",
@@ -80,8 +86,10 @@
     aliasCleared: "\u5DF2\u6062\u590D\u771F\u5B9E\u540D\u79F0",
     aliasHint: "\u78C1\u76D8\u76EE\u5F55\u540D\u4E0D\u53D8\uFF1A\u7EC8\u7AEF\u3001\u6587\u4EF6\u7BA1\u7406\u5668\u4E0E\u5176\u4ED6\u5F15\u7528\u771F\u5B9E\u8DEF\u5F84\u7684\u754C\u9762\u4ECD\u663E\u793A\u539F\u540D\u3002",
     taskOrderSaved: "\u987A\u5E8F\u5DF2\u66F4\u65B0",
-    plugTitle: "\u63D2\u4EF6\u63A8\u8350\uFF1Aduanluan-zcode-plugins",
-    plugDesc: "\u4E3A ZCode \u6253\u9020\u7684\u63D2\u4EF6\u5408\u96C6\uFF1AAI \u4EE3\u7801\u8BC4\u5BA1\u3001\u8BF7\u6C42\u538B\u7F29\u8282\u7701 token\u3001\u547D\u4EE4\u8F93\u51FA\u538B\u7F29\u3002\u70B9\u51FB\u8BBF\u95EE GitHub \u4ED3\u5E93\u3002",
+    plugTitle: "\u63D2\u4EF6\u63A8\u8350\uFF1Azcode-plugins",
+    plugDesc: "AI \u4EE3\u7801\u8BC4\u5BA1\u4E0E token \u538B\u7F29",
+    qqGroupTitle: "QQ \u7FA4\uFF1A428403354",
+    qqGroupDesc: "\u95EE\u9898\u53CD\u9988\u4E0E\u4EA4\u6D41",
     browse: "\u6D4F\u89C8",
     relocateItem: "\u5207\u6362\u6587\u4EF6\u5939",
     relocateTitle: "\u5207\u6362\u6587\u4EF6\u5939",
@@ -132,6 +140,12 @@
     featureTaskOrderDesc: "Makes session drags in Pinned, Projects and Groups persist across refreshes.",
     featureFileActions: "File menu actions",
     featureFileActionsDesc: 'Adds "Open with default app" and "Reveal in file manager" to the right-click menu of file links in chat.',
+    featureImageCopy: "Image right-click copy",
+    featureImageCopyDesc: "Right-click an image in chat or the enlarged preview to copy it to the clipboard.",
+    imageCopy: "Copy image",
+    imageCopied: "Image copied to the clipboard.",
+    imageCopyFailed: "Failed to copy the image.",
+    openFolderItem: "Open folder",
     fileOpenDefault: "Open with default app",
     fileReveal: "Reveal in file manager",
     featurePinnedExpand: "Keep projects collapsed for pinned sessions (experimental)",
@@ -151,8 +165,10 @@
     aliasCleared: "Real name restored.",
     aliasHint: "The directory name on disk is unchanged: terminals, file managers and other path-based UI still show the real name.",
     taskOrderSaved: "Order updated.",
-    plugTitle: "Plugin pick: duanluan-zcode-plugins",
-    plugDesc: "A plugin collection for ZCode: AI code review, request compression to save tokens, and command output compression. Click to visit the GitHub repo.",
+    plugTitle: "Plugin pick: zcode-plugins",
+    plugDesc: "AI code review & token saving",
+    qqGroupTitle: "QQ group: 428403354",
+    qqGroupDesc: "Feedback & discussion",
     browse: "Browse",
     relocateItem: "Switch folder",
     relocateTitle: "Switch folder",
@@ -169,11 +185,21 @@
     failed: "Operation failed",
     retryHint: "Please retry"
   };
+  function isZhLocale() {
+    let pref = null;
+    try {
+      pref = window.localStorage.getItem("zcode-locale-preference");
+    } catch {
+    }
+    if (pref === "zh-CN" || pref === "en-US") return pref === "zh-CN";
+    return /^zh/i.test(navigator.language || "zh-CN");
+  }
   function t() {
-    return /^zh/i.test(navigator.language || "zh-CN") ? zh : en;
+    return isZhLocale() ? zh : en;
   }
   var errEn = {
     "invalid-path": "Invalid project path",
+    "not-found": "The folder does not exist",
     "invalid-request": "Invalid request",
     "invalid-content": "content must be a string",
     "agents-read": "Failed to read AGENTS.md",
@@ -192,7 +218,7 @@
   };
   function errText(res) {
     if (!res) return "";
-    if (!/^zh/i.test(navigator.language || "zh-CN")) {
+    if (!isZhLocale()) {
       const en2 = res.code && errEn[res.code];
       if (en2) return en2;
     }
@@ -246,8 +272,8 @@
     observer2.observe(document.documentElement, { childList: true, subtree: true });
     return observer2;
   }
-  function itemsOf(menuEl) {
-    return [...menuEl.querySelectorAll('[role="menuitem"]')];
+  function itemsOf(menuEl2) {
+    return [...menuEl2.querySelectorAll('[role="menuitem"]')];
   }
   function itemText(item) {
     return (item.textContent || "").trim();
@@ -688,6 +714,11 @@
       background: var(--color-primary, #111);
       cursor: pointer;
     }
+    /* \u56FE\u7247\u53F3\u952E\u83DC\u5355\u9879\u60AC\u505C\u9AD8\u4EAE\uFF1A\u540C\u4E0A\u4E0D\u4F9D\u8D56\u5E94\u7528 Tailwind hover \u7C7B\u662F\u5426\u5B58\u5728 */
+    .zcodepro-imgmenu-item { transition: background-color 0.12s ease; }
+    .zcodepro-imgmenu-item:hover {
+      background-color: var(--color-accent, color-mix(in oklab, var(--color-foreground, #888) 10%, transparent));
+    }
   `));
   }
 
@@ -1015,6 +1046,48 @@
     });
   }
 
+  // src/inject/features/open-folder.js
+  function appendOpenFolderItem(menu, anchorItem, project) {
+    if (menu.querySelector('[data-zcodepro-item="open-folder"]')) return;
+    const L = t();
+    const item = anchorItem.cloneNode(true);
+    item.removeAttribute("data-testid");
+    item.removeAttribute("data-highlighted");
+    item.setAttribute("data-zcodepro-item", "open-folder");
+    for (const child of [...item.childNodes]) child.remove();
+    const origIcon = anchorItem.querySelector("svg");
+    const iconClass = origIcon ? origIcon.getAttribute("class") : "h-3.5 w-3.5";
+    item.append(hFolderIcon(iconClass), document.createTextNode(L.openFolderItem));
+    item.addEventListener("mouseenter", () => {
+      for (const el of menu.querySelectorAll('[role="menuitem"]')) el.removeAttribute("data-highlighted");
+      item.setAttribute("data-highlighted", "");
+    });
+    item.addEventListener("mouseleave", () => item.removeAttribute("data-highlighted"));
+    item.addEventListener("click", () => {
+      closeRadixMenu(menu);
+      try {
+        void rpc("/open-folder", { method: "POST", body: { path: project.path } });
+      } catch {
+      }
+    });
+    anchorItem.before(item);
+  }
+  function hFolderIcon(cls) {
+    const ns = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor");
+    svg.setAttribute("stroke-width", "2");
+    svg.setAttribute("stroke-linecap", "round");
+    svg.setAttribute("stroke-linejoin", "round");
+    svg.setAttribute("class", cls);
+    const p = document.createElementNS(ns, "path");
+    p.setAttribute("d", "M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 0-1.69.9l-.58.87A2 2 0 0 1 8.93 8H4a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2Z");
+    svg.append(p);
+    return svg;
+  }
+
   // src/inject/features/project-menu.js
   var REMOVE_TEXTS = ["\u79FB\u9664", "Remove"];
   function extractPathFromTestId2(testid) {
@@ -1054,6 +1127,7 @@
       if (config.features && config.features.projectRelocate !== false) {
         appendRelocateItem(content, removeItem, project);
       }
+      appendOpenFolderItem(content, removeItem, project);
     })();
   }
 
@@ -1189,6 +1263,212 @@
         }
       });
     })();
+  }
+
+  // src/inject/features/image-menu.js
+  var MIN_SIZE = 48;
+  function copyTargetOf(el, x, y) {
+    const sizeOk = (img) => {
+      const r = img.getBoundingClientRect();
+      return Math.min(r.width, r.height) >= MIN_SIZE;
+    };
+    if (el instanceof HTMLImageElement) {
+      if (!el.closest("[data-v4-timeline-content-column]") && !el.closest('[role="dialog"]')) return null;
+      return sizeOk(el) ? el : null;
+    }
+    if (!(el instanceof Element)) return null;
+    const dialog = el.closest('[role="dialog"]');
+    if (!dialog) return null;
+    let best = null;
+    for (const img of dialog.querySelectorAll("img")) {
+      const r = img.getBoundingClientRect();
+      if (x < r.left || x > r.right || y < r.top || y > r.bottom) continue;
+      if (!sizeOk(img)) continue;
+      const area = r.width * r.height;
+      if (!best || area > best.area) best = { img, area };
+    }
+    return best ? best.img : null;
+  }
+  var menuEl = null;
+  var hideMenu = () => {
+  };
+  function showMenu(x, y, img) {
+    hideMenu();
+    const L = t();
+    const preBlob = fetchImageBlob(img);
+    menuEl = h(
+      "div",
+      {
+        role: "menu",
+        class: "fixed rounded-xl border border-border bg-menu p-1 text-ui-sm text-foreground",
+        style: "z-index:2147483000;min-width:9rem;box-shadow:0 10px 30px rgba(0,0,0,.18);pointer-events:auto"
+      },
+      h(
+        "div",
+        {
+          role: "menuitem",
+          tabindex: "0",
+          class: "zcodepro-imgmenu-item flex cursor-pointer select-none items-center gap-2 rounded-lg px-2.5 py-1.5",
+          onClick: () => {
+            hideMenu();
+            void copyImage(img, preBlob);
+          }
+        },
+        hCopyIcon(),
+        document.createTextNode(L.imageCopy)
+      )
+    );
+    document.body.append(menuEl);
+    const r = menuEl.getBoundingClientRect();
+    menuEl.style.left = Math.max(8, Math.min(x, window.innerWidth - r.width - 8)) + "px";
+    menuEl.style.top = Math.max(8, Math.min(y, window.innerHeight - r.height - 8)) + "px";
+    const onPointerDown = (e) => {
+      if (menuEl && menuEl.contains(e.target)) {
+        e.stopPropagation();
+        return;
+      }
+      e.preventDefault();
+      e.stopPropagation();
+      hideMenu();
+    };
+    const onKeyDown = (e) => {
+      if (e.key !== "Escape") return;
+      e.preventDefault();
+      hideMenu();
+    };
+    hideMenu = () => {
+      if (menuEl) {
+        menuEl.remove();
+        menuEl = null;
+      }
+      window.removeEventListener("blur", hideMenu);
+      window.removeEventListener("resize", hideMenu);
+      document.removeEventListener("scroll", hideMenu, true);
+      document.removeEventListener("pointerdown", onPointerDown, true);
+      document.removeEventListener("keydown", onKeyDown, true);
+      hideMenu = () => {
+      };
+    };
+    window.addEventListener("blur", hideMenu);
+    window.addEventListener("resize", hideMenu);
+    document.addEventListener("scroll", hideMenu, true);
+    document.addEventListener("pointerdown", onPointerDown, true);
+    document.addEventListener("keydown", onKeyDown, true);
+  }
+  async function fetchImageBlob(img) {
+    const src = img.currentSrc || img.src || "";
+    if (src) {
+      try {
+        const resp = await fetch(src);
+        if (resp.ok) {
+          const blob = await resp.blob();
+          if (/^image\//.test(blob.type)) return blob;
+        }
+      } catch {
+      }
+    }
+    return await fromCanvas(img);
+  }
+  async function copyImage(img, preBlob) {
+    const L = t();
+    try {
+      let blob = await (preBlob || fetchImageBlob(img));
+      if (!blob) throw new Error("empty image");
+      if (blob.type !== "image/png") blob = await toPng(blob);
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+      showToast(L.imageCopied);
+    } catch {
+      if (copyViaSelection(img)) showToast(L.imageCopied);
+      else showToast(L.imageCopyFailed, "error");
+    }
+  }
+  function copyViaSelection(img) {
+    try {
+      const prevSelect = img.style.userSelect;
+      img.style.userSelect = "text";
+      const range = document.createRange();
+      range.selectNode(img);
+      const sel = window.getSelection();
+      const saved = sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
+      sel.removeAllRanges();
+      sel.addRange(range);
+      const ok = document.execCommand("copy");
+      sel.removeAllRanges();
+      if (saved) sel.addRange(saved);
+      img.style.userSelect = prevSelect;
+      return ok;
+    } catch {
+      return false;
+    }
+  }
+  function fromCanvas(img) {
+    return new Promise((resolve) => {
+      try {
+        const c = document.createElement("canvas");
+        c.width = img.naturalWidth || 0;
+        c.height = img.naturalHeight || 0;
+        if (!c.width || !c.height) {
+          resolve(null);
+          return;
+        }
+        c.getContext("2d").drawImage(img, 0, 0);
+        c.toBlob((b) => resolve(b), "image/png");
+      } catch {
+        resolve(null);
+      }
+    });
+  }
+  async function toPng(blob) {
+    const bmp = await createImageBitmap(blob);
+    const c = document.createElement("canvas");
+    c.width = bmp.width;
+    c.height = bmp.height;
+    c.getContext("2d").drawImage(bmp, 0, 0);
+    const png = await new Promise((resolve) => c.toBlob(resolve, "image/png"));
+    if (!png) throw new Error("png convert failed");
+    return png;
+  }
+  function hCopyIcon() {
+    const ns = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor");
+    svg.setAttribute("stroke-width", "2");
+    svg.setAttribute("stroke-linecap", "round");
+    svg.setAttribute("stroke-linejoin", "round");
+    svg.setAttribute("class", "size-4 shrink-0 text-foreground-subtle");
+    const rect = document.createElementNS(ns, "rect");
+    rect.setAttribute("width", "14");
+    rect.setAttribute("height", "14");
+    rect.setAttribute("x", "8");
+    rect.setAttribute("y", "8");
+    rect.setAttribute("rx", "2");
+    rect.setAttribute("ry", "2");
+    svg.append(rect);
+    const p = document.createElementNS(ns, "path");
+    p.setAttribute("d", "M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2");
+    svg.append(p);
+    return svg;
+  }
+  function startImageMenu() {
+    if (typeof window === "undefined") return;
+    if (typeof navigator.clipboard?.write !== "function" || typeof window.ClipboardItem === "undefined") return;
+    let enabled2 = true;
+    const refresh = () => {
+      void getConfig().then((c) => {
+        enabled2 = !(c.features && c.features.imageCopy === false);
+      });
+    };
+    refresh();
+    document.addEventListener("contextmenu", (e) => {
+      if (e.defaultPrevented) return;
+      const img = copyTargetOf(e.target, e.clientX, e.clientY);
+      if (!img) return;
+      e.preventDefault();
+      if (enabled2) showMenu(e.clientX, e.clientY, img);
+      refresh();
+    }, true);
   }
 
   // src/inject/features/styles.js
@@ -1332,6 +1612,11 @@
               if (await setFeature("fileActions", next)) f.fileActions = next;
               refreshRows();
             }),
+            settingRow(L.featureImageCopy, L.featureImageCopyDesc, f.imageCopy !== false, async () => {
+              const next = !(f.imageCopy !== false);
+              if (await setFeature("imageCopy", next)) f.imageCopy = next;
+              refreshRows();
+            }),
             settingRow(L.featurePinnedExpand, L.featurePinnedExpandDesc, f.pinnedKeepCollapsed !== false, async () => {
               const next = !(f.pinnedKeepCollapsed !== false);
               if (await setFeature("pinnedKeepCollapsed", next)) f.pinnedKeepCollapsed = next;
@@ -1340,41 +1625,50 @@
           );
         };
         refreshRows();
-        let pluginCard = null;
+        let recCards = null;
         if (typeof window !== "undefined" && typeof window.zcode?.openExternal === "function") {
           const ns = "http://www.w3.org/2000/svg";
-          const icon = h("svg", {
-            viewBox: "0 0 24 24",
-            fill: "none",
-            stroke: "currentColor",
-            "stroke-width": "2",
-            "stroke-linecap": "round",
-            "stroke-linejoin": "round",
-            class: "size-4 shrink-0 text-foreground-subtle"
-          });
-          for (const d of ["M15 3h6v6", "M10 14 21 3", "M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"]) {
-            const p2 = document.createElementNS(ns, "path");
-            p2.setAttribute("d", d);
-            icon.append(p2);
-          }
-          pluginCard = h(
+          const extIcon = () => {
+            const icon = h("svg", {
+              viewBox: "0 0 24 24",
+              fill: "none",
+              stroke: "currentColor",
+              "stroke-width": "2",
+              "stroke-linecap": "round",
+              "stroke-linejoin": "round",
+              class: "size-4 shrink-0 text-foreground-subtle"
+            });
+            for (const d of ["M15 3h6v6", "M10 14 21 3", "M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"]) {
+              const p2 = document.createElementNS(ns, "path");
+              p2.setAttribute("d", d);
+              icon.append(p2);
+            }
+            return icon;
+          };
+          const recCard = (title, desc, url) => h(
             "div",
             {
-              class: "mt-3 flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-border p-3 transition-colors hover:bg-surface-hover",
+              class: "flex cursor-pointer items-center justify-between gap-2 rounded-xl border border-border p-3 transition-colors hover:bg-surface-hover",
               onClick: () => {
                 try {
-                  void window.zcode.openExternal("https://github.com/duanluan/zcode-plugins");
+                  void window.zcode.openExternal(url);
                 } catch {
                 }
               }
             },
             h(
               "div",
-              { class: "min-w-0 flex-1" },
-              h("div", { class: "text-ui-sm font-medium text-foreground" }, L.plugTitle),
-              h("div", { class: "mt-0.5 text-ui-xs/relaxed text-foreground-subtle" }, L.plugDesc)
+              { class: "min-w-0" },
+              h("div", { class: "truncate text-ui-sm font-medium text-foreground" }, title),
+              h("div", { class: "mt-0.5 truncate text-ui-xs/relaxed text-foreground-subtle" }, desc)
             ),
-            icon
+            extIcon()
+          );
+          recCards = h(
+            "div",
+            { class: "mt-3 grid grid-cols-2 gap-2" },
+            recCard(L.plugTitle, L.plugDesc, "https://github.com/duanluan/zcode-plugins"),
+            recCard(L.qqGroupTitle, L.qqGroupDesc, "https://qm.qq.com/q/WXuISJK3ug")
           );
         }
         let activeTab = "features";
@@ -1382,7 +1676,7 @@
           "div",
           { role: "tabpanel", class: "mt-4" },
           h("div", {}, rows),
-          ...pluginCard ? [pluginCard] : []
+          ...recCards ? [recCards] : []
         );
         const paneStyles = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
         const paneAgents = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
@@ -1710,6 +2004,10 @@
       }
       try {
         startTaskOrderWatcher();
+      } catch {
+      }
+      try {
+        startImageMenu();
       } catch {
       }
       try {

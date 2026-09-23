@@ -13,7 +13,7 @@ import { taskIndexPath, probeTaskIndexWritable, remapTaskIndexPaths, taskIndexDr
 import { pickFolderSystem } from './pickFolder.mjs';
 import { reorderWorkspaceTasks, reorderGroupMembers } from './taskOrder.mjs';
 
-const VERSION = '0.6.1';
+const VERSION = '0.7.0';
 
 // 全局提示词固定在用户主目录：官方加载器按 HOME/USERPROFILE 拼 .zcode/AGENTS.md，
 // 不读 ZCODE_DATA_BASE_DIR（数据根迁走时全局指令仍在原位）。
@@ -183,6 +183,12 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         json(res, ...await revealInFileManager(body?.path));
         return;
       }
+      // 在系统文件管理器中打开文件夹（项目「更多」菜单的「打开文件夹」）
+      if (req.method === 'POST' && url.pathname === '/open-folder') {
+        const body = await readBody(req);
+        json(res, ...await openFolder(body?.path));
+        return;
+      }
       if (req.method === 'POST' && url.pathname === '/agents') {
         const body = await readBody(req);
         json(res, ...writeAgents(body, agentsFile));
@@ -314,6 +320,34 @@ export function revealInFileManager(rawPath) {
       // 无 freedesktop 文件管理器服务时退而打开所在目录
       execFile('xdg-open', [dirname(p)], { timeout: 5000 }, (err2) => resolveReveal(err2 ? [500, { ok: false, error: err2.message }] : [200, { ok: true }]));
     });
+  });
+}
+
+// 在系统文件管理器中打开文件夹本身（与 revealInFileManager 的定位不同）。
+// macOS 用 open；Windows 用 explorer；Linux 用 xdg-open。导出以便测试脚本直接驱动。
+export function openFolder(rawPath) {
+  return new Promise((resolveOpen) => {
+    const p = typeof rawPath === 'string' ? rawPath.trim() : '';
+    if (!p || !isAbsolute(p)) {
+      resolveOpen([400, { ok: false, code: 'invalid-path', error: '无效的路径' }]);
+      return;
+    }
+    try {
+      if (!existsSync(p) || !statSync(p).isDirectory()) {
+        resolveOpen([400, { ok: false, code: 'not-found', error: '文件夹不存在' }]);
+        return;
+      }
+    } catch (err) {
+      resolveOpen([500, { ok: false, error: err?.message || String(err) }]);
+      return;
+    }
+    const done = (err) => resolveOpen(err ? [500, { ok: false, error: err.message }] : [200, { ok: true }]);
+    if (process.platform === 'darwin') execFile('open', [p], { timeout: 5000 }, done);
+    else if (process.platform === 'win32') {
+      const child = spawn('explorer.exe', [p], { detached: true, stdio: 'ignore' });
+      child.on('error', done);
+      child.on('close', () => done(null));
+    } else execFile('xdg-open', [p], { timeout: 5000 }, done);
   });
 }
 

@@ -3,6 +3,7 @@
 import { observeRadixPopups } from './core.js';
 import { handleProjectMenu } from './features/project-menu.js';
 import { handleFileMenu } from './features/file-menu.js';
+import { startImageMenu } from './features/image-menu.js';
 import { startSettingsEntry } from './features/settings-entry.js';
 import { startAliasWatcher } from './features/alias.js';
 import { startTaskOrderWatcher } from './features/task-order.js';
@@ -25,6 +26,7 @@ import { ensureStyle } from './ui.js';
     });
     try { void startAliasWatcher(); } catch { /* ignore */ }
     try { startTaskOrderWatcher(); } catch { /* ignore */ }
+    try { startImageMenu(); } catch { /* ignore */ }
     try { startPinnedExpandSuppression(); } catch { /* ignore */ }
     try { startStyleAdjustments(); } catch { /* ignore */ }
     try { startSettingsEntry(); } catch { /* ignore */ }

@@ -64,6 +64,12 @@ const zh = {
   featureTaskOrderDesc: '让置顶、项目与分组中的会话拖动后记住顺序，刷新后保持。',
   featureFileActions: '文件菜单增强',
   featureFileActionsDesc: '在会话中文件链接的右键菜单里新增「默认应用打开」与「打开所在目录」。',
+  featureImageCopy: '图片右键复制',
+  featureImageCopyDesc: '右键会话中的图片或点击放大的预览图，可将图片复制到剪贴板。',
+  imageCopy: '复制图片',
+  imageCopied: '图片已复制到剪贴板',
+  imageCopyFailed: '复制图片失败',
+  openFolderItem: '打开文件夹',
   fileOpenDefault: '默认应用打开',
   fileReveal: '打开所在目录',
   featurePinnedExpand: '置顶会话保持项目折叠（实验性）',
@@ -83,8 +89,10 @@ const zh = {
   aliasCleared: '已恢复真实名称',
   aliasHint: '磁盘目录名不变：终端、文件管理器与其他引用真实路径的界面仍显示原名。',
   taskOrderSaved: '顺序已更新',
-  plugTitle: '插件推荐：duanluan-zcode-plugins',
-  plugDesc: '为 ZCode 打造的插件合集：AI 代码评审、请求压缩节省 token、命令输出压缩。点击访问 GitHub 仓库。',
+  plugTitle: '插件推荐：zcode-plugins',
+  plugDesc: 'AI 代码评审与 token 压缩',
+  qqGroupTitle: 'QQ 群：428403354',
+  qqGroupDesc: '问题反馈与交流',
   browse: '浏览',
   relocateItem: '切换文件夹',
   relocateTitle: '切换文件夹',
@@ -136,6 +144,12 @@ const en = {
   featureTaskOrderDesc: 'Makes session drags in Pinned, Projects and Groups persist across refreshes.',
   featureFileActions: 'File menu actions',
   featureFileActionsDesc: 'Adds "Open with default app" and "Reveal in file manager" to the right-click menu of file links in chat.',
+  featureImageCopy: 'Image right-click copy',
+  featureImageCopyDesc: 'Right-click an image in chat or the enlarged preview to copy it to the clipboard.',
+  imageCopy: 'Copy image',
+  imageCopied: 'Image copied to the clipboard.',
+  imageCopyFailed: 'Failed to copy the image.',
+  openFolderItem: 'Open folder',
   fileOpenDefault: 'Open with default app',
   fileReveal: 'Reveal in file manager',
   featurePinnedExpand: 'Keep projects collapsed for pinned sessions (experimental)',
@@ -155,8 +169,10 @@ const en = {
   aliasCleared: 'Real name restored.',
   aliasHint: 'The directory name on disk is unchanged: terminals, file managers and other path-based UI still show the real name.',
   taskOrderSaved: 'Order updated.',
-  plugTitle: 'Plugin pick: duanluan-zcode-plugins',
-  plugDesc: 'A plugin collection for ZCode: AI code review, request compression to save tokens, and command output compression. Click to visit the GitHub repo.',
+  plugTitle: 'Plugin pick: zcode-plugins',
+  plugDesc: 'AI code review & token saving',
+  qqGroupTitle: 'QQ group: 428403354',
+  qqGroupDesc: 'Feedback & discussion',
   browse: 'Browse',
   relocateItem: 'Switch folder',
   relocateTitle: 'Switch folder',
@@ -174,14 +190,24 @@ const en = {
   retryHint: 'Please retry',
 };
 
+// 界面语言：与官方 IntlProvider 的解析一致——先读应用的 localStorage 偏好
+// （zcode-locale-preference：zh-CN/en-US/system），'system' 或读取失败时回退 navigator.language
+export function isZhLocale() {
+  let pref = null;
+  try { pref = window.localStorage.getItem('zcode-locale-preference'); } catch { /* ignore */ }
+  if (pref === 'zh-CN' || pref === 'en-US') return pref === 'zh-CN';
+  return /^zh/i.test(navigator.language || 'zh-CN');
+}
+
 export function t() {
-  return /^zh/i.test(navigator.language || 'zh-CN') ? zh : en;
+  return isZhLocale() ? zh : en;
 }
 
 // helper 错误消息的英文映射（code → 文案）：helper 原文为中文，非中文界面按 code 显示英文，
 // 无映射或中文界面回退 helper 原文
 const errEn = {
   'invalid-path': 'Invalid project path',
+  'not-found': 'The folder does not exist',
   'invalid-request': 'Invalid request',
   'invalid-content': 'content must be a string',
   'agents-read': 'Failed to read AGENTS.md',
@@ -201,7 +227,7 @@ const errEn = {
 
 export function errText(res) {
   if (!res) return '';
-  if (!/^zh/i.test(navigator.language || 'zh-CN')) {
+  if (!isZhLocale()) {
     const en = res.code && errEn[res.code];
     if (en) return en;
   }

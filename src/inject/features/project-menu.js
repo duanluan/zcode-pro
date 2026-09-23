@@ -4,6 +4,7 @@
 import { rpc, getConfig, itemsOf, itemText } from '../core.js';
 import { appendAliasItem } from './alias.js';
 import { appendRelocateItem } from './relocate-dialog.js';
+import { appendOpenFolderItem } from './open-folder.js';
 
 const REMOVE_TEXTS = ['移除', 'Remove'];
 
@@ -47,9 +48,10 @@ export function handleProjectMenu(content) {
     const project = await resolveProjectPath(removeItem);
     if (!project) return;
     appendAliasItem(content, removeItem, project);
-    // 菜单顺序：自定义别名 → 切换文件夹 → 移除（均插在「移除」之前，按调用顺序排列）
+    // 菜单顺序：自定义别名 → 切换文件夹 → 打开文件夹 → 移除（均插在「移除」之前，按调用顺序排列）
     if (config.features && config.features.projectRelocate !== false) {
       appendRelocateItem(content, removeItem, project);
     }
+    appendOpenFolderItem(content, removeItem, project);
   })();
 }

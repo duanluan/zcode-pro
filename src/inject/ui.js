@@ -410,5 +410,10 @@ export function ensureStyle() {
       background: var(--color-primary, #111);
       cursor: pointer;
     }
+    /* 图片右键菜单项悬停高亮：同上不依赖应用 Tailwind hover 类是否存在 */
+    .zcodepro-imgmenu-item { transition: background-color 0.12s ease; }
+    .zcodepro-imgmenu-item:hover {
+      background-color: var(--color-accent, color-mix(in oklab, var(--color-foreground, #888) 10%, transparent));
+    }
   `));
 }

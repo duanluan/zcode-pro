@@ -24,6 +24,10 @@ Point a project at another folder to change where it lives:
 - The sidebar project list, open tabs and local task history move together — no sessions are lost;
 - The directory itself is never moved or modified.
 
+### Open project folder
+
+A new "Open folder" action in the project "More" menu opens the project directory in your system file manager.
+
 ### Session ordering
 
 Drag sessions within the pinned, project and group lists to reorder them. The order is remembered and survives refreshes.
@@ -36,6 +40,10 @@ Two new actions in the right-click menu of file links in chat:
 - Reveal in file manager: show the file in your system file manager.
 
 Can be toggled in the settings window.
+
+### Copy image
+
+Right-click an image in chat or the enlarged preview and choose "Copy image" to copy it to the system clipboard. Can be toggled in the settings window.
 
 ### UI style adjustments
 
@@ -135,3 +143,18 @@ zcode-pro [--cdp-port 9333] [--helper-port 47889] [--zcode-path <path>]
 
 - If a task is running inside the project, stop it before relocating the folder;
 - Checkpoint snapshots still reference the original path; restoring an old checkpoint may write back to the original directory.
+
+## Plugin recommendation
+
+[duanluan/zcode-plugins](https://github.com/duanluan/zcode-plugins) is a companion plugin marketplace for ZCode: AI code review, request compression and command-output compression plugins that save tokens. To install: ZCode → Settings → Plugin Manager → "+" (top right) → add the marketplace `duanluan/zcode-plugins`.
+
+## Community
+
+- QQ group: **428403354** ([join](https://qm.qq.com/q/WXuISJK3ug))
+- WeChat group: add **ai4only** on WeChat to be invited
+
+<p>
+  <img src="assets/qq-group.png" width="200" alt="QQ group QR code" />
+  &nbsp;&nbsp;
+  <img src="assets/wechat-ai4only.png" width="200" alt="WeChat QR code (ai4only)" />
+</p>

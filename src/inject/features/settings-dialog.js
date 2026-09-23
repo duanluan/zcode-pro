@@ -66,6 +66,11 @@ export function openSettingsDialog() {
             if (await setFeature('fileActions', next)) f.fileActions = next;
             refreshRows();
           }),
+          settingRow(L.featureImageCopy, L.featureImageCopyDesc, f.imageCopy !== false, async () => {
+            const next = !(f.imageCopy !== false);
+            if (await setFeature('imageCopy', next)) f.imageCopy = next;
+            refreshRows();
+          }),
           settingRow(L.featurePinnedExpand, L.featurePinnedExpandDesc, f.pinnedKeepCollapsed !== false, async () => {
             const next = !(f.pinnedKeepCollapsed !== false);
             if (await setFeature('pinnedKeepCollapsed', next)) f.pinnedKeepCollapsed = next;
@@ -75,35 +80,41 @@ export function openSettingsDialog() {
       };
       refreshRows();
 
-      // 推荐卡片：作者自己的 ZCode 插件合集（依赖宿主 openExternal 打开系统浏览器）
-      let pluginCard = null;
+      // 底部推荐卡片：插件市场 + QQ 交流群，同一行两列（依赖宿主 openExternal 打开系统浏览器）
+      let recCards = null;
       if (typeof window !== 'undefined' && typeof window.zcode?.openExternal === 'function') {
         const ns = 'http://www.w3.org/2000/svg';
-        const icon = h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor',
-          'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round',
-          class: 'size-4 shrink-0 text-foreground-subtle' });
-        for (const d of ['M15 3h6v6', 'M10 14 21 3', 'M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6']) {
-          const p2 = document.createElementNS(ns, 'path');
-          p2.setAttribute('d', d);
-          icon.append(p2);
-        }
-        pluginCard = h('div', {
-          class: 'mt-3 flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-border p-3 transition-colors hover:bg-surface-hover',
+        const extIcon = () => {
+          const icon = h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor',
+            'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round',
+            class: 'size-4 shrink-0 text-foreground-subtle' });
+          for (const d of ['M15 3h6v6', 'M10 14 21 3', 'M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6']) {
+            const p2 = document.createElementNS(ns, 'path');
+            p2.setAttribute('d', d);
+            icon.append(p2);
+          }
+          return icon;
+        };
+        const recCard = (title, desc, url) => h('div', {
+          class: 'flex cursor-pointer items-center justify-between gap-2 rounded-xl border border-border p-3 transition-colors hover:bg-surface-hover',
           onClick: () => {
-            try { void window.zcode.openExternal('https://github.com/duanluan/zcode-plugins'); } catch { /* ignore */ }
+            try { void window.zcode.openExternal(url); } catch { /* ignore */ }
           },
         },
-          h('div', { class: 'min-w-0 flex-1' },
-            h('div', { class: 'text-ui-sm font-medium text-foreground' }, L.plugTitle),
-            h('div', { class: 'mt-0.5 text-ui-xs/relaxed text-foreground-subtle' }, L.plugDesc)),
-          icon);
+          h('div', { class: 'min-w-0' },
+            h('div', { class: 'truncate text-ui-sm font-medium text-foreground' }, title),
+            h('div', { class: 'mt-0.5 truncate text-ui-xs/relaxed text-foreground-subtle' }, desc)),
+          extIcon());
+        recCards = h('div', { class: 'mt-3 grid grid-cols-2 gap-2' },
+          recCard(L.plugTitle, L.plugDesc, 'https://github.com/duanluan/zcode-plugins'),
+          recCard(L.qqGroupTitle, L.qqGroupDesc, 'https://qm.qq.com/q/WXuISJK3ug'));
       }
 
       // 标签页切换：功能（现有内容）/ 样式调整 / 全局提示词
       let activeTab = 'features';
       const paneFeatures = h('div', { role: 'tabpanel', class: 'mt-4' },
         h('div', {}, rows),
-        ...(pluginCard ? [pluginCard] : []),
+        ...(recCards ? [recCards] : []),
       );
       const paneStyles = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
       const paneAgents = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
