@@ -146,7 +146,7 @@ zcode-pro [--cdp-port 9333] [--helper-port 47889] [--zcode-path <路径>]
 
 ## 插件推荐
 
-[duanluan/zcode-plugins](https://github.com/duanluan/zcode-plugins) 是配套的 ZCode 插件市场，提供 AI 代码评审、对话请求压缩、命令输出压缩等插件，可显著节省 token。安装方式：ZCode → 设置 → 插件管理 → 右上角「+」→ 添加插件市场，填写 `duanluan/zcode-plugins`。
+[duanluan/zcode-plugins](https://github.com/duanluan/zcode-plugins) 是配套的 ZCode 插件市场，提供 AI 代码评审、对话请求压缩、命令输出压缩等插件，可显著节省 token。安装方式：ZCode → 插件市场 → 右上角「添加」→ 添加插件市场，填写 `duanluan/zcode-plugins`。
 
 ## 交流与反馈
 

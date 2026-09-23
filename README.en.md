@@ -146,7 +146,7 @@ zcode-pro [--cdp-port 9333] [--helper-port 47889] [--zcode-path <path>]
 
 ## Plugin recommendation
 
-[duanluan/zcode-plugins](https://github.com/duanluan/zcode-plugins) is a companion plugin marketplace for ZCode: AI code review, request compression and command-output compression plugins that save tokens. To install: ZCode → Settings → Plugin Manager → "+" (top right) → add the marketplace `duanluan/zcode-plugins`.
+[duanluan/zcode-plugins](https://github.com/duanluan/zcode-plugins) is a companion plugin marketplace for ZCode: AI code review, request compression and command-output compression plugins that save tokens. To install: ZCode → Plugin Marketplace → "Add" (top right) → Add plugin marketplace, and enter `duanluan/zcode-plugins`.
 
 ## Community
 
