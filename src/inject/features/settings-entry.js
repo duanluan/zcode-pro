@@ -12,7 +12,7 @@ export function handleSettingsContextmenu(e) {
   e.preventDefault();
   e.stopPropagation();
   // 增强弹窗已打开时忽略，避免叠开（openDialog 无防重入）
-  if (document.getElementById('zcodepro-overlay')) return;
+  if (document.querySelector('.zcodepro-overlay')) return;
   openSettingsDialog();
 }
 

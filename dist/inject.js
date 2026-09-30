@@ -1,5 +1,5 @@
 (() => {
-  // src/inject/core.js
+  // ../../../../../../tmp/zp-surgical/src/inject/core.js
   var BOOT = typeof window !== "undefined" ? window.__ZCODEPRO__ || {} : {};
   var HELPER_URL = BOOT.helperUrl || "http://127.0.0.1:47889";
   var TOKEN = BOOT.token || "";
@@ -103,6 +103,9 @@
     relocateNotFound: "\u76EE\u6807\u6587\u4EF6\u5939\u4E0D\u5B58\u5728",
     relocateProtected: "\u62D2\u7EDD\u6307\u5411 ZCode \u6570\u636E\u76EE\u5F55\u5185\u90E8\u8DEF\u5F84",
     relocateIndexBusy: "\u4EFB\u52A1\u7D22\u5F15\u6B63\u88AB ZCode \u5360\u7528\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5\u3002",
+    relocateConfirmTitle: "\u786E\u8BA4\u5207\u6362\u6587\u4EF6\u5939",
+    relocateConfirmDesc: "\u5207\u6362\u540E\u5C06\u81EA\u52A8\u5237\u65B0\u9875\u9762\uFF0C\u804A\u5929\u8F93\u5165\u6846\u4E2D\u672A\u53D1\u9001\u7684\u5185\u5BB9\u4F1A\u4E22\u5931\uFF1B\u4F1A\u8BDD\u8BB0\u5F55\u4E0E\u9879\u76EE\u6587\u4EF6\u4E0D\u53D7\u5F71\u54CD\u3002",
+    relocateConfirmGo: "\u786E\u8BA4\u5207\u6362",
     failed: "\u64CD\u4F5C\u5931\u8D25",
     retryHint: "\u8BF7\u91CD\u8BD5"
   };
@@ -182,6 +185,9 @@
     relocateNotFound: "The target folder does not exist.",
     relocateProtected: "Refusing to point inside the ZCode data directory.",
     relocateIndexBusy: "The task index is busy (ZCode may be writing). Please retry shortly.",
+    relocateConfirmTitle: "Confirm folder switch",
+    relocateConfirmDesc: "The page will refresh after switching, and unsent text in the chat input will be lost. Sessions and project files are not affected.",
+    relocateConfirmGo: "Confirm switch",
     failed: "Operation failed",
     retryHint: "Please retry"
   };
@@ -279,7 +285,7 @@
     return (item.textContent || "").trim();
   }
 
-  // src/inject/ui.js
+  // ../../../../../../tmp/zp-surgical/src/inject/ui.js
   var toastTimer = null;
   function showToast(text, kind = "info") {
     document.getElementById("__zcodepro_toast__")?.remove();
@@ -299,12 +305,14 @@
   var overlayClass = "fixed inset-0 isolate z-50 flex items-center justify-center bg-black/60 supports-backdrop-filter:backdrop-blur-xs duration-100 p-4 platform-linux-desktop:top-12";
   var overlayClassBare = "fixed inset-0 isolate z-50 flex items-center justify-center duration-100 p-4 platform-linux-desktop:top-12";
   var contentClass = "w-full sm:max-w-md rounded-2xl border-none bg-popover/98 p-5 text-ui-base/relaxed text-foreground ring-border shadow-2xl";
+  var dialogStack = [];
   function openDialog({ title, description, onMount, onClose, width = "sm:max-w-md", overlay = "dim", draggable = false, posKey = "", dismissOnOutside = true }) {
     const L = t();
     const prevActive = document.activeElement;
     let cleanupDrag = null;
     const close = () => {
       overlayEl.remove();
+      dialogStack = dialogStack.filter((e) => e !== overlayEl);
       document.removeEventListener("keydown", onKey);
       if (cleanupDrag) cleanupDrag();
       if (prevActive && prevActive.focus) {
@@ -316,25 +324,23 @@
       onClose && onClose();
     };
     const onKey = (e) => {
-      if (e.key === "Escape") {
-        e.stopPropagation();
-        close();
-      }
+      if (e.key !== "Escape") return;
+      e.stopPropagation();
+      if (dialogStack[dialogStack.length - 1] === overlayEl) close();
     };
     const content = h("div", {
       role: "dialog",
       "aria-modal": "true",
-      id: "zcodepro-card",
-      class: contentClass.replace("sm:max-w-md", width)
+      class: contentClass.replace("sm:max-w-md", width) + " zcodepro-card"
     });
     const overlayEl = h("div", {
-      id: "zcodepro-overlay",
       "data-overlay": overlay,
-      class: overlay === "none" ? overlayClassBare : overlayClass,
+      class: (overlay === "none" ? overlayClassBare : overlayClass) + " zcodepro-overlay",
       onMousedown: (e) => {
         if (dismissOnOutside && e.target === overlayEl) close();
       }
     }, content);
+    dialogStack.push(overlayEl);
     if (!dismissOnOutside) {
       overlayEl.style.pointerEvents = "none";
       content.style.pointerEvents = "auto";
@@ -611,9 +617,9 @@
     root.append(h("style", { id: "__zcodepro_style__" }, `
     @keyframes zcodepro-fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
     /* \u5F39\u7A97\u906E\u7F69/\u9762\u677F\u515C\u5E95\uFF1A\u4E0D\u4F9D\u8D56\u5E94\u7528 Tailwind \u7C7B\u662F\u5426\u4ECD\u5B58\u5728\uFF1B\u4E3B\u9898\u8272\u8D70 --color-* \u53D8\u91CF\uFF0C\u7F3A\u5931\u65F6\u56DE\u9000\u5B57\u9762\u91CF */
-    #zcodepro-overlay { background-color: rgba(0, 0, 0, 0.6); }
-    #zcodepro-overlay[data-overlay="none"] { background-color: transparent; }
-    #zcodepro-card {
+    .zcodepro-overlay { background-color: rgba(0, 0, 0, 0.6); }
+    .zcodepro-overlay[data-overlay="none"] { background-color: transparent; }
+    .zcodepro-card {
       background-color: var(--color-popover, #fff);
       border-radius: 16px;
       outline: none;
@@ -722,7 +728,7 @@
   `));
   }
 
-  // src/inject/features/alias.js
+  // ../../../../../../tmp/zp-surgical/src/inject/features/alias.js
   var norm = (p) => String(p || "").replace(/[\\/]+$/, "");
   var basenameOf = (p) => norm(p).split(/[\\/]/).pop() || "";
   function extractPathFromTestId(testid) {
@@ -903,7 +909,7 @@
     });
   }
 
-  // src/inject/features/relocate-dialog.js
+  // ../../../../../../tmp/zp-surgical/src/inject/features/relocate-dialog.js
   function appendRelocateItem(menu, anchorItem, project) {
     if (menu.querySelector('[data-zcodepro-item="relocate"]')) return;
     const L = t();
@@ -993,6 +999,25 @@
             close();
             return;
           }
+          openDialog({
+            title: L.relocateConfirmTitle,
+            description: L.relocateConfirmDesc,
+            width: "sm:max-w-md",
+            onMount: ({ body: body2, close: closeConfirm }) => {
+              body2.append(
+                dialogFooter(
+                  btnSecondary(L.cancel, () => closeConfirm()),
+                  btnPrimary(L.relocateConfirmGo, () => {
+                    closeConfirm();
+                    void runRelocate();
+                  }, "min-w-24")
+                )
+              );
+            }
+          });
+        };
+        const runRelocate = async () => {
+          const newPath = input.value.trim();
           submitting = true;
           submitBtn.setAttribute("disabled", "true");
           errLine.classList.add("hidden");
@@ -1046,7 +1071,7 @@
     });
   }
 
-  // src/inject/features/open-folder.js
+  // ../../../../../../tmp/zp-surgical/src/inject/features/open-folder.js
   function appendOpenFolderItem(menu, anchorItem, project) {
     if (menu.querySelector('[data-zcodepro-item="open-folder"]')) return;
     const L = t();
@@ -1088,7 +1113,7 @@
     return svg;
   }
 
-  // src/inject/features/project-menu.js
+  // ../../../../../../tmp/zp-surgical/src/inject/features/project-menu.js
   var REMOVE_TEXTS = ["\u79FB\u9664", "Remove"];
   function extractPathFromTestId2(testid) {
     let m = testid.match(/[-:=,|](\/.+)$/);
@@ -1131,7 +1156,7 @@
     })();
   }
 
-  // src/inject/features/file-menu.js
+  // ../../../../../../tmp/zp-surgical/src/inject/features/file-menu.js
   var COPY_ABS_TEXTS = ["\u590D\u5236\u7EDD\u5BF9\u8DEF\u5F84", "Copy absolute path"];
   var NO_APPS_TEXTS = ["\u672A\u627E\u5230\u53EF\u7528 App", "No apps found"];
   var ICON_OPEN_DEFAULT = [
@@ -1265,7 +1290,7 @@
     })();
   }
 
-  // src/inject/features/image-menu.js
+  // ../../../../../../tmp/zp-surgical/src/inject/features/image-menu.js
   var MIN_SIZE = 48;
   function copyTargetOf(el, x, y) {
     const sizeOk = (img) => {
@@ -1471,7 +1496,7 @@
     }, true);
   }
 
-  // src/inject/features/styles.js
+  // ../../../../../../tmp/zp-surgical/src/inject/features/styles.js
   var STYLE_DEFAULTS = {
     rowGap: 20,
     // 段落间距：会话内各块之间的垂直间距
@@ -1552,7 +1577,7 @@
     });
   }
 
-  // src/inject/features/settings-dialog.js
+  // ../../../../../../tmp/zp-surgical/src/inject/features/settings-dialog.js
   function openSettingsDialog() {
     ensureStyle();
     const L = t();
@@ -1828,7 +1853,7 @@
     });
   }
 
-  // src/inject/features/settings-entry.js
+  // ../../../../../../tmp/zp-surgical/src/inject/features/settings-entry.js
   var SETTINGS_BUTTON_TESTID = "task-settings-button";
   function handleSettingsContextmenu(e) {
     const target = e.target;
@@ -1836,14 +1861,14 @@
     if (!target.closest(`[data-testid="${SETTINGS_BUTTON_TESTID}"]`)) return;
     e.preventDefault();
     e.stopPropagation();
-    if (document.getElementById("zcodepro-overlay")) return;
+    if (document.querySelector(".zcodepro-overlay")) return;
     openSettingsDialog();
   }
   function startSettingsEntry() {
     document.addEventListener("contextmenu", handleSettingsContextmenu, true);
   }
 
-  // src/inject/features/task-order.js
+  // ../../../../../../tmp/zp-surgical/src/inject/features/task-order.js
   var installed = false;
   var dragKey = null;
   function startTaskOrderWatcher() {
@@ -1906,7 +1931,7 @@
     }
   }
 
-  // src/inject/features/pinned-expand.js
+  // ../../../../../../tmp/zp-surgical/src/inject/features/pinned-expand.js
   var installed2 = false;
   var keepCollapsed = false;
   async function refreshConfig() {
@@ -1981,7 +2006,7 @@
     return String(s).replace(/(["\\\]])/g, "\\$1");
   }
 
-  // src/inject/index.js
+  // ../../../../../../tmp/zp-surgical/src/inject/index.js
   (function zcodeproInject() {
     if (typeof window === "undefined") return;
     if (window.__zcodeproInjected) return;

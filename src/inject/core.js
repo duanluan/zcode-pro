@@ -106,6 +106,9 @@ const zh = {
   relocateNotFound: '目标文件夹不存在',
   relocateProtected: '拒绝指向 ZCode 数据目录内部路径',
   relocateIndexBusy: '任务索引正被 ZCode 占用，请稍后重试。',
+  relocateConfirmTitle: '确认切换文件夹',
+  relocateConfirmDesc: '切换后将自动刷新页面，聊天输入框中未发送的内容会丢失；会话记录与项目文件不受影响。',
+  relocateConfirmGo: '确认切换',
   failed: '操作失败',
   retryHint: '请重试',
 };
@@ -186,6 +189,9 @@ const en = {
   relocateNotFound: 'The target folder does not exist.',
   relocateProtected: 'Refusing to point inside the ZCode data directory.',
   relocateIndexBusy: 'The task index is busy (ZCode may be writing). Please retry shortly.',
+  relocateConfirmTitle: 'Confirm folder switch',
+  relocateConfirmDesc: 'The page will refresh after switching, and unsent text in the chat input will be lost. Sessions and project files are not affected.',
+  relocateConfirmGo: 'Confirm switch',
   failed: 'Operation failed',
   retryHint: 'Please retry',
 };

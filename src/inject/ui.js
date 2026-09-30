@@ -33,32 +33,38 @@ const contentClass = 'w-full sm:max-w-md rounded-2xl border-none bg-popover/98 p
 // dismissOnOutside: 点弹窗外部是否关闭（默认 true）。为 false 时遮罩不再拦截鼠标，
 // 可以直接操作弹窗后面的会话（滚动/选中），弹窗只通过关闭按钮或 Esc 关闭。
 // draggable: 允许按住标题栏拖动弹窗。posKey: 记住拖动位置（localStorage）。
+// 弹窗栈：同时打开多层弹窗（如「切换文件夹」上叠二次确认）时，
+// Esc 只关最上层，避免一次 Esc 把两层一起关掉
+let dialogStack = [];
+
 export function openDialog({ title, description, onMount, onClose, width = 'sm:max-w-md', overlay = 'dim', draggable = false, posKey = '', dismissOnOutside = true }) {
   const L = t();
   const prevActive = document.activeElement;
   let cleanupDrag = null;
   const close = () => {
     overlayEl.remove();
+    dialogStack = dialogStack.filter((e) => e !== overlayEl);
     document.removeEventListener('keydown', onKey);
     if (cleanupDrag) cleanupDrag();
     if (prevActive && prevActive.focus) { try { prevActive.focus(); } catch { /* ignore */ } }
     onClose && onClose();
   };
   const onKey = (e) => {
-    if (e.key === 'Escape') { e.stopPropagation(); close(); }
+    if (e.key !== 'Escape') return;
+    e.stopPropagation();
+    if (dialogStack[dialogStack.length - 1] === overlayEl) close();
   };
   const content = h('div', {
     role: 'dialog',
     'aria-modal': 'true',
-    id: 'zcodepro-card',
-    class: contentClass.replace('sm:max-w-md', width),
+    class: contentClass.replace('sm:max-w-md', width) + ' zcodepro-card',
   });
   const overlayEl = h('div', {
-    id: 'zcodepro-overlay',
     'data-overlay': overlay,
-    class: overlay === 'none' ? overlayClassBare : overlayClass,
+    class: (overlay === 'none' ? overlayClassBare : overlayClass) + ' zcodepro-overlay',
     onMousedown: (e) => { if (dismissOnOutside && e.target === overlayEl) close(); },
   }, content);
+  dialogStack.push(overlayEl);
   if (!dismissOnOutside) {
     overlayEl.style.pointerEvents = 'none';
     content.style.pointerEvents = 'auto';
@@ -307,9 +313,9 @@ export function ensureStyle() {
   root.append(h('style', { id: '__zcodepro_style__' }, `
     @keyframes zcodepro-fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
     /* 弹窗遮罩/面板兜底：不依赖应用 Tailwind 类是否仍存在；主题色走 --color-* 变量，缺失时回退字面量 */
-    #zcodepro-overlay { background-color: rgba(0, 0, 0, 0.6); }
-    #zcodepro-overlay[data-overlay="none"] { background-color: transparent; }
-    #zcodepro-card {
+    .zcodepro-overlay { background-color: rgba(0, 0, 0, 0.6); }
+    .zcodepro-overlay[data-overlay="none"] { background-color: transparent; }
+    .zcodepro-card {
       background-color: var(--color-popover, #fff);
       border-radius: 16px;
       outline: none;

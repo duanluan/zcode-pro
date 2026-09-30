@@ -94,6 +94,24 @@ export function openRelocateDialog(project) {
         if (submitting) return;
         const newPath = input.value.trim();
         if (!newPath || newPath === project.path) { close(); return; }
+        // 二次确认：切换成功后会刷新页面，聊天输入框中未发送的内容会丢失
+        openDialog({
+          title: L.relocateConfirmTitle,
+          description: L.relocateConfirmDesc,
+          width: 'sm:max-w-md',
+          onMount: ({ body, close: closeConfirm }) => {
+            body.append(
+              dialogFooter(
+                btnSecondary(L.cancel, () => closeConfirm()),
+                btnPrimary(L.relocateConfirmGo, () => { closeConfirm(); void runRelocate(); }, 'min-w-24'),
+              ),
+            );
+          },
+        });
+      };
+
+      const runRelocate = async () => {
+        const newPath = input.value.trim();
         submitting = true;
         submitBtn.setAttribute('disabled', 'true');
         errLine.classList.add('hidden');
