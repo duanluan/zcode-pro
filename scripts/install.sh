@@ -48,6 +48,17 @@ case "${1:-}" in
     ;;
 esac
 
+# 已装 AUR 版时拒绝安装：~/.local 手动安装会遮蔽系统级安装（同名快捷方式优先级更高、
+# PATH 更靠前），表现为快捷方式与终端命令一直运行旧版。--uninstall 不受限——
+# AUR 用户正需要它清理残留。
+if [ -z "$DESTDIR" ] && command -v pacman >/dev/null 2>&1 && pacman -Q zcode-pro >/dev/null 2>&1; then
+  echo "[zcode-pro] 检测到已安装 AUR 包 zcode-pro（$(pacman -Q zcode-pro)），请勿混用两种安装方式：" >&2
+  echo "  - 继续用 AUR：无需本脚本，直接使用 /usr/bin/zcode-pro 与系统级快捷方式；" >&2
+  echo "  - 改用手动安装：先 sudo pacman -R zcode-pro，再重新运行本脚本；" >&2
+  echo "  - 清理旧手动安装残留：./scripts/install.sh --uninstall" >&2
+  exit 1
+fi
+
 if [ ! -f "$REPO_DIR/dist/inject.js" ]; then
   echo "[zcode-pro] 缺少 dist/inject.js：请使用完整仓库（含构建产物）运行本脚本。" >&2
   exit 1

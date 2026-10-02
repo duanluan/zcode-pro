@@ -10,6 +10,19 @@ SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$SELF")" && pwd)
 APP_DIR=$(dirname -- "$SCRIPT_DIR")
 ENTRY="$APP_DIR/cli.mjs"
 
+# 系统级安装（AUR / PREFIX=/opt）时提醒清理 ~/.local 下的手动安装残留：
+# 残留的同名快捷方式优先级更高、~/.local/bin 在 PATH 更靠前，会让菜单与终端一直运行旧版。
+case "$APP_DIR" in
+  "$HOME"/*) ;;  # 自身就是手动安装（默认装在 ~/.local），无需提醒
+  *)
+    if [ -e "$HOME/.local/share/zcode-pro" ] || [ -e "$HOME/.local/bin/zcode-pro" ] \
+       || [ -e "$HOME/.local/share/applications/zcode-pro.desktop" ]; then
+      echo "[zcodepro] 检测到 ~/.local 下有旧版手动安装残留，可能遮蔽本命令与快捷方式（表现为一直运行旧版）。" >&2
+      echo "  清理：rm -f ~/.local/bin/zcode-pro ~/.local/share/applications/zcode-pro.desktop && rm -rf ~/.local/share/zcode-pro" >&2
+    fi
+    ;;
+esac
+
 find_zcode_binary() {
   if [ -n "$ZCODEPRO_ZCODE_PATH" ] && [ -x "$ZCODEPRO_ZCODE_PATH" ]; then
     printf '%s' "$ZCODEPRO_ZCODE_PATH"

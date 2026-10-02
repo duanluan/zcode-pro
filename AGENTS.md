@@ -12,7 +12,7 @@
 1. 三处版本号一次性升级 → commit → push main
 2. `git tag vX.Y.Z` 并推送；`git archive --format=tar.gz --prefix='zcode-pro-X.Y.Z/' vX.Y.Z` 生成源码包
 3. `gh release create vX.Y.Z <源码包>`（Release 说明面向用户，不提实现细节）
-4. `../aur-packages` 仓库：更新 `packages/zcode-pro/PKGBUILD`（pkgver + 新 sha256sums）与 `.SRCINFO`（`makepkg --printsrcinfo`），commit + push
+4. `../aur-packages` 仓库：更新 `packages/zcode-pro/PKGBUILD`（pkgver + 新 sha256sums；如有变更需同步 `packaging/aur/zcodepro/` 下的 `zcode-pro.install` 等附带文件）与 `.SRCINFO`（`makepkg --printsrcinfo`），commit + push
 5. `../aur-packages/scripts/sync-aur-packages.sh zcode-pro` 推送 AUR（完成后用 AUR key `ls-remote` 确认 ref 前进；后台执行时注意核对，曾出现静默未推的情况，前台重跑即可）
 6. 验证：Release 资产 URL 返回 200
 

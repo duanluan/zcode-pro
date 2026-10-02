@@ -104,6 +104,7 @@ cd zcode-pro && ./scripts/install.sh
 
 - Installs to `~/.local`; use `PREFIX=` to choose another location;
 - On Linux, registers an app-menu shortcut "ZCode Pro" (icon reused from the installed ZCode);
+- Do not use this script while the AUR package is installed (the script detects this and refuses): the user-level install would shadow the system-wide one;
 - Uninstall: `./scripts/install.sh --uninstall`.
 
 ### Windows
@@ -128,6 +129,8 @@ paru -S zcode-pro
 # Manual installation
 git clone https://aur.archlinux.org/zcode-pro.git && cd zcode-pro && makepkg -si
 ```
+
+If you previously installed via `install.sh`, run `./scripts/install.sh --uninstall` in that repository clone before switching to the AUR package. Leftover user-level files would keep shadowing the system-wide entry, and you would keep launching the old version.
 
 ### Run without installing
 

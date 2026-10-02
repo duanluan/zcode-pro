@@ -99,6 +99,7 @@ rtk 插件把常见开发命令的输出压缩 60~90% 再进入上下文。设�
 
 - 安装至 `~/.local`，可通过 `PREFIX=` 指定其他位置；
 - Linux 会注册应用菜单快捷方式「ZCode Pro」（图标复用已安装的 ZCode）；
+- 已通过 AUR 安装时请勿再使用本脚本（脚本会检测并拒绝），用户级安装会遮蔽系统级入口；
 - 卸载：`./scripts/install.sh --uninstall`。
 
 ```bash
@@ -128,6 +129,8 @@ paru -S zcode-pro
 # 手动安装方式
 git clone https://aur.archlinux.org/zcode-pro.git && cd zcode-pro && makepkg -si
 ```
+
+从手动安装（`install.sh`）迁移到 AUR 前，请先在原仓库执行 `./scripts/install.sh --uninstall` 清理 `~/.local` 下的旧文件，再安装本包；否则旧的用户级快捷方式会一直遮蔽系统级入口，实际运行的仍是旧版本。
 
 ### 手动运行（不安装）
 
