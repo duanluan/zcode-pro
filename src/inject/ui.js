@@ -398,6 +398,8 @@ export function ensureStyle() {
     }
     .zcodepro-textarea::placeholder { color: var(--color-muted-foreground, #888); }
     .zcodepro-textarea:disabled { opacity: 0.5; }
+    /* 小型文本域（视觉代理提示词等）：11rem 最小高度只属于全局提示词大编辑框，这里按 rows 定高 */
+    .zcodepro-textarea.zcodepro-textarea-sm { min-height: 0; }
     /* 行高滑杆（样式调整标签页） */
     .zcodepro-range {
       -webkit-appearance: none;

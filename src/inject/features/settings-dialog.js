@@ -10,7 +10,9 @@ export function openSettingsDialog() {
   const L = t();
   openDialog({
     title: L.settingsTitle,
-    width: 'max-w-lg',
+    // 宽度类必须用宿主样式表已有的工具类（注入的类名不会生成 CSS）：
+    // sm:max-w-3xl 不存在会失去约束拉满全屏；max-w-2xl=42rem 存在且尺寸合适
+    width: 'max-w-2xl',
     overlay: 'none',
     draggable: true,
     posKey: 'settings',
@@ -19,6 +21,8 @@ export function openSettingsDialog() {
       const health = await rpc('/health');
       const config = await getConfig(true);
       const agentsRes = await rpc('/agents');
+      const visionRes = await rpc('/vision');
+      const rtkRes = await rpc('/rtk');
 
       const setFeature = async (key, value) => {
         const res = await rpc('/config', { method: 'POST', body: { features: { [key]: value } } });
@@ -76,6 +80,11 @@ export function openSettingsDialog() {
             if (await setFeature('pinnedKeepCollapsed', next)) f.pinnedKeepCollapsed = next;
             refreshRows();
           }),
+          settingRow(L.featureAutoUpdatePlugins, L.featureAutoUpdatePluginsDesc, f.autoUpdatePlugins === true, async () => {
+            const next = !(f.autoUpdatePlugins === true);
+            if (await setFeature('autoUpdatePlugins', next)) f.autoUpdatePlugins = next;
+            refreshRows();
+          }),
         );
       };
       refreshRows();
@@ -110,19 +119,55 @@ export function openSettingsDialog() {
           recCard(L.qqGroupTitle, L.qqGroupDesc, 'https://qm.qq.com/q/WXuISJK3ug'));
       }
 
-      // 标签页切换：功能（现有内容）/ 样式调整 / 全局提示词
+      // 标签页切换：功能（现有内容）/ 样式调整 / 全局提示词 / 视觉代理
       let activeTab = 'features';
+      // 插件更新卡片：显示 duanluan-zcode-plugins 市场状态，一键更新（helper /plugins/* 端点）；
+      // 状态异步加载，打开弹窗不等待
+      const pluginsStatusLine = h('span', { class: 'text-ui-xs/relaxed text-foreground-subtle' }, '…');
+      const pluginsBtn = btnSecondary(L.pluginsCheckNow, () => { void runPluginsUpdate(); }, 'h-7 px-3 text-ui-xs');
+      const runPluginsUpdate = async () => {
+        pluginsBtn.disabled = true;
+        pluginsStatusLine.textContent = L.pluginsUpdating;
+        const res = await rpc('/plugins/update', { method: 'POST', body: { installMissing: true } });
+        pluginsBtn.disabled = false;
+        if (!res.ok) {
+          pluginsStatusLine.textContent = '';
+          showToast(L.pluginsUpdateFailed + ': ' + errText(res), 'error');
+          return;
+        }
+        pluginsStatusLine.textContent = res.updated > 0
+          ? L.pluginsUpdatedDone.replaceAll('{n}', String(res.updated))
+          : L.pluginsUpToDate;
+        showToast(pluginsStatusLine.textContent, 'success');
+      };
+      void (async () => {
+        const res = await rpc('/plugins/status');
+        if (!res.ok) { pluginsStatusLine.textContent = ''; return; }
+        pluginsStatusLine.textContent = (res.updates || []).length > 0
+          ? L.pluginsUpdatesFound.replaceAll('{n}', String(res.updates.length))
+          : L.pluginsUpToDate;
+      })();
+      const pluginsCard = h('div', { class: 'mt-3 flex items-center justify-between gap-2 rounded-xl border border-border p-3' },
+        h('div', { class: 'min-w-0' },
+          h('div', { class: 'truncate text-ui-sm font-medium text-foreground' }, L.pluginsUpdateTitle),
+          h('div', { class: 'mt-0.5 truncate text-ui-xs/relaxed text-foreground-subtle' }, pluginsStatusLine)),
+        pluginsBtn);
       const paneFeatures = h('div', { role: 'tabpanel', class: 'mt-4' },
         h('div', {}, rows),
+        pluginsCard,
         ...(recCards ? [recCards] : []),
       );
       const paneStyles = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
       const paneAgents = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
-      const panes = { features: paneFeatures, styles: paneStyles, agents: paneAgents };
+      const paneVision = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
+      const paneRtk = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
+      const panes = { features: paneFeatures, styles: paneStyles, agents: paneAgents, vision: paneVision, rtk: paneRtk };
       const tabDefs = [
         ['features', L.tabFeatures],
         ['styles', L.tabStyles],
         ['agents', L.tabAgents],
+        ['vision', L.tabVision],
+        ['rtk', L.tabRtk],
       ];
       const tablist = h('div', { role: 'tablist', 'aria-orientation': 'horizontal', class: 'zcodepro-tablist mt-4' });
       const renderTabs = () => tablist.replaceChildren(...tabDefs.map(([id, label]) =>
@@ -242,12 +287,262 @@ export function openSettingsDialog() {
         h('div', { class: 'mt-3 flex justify-end' }, agentsSaveBtn),
       );
 
+      // 「视觉代理」：编辑 ~/.zcode/zcode-vision.json（zcode-vision 插件与 /vision-* 命令共用同一文件）。
+      // 代理列表顺序即执行链；结构性改动（开关/模式/排序/删增）即时保存，文本输入防抖保存。
+      // 注意：保存时链按全部代理重建——若用 /vision-chain 配过子集链，会被这里覆盖（两套入口语义如此，面板以列表为准）。
+      const VISION_DEFAULT_CFG = {
+        enabled: true,
+        chainMode: 'fallback',
+        chain: ['glm-flash'],
+        proxies: [
+          { name: 'glm-flash', baseUrl: 'https://open.bigmodel.cn/api/anthropic', model: 'glm-5.3-flash', apiKey: '', format: 'anthropic', prompt: '请详细描述这张图片的全部内容。若是界面或图表截图，请先把所有错误、警告、异常状态逐字引用出来（含完整原文），再描述整体布局、文字与关键数据。' },
+        ],
+        pollMs: 3000,
+        apiTimeoutMs: 60000,
+        compressThresholdKB: 1024,
+      };
+      let visionCfg = visionRes.ok && visionRes.config && typeof visionRes.config === 'object'
+        ? structuredClone(visionRes.config)
+        : null;
+      let visionSaveTimer = null;
+      const persistVision = async () => {
+        visionCfg.chain = visionCfg.proxies.map((p) => (p.name || '').trim()).filter(Boolean);
+        const res = await rpc('/vision', { method: 'POST', body: { config: visionCfg } });
+        if (!res.ok) showToast(L.failed + ': ' + errText(res), 'error');
+        return res.ok;
+      };
+      const saveVisionSoon = () => {
+        clearTimeout(visionSaveTimer);
+        visionSaveTimer = setTimeout(() => { void persistVision(); }, 500);
+      };
+      const visionTestPre = h('pre', {
+        class: 'mt-2 max-h-56 overflow-auto whitespace-pre-wrap rounded-lg border border-border bg-surface p-2 text-ui-xs text-foreground-subtle',
+        style: 'display:none',
+      });
+      const visionInputCls = 'h-8 w-full rounded-lg border border-border bg-input px-2.5 text-ui-sm text-foreground outline-none transition-shadow placeholder:text-foreground-subtle focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40';
+      const renderVision = () => {
+        if (!visionCfg) {
+          const initBtn = btnSecondary(L.visionAddProxy, async () => {
+            const res = await rpc('/vision', { method: 'POST', body: { config: VISION_DEFAULT_CFG } });
+            if (res.ok) { visionCfg = structuredClone(res.config); renderVision(); }
+            else showToast(L.failed + ': ' + errText(res), 'error');
+          }, 'h-7 px-3 text-ui-xs');
+          paneVision.replaceChildren(
+            h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.visionDesc),
+            ...(visionRes.ok ? [] : [h('p', { class: 'mt-2 text-ui-sm text-destructive' }, L.visionLoadFailed + ': ' + errText(visionRes))]),
+            h('div', { class: 'mt-3 flex justify-end' }, initBtn),
+          );
+          return;
+        }
+        const field = (labelText, node) => h('label', { class: 'block min-w-0' },
+          h('span', { class: 'mb-1 block text-ui-xs font-medium text-foreground-subtle' }, labelText), node);
+        const smallBtn = (text, onClick, extra = '') => btnSecondary(text, onClick, 'h-7 px-2.5 text-ui-xs ' + extra);
+        const modeBtn = (id, label, desc) => h('button', {
+          type: 'button',
+          class: 'zcodepro-tab',
+          'data-state': visionCfg.chainMode === id ? 'active' : 'inactive',
+          title: desc,
+          onClick: () => { visionCfg.chainMode = id; void persistVision(); renderVision(); },
+        }, label);
+        const textIn = (value, onInput, { type = 'text', placeholder = '' } = {}) => {
+          const n = h('input', { type, value: value || '', placeholder, class: visionInputCls });
+          n.addEventListener('input', () => onInput(n.value));
+          return n;
+        };
+        const cards = visionCfg.proxies.map((p, i) => h('div', { class: 'mt-2 rounded-xl border border-border p-3' },
+          h('div', { class: 'flex flex-wrap items-center gap-2' },
+            h('span', { class: 'shrink-0 rounded-md bg-surface px-1.5 py-0.5 text-ui-xs tabular-nums text-foreground-subtle' }, String(i + 1)),
+            textIn(p.name, (v) => { p.name = v; saveVisionSoon(); }, { placeholder: L.visionName }),
+            (() => {
+              const sel = h('select', { class: 'h-7 shrink-0 rounded-lg border border-border bg-input px-1.5 text-ui-xs text-foreground outline-none' },
+                h('option', { value: 'anthropic' }, 'anthropic'),
+                h('option', { value: 'openai' }, 'openai'));
+              sel.value = p.format === 'openai' ? 'openai' : 'anthropic';
+              sel.addEventListener('change', () => { p.format = sel.value; void persistVision(); });
+              return sel;
+            })(),
+            smallBtn(L.visionMoveUp, () => {
+              if (i <= 0) return;
+              visionCfg.proxies.splice(i - 1, 0, visionCfg.proxies.splice(i, 1)[0]);
+              void persistVision(); renderVision();
+            }, i === 0 ? 'pointer-events-none opacity-40' : ''),
+            smallBtn(L.visionMoveDown, () => {
+              if (i >= visionCfg.proxies.length - 1) return;
+              visionCfg.proxies.splice(i + 1, 0, visionCfg.proxies.splice(i, 1)[0]);
+              void persistVision(); renderVision();
+            }, i === visionCfg.proxies.length - 1 ? 'pointer-events-none opacity-40' : ''),
+            smallBtn(L.visionRemove, () => { visionCfg.proxies.splice(i, 1); void persistVision(); renderVision(); }),
+          ),
+          h('div', { class: 'mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2' },
+            field(L.visionUseProvider, (() => {
+              const n = h('input', { type: 'text', value: p.useProvider || '', placeholder: L.visionUseProviderHint, class: visionInputCls });
+              n.addEventListener('input', () => { p.useProvider = n.value.trim(); saveVisionSoon(); });
+              return n;
+            })()),
+            field(L.visionModel, textIn(p.model, (v) => { p.model = v; saveVisionSoon(); })),
+            field(L.visionBaseUrl, textIn(p.baseUrl, (v) => { p.baseUrl = v; saveVisionSoon(); })),
+            field(L.visionApiKey + ' · ' + L.visionApiKeyHint, textIn(p.apiKey, (v) => { p.apiKey = v; saveVisionSoon(); }, { type: 'password' })),
+          ),
+          (() => {
+            const n = h('textarea', { class: 'zcodepro-textarea zcodepro-textarea-sm', rows: '3', placeholder: L.visionPrompt });
+            n.value = p.prompt || '';
+            n.addEventListener('input', () => { p.prompt = n.value; saveVisionSoon(); });
+            return field(L.visionPrompt, n);
+          })(),
+        ));
+        let testBtn;
+        testBtn = smallBtn(L.visionTest, async () => {
+          testBtn.disabled = true;
+          testBtn.textContent = L.visionTesting;
+          visionTestPre.style.display = '';
+          visionTestPre.textContent = L.visionTesting;
+          const res = await rpc('/vision/test', { method: 'POST', body: {} });
+          testBtn.disabled = false;
+          testBtn.textContent = L.visionTest;
+          visionTestPre.textContent = res.output || res.error || '';
+          if (!res.ok) showToast(L.visionTestFailed + ': ' + errText(res), 'error');
+        });
+        paneVision.replaceChildren(
+          h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.visionDesc),
+          h('div', { class: 'mt-3 rounded-xl border border-border p-1.5' },
+            settingRow(L.visionEnabled, L.visionEnabledDesc, visionCfg.enabled !== false, async () => {
+              visionCfg.enabled = !(visionCfg.enabled !== false);
+              await persistVision();
+              renderVision();
+            }),
+          ),
+          h('div', { class: 'mt-2 flex items-center gap-1.5 rounded-xl border border-border p-1.5' },
+            h('span', { class: 'ml-1.5 shrink-0 text-ui-sm font-medium text-foreground' }, L.visionMode),
+            modeBtn('fallback', L.visionModeFallback, L.visionModeFallbackDesc),
+            modeBtn('pipeline', L.visionModePipeline, L.visionModePipelineDesc),
+            (() => {
+              const n = h('input', { type: 'number', min: '0', step: '128', title: L.visionCompressKBHint,
+                class: 'ml-auto h-7 w-28 rounded-lg border border-border bg-input px-2 text-right text-ui-xs tabular-nums text-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40' });
+              n.value = String(Number.isFinite(visionCfg.compressThresholdKB) ? visionCfg.compressThresholdKB : 1024);
+              n.addEventListener('change', () => {
+                visionCfg.compressThresholdKB = Math.max(0, Math.round(Number(n.value) || 0));
+                n.value = String(visionCfg.compressThresholdKB);
+                void persistVision();
+              });
+              return h('label', { class: 'flex shrink-0 items-center gap-1.5', title: L.visionCompressKBHint },
+                h('span', { class: 'text-ui-xs font-medium text-foreground-subtle' }, L.visionCompressKB), n);
+            })()),
+          ...cards,
+          h('div', { class: 'mt-2 flex items-center justify-between' },
+            smallBtn('+ ' + L.visionAddProxy, () => {
+              // 名称留空时 helper 校验会拒绝保存；等用户输入名称后防抖保存
+              visionCfg.proxies.push({ name: '', baseUrl: 'https://open.bigmodel.cn/api/anthropic', model: 'glm-5.3-flash', apiKey: '', format: 'anthropic', prompt: '' });
+              renderVision();
+            }),
+            testBtn),
+          visionTestPre,
+        );
+      };
+      renderVision();
+
+      // 「rtk 压缩」：编辑 rtk 插件状态（~/.zcode-rtk 的 mode 与 whitelist，
+      // /rtk-* 命令编辑同一文件）。开关与白名单增删即时保存，钩子每次执行都重读文件。
+      let rtkCfg = rtkRes.ok
+        ? {
+            installed: rtkRes.installed !== false,
+            version: rtkRes.version || '',
+            binPath: rtkRes.binPath || '',
+            mode: rtkRes.mode === 'off' ? 'off' : 'hint',
+            whitelist: Array.isArray(rtkRes.whitelist) ? [...rtkRes.whitelist] : [],
+          }
+        : null;
+      const persistRtk = async (partial) => {
+        const res = await rpc('/rtk', { method: 'POST', body: partial });
+        if (!res.ok) showToast(L.failed + ': ' + errText(res), 'error');
+        return res.ok;
+      };
+      const rtkInputCls = 'h-8 w-full rounded-lg border border-border bg-input px-2.5 text-ui-sm text-foreground outline-none transition-shadow placeholder:text-foreground-subtle focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40';
+      const renderRtk = () => {
+        if (!rtkCfg) {
+          paneRtk.replaceChildren(
+            h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.rtkDesc),
+            h('p', { class: 'mt-2 text-ui-sm text-destructive' }, L.rtkLoadFailed + ': ' + errText(rtkRes)),
+          );
+          return;
+        }
+        const input = h('input', { type: 'text', placeholder: L.rtkWhitelistPlaceholder, class: rtkInputCls + ' min-w-0 flex-1' });
+        const addEntry = async () => {
+          const v = input.value.trim();
+          if (!v) return;
+          if (!/^(git:)?[A-Za-z0-9._-]+$/.test(v) || rtkCfg.whitelist.includes(v)) {
+            showToast(L.rtkWhitelistInvalid, 'error');
+            return;
+          }
+          if (await persistRtk({ whitelist: [...rtkCfg.whitelist, v] })) {
+            rtkCfg.whitelist.push(v);
+            renderRtk();
+          }
+        };
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') { e.preventDefault(); void addEntry(); }
+        });
+        const removeEntry = (entry) => {
+          void (async () => {
+            const next = rtkCfg.whitelist.filter((x) => x !== entry);
+            if (await persistRtk({ whitelist: next })) {
+              rtkCfg.whitelist = next;
+              renderRtk();
+            }
+          })();
+        };
+        paneRtk.replaceChildren(
+          h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.rtkDesc),
+          ...(rtkCfg.installed
+            ? [h('p', { class: 'mt-2 text-ui-xs text-foreground-subtle' },
+                `${rtkCfg.version || 'rtk'}${rtkCfg.binPath ? ' · ' + rtkCfg.binPath : ''}`)]
+            : [h('p', { class: 'mt-2 text-ui-sm text-amber-500' }, L.rtkNotInstalled)]),
+          h('div', { class: 'mt-3 rounded-xl border border-border p-1.5' },
+            settingRow(L.rtkEnabled, L.rtkEnabledDesc, rtkCfg.mode === 'hint', async () => {
+              const next = rtkCfg.mode === 'hint' ? 'off' : 'hint';
+              if (await persistRtk({ mode: next })) {
+                rtkCfg.mode = next;
+                renderRtk();
+              }
+            })),
+          h('div', { class: 'mt-2 rounded-xl border border-border p-3' },
+            h('div', { class: 'text-ui-sm font-medium text-foreground' }, L.rtkWhitelistTitle),
+            h('p', { class: 'mt-1 text-ui-xs/relaxed text-foreground-subtle' }, L.rtkWhitelistDesc),
+            h('div', { class: 'mt-2 flex flex-wrap items-center gap-1.5' },
+              ...rtkCfg.whitelist.map((entry) => h('span', {
+                class: 'inline-flex items-center gap-1 rounded-md border border-border bg-surface px-1.5 py-0.5 text-ui-xs text-foreground',
+              }, entry,
+                h('button', {
+                  type: 'button', class: 'text-foreground-subtle hover:text-destructive', title: L.visionRemove,
+                  onClick: () => removeEntry(entry),
+                }, '×'))),
+              ...(rtkCfg.whitelist.length === 0
+                ? [h('span', { class: 'text-ui-xs text-foreground-subtle/70' }, L.defaultValue)]
+                : [])),
+            h('div', { class: 'mt-2 flex items-center gap-2' },
+              input,
+              btnSecondary(L.rtkWhitelistAdd, () => { void addEntry(); }, 'h-7 shrink-0 px-3 text-ui-xs'),
+              btnSecondary(L.rtkWhitelistClear, () => {
+                void (async () => {
+                  if (rtkCfg.whitelist.length === 0) return;
+                  if (await persistRtk({ whitelist: [] })) {
+                    rtkCfg.whitelist = [];
+                    renderRtk();
+                    showToast(L.rtkWhitelistCleared);
+                  }
+                })();
+              }, 'h-7 shrink-0 px-3 text-ui-xs'))),
+        );
+      };
+      renderRtk();
+
       body.append(
         statusLine,
         tablist,
         paneFeatures,
         paneStyles,
         paneAgents,
+        paneVision,
+        paneRtk,
       );
       body.append(
         dialogFooter(btnPrimary(L.close, () => close()))

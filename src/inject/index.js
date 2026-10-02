@@ -9,6 +9,7 @@ import { startAliasWatcher } from './features/alias.js';
 import { startTaskOrderWatcher } from './features/task-order.js';
 import { startPinnedExpandSuppression } from './features/pinned-expand.js';
 import { startStyleAdjustments } from './features/styles.js';
+import { startPluginUpdateCheck } from './features/plugin-updates.js';
 import { ensureStyle } from './ui.js';
 
 (function zcodeproInject() {
@@ -30,6 +31,8 @@ import { ensureStyle } from './ui.js';
     try { startPinnedExpandSuppression(); } catch { /* ignore */ }
     try { startStyleAdjustments(); } catch { /* ignore */ }
     try { startSettingsEntry(); } catch { /* ignore */ }
+    // 插件更新检查慢（可能 git pull），异步进行，不阻塞其他功能
+    try { void startPluginUpdateCheck(); } catch { /* ignore */ }
   };
 
   if (document.readyState === 'loading') {

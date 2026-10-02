@@ -65,9 +65,31 @@ ZCode 桌面版界面增强工具。通过「ZCode Pro」启动 ZCode 时自动�
 - 保存后从新会话起生效，项目内的 `AGENTS.md` 可继续补充或覆盖全局规则；
 - 清空内容并保存即移除全局提示词。
 
+### 视觉代理
+
+主模型不支持图片输入时（如 glm-5.3），自动把会话中的图片交给视觉模型识别，识别结果以文字注入对话（需安装 zcode-vision 插件）。设置弹窗中的「视觉代理」标签页可视化编辑：
+
+- 启用开关、链模式（依次尝试 / 逐级加工）、压缩阈值、代理链与识别提示词；
+- 与 `/vision-*` 命令编辑同一份配置，改动自动保存、即时生效，支持一键测试。
+
+### rtk 压缩
+
+rtk 插件把常见开发命令的输出压缩 60~90% 再进入上下文。设置弹窗中的「rtk 压缩」标签页可管理：
+
+- 改写提醒开关：关闭后不再拦截提醒，仍可手动用 `rtk <命令>` 享受压缩；
+- 命令白名单：不提醒直接放行的命令（如 `docker`、`git:clone`）。
+
+与 `/rtk-*` 命令编辑同一份配置，改动自动保存、钩子即时生效。
+
+### 插件更新
+
+- 设置弹窗「功能」标签页新增「插件更新」卡片：一键检查并更新 zcode-plugins 市场里已安装的插件；
+- 可开启自动更新，启动时自动完成；
+- 未开启自动更新时，检测到新版本会提醒一次。
+
 ### 设置入口
 
-右键点击 ZCode 侧边栏底部的设置按钮即可打开 ZCode Pro 设置窗口（左键仍打开 ZCode 设置页），分为「功能」「样式调整」与「全局提示词」三个标签页，可开关各项增强功能、调整界面样式、编辑全局提示词并查看运行状态，设置即时生效。
+右键点击 ZCode 侧边栏底部的设置按钮即可打开 ZCode Pro 设置窗口（左键仍打开 ZCode 设置页），分为「功能」「样式调整」「全局提示词」「视觉代理」「rtk 压缩」五个标签页，可开关各项增强功能、调整界面样式、编辑全局提示词、管理配套插件并查看运行状态，设置即时生效。
 
 ## 安装与使用
 
@@ -136,6 +158,8 @@ zcode-pro [--cdp-port 9333] [--helper-port 47889] [--zcode-path <路径>]
 
 - 功能开关与项目别名：`~/.zcode/zcodepro.json`
 - 全局提示词：`~/.zcode/AGENTS.md`（保存前一份备份：`~/.zcode/AGENTS.md.zcodepro-backup`）
+- 视觉代理设置（zcode-vision 插件）：`~/.zcode/zcode-vision.json`
+- rtk 压缩设置（rtk 插件）：`~/.zcode-rtk/`（mode 与 whitelist）
 - 切换文件夹时的配置备份：`~/.zcode/v2/setting.json.zcodepro-backup`
 - 卸载后直接使用官方 ZCode 入口启动即可，无需清理系统位置。
 
@@ -146,7 +170,7 @@ zcode-pro [--cdp-port 9333] [--helper-port 47889] [--zcode-path <路径>]
 
 ## 插件推荐
 
-[duanluan/zcode-plugins](https://github.com/duanluan/zcode-plugins) 是配套的 ZCode 插件市场，提供 AI 代码评审、对话请求压缩、命令输出压缩等插件，可显著节省 token。安装方式：ZCode → 插件市场 → 右上角「添加」→ 添加插件市场，填写 `duanluan/zcode-plugins`。
+[duanluan/zcode-plugins](https://github.com/duanluan/zcode-plugins) 是配套的 ZCode 插件市场，提供 AI 代码评审、对话请求压缩、命令输出压缩等插件，可显著节省 token。安装方式：ZCode → 插件市场 → 右上角「添加」→ 添加插件市场，填写 `duanluan/zcode-plugins`。已安装的插件可在 ZCode Pro 设置中一键检查并更新。
 
 ## 交流与反馈
 

@@ -1,5 +1,5 @@
 (() => {
-  // ../../../../../../tmp/zp-surgical/src/inject/core.js
+  // src/inject/core.js
   var BOOT = typeof window !== "undefined" ? window.__ZCODEPRO__ || {} : {};
   var HELPER_URL = BOOT.helperUrl || "http://127.0.0.1:47889";
   var TOKEN = BOOT.token || "";
@@ -71,6 +71,59 @@
     fileReveal: "\u6253\u5F00\u6240\u5728\u76EE\u5F55",
     featurePinnedExpand: "\u7F6E\u9876\u4F1A\u8BDD\u4FDD\u6301\u9879\u76EE\u6298\u53E0\uFF08\u5B9E\u9A8C\u6027\uFF09",
     featurePinnedExpandDesc: "\u70B9\u51FB\u6298\u53E0\u9879\u76EE\u7684\u7F6E\u9876\u4F1A\u8BDD\u540E\u5C06\u5176\u4FDD\u6301\u6298\u53E0\u3002\u53D7\u9650\u4E8E\u5E94\u7528\u673A\u5236\uFF0C\u9879\u76EE\u4F1A\u5148\u77ED\u6682\u5C55\u5F00\u518D\u7F29\u8D77\u3002",
+    featureAutoUpdatePlugins: "\u81EA\u52A8\u66F4\u65B0 zcode-plugins \u63D2\u4EF6",
+    featureAutoUpdatePluginsDesc: "\u542F\u52A8\u65F6\u81EA\u52A8\u68C0\u67E5\u5E76\u66F4\u65B0\u5DF2\u88C5\u7684 zcode-plugins \u63D2\u4EF6\uFF08\u542B\u5B89\u88C5\u5E02\u573A\u91CC\u65B0\u589E\u7684\u63D2\u4EF6\uFF09\uFF0C\u66F4\u65B0\u5728\u65B0\u4F1A\u8BDD\u751F\u6548\u3002",
+    pluginsUpdateTitle: "\u63D2\u4EF6\u66F4\u65B0 \xB7 zcode-plugins",
+    pluginsCheckNow: "\u68C0\u67E5\u5E76\u66F4\u65B0",
+    pluginsUpdating: "\u6B63\u5728\u66F4\u65B0\u63D2\u4EF6\u2026",
+    pluginsUpToDate: "\u63D2\u4EF6\u5DF2\u662F\u6700\u65B0",
+    pluginsUpdatesFound: "{n} \u4E2A\u63D2\u4EF6\u53EF\u66F4\u65B0",
+    pluginsUpdatedDone: "\u5DF2\u66F4\u65B0 {n} \u4E2A\u63D2\u4EF6",
+    pluginsUpdateFailed: "\u63D2\u4EF6\u66F4\u65B0\u5931\u8D25",
+    pluginsUpdatesAvailable: "zcode-plugins \u6709 {n} \u4E2A\u63D2\u4EF6\u53EF\u66F4\u65B0\uFF08ZCode Pro \u8BBE\u7F6E \u2192 \u529F\u80FD\uFF09",
+    pluginsAutoUpdated: "zcode-plugins \u63D2\u4EF6\u5DF2\u66F4\u65B0",
+    tabVision: "\u89C6\u89C9\u4EE3\u7406",
+    visionDesc: "\u4E3B\u6A21\u578B\u4E0D\u652F\u6301\u56FE\u7247\u8F93\u5165\u65F6\uFF08\u5982 glm-5.3\uFF09\uFF0C\u81EA\u52A8\u628A\u6D88\u606F\u91CC\u7684\u56FE\u7247\u4EA4\u7ED9\u4E0B\u9762\u7684\u89C6\u89C9\u6A21\u578B\u8BC6\u522B\u5E76\u6CE8\u5165\u5BF9\u8BDD\uFF08zcode-vision \u63D2\u4EF6\uFF1B/vision-* \u547D\u4EE4\u7F16\u8F91\u540C\u4E00\u914D\u7F6E\uFF09\u3002\u6539\u52A8\u81EA\u52A8\u4FDD\u5B58\u3002",
+    visionEnabled: "\u542F\u7528\u56FE\u7247\u8BC6\u522B",
+    visionEnabledDesc: "\u5173\u95ED\u540E\u94A9\u5B50\u5B8C\u5168\u653E\u884C\uFF0C\u4E0D\u518D\u8BC6\u522B\u6CE8\u5165\u3002",
+    visionMode: "\u94FE\u6A21\u5F0F",
+    visionModeFallback: "\u4F9D\u6B21\u5C1D\u8BD5",
+    visionModeFallbackDesc: "\u524D\u4E00\u4E2A\u5931\u8D25\u624D\u8BD5\u4E0B\u4E00\u4E2A\uFF0C\u4EFB\u4E00\u6210\u529F\u5373\u6B62\uFF08\u4E3B\u529B + \u5907\u7528\uFF09\u3002",
+    visionModePipeline: "\u9010\u7EA7\u52A0\u5DE5",
+    visionModePipelineDesc: "\u6BCF\u6B65\u90FD\u6267\u884C\uFF0C\u540E\u4E00\u6B65\u52A0\u5DE5\u524D\u4E00\u6B65\u7ED3\u679C\uFF08\u63CF\u8FF0 \u2192 \u6821\u5BF9/\u63D0\u70BC\uFF09\u3002",
+    visionAddProxy: "\u6DFB\u52A0\u4EE3\u7406",
+    visionRemove: "\u5220\u9664",
+    visionMoveUp: "\u4E0A\u79FB",
+    visionMoveDown: "\u4E0B\u79FB",
+    visionName: "\u540D\u79F0",
+    visionUseProvider: "\u8DDF\u968F\u4F9B\u5E94\u5546 useProvider",
+    visionUseProviderHint: "\u586B session=\u5F53\u524D\u4F1A\u8BDD\u4F9B\u5E94\u5546\uFF0C\u6216\u4F9B\u5E94\u5546\u540D/ID\uFF1B\u586B\u5199\u540E baseUrl/Key/\u683C\u5F0F\u81EA\u52A8\u53D6\u8BE5\u4F9B\u5E94\u5546",
+    visionBaseUrl: "\u63A5\u53E3\u5730\u5740 baseUrl",
+    visionModel: "\u6A21\u578B",
+    visionFormat: "\u683C\u5F0F",
+    visionApiKey: "API Key",
+    visionApiKeyHint: "\u7559\u7A7A\u81EA\u52A8\u53D6 GLM \u8BA2\u9605 key",
+    visionPrompt: "\u8BC6\u522B\u63D0\u793A\u8BCD\uFF08pipeline \u540E\u7EED\u6B65\u53EF\u7528 {prev} \u5F15\u7528\u4E0A\u4E00\u6B65\uFF09",
+    visionTest: "\u6D4B\u8BD5",
+    visionTesting: "\u6D4B\u8BD5\u4E2D\u2026",
+    visionTestFailed: "\u89C6\u89C9\u4EE3\u7406\u6D4B\u8BD5\u5931\u8D25",
+    visionTestOutput: "\u6D4B\u8BD5\u8F93\u51FA",
+    visionCompressKB: "\u538B\u7F29\u9608\u503C KB",
+    visionCompressKBHint: "\u8D85\u8FC7\u8BE5\u5927\u5C0F\u7684\u56FE\u5148\u538B\u7F29\u518D\u8BC6\u522B\uFF08\u6700\u957F\u8FB9 2000\u3001JPEG\uFF09\uFF1B0 = \u4E0D\u538B\u7F29",
+    visionLoadFailed: "\u8BFB\u53D6\u89C6\u89C9\u4EE3\u7406\u914D\u7F6E\u5931\u8D25",
+    tabRtk: "rtk \u538B\u7F29",
+    rtkDesc: "rtk \u63D2\u4EF6\uFF1A\u628A\u5E38\u89C1\u5F00\u53D1\u547D\u4EE4\u7684\u8F93\u51FA\u538B\u7F29 60-90% \u518D\u8FDB\u5165\u4E0A\u4E0B\u6587\uFF08/rtk-* \u547D\u4EE4\u7F16\u8F91\u540C\u4E00\u914D\u7F6E\uFF09\u3002\u6539\u52A8\u81EA\u52A8\u4FDD\u5B58\uFF0C\u94A9\u5B50\u5373\u65F6\u751F\u6548\u3002",
+    rtkEnabled: "\u6539\u5199\u63D0\u9192",
+    rtkEnabledDesc: "\u5173\u95ED\u540E\u94A9\u5B50\u653E\u884C\u4E00\u5207\u547D\u4EE4\u3001\u4E0D\u518D\u63D0\u9192\uFF1B\u4ECD\u53EF\u624B\u52A8 rtk <\u547D\u4EE4> \u4EAB\u53D7\u538B\u7F29\u3002",
+    rtkNotInstalled: "\u672A\u5B89\u88C5 rtk\uFF0C\u4EE5\u4E0B\u914D\u7F6E\u5C06\u5728\u5B89\u88C5\u540E\u751F\u6548\uFF08\u4F1A\u8BDD\u91CC\u53EF\u7528 /rtk-install \u5B89\u88C5\uFF09",
+    rtkWhitelistTitle: "\u767D\u540D\u5355\uFF08\u4E0D\u63D0\u9192\u76F4\u63A5\u653E\u884C\uFF09",
+    rtkWhitelistDesc: "\u6BCF\u6761 name\uFF08\u5982 docker\uFF09\u6216 git:name\uFF08\u5982 git:clone\uFF09\u3002\u8F93\u51FA\u6781\u5C0F\u6216\u7EAF\u526F\u4F5C\u7528\u7684\u547D\u4EE4\u65E0\u9700\u538B\u7F29\uFF0C\u52A0\u5165\u540E\u94A9\u5B50\u4E0D\u518D\u62E6\u622A\u63D0\u9192\uFF1B\u5185\u7F6E\u7684 git add/commit/push\u3001mkdir/cp \u7B49\u4E0D\u53EF\u79FB\u9664\u3002\u5220\u9664\u672C\u6587\u4EF6\u5373\u6062\u590D\u9ED8\u8BA4\u3002",
+    rtkWhitelistPlaceholder: "name \u6216 git:name\uFF0C\u56DE\u8F66\u6DFB\u52A0",
+    rtkWhitelistAdd: "\u6DFB\u52A0",
+    rtkWhitelistClear: "\u6E05\u7A7A",
+    rtkWhitelistCleared: "\u767D\u540D\u5355\u5DF2\u6E05\u7A7A",
+    rtkWhitelistInvalid: "\u6761\u76EE\u683C\u5F0F\u5E94\u4E3A name \u6216 git:name",
+    rtkLoadFailed: "\u8BFB\u53D6 rtk \u914D\u7F6E\u5931\u8D25",
     version: "\u7248\u672C",
     close: "\u5173\u95ED",
     cancel: "\u53D6\u6D88",
@@ -153,6 +206,59 @@
     fileReveal: "Reveal in file manager",
     featurePinnedExpand: "Keep projects collapsed for pinned sessions (experimental)",
     featurePinnedExpandDesc: "Keeps the project collapsed after clicking a pinned session. Note: it briefly expands first, then collapses.",
+    featureAutoUpdatePlugins: "Auto-update zcode-plugins plugins",
+    featureAutoUpdatePluginsDesc: "Checks and updates installed zcode-plugins plugins on startup (including newly added ones). Updates apply to new sessions.",
+    pluginsUpdateTitle: "Plugin updates \xB7 zcode-plugins",
+    pluginsCheckNow: "Check & update",
+    pluginsUpdating: "Updating plugins\u2026",
+    pluginsUpToDate: "Plugins are up to date",
+    pluginsUpdatesFound: "{n} plugin(s) can be updated",
+    pluginsUpdatedDone: "Updated {n} plugin(s)",
+    pluginsUpdateFailed: "Plugin update failed",
+    pluginsUpdatesAvailable: "{n} zcode-plugins update(s) available (ZCode Pro settings \u2192 Features)",
+    pluginsAutoUpdated: "zcode-plugins updated",
+    tabVision: "Vision Proxy",
+    visionDesc: "When the main model cannot see images (e.g. glm-5.3), images in messages are recognized by the vision models below and injected as text (zcode-vision plugin; /vision-* commands edit the same file). Changes save automatically.",
+    visionEnabled: "Enable image recognition",
+    visionEnabledDesc: "When off, the hook passes through silently.",
+    visionMode: "Chain mode",
+    visionModeFallback: "Fallback",
+    visionModeFallbackDesc: "Try in order until one succeeds (primary + backup).",
+    visionModePipeline: "Pipeline",
+    visionModePipelineDesc: "Every step runs; later steps refine earlier results (describe \u2192 refine).",
+    visionAddProxy: "Add proxy",
+    visionRemove: "Remove",
+    visionMoveUp: "Up",
+    visionMoveDown: "Down",
+    visionName: "Name",
+    visionUseProvider: "Follow provider (useProvider)",
+    visionUseProviderHint: "session = the current session provider, or a provider name/ID; overrides baseUrl/key/format",
+    visionBaseUrl: "Base URL",
+    visionModel: "Model",
+    visionFormat: "Format",
+    visionApiKey: "API Key",
+    visionApiKeyHint: "Leave empty to reuse the GLM subscription key",
+    visionPrompt: "Recognition prompt ({prev} = previous step in pipeline)",
+    visionTest: "Test",
+    visionTesting: "Testing\u2026",
+    visionTestFailed: "Vision proxy test failed",
+    visionTestOutput: "Test output",
+    visionCompressKB: "Compress threshold KB",
+    visionCompressKBHint: "Images above this size are compressed first (max edge 2000, JPEG); 0 = never",
+    visionLoadFailed: "Failed to load the vision config",
+    tabRtk: "rtk Compression",
+    rtkDesc: "rtk plugin: compresses common dev command output by 60-90% before it reaches the context (/rtk-* commands edit the same files). Changes save automatically and apply to the hook immediately.",
+    rtkEnabled: "Rewrite hints",
+    rtkEnabledDesc: "When off, the hook passes every command through without hints; manual rtk <command> still works.",
+    rtkNotInstalled: "rtk is not installed. The settings below take effect after installation (/rtk-install in a session).",
+    rtkWhitelistTitle: "Whitelist (pass through without hints)",
+    rtkWhitelistDesc: "Each entry is name (e.g. docker) or git:name (e.g. git:clone). Commands with tiny or no output need no compression; adding them stops the hook from interrupting. Built-ins (git add/commit/push, mkdir/cp, \u2026) cannot be removed. Delete the file to reset.",
+    rtkWhitelistPlaceholder: "name or git:name, press Enter to add",
+    rtkWhitelistAdd: "Add",
+    rtkWhitelistClear: "Clear",
+    rtkWhitelistCleared: "Whitelist cleared",
+    rtkWhitelistInvalid: "Entry must be name or git:name",
+    rtkLoadFailed: "Failed to load the rtk config",
     version: "Version",
     close: "Close",
     cancel: "Cancel",
@@ -220,7 +326,15 @@
     "name-invalid-chars": "Alias must not contain newlines or control characters",
     "index-remap-failed": "Failed to update the task index (config changes rolled back)",
     "index-error": "Task index error",
-    "index-busy": "The task index is busy. Please retry shortly."
+    "index-busy": "The task index is busy. Please retry shortly.",
+    "vision-invalid": "Invalid vision config",
+    "vision-read": "Failed to read zcode-vision.json",
+    "vision-write": "Failed to write zcode-vision.json",
+    "vision-test": "Vision test failed",
+    "rtk-invalid": "Invalid rtk config",
+    "rtk-write": "Failed to write the rtk config",
+    "plugins-status": "Failed to read the plugin list",
+    "plugins-update": "Failed to update plugins"
   };
   function errText(res) {
     if (!res) return "";
@@ -285,7 +399,7 @@
     return (item.textContent || "").trim();
   }
 
-  // ../../../../../../tmp/zp-surgical/src/inject/ui.js
+  // src/inject/ui.js
   var toastTimer = null;
   function showToast(text, kind = "info") {
     document.getElementById("__zcodepro_toast__")?.remove();
@@ -702,6 +816,8 @@
     }
     .zcodepro-textarea::placeholder { color: var(--color-muted-foreground, #888); }
     .zcodepro-textarea:disabled { opacity: 0.5; }
+    /* \u5C0F\u578B\u6587\u672C\u57DF\uFF08\u89C6\u89C9\u4EE3\u7406\u63D0\u793A\u8BCD\u7B49\uFF09\uFF1A11rem \u6700\u5C0F\u9AD8\u5EA6\u53EA\u5C5E\u4E8E\u5168\u5C40\u63D0\u793A\u8BCD\u5927\u7F16\u8F91\u6846\uFF0C\u8FD9\u91CC\u6309 rows \u5B9A\u9AD8 */
+    .zcodepro-textarea.zcodepro-textarea-sm { min-height: 0; }
     /* \u884C\u9AD8\u6ED1\u6746\uFF08\u6837\u5F0F\u8C03\u6574\u6807\u7B7E\u9875\uFF09 */
     .zcodepro-range {
       -webkit-appearance: none;
@@ -728,7 +844,7 @@
   `));
   }
 
-  // ../../../../../../tmp/zp-surgical/src/inject/features/alias.js
+  // src/inject/features/alias.js
   var norm = (p) => String(p || "").replace(/[\\/]+$/, "");
   var basenameOf = (p) => norm(p).split(/[\\/]/).pop() || "";
   function extractPathFromTestId(testid) {
@@ -909,7 +1025,7 @@
     });
   }
 
-  // ../../../../../../tmp/zp-surgical/src/inject/features/relocate-dialog.js
+  // src/inject/features/relocate-dialog.js
   function appendRelocateItem(menu, anchorItem, project) {
     if (menu.querySelector('[data-zcodepro-item="relocate"]')) return;
     const L = t();
@@ -1071,7 +1187,7 @@
     });
   }
 
-  // ../../../../../../tmp/zp-surgical/src/inject/features/open-folder.js
+  // src/inject/features/open-folder.js
   function appendOpenFolderItem(menu, anchorItem, project) {
     if (menu.querySelector('[data-zcodepro-item="open-folder"]')) return;
     const L = t();
@@ -1113,7 +1229,7 @@
     return svg;
   }
 
-  // ../../../../../../tmp/zp-surgical/src/inject/features/project-menu.js
+  // src/inject/features/project-menu.js
   var REMOVE_TEXTS = ["\u79FB\u9664", "Remove"];
   function extractPathFromTestId2(testid) {
     let m = testid.match(/[-:=,|](\/.+)$/);
@@ -1156,7 +1272,7 @@
     })();
   }
 
-  // ../../../../../../tmp/zp-surgical/src/inject/features/file-menu.js
+  // src/inject/features/file-menu.js
   var COPY_ABS_TEXTS = ["\u590D\u5236\u7EDD\u5BF9\u8DEF\u5F84", "Copy absolute path"];
   var NO_APPS_TEXTS = ["\u672A\u627E\u5230\u53EF\u7528 App", "No apps found"];
   var ICON_OPEN_DEFAULT = [
@@ -1290,7 +1406,7 @@
     })();
   }
 
-  // ../../../../../../tmp/zp-surgical/src/inject/features/image-menu.js
+  // src/inject/features/image-menu.js
   var MIN_SIZE = 48;
   function copyTargetOf(el, x, y) {
     const sizeOk = (img) => {
@@ -1496,7 +1612,7 @@
     }, true);
   }
 
-  // ../../../../../../tmp/zp-surgical/src/inject/features/styles.js
+  // src/inject/features/styles.js
   var STYLE_DEFAULTS = {
     rowGap: 20,
     // 段落间距：会话内各块之间的垂直间距
@@ -1577,13 +1693,15 @@
     });
   }
 
-  // ../../../../../../tmp/zp-surgical/src/inject/features/settings-dialog.js
+  // src/inject/features/settings-dialog.js
   function openSettingsDialog() {
     ensureStyle();
     const L = t();
     openDialog({
       title: L.settingsTitle,
-      width: "max-w-lg",
+      // 宽度类必须用宿主样式表已有的工具类（注入的类名不会生成 CSS）：
+      // sm:max-w-3xl 不存在会失去约束拉满全屏；max-w-2xl=42rem 存在且尺寸合适
+      width: "max-w-2xl",
       overlay: "none",
       draggable: true,
       posKey: "settings",
@@ -1592,6 +1710,8 @@
         const health = await rpc("/health");
         const config = await getConfig(true);
         const agentsRes = await rpc("/agents");
+        const visionRes = await rpc("/vision");
+        const rtkRes = await rpc("/rtk");
         const setFeature = async (key, value) => {
           const res = await rpc("/config", { method: "POST", body: { features: { [key]: value } } });
           clearConfigCache();
@@ -1646,6 +1766,11 @@
               const next = !(f.pinnedKeepCollapsed !== false);
               if (await setFeature("pinnedKeepCollapsed", next)) f.pinnedKeepCollapsed = next;
               refreshRows();
+            }),
+            settingRow(L.featureAutoUpdatePlugins, L.featureAutoUpdatePluginsDesc, f.autoUpdatePlugins === true, async () => {
+              const next = !(f.autoUpdatePlugins === true);
+              if (await setFeature("autoUpdatePlugins", next)) f.autoUpdatePlugins = next;
+              refreshRows();
             })
           );
         };
@@ -1697,19 +1822,60 @@
           );
         }
         let activeTab = "features";
+        const pluginsStatusLine = h("span", { class: "text-ui-xs/relaxed text-foreground-subtle" }, "\u2026");
+        const pluginsBtn = btnSecondary(L.pluginsCheckNow, () => {
+          void runPluginsUpdate();
+        }, "h-7 px-3 text-ui-xs");
+        const runPluginsUpdate = async () => {
+          pluginsBtn.disabled = true;
+          pluginsStatusLine.textContent = L.pluginsUpdating;
+          const res = await rpc("/plugins/update", { method: "POST", body: { installMissing: true } });
+          pluginsBtn.disabled = false;
+          if (!res.ok) {
+            pluginsStatusLine.textContent = "";
+            showToast(L.pluginsUpdateFailed + ": " + errText(res), "error");
+            return;
+          }
+          pluginsStatusLine.textContent = res.updated > 0 ? L.pluginsUpdatedDone.replaceAll("{n}", String(res.updated)) : L.pluginsUpToDate;
+          showToast(pluginsStatusLine.textContent, "success");
+        };
+        void (async () => {
+          const res = await rpc("/plugins/status");
+          if (!res.ok) {
+            pluginsStatusLine.textContent = "";
+            return;
+          }
+          pluginsStatusLine.textContent = (res.updates || []).length > 0 ? L.pluginsUpdatesFound.replaceAll("{n}", String(res.updates.length)) : L.pluginsUpToDate;
+        })();
+        const pluginsCard = h(
+          "div",
+          { class: "mt-3 flex items-center justify-between gap-2 rounded-xl border border-border p-3" },
+          h(
+            "div",
+            { class: "min-w-0" },
+            h("div", { class: "truncate text-ui-sm font-medium text-foreground" }, L.pluginsUpdateTitle),
+            h("div", { class: "mt-0.5 truncate text-ui-xs/relaxed text-foreground-subtle" }, pluginsStatusLine)
+          ),
+          pluginsBtn
+        );
         const paneFeatures = h(
           "div",
           { role: "tabpanel", class: "mt-4" },
           h("div", {}, rows),
+          pluginsCard,
           ...recCards ? [recCards] : []
         );
         const paneStyles = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
         const paneAgents = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
-        const panes = { features: paneFeatures, styles: paneStyles, agents: paneAgents };
+        const paneVision = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
+        const paneRtk = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
+        const panes = { features: paneFeatures, styles: paneStyles, agents: paneAgents, vision: paneVision, rtk: paneRtk };
         const tabDefs = [
           ["features", L.tabFeatures],
           ["styles", L.tabStyles],
-          ["agents", L.tabAgents]
+          ["agents", L.tabAgents],
+          ["vision", L.tabVision],
+          ["rtk", L.tabRtk]
         ];
         const tablist = h("div", { role: "tablist", "aria-orientation": "horizontal", class: "zcodepro-tablist mt-4" });
         const renderTabs = () => tablist.replaceChildren(...tabDefs.map(([id, label]) => h("button", {
@@ -1839,12 +2005,337 @@
           h("div", { class: "mt-3" }, agentsArea),
           h("div", { class: "mt-3 flex justify-end" }, agentsSaveBtn)
         );
+        const VISION_DEFAULT_CFG = {
+          enabled: true,
+          chainMode: "fallback",
+          chain: ["glm-flash"],
+          proxies: [
+            { name: "glm-flash", baseUrl: "https://open.bigmodel.cn/api/anthropic", model: "glm-5.3-flash", apiKey: "", format: "anthropic", prompt: "\u8BF7\u8BE6\u7EC6\u63CF\u8FF0\u8FD9\u5F20\u56FE\u7247\u7684\u5168\u90E8\u5185\u5BB9\u3002\u82E5\u662F\u754C\u9762\u6216\u56FE\u8868\u622A\u56FE\uFF0C\u8BF7\u5148\u628A\u6240\u6709\u9519\u8BEF\u3001\u8B66\u544A\u3001\u5F02\u5E38\u72B6\u6001\u9010\u5B57\u5F15\u7528\u51FA\u6765\uFF08\u542B\u5B8C\u6574\u539F\u6587\uFF09\uFF0C\u518D\u63CF\u8FF0\u6574\u4F53\u5E03\u5C40\u3001\u6587\u5B57\u4E0E\u5173\u952E\u6570\u636E\u3002" }
+          ],
+          pollMs: 3e3,
+          apiTimeoutMs: 6e4,
+          compressThresholdKB: 1024
+        };
+        let visionCfg = visionRes.ok && visionRes.config && typeof visionRes.config === "object" ? structuredClone(visionRes.config) : null;
+        let visionSaveTimer = null;
+        const persistVision = async () => {
+          visionCfg.chain = visionCfg.proxies.map((p) => (p.name || "").trim()).filter(Boolean);
+          const res = await rpc("/vision", { method: "POST", body: { config: visionCfg } });
+          if (!res.ok) showToast(L.failed + ": " + errText(res), "error");
+          return res.ok;
+        };
+        const saveVisionSoon = () => {
+          clearTimeout(visionSaveTimer);
+          visionSaveTimer = setTimeout(() => {
+            void persistVision();
+          }, 500);
+        };
+        const visionTestPre = h("pre", {
+          class: "mt-2 max-h-56 overflow-auto whitespace-pre-wrap rounded-lg border border-border bg-surface p-2 text-ui-xs text-foreground-subtle",
+          style: "display:none"
+        });
+        const visionInputCls = "h-8 w-full rounded-lg border border-border bg-input px-2.5 text-ui-sm text-foreground outline-none transition-shadow placeholder:text-foreground-subtle focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40";
+        const renderVision = () => {
+          if (!visionCfg) {
+            const initBtn = btnSecondary(L.visionAddProxy, async () => {
+              const res = await rpc("/vision", { method: "POST", body: { config: VISION_DEFAULT_CFG } });
+              if (res.ok) {
+                visionCfg = structuredClone(res.config);
+                renderVision();
+              } else showToast(L.failed + ": " + errText(res), "error");
+            }, "h-7 px-3 text-ui-xs");
+            paneVision.replaceChildren(
+              h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.visionDesc),
+              ...visionRes.ok ? [] : [h("p", { class: "mt-2 text-ui-sm text-destructive" }, L.visionLoadFailed + ": " + errText(visionRes))],
+              h("div", { class: "mt-3 flex justify-end" }, initBtn)
+            );
+            return;
+          }
+          const field = (labelText, node) => h(
+            "label",
+            { class: "block min-w-0" },
+            h("span", { class: "mb-1 block text-ui-xs font-medium text-foreground-subtle" }, labelText),
+            node
+          );
+          const smallBtn = (text, onClick, extra = "") => btnSecondary(text, onClick, "h-7 px-2.5 text-ui-xs " + extra);
+          const modeBtn = (id, label, desc) => h("button", {
+            type: "button",
+            class: "zcodepro-tab",
+            "data-state": visionCfg.chainMode === id ? "active" : "inactive",
+            title: desc,
+            onClick: () => {
+              visionCfg.chainMode = id;
+              void persistVision();
+              renderVision();
+            }
+          }, label);
+          const textIn = (value, onInput, { type = "text", placeholder = "" } = {}) => {
+            const n = h("input", { type, value: value || "", placeholder, class: visionInputCls });
+            n.addEventListener("input", () => onInput(n.value));
+            return n;
+          };
+          const cards = visionCfg.proxies.map((p, i) => h(
+            "div",
+            { class: "mt-2 rounded-xl border border-border p-3" },
+            h(
+              "div",
+              { class: "flex flex-wrap items-center gap-2" },
+              h("span", { class: "shrink-0 rounded-md bg-surface px-1.5 py-0.5 text-ui-xs tabular-nums text-foreground-subtle" }, String(i + 1)),
+              textIn(p.name, (v) => {
+                p.name = v;
+                saveVisionSoon();
+              }, { placeholder: L.visionName }),
+              (() => {
+                const sel = h(
+                  "select",
+                  { class: "h-7 shrink-0 rounded-lg border border-border bg-input px-1.5 text-ui-xs text-foreground outline-none" },
+                  h("option", { value: "anthropic" }, "anthropic"),
+                  h("option", { value: "openai" }, "openai")
+                );
+                sel.value = p.format === "openai" ? "openai" : "anthropic";
+                sel.addEventListener("change", () => {
+                  p.format = sel.value;
+                  void persistVision();
+                });
+                return sel;
+              })(),
+              smallBtn(L.visionMoveUp, () => {
+                if (i <= 0) return;
+                visionCfg.proxies.splice(i - 1, 0, visionCfg.proxies.splice(i, 1)[0]);
+                void persistVision();
+                renderVision();
+              }, i === 0 ? "pointer-events-none opacity-40" : ""),
+              smallBtn(L.visionMoveDown, () => {
+                if (i >= visionCfg.proxies.length - 1) return;
+                visionCfg.proxies.splice(i + 1, 0, visionCfg.proxies.splice(i, 1)[0]);
+                void persistVision();
+                renderVision();
+              }, i === visionCfg.proxies.length - 1 ? "pointer-events-none opacity-40" : ""),
+              smallBtn(L.visionRemove, () => {
+                visionCfg.proxies.splice(i, 1);
+                void persistVision();
+                renderVision();
+              })
+            ),
+            h(
+              "div",
+              { class: "mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2" },
+              field(L.visionUseProvider, (() => {
+                const n = h("input", { type: "text", value: p.useProvider || "", placeholder: L.visionUseProviderHint, class: visionInputCls });
+                n.addEventListener("input", () => {
+                  p.useProvider = n.value.trim();
+                  saveVisionSoon();
+                });
+                return n;
+              })()),
+              field(L.visionModel, textIn(p.model, (v) => {
+                p.model = v;
+                saveVisionSoon();
+              })),
+              field(L.visionBaseUrl, textIn(p.baseUrl, (v) => {
+                p.baseUrl = v;
+                saveVisionSoon();
+              })),
+              field(L.visionApiKey + " \xB7 " + L.visionApiKeyHint, textIn(p.apiKey, (v) => {
+                p.apiKey = v;
+                saveVisionSoon();
+              }, { type: "password" }))
+            ),
+            (() => {
+              const n = h("textarea", { class: "zcodepro-textarea zcodepro-textarea-sm", rows: "3", placeholder: L.visionPrompt });
+              n.value = p.prompt || "";
+              n.addEventListener("input", () => {
+                p.prompt = n.value;
+                saveVisionSoon();
+              });
+              return field(L.visionPrompt, n);
+            })()
+          ));
+          let testBtn;
+          testBtn = smallBtn(L.visionTest, async () => {
+            testBtn.disabled = true;
+            testBtn.textContent = L.visionTesting;
+            visionTestPre.style.display = "";
+            visionTestPre.textContent = L.visionTesting;
+            const res = await rpc("/vision/test", { method: "POST", body: {} });
+            testBtn.disabled = false;
+            testBtn.textContent = L.visionTest;
+            visionTestPre.textContent = res.output || res.error || "";
+            if (!res.ok) showToast(L.visionTestFailed + ": " + errText(res), "error");
+          });
+          paneVision.replaceChildren(
+            h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.visionDesc),
+            h(
+              "div",
+              { class: "mt-3 rounded-xl border border-border p-1.5" },
+              settingRow(L.visionEnabled, L.visionEnabledDesc, visionCfg.enabled !== false, async () => {
+                visionCfg.enabled = !(visionCfg.enabled !== false);
+                await persistVision();
+                renderVision();
+              })
+            ),
+            h(
+              "div",
+              { class: "mt-2 flex items-center gap-1.5 rounded-xl border border-border p-1.5" },
+              h("span", { class: "ml-1.5 shrink-0 text-ui-sm font-medium text-foreground" }, L.visionMode),
+              modeBtn("fallback", L.visionModeFallback, L.visionModeFallbackDesc),
+              modeBtn("pipeline", L.visionModePipeline, L.visionModePipelineDesc),
+              (() => {
+                const n = h("input", {
+                  type: "number",
+                  min: "0",
+                  step: "128",
+                  title: L.visionCompressKBHint,
+                  class: "ml-auto h-7 w-28 rounded-lg border border-border bg-input px-2 text-right text-ui-xs tabular-nums text-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
+                });
+                n.value = String(Number.isFinite(visionCfg.compressThresholdKB) ? visionCfg.compressThresholdKB : 1024);
+                n.addEventListener("change", () => {
+                  visionCfg.compressThresholdKB = Math.max(0, Math.round(Number(n.value) || 0));
+                  n.value = String(visionCfg.compressThresholdKB);
+                  void persistVision();
+                });
+                return h(
+                  "label",
+                  { class: "flex shrink-0 items-center gap-1.5", title: L.visionCompressKBHint },
+                  h("span", { class: "text-ui-xs font-medium text-foreground-subtle" }, L.visionCompressKB),
+                  n
+                );
+              })()
+            ),
+            ...cards,
+            h(
+              "div",
+              { class: "mt-2 flex items-center justify-between" },
+              smallBtn("+ " + L.visionAddProxy, () => {
+                visionCfg.proxies.push({ name: "", baseUrl: "https://open.bigmodel.cn/api/anthropic", model: "glm-5.3-flash", apiKey: "", format: "anthropic", prompt: "" });
+                renderVision();
+              }),
+              testBtn
+            ),
+            visionTestPre
+          );
+        };
+        renderVision();
+        let rtkCfg = rtkRes.ok ? {
+          installed: rtkRes.installed !== false,
+          version: rtkRes.version || "",
+          binPath: rtkRes.binPath || "",
+          mode: rtkRes.mode === "off" ? "off" : "hint",
+          whitelist: Array.isArray(rtkRes.whitelist) ? [...rtkRes.whitelist] : []
+        } : null;
+        const persistRtk = async (partial) => {
+          const res = await rpc("/rtk", { method: "POST", body: partial });
+          if (!res.ok) showToast(L.failed + ": " + errText(res), "error");
+          return res.ok;
+        };
+        const rtkInputCls = "h-8 w-full rounded-lg border border-border bg-input px-2.5 text-ui-sm text-foreground outline-none transition-shadow placeholder:text-foreground-subtle focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40";
+        const renderRtk = () => {
+          if (!rtkCfg) {
+            paneRtk.replaceChildren(
+              h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.rtkDesc),
+              h("p", { class: "mt-2 text-ui-sm text-destructive" }, L.rtkLoadFailed + ": " + errText(rtkRes))
+            );
+            return;
+          }
+          const input = h("input", { type: "text", placeholder: L.rtkWhitelistPlaceholder, class: rtkInputCls + " min-w-0 flex-1" });
+          const addEntry = async () => {
+            const v = input.value.trim();
+            if (!v) return;
+            if (!/^(git:)?[A-Za-z0-9._-]+$/.test(v) || rtkCfg.whitelist.includes(v)) {
+              showToast(L.rtkWhitelistInvalid, "error");
+              return;
+            }
+            if (await persistRtk({ whitelist: [...rtkCfg.whitelist, v] })) {
+              rtkCfg.whitelist.push(v);
+              renderRtk();
+            }
+          };
+          input.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              void addEntry();
+            }
+          });
+          const removeEntry = (entry) => {
+            void (async () => {
+              const next = rtkCfg.whitelist.filter((x) => x !== entry);
+              if (await persistRtk({ whitelist: next })) {
+                rtkCfg.whitelist = next;
+                renderRtk();
+              }
+            })();
+          };
+          paneRtk.replaceChildren(
+            h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.rtkDesc),
+            ...rtkCfg.installed ? [h(
+              "p",
+              { class: "mt-2 text-ui-xs text-foreground-subtle" },
+              `${rtkCfg.version || "rtk"}${rtkCfg.binPath ? " \xB7 " + rtkCfg.binPath : ""}`
+            )] : [h("p", { class: "mt-2 text-ui-sm text-amber-500" }, L.rtkNotInstalled)],
+            h(
+              "div",
+              { class: "mt-3 rounded-xl border border-border p-1.5" },
+              settingRow(L.rtkEnabled, L.rtkEnabledDesc, rtkCfg.mode === "hint", async () => {
+                const next = rtkCfg.mode === "hint" ? "off" : "hint";
+                if (await persistRtk({ mode: next })) {
+                  rtkCfg.mode = next;
+                  renderRtk();
+                }
+              })
+            ),
+            h(
+              "div",
+              { class: "mt-2 rounded-xl border border-border p-3" },
+              h("div", { class: "text-ui-sm font-medium text-foreground" }, L.rtkWhitelistTitle),
+              h("p", { class: "mt-1 text-ui-xs/relaxed text-foreground-subtle" }, L.rtkWhitelistDesc),
+              h(
+                "div",
+                { class: "mt-2 flex flex-wrap items-center gap-1.5" },
+                ...rtkCfg.whitelist.map((entry) => h(
+                  "span",
+                  {
+                    class: "inline-flex items-center gap-1 rounded-md border border-border bg-surface px-1.5 py-0.5 text-ui-xs text-foreground"
+                  },
+                  entry,
+                  h("button", {
+                    type: "button",
+                    class: "text-foreground-subtle hover:text-destructive",
+                    title: L.visionRemove,
+                    onClick: () => removeEntry(entry)
+                  }, "\xD7")
+                )),
+                ...rtkCfg.whitelist.length === 0 ? [h("span", { class: "text-ui-xs text-foreground-subtle/70" }, L.defaultValue)] : []
+              ),
+              h(
+                "div",
+                { class: "mt-2 flex items-center gap-2" },
+                input,
+                btnSecondary(L.rtkWhitelistAdd, () => {
+                  void addEntry();
+                }, "h-7 shrink-0 px-3 text-ui-xs"),
+                btnSecondary(L.rtkWhitelistClear, () => {
+                  void (async () => {
+                    if (rtkCfg.whitelist.length === 0) return;
+                    if (await persistRtk({ whitelist: [] })) {
+                      rtkCfg.whitelist = [];
+                      renderRtk();
+                      showToast(L.rtkWhitelistCleared);
+                    }
+                  })();
+                }, "h-7 shrink-0 px-3 text-ui-xs")
+              )
+            )
+          );
+        };
+        renderRtk();
         body.append(
           statusLine,
           tablist,
           paneFeatures,
           paneStyles,
-          paneAgents
+          paneAgents,
+          paneVision,
+          paneRtk
         );
         body.append(
           dialogFooter(btnPrimary(L.close, () => close()))
@@ -1853,7 +2344,7 @@
     });
   }
 
-  // ../../../../../../tmp/zp-surgical/src/inject/features/settings-entry.js
+  // src/inject/features/settings-entry.js
   var SETTINGS_BUTTON_TESTID = "task-settings-button";
   function handleSettingsContextmenu(e) {
     const target = e.target;
@@ -1868,7 +2359,7 @@
     document.addEventListener("contextmenu", handleSettingsContextmenu, true);
   }
 
-  // ../../../../../../tmp/zp-surgical/src/inject/features/task-order.js
+  // src/inject/features/task-order.js
   var installed = false;
   var dragKey = null;
   function startTaskOrderWatcher() {
@@ -1931,7 +2422,7 @@
     }
   }
 
-  // ../../../../../../tmp/zp-surgical/src/inject/features/pinned-expand.js
+  // src/inject/features/pinned-expand.js
   var installed2 = false;
   var keepCollapsed = false;
   async function refreshConfig() {
@@ -2006,7 +2497,35 @@
     return String(s).replace(/(["\\\]])/g, "\\$1");
   }
 
-  // ../../../../../../tmp/zp-surgical/src/inject/index.js
+  // src/inject/features/plugin-updates.js
+  var NOTIFIED_KEY = "zcodepro-plugin-updates-notified";
+  async function startPluginUpdateCheck() {
+    const status = await rpc("/plugins/status");
+    if (!status.ok || !Array.isArray(status.updates)) return;
+    const L = t();
+    if (status.updates.length === 0) return;
+    const config = await getConfig();
+    if ((config.features || {}).autoUpdatePlugins === true) {
+      const res = await rpc("/plugins/update", { method: "POST", body: { installMissing: true } });
+      if (res.ok) showToast(L.pluginsAutoUpdated, "success");
+      else showToast(L.pluginsUpdateFailed + ": " + (res.error || ""), "error");
+      return;
+    }
+    const sig = status.updates.map((u) => `${u.name}:${u.installed}>${u.latest}`).join(",");
+    let seen = "";
+    try {
+      seen = window.localStorage.getItem(NOTIFIED_KEY) || "";
+    } catch {
+    }
+    if (seen === sig) return;
+    try {
+      window.localStorage.setItem(NOTIFIED_KEY, sig);
+    } catch {
+    }
+    showToast(L.pluginsUpdatesAvailable.replaceAll("{n}", String(status.updates.length)), "info");
+  }
+
+  // src/inject/index.js
   (function zcodeproInject() {
     if (typeof window === "undefined") return;
     if (window.__zcodeproInjected) return;
@@ -2045,6 +2564,10 @@
       }
       try {
         startSettingsEntry();
+      } catch {
+      }
+      try {
+        void startPluginUpdateCheck();
       } catch {
       }
     };

@@ -65,9 +65,31 @@ The "Global Prompt" tab in the settings window edits the default instructions sh
 - Takes effect from new sessions; a project's own `AGENTS.md` can extend or override the global rules;
 - Clear the content and save to remove the global prompt.
 
+### Vision proxy
+
+When the main model cannot take image input (e.g. glm-5.3), images in chat are automatically sent to a vision model and the recognition result is injected into the conversation as text (requires the zcode-vision plugin). Edit it visually in the "Vision Proxy" tab of the settings window:
+
+- Enable switch, chain mode (fallback / pipeline), compression threshold, proxy chain and recognition prompts;
+- Shares the same configuration as the `/vision-*` commands; changes save automatically, take effect instantly, with one-click testing.
+
+### rtk compression
+
+The rtk plugin compresses output of common dev commands by 60–90% before it enters the context. Manage it in the "rtk Compression" tab of the settings window:
+
+- Rewrite-hint switch: turn it off to stop the interception hints; you can still run `rtk <command>` manually to enjoy the compression;
+- Command whitelist: commands passed through without hints (e.g. `docker`, `git:clone`).
+
+Shares the same configuration as the `/rtk-*` commands; changes save automatically and take effect immediately.
+
+### Plugin updates
+
+- A "Plugin updates" card in the "Features" tab checks and updates installed plugins from the zcode-plugins marketplace in one click;
+- Optional auto-update runs the updates automatically at startup;
+- With auto-update off, new versions are reported once when detected.
+
 ### Settings entry
 
-Right-click the settings button at the bottom of the ZCode sidebar to open the ZCode Pro settings window (left-click still opens the ZCode settings page). It has three tabs — "Features", "Styles" and "Global Prompt" — to toggle each enhancement, adjust UI styles, edit the global prompt and check the runtime status. Settings apply instantly.
+Right-click the settings button at the bottom of the ZCode sidebar to open the ZCode Pro settings window (left-click still opens the ZCode settings page). It has five tabs — "Features", "Styles", "Global Prompt", "Vision Proxy" and "rtk Compression" — to toggle each enhancement, adjust UI styles, edit the global prompt, manage companion plugins and check the runtime status. Settings apply instantly.
 
 ## Installation
 
@@ -136,6 +158,8 @@ zcode-pro [--cdp-port 9333] [--helper-port 47889] [--zcode-path <path>]
 
 - Feature switches and project aliases: `~/.zcode/zcodepro.json`
 - Global prompt: `~/.zcode/AGENTS.md` (backed up before saving: `~/.zcode/AGENTS.md.zcodepro-backup`)
+- Vision proxy settings (zcode-vision plugin): `~/.zcode/zcode-vision.json`
+- rtk compression settings (rtk plugin): `~/.zcode-rtk/` (mode and whitelist)
 - Config backup created when relocating a folder: `~/.zcode/v2/setting.json.zcodepro-backup`
 - After uninstalling, just launch ZCode through its official entry — nothing to clean up.
 
@@ -146,7 +170,7 @@ zcode-pro [--cdp-port 9333] [--helper-port 47889] [--zcode-path <path>]
 
 ## Plugin recommendation
 
-[duanluan/zcode-plugins](https://github.com/duanluan/zcode-plugins) is a companion plugin marketplace for ZCode: AI code review, request compression and command-output compression plugins that save tokens. To install: ZCode → Plugin Marketplace → "Add" (top right) → Add plugin marketplace, and enter `duanluan/zcode-plugins`.
+[duanluan/zcode-plugins](https://github.com/duanluan/zcode-plugins) is a companion plugin marketplace for ZCode: AI code review, request compression and command-output compression plugins that save tokens. To install: ZCode → Plugin Marketplace → "Add" (top right) → Add plugin marketplace, and enter `duanluan/zcode-plugins`. Installed plugins can be checked and updated from ZCode Pro settings.
 
 ## Community
 
