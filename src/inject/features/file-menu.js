@@ -1,7 +1,7 @@
 // 功能五：文件菜单增强——文件操作弹出菜单（含「复制绝对路径」项的菜单，右键文件链接 chip
 // 与预览卡片「打开 ▾」下拉均有）：
 // - 「打开」分组内、可用编辑器列表（无可用时为「未找到可用 App」禁用项）上方新增「默认应用打开」
-//   （宿主桥 window.zcode.openExternalFile，Electron preload 原生暴露）；
+//   （helper /open-path 用系统默认应用打开；旧版曾用宿主桥 window.zcode.openExternalFile，新版已移除该桥）；
 // - 「复制绝对路径」上方新增「打开所在目录」（helper /reveal-path 在文件管理器中定位文件；
 //   不用宿主 openInFileManager——其在 Linux/Windows 的实现只是 shell.openPath，即用默认应用打开）。
 // 路径获取（按序尝试）：触发器 title（文件 chip 右键场景，message.tsx 写入绝对路径）→
@@ -118,10 +118,6 @@ export function handleFileMenu(content) {
   const items = itemsOf(content);
   const copyAbs = items.find((el) => COPY_ABS_TEXTS.some((x) => itemText(el).startsWith(x)));
   if (!copyAbs) return;
-  // 宿主桥缺失（非桌面端）时不注入
-  if (typeof window === 'undefined'
-    || typeof window.zcode?.openExternalFile !== 'function'
-    || typeof window.zcode?.openInFileManager !== 'function') return;
   // 同步占位防竞态：注入在下方异步段执行，多个观察者回调同时进入时只允许第一个注入
   content.dataset.zcodeproFileMenu = '1';
   void (async () => {
@@ -139,7 +135,7 @@ export function handleFileMenu(content) {
       marker: 'file-open-default',
       label: L.fileOpenDefault,
       icon: ICON_OPEN_DEFAULT,
-      onPick: () => { try { void window.zcode.openExternalFile(path); } catch { /* ignore */ } },
+      onPick: () => { try { void rpc('/open-path', { method: 'POST', body: { path } }); } catch { /* ignore */ } },
     });
     appendMenuItem(content, copyAbs, copyAbs, {
       marker: 'file-reveal',

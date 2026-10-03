@@ -14,7 +14,7 @@ import { taskIndexPath, probeTaskIndexWritable, remapTaskIndexPaths, taskIndexDr
 import { pickFolderSystem } from './pickFolder.mjs';
 import { reorderWorkspaceTasks, reorderGroupMembers } from './taskOrder.mjs';
 
-const VERSION = '0.9.0';
+const VERSION = '0.10.0';
 
 // 全局提示词固定在用户主目录：官方加载器按 HOME/USERPROFILE 拼 .zcode/AGENTS.md，
 // 不读 ZCODE_DATA_BASE_DIR（数据根迁走时全局指令仍在原位）。
@@ -48,12 +48,12 @@ export function defaultConfig() {
   return {
     version: VERSION,
     features: {
-      projectAlias: true,       // 项目“更多”菜单中的“自定义别名” + 侧边栏按表渲染
-      projectRelocate: true,    // 项目“更多”菜单中的“切换文件夹” + 路径引用同步
+      projectMenu: true,        // 项目菜单增强：自定义别名 + 切换文件夹 + 打开文件夹 + 复制路径（含侧栏别名渲染）
       taskOrder: true,          // 侧边栏会话拖动排序持久化
       fileActions: true,        // 文件菜单：默认应用打开 / 打开所在目录
       pinnedKeepCollapsed: false, // 点击置顶会话保持项目折叠（实验性：会先展开再缩起，有闪烁）
       autoUpdatePlugins: false,  // 启动时自动更新已装的 zcode-plugins 插件（含安装市场里新增的）
+      sessionSwitch: true,     // 会话快捷切换（alt+z 上次会话；按住 alt x/c 弹窗导航，类 alt+tab）
     },
     // 样式调整（设置弹窗「样式调整」标签页）。null = 不覆盖，跟随应用默认。
     styles: {
@@ -232,6 +232,13 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
       if (req.method === 'POST' && url.pathname === '/reveal-path') {
         const body = await readBody(req);
         json(res, ...await revealInFileManager(body?.path));
+        return;
+      }
+      // 用系统默认应用打开文件（会话文件菜单的「默认应用打开」；
+      // 新版 ZCode 桥已不再暴露 openExternalFile，改由 helper 代开）
+      if (req.method === 'POST' && url.pathname === '/open-path') {
+        const body = await readBody(req);
+        json(res, ...await openWithDefaultApp(body?.path));
         return;
       }
       // 在系统文件管理器中打开文件夹（项目「更多」菜单的「打开文件夹」）
@@ -1342,6 +1349,29 @@ export function openFolder(rawPath) {
       }
     } catch (err) {
       resolveOpen([500, { ok: false, error: err?.message || String(err) }]);
+      return;
+    }
+    const done = (err) => resolveOpen(err ? [500, { ok: false, error: err.message }] : [200, { ok: true }]);
+    if (process.platform === 'darwin') execFile('open', [p], { timeout: 5000 }, done);
+    else if (process.platform === 'win32') {
+      const child = spawn('explorer.exe', [p], { detached: true, stdio: 'ignore' });
+      child.on('error', done);
+      child.on('close', () => done(null));
+    } else execFile('xdg-open', [p], { timeout: 5000 }, done);
+  });
+}
+
+// 用系统默认应用打开文件（或文件夹）：macOS 用 open；Windows 用 explorer；
+// Linux 用 xdg-open。导出以便测试脚本直接驱动。
+export function openWithDefaultApp(rawPath) {
+  return new Promise((resolveOpen) => {
+    const p = typeof rawPath === 'string' ? rawPath.trim() : '';
+    if (!p || !isAbsolute(p)) {
+      resolveOpen([400, { ok: false, code: 'invalid-path', error: '无效的路径' }]);
+      return;
+    }
+    if (!existsSync(p)) {
+      resolveOpen([400, { ok: false, code: 'not-found', error: '文件不存在' }]);
       return;
     }
     const done = (err) => resolveOpen(err ? [500, { ok: false, error: err.message }] : [200, { ok: true }]);

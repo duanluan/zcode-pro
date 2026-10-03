@@ -215,21 +215,21 @@ export function openSettingsDialog() {
       const refreshRows = () => {
         const f = config.features || {};
         rows.replaceChildren(
-          settingRow(L.featureAlias, L.featureAliasDesc, f.projectAlias !== false, async () => {
-            const next = !(f.projectAlias !== false);
-            if (await setFeature('projectAlias', next)) f.projectAlias = next;
+          settingRow(L.featureProjectMenu, L.featureProjectMenuDesc, f.projectMenu !== false, async () => {
+            const next = !(f.projectMenu !== false);
+            if (await setFeature('projectMenu', next)) f.projectMenu = next;
             refreshRows();
             // 关闭后立即还原真实名称；开启则按表重新渲染
             await refreshAliases();
           }),
-          settingRow(L.featureRelocate, L.featureRelocateDesc, f.projectRelocate !== false, async () => {
-            const next = !(f.projectRelocate !== false);
-            if (await setFeature('projectRelocate', next)) f.projectRelocate = next;
-            refreshRows();
-          }),
           settingRow(L.featureTaskOrder, L.featureTaskOrderDesc, f.taskOrder !== false, async () => {
             const next = !(f.taskOrder !== false);
             if (await setFeature('taskOrder', next)) f.taskOrder = next;
+            refreshRows();
+          }),
+          settingRow(L.featureSessionSwitch, L.featureSessionSwitchDesc, f.sessionSwitch !== false, async () => {
+            const next = !(f.sessionSwitch !== false);
+            if (await setFeature('sessionSwitch', next)) f.sessionSwitch = next;
             refreshRows();
           }),
           settingRow(L.featureFileActions, L.featureFileActionsDesc, f.fileActions !== false, async () => {

@@ -62,12 +62,16 @@
     contentWidthDesc: "\u4F1A\u8BDD\u5185\u5BB9\u7684\u6700\u5927\u5BBD\u5EA6\uFF0C\u53EF\u8F93\u5165 px \u6216 %\uFF08\u5982 900px\u300185%\uFF09\uFF1B\u9ED8\u8BA4\u663E\u793A\u5F53\u524D\u5B9E\u9645\u5BBD\u5EA6\uFF0C% \u76F8\u5BF9\u4F1A\u8BDD\u533A\u57DF\u3002",
     defaultValue: "\u9ED8\u8BA4",
     resetDefault: "\u6062\u590D\u9ED8\u8BA4",
-    featureAlias: "\u9879\u76EE\u201C\u66F4\u591A\u201D\u83DC\u5355 \xB7 \u81EA\u5B9A\u4E49\u522B\u540D",
-    featureAliasDesc: "\u4E3A\u9879\u76EE\u8BBE\u7F6E\u4EC5\u754C\u9762\u663E\u793A\u7684\u522B\u540D\uFF1A\u4FA7\u8FB9\u680F\u663E\u793A\u522B\u540D\uFF0C\u78C1\u76D8\u76EE\u5F55\u4E0E\u6240\u6709\u6570\u636E\u4E0D\u53D8\u3002",
-    featureRelocate: "\u9879\u76EE\u201C\u66F4\u591A\u201D\u83DC\u5355 \xB7 \u5207\u6362\u6587\u4EF6\u5939",
-    featureRelocateDesc: "\u5C06\u9879\u76EE\u6307\u5411\u53E6\u4E00\u4E2A\u6587\u4EF6\u5939\uFF1A\u4FA7\u8FB9\u680F\u3001\u6807\u7B7E\u9875\u4E0E\u4EFB\u52A1\u5386\u53F2\u4E00\u5E76\u8FC1\u79FB\uFF0C\u76EE\u5F55\u672C\u8EAB\u4E0D\u52A8\u3002",
+    featureProjectMenu: "\u9879\u76EE\u83DC\u5355\u589E\u5F3A",
+    featureProjectMenuDesc: "\u9879\u76EE\u300C\u66F4\u591A\u300D\u83DC\u5355\u4E2D\u7684\u81EA\u5B9A\u4E49\u522B\u540D\u3001\u5207\u6362\u6587\u4EF6\u5939\u3001\u6253\u5F00\u6587\u4EF6\u5939\u4E0E\u590D\u5236\u8DEF\u5F84\uFF08\u522B\u540D\u540C\u65F6\u4F5C\u7528\u4E8E\u4FA7\u8FB9\u680F\u663E\u793A\uFF09\u3002",
     featureTaskOrder: "\u4FA7\u8FB9\u680F\u4F1A\u8BDD\u62D6\u52A8\u6392\u5E8F",
     featureTaskOrderDesc: "\u8BA9\u7F6E\u9876\u3001\u9879\u76EE\u4E0E\u5206\u7EC4\u4E2D\u7684\u4F1A\u8BDD\u62D6\u52A8\u540E\u8BB0\u4F4F\u987A\u5E8F\uFF0C\u5237\u65B0\u540E\u4FDD\u6301\u3002",
+    featureSessionSwitch: "\u4F1A\u8BDD\u5FEB\u6377\u5207\u6362",
+    featureSessionSwitchDesc: "alt+z \u5728\u5F53\u524D\u4E0E\u4E0A\u6B21\u4F1A\u8BDD\u95F4\u6765\u56DE\u5207\u6362\uFF1B\u6309\u4F4F alt \u518D\u6309 x/c \u5F39\u51FA\u6700\u8FD1\u4F1A\u8BDD\u5217\u8868\u524D\u540E\u9009\u62E9\uFF0C\u677E\u5F00 alt \u5207\u6362\uFF08\u7C7B alt+tab\uFF09\u3002",
+    switcherHint: "x / c \u9009\u62E9\uFF0C\u677E\u5F00 alt \u5207\u6362\uFF0CEsc \u53D6\u6D88",
+    switcherCurrent: "\u5F53\u524D",
+    switcherEmpty: "\u6682\u65E0\u4E0A\u6B21\u4F1A\u8BDD\uFF08\u5207\u6362\u8FC7\u4F1A\u8BDD\u540E\u53EF\u7528\uFF09",
+    switcherFailed: "\u672A\u80FD\u5207\u6362\u5230\u8BE5\u4F1A\u8BDD\uFF08\u53EF\u80FD\u5DF2\u5220\u9664\uFF09",
     featureFileActions: "\u6587\u4EF6\u83DC\u5355\u589E\u5F3A",
     featureFileActionsDesc: "\u5728\u4F1A\u8BDD\u4E2D\u6587\u4EF6\u94FE\u63A5\u7684\u53F3\u952E\u83DC\u5355\u91CC\u65B0\u589E\u300C\u9ED8\u8BA4\u5E94\u7528\u6253\u5F00\u300D\u4E0E\u300C\u6253\u5F00\u6240\u5728\u76EE\u5F55\u300D\u3002",
     featureImageCopy: "\u56FE\u7247\u53F3\u952E\u590D\u5236",
@@ -76,6 +80,9 @@
     imageCopied: "\u56FE\u7247\u5DF2\u590D\u5236\u5230\u526A\u8D34\u677F",
     imageCopyFailed: "\u590D\u5236\u56FE\u7247\u5931\u8D25",
     openFolderItem: "\u6253\u5F00\u6587\u4EF6\u5939",
+    copyPathItem: "\u590D\u5236\u8DEF\u5F84",
+    pathCopied: "\u8DEF\u5F84\u5DF2\u590D\u5236\u5230\u526A\u8D34\u677F",
+    pathCopyFailed: "\u590D\u5236\u8DEF\u5F84\u5931\u8D25",
     fileOpenDefault: "\u9ED8\u8BA4\u5E94\u7528\u6253\u5F00",
     fileReveal: "\u6253\u5F00\u6240\u5728\u76EE\u5F55",
     featurePinnedExpand: "\u7F6E\u9876\u4F1A\u8BDD\u4FDD\u6301\u9879\u76EE\u6298\u53E0\uFF08\u5B9E\u9A8C\u6027\uFF09",
@@ -272,12 +279,16 @@
     contentWidthDesc: "Max width of conversation content; accepts px or % (e.g. 900px, 85%).",
     defaultValue: "default",
     resetDefault: "Reset to default",
-    featureAlias: 'Project "More" menu \xB7 Custom alias',
-    featureAliasDesc: "A UI-only alias: the sidebar shows your custom name while the directory and all data stay untouched.",
-    featureRelocate: 'Project "More" menu \xB7 Switch folder',
-    featureRelocateDesc: "Points a project at another folder; the sidebar, tabs and task history follow. The directory stays untouched.",
+    featureProjectMenu: "Project menu actions",
+    featureProjectMenuDesc: 'Custom alias, switch folder, open folder and copy path in the project "More" menu (the alias also applies to the sidebar).',
     featureTaskOrder: "Sidebar session drag ordering",
     featureTaskOrderDesc: "Makes session drags in Pinned, Projects and Groups persist across refreshes.",
+    featureSessionSwitch: "Session quick switch",
+    featureSessionSwitchDesc: "alt+z toggles between the current and the last session; hold alt and press x/c to move the highlight across recently used sessions, release alt to switch (like alt+tab).",
+    switcherHint: "x / c to choose, release alt to switch, Esc to cancel",
+    switcherCurrent: "current",
+    switcherEmpty: "No previous session yet (available after you switch sessions)",
+    switcherFailed: "Failed to switch to that session (it may have been deleted)",
     featureFileActions: "File menu actions",
     featureFileActionsDesc: 'Adds "Open with default app" and "Reveal in file manager" to the right-click menu of file links in chat.',
     featureImageCopy: "Image right-click copy",
@@ -286,6 +297,9 @@
     imageCopied: "Image copied to the clipboard.",
     imageCopyFailed: "Failed to copy the image.",
     openFolderItem: "Open folder",
+    copyPathItem: "Copy path",
+    pathCopied: "Path copied to the clipboard.",
+    pathCopyFailed: "Failed to copy the path.",
     fileOpenDefault: "Open with default app",
     fileReveal: "Reveal in file manager",
     featurePinnedExpand: "Keep projects collapsed for pinned sessions (experimental)",
@@ -543,7 +557,9 @@
       }
       if (node.getAttribute && node.getAttribute("role") === "menu" && !seen.has(node)) {
         seen.add(node);
-        onPopup(node);
+        requestAnimationFrame(() => {
+          if (node.isConnected) onPopup(node);
+        });
       }
     };
     const process = (mutations) => {
@@ -742,11 +758,11 @@
     return input;
   }
   function numberField({ value = null, fallback = 0, min = 0, max = 48, step = 1, onCommit }) {
-    let current = typeof value === "number" && Number.isFinite(value) ? value : fallback;
+    let current2 = typeof value === "number" && Number.isFinite(value) ? value : fallback;
     const input = h("input", {
       type: "text",
       inputmode: "decimal",
-      value: String(current),
+      value: String(current2),
       class: "h-8 w-16 rounded-lg border border-border bg-input px-2 text-right text-ui-sm tabular-nums text-foreground outline-none transition-shadow focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
     });
     const clamp = (v) => Math.min(max, Math.max(min, v));
@@ -755,24 +771,24 @@
     };
     const commit = (v) => {
       const next = clamp(v);
-      if (next === current) {
+      if (next === current2) {
         display(next);
         return;
       }
-      current = next;
+      current2 = next;
       display(next);
       onCommit && onCommit(next);
     };
     input.addEventListener("wheel", (e) => {
       e.preventDefault();
       const dir = (e.deltaY || 0) < 0 ? 1 : -1;
-      const raw = current + dir * step;
+      const raw = current2 + dir * step;
       commit(step < 1 ? Math.round(raw / step) * step : Math.round(raw));
     }, { passive: false });
     const submitTyped = () => {
       const parsed = parseFloat(String(input.value).trim());
       if (!Number.isFinite(parsed)) {
-        display(current);
+        display(current2);
         return;
       }
       commit(step < 1 ? Math.round(parsed / step) * step : parsed);
@@ -787,15 +803,15 @@
     return {
       el: input,
       set(v) {
-        current = clamp(v);
-        display(current);
+        current2 = clamp(v);
+        display(current2);
       },
       reset() {
-        current = fallback;
-        display(current);
+        current2 = fallback;
+        display(current2);
       },
       get() {
-        return current;
+        return current2;
       }
     };
   }
@@ -807,35 +823,35 @@
       const n = v.unit === "px" ? Math.round(v.value) : Math.round(v.value * 10) / 10;
       return Number.isFinite(n) ? { value: Math.min(max, Math.max(min, n)), unit: v.unit } : null;
     };
-    let current = norm2(value) || norm2(fallback) || { value: 100, unit: "%" };
+    let current2 = norm2(value) || norm2(fallback) || { value: 100, unit: "%" };
     const input = h("input", {
       type: "text",
       inputmode: "decimal",
-      value: `${current.value}${current.unit}`,
+      value: `${current2.value}${current2.unit}`,
       class: "h-8 w-20 rounded-lg border border-border bg-input px-2 text-right text-ui-sm tabular-nums text-foreground outline-none transition-shadow focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
     });
     const display = () => {
-      input.value = `${current.value}${current.unit}`;
+      input.value = `${current2.value}${current2.unit}`;
     };
     const commit = (v) => {
       const next = norm2(v);
-      if (!next || next.value === current.value && next.unit === current.unit) {
+      if (!next || next.value === current2.value && next.unit === current2.unit) {
         display();
         return;
       }
-      current = next;
+      current2 = next;
       display();
-      onCommit && onCommit({ ...current });
+      onCommit && onCommit({ ...current2 });
     };
     input.addEventListener("wheel", (e) => {
       e.preventDefault();
       const dir = (e.deltaY || 0) < 0 ? 1 : -1;
-      commit({ value: current.value + dir * (step[current.unit] || 1), unit: current.unit });
+      commit({ value: current2.value + dir * (step[current2.unit] || 1), unit: current2.unit });
     }, { passive: false });
     const parseTyped = (s) => {
       const m = String(s).trim().match(/^(\d+(?:\.\d+)?)\s*(px|%)?$/i);
       if (!m) return null;
-      return { value: parseFloat(m[1]), unit: (m[2] || current.unit).toLowerCase() === "px" ? "px" : "%" };
+      return { value: parseFloat(m[1]), unit: (m[2] || current2.unit).toLowerCase() === "px" ? "px" : "%" };
     };
     const submitTyped = () => {
       const parsed = parseTyped(input.value);
@@ -855,11 +871,11 @@
     return {
       el: input,
       reset() {
-        current = norm2(fallback) || current;
+        current2 = norm2(fallback) || current2;
         display();
       },
       get() {
-        return { ...current };
+        return { ...current2 };
       }
     };
   }
@@ -1050,6 +1066,84 @@
       background: color-mix(in oklab, var(--color-foreground, #888) 18%, transparent);
       outline: none;
     }
+    /* \u4F1A\u8BDD\u5FEB\u6377\u5207\u6362\u5F39\u7A97\uFF08alt+x/c\uFF09\uFF1A\u5C45\u4E2D\u5217\u8868\u5361\uFF0C\u7C7B alt+tab */
+    .zcodepro-switcher-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 90;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: rgba(0, 0, 0, 0.35);
+    }
+    .zcodepro-switcher {
+      display: flex;
+      flex-direction: column;
+      min-width: 440px;
+      max-width: min(560px, calc(100vw - 2rem));
+      max-height: 60vh;
+      padding: 8px;
+      border-radius: 14px;
+      background-color: var(--color-popover, #fff);
+      box-shadow: 0 0 0 1px var(--color-border, rgba(0, 0, 0, 0.1)), 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+    }
+    .zcodepro-switcher-hint {
+      padding: 4px 10px 8px;
+      font-size: 11px;
+      color: var(--color-muted-foreground, #888);
+    }
+    .zcodepro-switcher-list {
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    /* \u4E24\u884C\u5E03\u5C40\uFF08\u6807\u9898 + \u9879\u76EE\u540D\uFF09\u5168\u90E8\u5C45\u5DE6\uFF1B\u6807\u9898\u884C\u7684\u300C\u5F53\u524D\u300D\u6807\u7B7E\u4E0E\u6587\u672C\u5782\u76F4\u5C45\u4E2D */
+    .zcodepro-switcher-row {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 2px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      text-align: left;
+    }
+    .zcodepro-switcher-row:hover { background-color: color-mix(in oklab, var(--color-foreground, #888) 6%, transparent); }
+    .zcodepro-switcher-row[data-active] {
+      background-color: color-mix(in oklab, var(--color-foreground, #888) 12%, transparent);
+    }
+    .zcodepro-switcher-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+      text-align: left;
+      font-size: 13px;
+      color: var(--color-foreground, #111);
+    }
+    /* \u6807\u9898\u6587\u672C\u627F\u8F7D span\uFF1A\u622A\u65AD\u7701\u7565\u653E\u5728\u6587\u672C\u8282\u70B9\u4E0A\uFF0C\u907F\u514D flex \u5BB9\u5668 ellipsis \u5931\u6548 */
+    .zcodepro-switcher-title > span:last-child {
+      min-width: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+    .zcodepro-switcher-tag {
+      flex-shrink: 0;
+      padding: 1px 5px;
+      border-radius: 5px;
+      font-size: 10px;
+      background-color: color-mix(in oklab, var(--color-primary, #111) 12%, transparent);
+      color: var(--color-foreground-subtle, #666);
+    }
+    .zcodepro-switcher-ws {
+      font-size: 11px;
+      color: var(--color-muted-foreground, #888);
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
     .zcodepro-range::-webkit-slider-thumb {
       -webkit-appearance: none;
       width: 14px;
@@ -1087,7 +1181,7 @@
   }
   async function syncFromConfig() {
     const config = await getConfig();
-    enabled = !(config.features && config.features.projectAlias === false);
+    enabled = !(config.features && config.features.projectMenu === false);
     aliases = enabled ? config.aliases || {} : {};
   }
   var applyTimer = 0;
@@ -1166,7 +1260,7 @@
   function openAliasDialog(project) {
     ensureStyle();
     const L = t();
-    const current = aliases[norm(project.path)] || "";
+    const current2 = aliases[norm(project.path)] || "";
     const realName = project.name || basenameOf(project.path);
     let submitting = false;
     openDialog({
@@ -1175,7 +1269,7 @@
       width: "sm:max-w-md",
       onMount: ({ body, close }) => {
         const input = textInput({
-          value: current || realName,
+          value: current2 || realName,
           placeholder: L.aliasPlaceholder,
           onEnter: () => submit()
         });
@@ -1183,7 +1277,7 @@
         const submit = async () => {
           if (submitting) return;
           const name = input.value.trim();
-          if (name && name === current) {
+          if (name && name === current2) {
             close();
             return;
           }
@@ -1225,7 +1319,7 @@
           (() => {
             const footer = document.createElement("div");
             footer.className = "mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end";
-            if (current) {
+            if (current2) {
               footer.append(btnSecondary(L.aliasClear, async () => {
                 if (submitting) return;
                 submitting = true;
@@ -1451,6 +1545,73 @@
     return svg;
   }
 
+  // src/inject/features/copy-path.js
+  async function appendCopyPathItem(menu, anchorItem, project) {
+    if (menu.querySelector('[data-zcodepro-item="copy-path"]')) return;
+    const L = t();
+    const item = anchorItem.cloneNode(true);
+    item.removeAttribute("data-testid");
+    item.removeAttribute("data-highlighted");
+    item.setAttribute("data-zcodepro-item", "copy-path");
+    for (const child of [...item.childNodes]) child.remove();
+    const origIcon = anchorItem.querySelector("svg");
+    const iconClass = origIcon ? origIcon.getAttribute("class") : "h-3.5 w-3.5";
+    item.append(hCopyIcon(iconClass), document.createTextNode(L.copyPathItem));
+    item.addEventListener("mouseenter", () => {
+      for (const el of menu.querySelectorAll('[role="menuitem"]')) el.removeAttribute("data-highlighted");
+      item.setAttribute("data-highlighted", "");
+    });
+    item.addEventListener("mouseleave", () => item.removeAttribute("data-highlighted"));
+    item.addEventListener("click", () => {
+      closeRadixMenu(menu);
+      void copyText(project.path);
+    });
+    anchorItem.before(item);
+  }
+  async function copyText(text) {
+    const L = t();
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast(L.pathCopied);
+    } catch {
+      if (copyViaHiddenInput(text)) showToast(L.pathCopied);
+      else showToast(L.pathCopyFailed, "error");
+    }
+  }
+  function copyViaHiddenInput(text) {
+    try {
+      const input = h("input", { type: "text", style: "position:fixed;left:-9999px;top:0;opacity:0" });
+      input.value = text;
+      document.body.append(input);
+      input.select();
+      const ok = document.execCommand("copy");
+      input.remove();
+      return ok;
+    } catch {
+      return false;
+    }
+  }
+  function hCopyIcon(cls) {
+    const ns = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor");
+    svg.setAttribute("stroke-width", "2");
+    svg.setAttribute("stroke-linecap", "round");
+    svg.setAttribute("stroke-linejoin", "round");
+    svg.setAttribute("class", cls);
+    for (const d of [
+      "M8 8h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2Z",
+      "M4 16c-1.1 0-2-.9-2-2V4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2"
+    ]) {
+      const p = document.createElementNS(ns, "path");
+      p.setAttribute("d", d);
+      svg.append(p);
+    }
+    return svg;
+  }
+
   // src/inject/features/project-menu.js
   var REMOVE_TEXTS = ["\u79FB\u9664", "Remove"];
   function extractPathFromTestId2(testid) {
@@ -1483,14 +1644,13 @@
     if (!removeItem) return;
     void (async () => {
       const config = await getConfig();
-      if (config.features && config.features.projectAlias === false) return;
+      if (config.features && config.features.projectMenu === false) return;
       const project = await resolveProjectPath(removeItem);
       if (!project) return;
       appendAliasItem(content, removeItem, project);
-      if (config.features && config.features.projectRelocate !== false) {
-        appendRelocateItem(content, removeItem, project);
-      }
+      appendRelocateItem(content, removeItem, project);
       appendOpenFolderItem(content, removeItem, project);
+      appendCopyPathItem(content, removeItem, project);
     })();
   }
 
@@ -1593,7 +1753,6 @@
     const items = itemsOf(content);
     const copyAbs = items.find((el) => COPY_ABS_TEXTS.some((x) => itemText(el).startsWith(x)));
     if (!copyAbs) return;
-    if (typeof window === "undefined" || typeof window.zcode?.openExternalFile !== "function" || typeof window.zcode?.openInFileManager !== "function") return;
     content.dataset.zcodeproFileMenu = "1";
     void (async () => {
       const config = await getConfig();
@@ -1609,7 +1768,7 @@
         icon: ICON_OPEN_DEFAULT,
         onPick: () => {
           try {
-            void window.zcode.openExternalFile(path);
+            void rpc("/open-path", { method: "POST", body: { path } });
           } catch {
           }
         }
@@ -1677,7 +1836,7 @@
             void copyImage(img, preBlob);
           }
         },
-        hCopyIcon(),
+        hCopyIcon2(),
         document.createTextNode(L.imageCopy)
       )
     );
@@ -1791,7 +1950,7 @@
     if (!png) throw new Error("png convert failed");
     return png;
   }
-  function hCopyIcon() {
+  function hCopyIcon2() {
     const ns = "http://www.w3.org/2000/svg";
     const svg = document.createElementNS(ns, "svg");
     svg.setAttribute("viewBox", "0 0 24 24");
@@ -2141,20 +2300,20 @@
         const refreshRows = () => {
           const f = config.features || {};
           rows.replaceChildren(
-            settingRow(L.featureAlias, L.featureAliasDesc, f.projectAlias !== false, async () => {
-              const next = !(f.projectAlias !== false);
-              if (await setFeature("projectAlias", next)) f.projectAlias = next;
+            settingRow(L.featureProjectMenu, L.featureProjectMenuDesc, f.projectMenu !== false, async () => {
+              const next = !(f.projectMenu !== false);
+              if (await setFeature("projectMenu", next)) f.projectMenu = next;
               refreshRows();
               await refreshAliases();
-            }),
-            settingRow(L.featureRelocate, L.featureRelocateDesc, f.projectRelocate !== false, async () => {
-              const next = !(f.projectRelocate !== false);
-              if (await setFeature("projectRelocate", next)) f.projectRelocate = next;
-              refreshRows();
             }),
             settingRow(L.featureTaskOrder, L.featureTaskOrderDesc, f.taskOrder !== false, async () => {
               const next = !(f.taskOrder !== false);
               if (await setFeature("taskOrder", next)) f.taskOrder = next;
+              refreshRows();
+            }),
+            settingRow(L.featureSessionSwitch, L.featureSessionSwitchDesc, f.sessionSwitch !== false, async () => {
+              const next = !(f.sessionSwitch !== false);
+              if (await setFeature("sessionSwitch", next)) f.sessionSwitch = next;
               refreshRows();
             }),
             settingRow(L.featureFileActions, L.featureFileActionsDesc, f.fileActions !== false, async () => {
@@ -3207,6 +3366,205 @@
     }
   }
 
+  // src/inject/features/session-switch.js
+  var MRU_LIMIT = 50;
+  var SCAN_MS = 800;
+  var mru = [];
+  var current = null;
+  var titles = /* @__PURE__ */ new Map();
+  var popupEl = null;
+  var aliasesCache = {};
+  var highlight = 0;
+  var scanTimer = null;
+  function firstLineOf(item) {
+    const tEl = item.querySelector('[class*="truncate"]');
+    return (tEl ? tEl.textContent : (item.innerText || "").split("\n")[0])?.trim() || "";
+  }
+  function workspaceOf(key) {
+    const i = key.indexOf(":sess_");
+    return i > 0 ? key.slice(0, i) : key;
+  }
+  function findCurrent() {
+    for (const el of document.querySelectorAll("[data-task-item-key]")) {
+      if ((el.className + "").includes("bg-selected")) return el;
+    }
+    return null;
+  }
+  function record(key) {
+    if (key && key !== current) {
+      current = key;
+      mru = mru.filter((k) => k !== key);
+      mru.unshift(key);
+      if (mru.length > MRU_LIMIT) mru.length = MRU_LIMIT;
+    }
+  }
+  function scan() {
+    const cur = findCurrent();
+    if (cur) record(cur.getAttribute("data-task-item-key"));
+    for (const el of document.querySelectorAll("[data-task-item-key]")) {
+      titles.set(el.getAttribute("data-task-item-key"), firstLineOf(el));
+    }
+  }
+  async function switchTo(key) {
+    const find = () => document.querySelector(`[data-task-item-key="${CSS.escape(key)}"]`);
+    let item = find();
+    if (!item) {
+      const ws = workspaceOf(key);
+      const header = document.querySelector(`[data-testid="workspace-item-${CSS.escape(ws)}"]`);
+      const expander = header && header.querySelector("[aria-expanded]");
+      if (expander && expander.getAttribute("aria-expanded") === "false") {
+        expander.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+        for (let i = 0; i < 20 && !(item = find()); i++) await new Promise((r) => setTimeout(r, 100));
+      }
+    }
+    if (!item) return false;
+    item.scrollIntoView({ block: "nearest" });
+    item.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+    return true;
+  }
+  function closePopup(commit) {
+    if (!popupEl) return;
+    const idx = highlight;
+    popupEl.remove();
+    popupEl = null;
+    if (commit && idx > 0 && mru[idx] && mru[idx] !== current) {
+      void switchTo(mru[idx]).then((ok) => {
+        if (!ok) showToast(t().switcherFailed, "error");
+      });
+    }
+  }
+  function findTitle(key) {
+    const item = document.querySelector(`[data-task-item-key="${CSS.escape(key)}"]`);
+    if (item) titles.set(key, firstLineOf(item));
+    const id = key.slice(key.indexOf(":sess_") + 1);
+    return titles.get(key) || `sess ${id.slice(0, 8)}`;
+  }
+  function projLabelOf(key, aliases2) {
+    const ws = workspaceOf(key);
+    if (!ws) return "";
+    return aliases2[ws] || ws.replace(/[\\/]+$/, "").split(/[\\/]/).pop();
+  }
+  function renderPopup() {
+    if (!popupEl) return;
+    const L = t();
+    const list = popupEl.querySelector("[data-zcodepro-switcher-list]");
+    list.replaceChildren(...mru.map((key, i) => {
+      const proj = projLabelOf(key, aliasesCache);
+      return h(
+        "div",
+        {
+          class: "zcodepro-switcher-row",
+          "data-active": i === highlight ? "" : void 0,
+          onClick: () => {
+            highlight = i;
+            closePopup(true);
+          }
+        },
+        // 标题文本包 span：截断省略作用在文本节点上（flex 容器自身 ellipsis 无效）
+        h(
+          "div",
+          { class: "zcodepro-switcher-title" },
+          i === 0 ? h("span", { class: "zcodepro-switcher-tag" }, L.switcherCurrent) : null,
+          h("span", null, findTitle(key))
+        ),
+        // 无项目归属（如置顶）时不渲染空行
+        proj ? h("div", { class: "zcodepro-switcher-ws" }, proj) : null
+      );
+    }));
+  }
+  async function openPopup() {
+    if (popupEl) return;
+    const cfg = await getConfig().catch(() => null);
+    aliasesCache = cfg && cfg.aliases && typeof cfg.aliases === "object" ? cfg.aliases : {};
+    ensureStyle();
+    const L = t();
+    highlight = 0;
+    popupEl = h(
+      "div",
+      {
+        class: "zcodepro-switcher-overlay",
+        // 点弹窗外 = 取消（不切）
+        onMousedown: (e) => {
+          if (e.target === popupEl) closePopup(false);
+        }
+      },
+      h(
+        "div",
+        { class: "zcodepro-switcher" },
+        h("div", { class: "zcodepro-switcher-hint" }, L.switcherHint),
+        h("div", { "data-zcodepro-switcher-list": "1", class: "zcodepro-switcher-list" })
+      )
+    );
+    document.body.append(popupEl);
+    renderPopup();
+  }
+  function moveHighlight(delta) {
+    if (!popupEl || mru.length < 2) return;
+    highlight = (highlight + delta + mru.length) % mru.length;
+    renderPopup();
+    const row = popupEl.querySelector("[data-active]");
+    if (row) row.scrollIntoView({ block: "nearest" });
+  }
+  function startSessionSwitch() {
+    scan();
+    scanTimer = setInterval(scan, SCAN_MS);
+    document.addEventListener("click", (e) => {
+      const item = e.target instanceof Element && e.target.closest("[data-task-item-key]");
+      if (item) record(item.getAttribute("data-task-item-key"));
+    }, true);
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && popupEl) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        closePopup(false);
+        return;
+      }
+      if (!e.altKey || e.ctrlKey || e.metaKey || e.isComposing) return;
+      if (document.querySelector(".zcodepro-overlay")) return;
+      const k = e.key.toLowerCase();
+      if (k !== "z" && k !== "x" && k !== "c") return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      void (async () => {
+        const cfg = await getConfig();
+        if (cfg.features && cfg.features.sessionSwitch === false) return;
+        if (k === "z") {
+          if (e.repeat) return;
+          closePopup(false);
+          if (mru.length < 2 || mru[0] !== current) {
+            const target = mru.find((mk) => mk !== current);
+            if (!target) {
+              showToast(t().switcherEmpty);
+              return;
+            }
+            void switchTo(target).then((ok) => {
+              if (!ok) showToast(t().switcherFailed, "error");
+            });
+            return;
+          }
+          if (!mru[1]) {
+            showToast(t().switcherEmpty);
+            return;
+          }
+          void switchTo(mru[1]).then((ok) => {
+            if (!ok) showToast(t().switcherFailed, "error");
+          });
+          return;
+        }
+        if (mru.length < 2) {
+          showToast(t().switcherEmpty);
+          return;
+        }
+        if (!popupEl) await openPopup();
+        moveHighlight(k === "x" ? 1 : -1);
+      })();
+    }, true);
+    document.addEventListener("keyup", (e) => {
+      if (e.key === "Alt" && popupEl) closePopup(true);
+    }, true);
+    window.addEventListener("blur", () => closePopup(false));
+  }
+
   // src/inject/features/pinned-expand.js
   var installed2 = false;
   var keepCollapsed = false;
@@ -3333,6 +3691,10 @@
       }
       try {
         startTaskOrderWatcher();
+      } catch {
+      }
+      try {
+        startSessionSwitch();
       } catch {
       }
       try {

@@ -476,6 +476,84 @@ export function ensureStyle() {
       background: color-mix(in oklab, var(--color-foreground, #888) 18%, transparent);
       outline: none;
     }
+    /* 会话快捷切换弹窗（alt+x/c）：居中列表卡，类 alt+tab */
+    .zcodepro-switcher-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 90;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: rgba(0, 0, 0, 0.35);
+    }
+    .zcodepro-switcher {
+      display: flex;
+      flex-direction: column;
+      min-width: 440px;
+      max-width: min(560px, calc(100vw - 2rem));
+      max-height: 60vh;
+      padding: 8px;
+      border-radius: 14px;
+      background-color: var(--color-popover, #fff);
+      box-shadow: 0 0 0 1px var(--color-border, rgba(0, 0, 0, 0.1)), 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+    }
+    .zcodepro-switcher-hint {
+      padding: 4px 10px 8px;
+      font-size: 11px;
+      color: var(--color-muted-foreground, #888);
+    }
+    .zcodepro-switcher-list {
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    /* 两行布局（标题 + 项目名）全部居左；标题行的「当前」标签与文本垂直居中 */
+    .zcodepro-switcher-row {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 2px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      text-align: left;
+    }
+    .zcodepro-switcher-row:hover { background-color: color-mix(in oklab, var(--color-foreground, #888) 6%, transparent); }
+    .zcodepro-switcher-row[data-active] {
+      background-color: color-mix(in oklab, var(--color-foreground, #888) 12%, transparent);
+    }
+    .zcodepro-switcher-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+      text-align: left;
+      font-size: 13px;
+      color: var(--color-foreground, #111);
+    }
+    /* 标题文本承载 span：截断省略放在文本节点上，避免 flex 容器 ellipsis 失效 */
+    .zcodepro-switcher-title > span:last-child {
+      min-width: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+    .zcodepro-switcher-tag {
+      flex-shrink: 0;
+      padding: 1px 5px;
+      border-radius: 5px;
+      font-size: 10px;
+      background-color: color-mix(in oklab, var(--color-primary, #111) 12%, transparent);
+      color: var(--color-foreground-subtle, #666);
+    }
+    .zcodepro-switcher-ws {
+      font-size: 11px;
+      color: var(--color-muted-foreground, #888);
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
     .zcodepro-range::-webkit-slider-thumb {
       -webkit-appearance: none;
       width: 14px;

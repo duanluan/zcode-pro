@@ -65,12 +65,16 @@ const zh = {
   contentWidthDesc: '会话内容的最大宽度，可输入 px 或 %（如 900px、85%）；默认显示当前实际宽度，% 相对会话区域。',
   defaultValue: '默认',
   resetDefault: '恢复默认',
-  featureAlias: '项目“更多”菜单 · 自定义别名',
-  featureAliasDesc: '为项目设置仅界面显示的别名：侧边栏显示别名，磁盘目录与所有数据不变。',
-  featureRelocate: '项目“更多”菜单 · 切换文件夹',
-  featureRelocateDesc: '将项目指向另一个文件夹：侧边栏、标签页与任务历史一并迁移，目录本身不动。',
+  featureProjectMenu: '项目菜单增强',
+  featureProjectMenuDesc: '项目「更多」菜单中的自定义别名、切换文件夹、打开文件夹与复制路径（别名同时作用于侧边栏显示）。',
   featureTaskOrder: '侧边栏会话拖动排序',
   featureTaskOrderDesc: '让置顶、项目与分组中的会话拖动后记住顺序，刷新后保持。',
+  featureSessionSwitch: '会话快捷切换',
+  featureSessionSwitchDesc: 'alt+z 在当前与上次会话间来回切换；按住 alt 再按 x/c 弹出最近会话列表前后选择，松开 alt 切换（类 alt+tab）。',
+  switcherHint: 'x / c 选择，松开 alt 切换，Esc 取消',
+  switcherCurrent: '当前',
+  switcherEmpty: '暂无上次会话（切换过会话后可用）',
+  switcherFailed: '未能切换到该会话（可能已删除）',
   featureFileActions: '文件菜单增强',
   featureFileActionsDesc: '在会话中文件链接的右键菜单里新增「默认应用打开」与「打开所在目录」。',
   featureImageCopy: '图片右键复制',
@@ -79,6 +83,9 @@ const zh = {
   imageCopied: '图片已复制到剪贴板',
   imageCopyFailed: '复制图片失败',
   openFolderItem: '打开文件夹',
+  copyPathItem: '复制路径',
+  pathCopied: '路径已复制到剪贴板',
+  pathCopyFailed: '复制路径失败',
   fileOpenDefault: '默认应用打开',
   fileReveal: '打开所在目录',
   featurePinnedExpand: '置顶会话保持项目折叠（实验性）',
@@ -276,12 +283,16 @@ const en = {
   contentWidthDesc: 'Max width of conversation content; accepts px or % (e.g. 900px, 85%).',
   defaultValue: 'default',
   resetDefault: 'Reset to default',
-  featureAlias: 'Project "More" menu · Custom alias',
-  featureAliasDesc: 'A UI-only alias: the sidebar shows your custom name while the directory and all data stay untouched.',
-  featureRelocate: 'Project "More" menu · Switch folder',
-  featureRelocateDesc: 'Points a project at another folder; the sidebar, tabs and task history follow. The directory stays untouched.',
+  featureProjectMenu: 'Project menu actions',
+  featureProjectMenuDesc: 'Custom alias, switch folder, open folder and copy path in the project "More" menu (the alias also applies to the sidebar).',
   featureTaskOrder: 'Sidebar session drag ordering',
   featureTaskOrderDesc: 'Makes session drags in Pinned, Projects and Groups persist across refreshes.',
+  featureSessionSwitch: 'Session quick switch',
+  featureSessionSwitchDesc: 'alt+z toggles between the current and the last session; hold alt and press x/c to move the highlight across recently used sessions, release alt to switch (like alt+tab).',
+  switcherHint: 'x / c to choose, release alt to switch, Esc to cancel',
+  switcherCurrent: 'current',
+  switcherEmpty: 'No previous session yet (available after you switch sessions)',
+  switcherFailed: 'Failed to switch to that session (it may have been deleted)',
   featureFileActions: 'File menu actions',
   featureFileActionsDesc: 'Adds "Open with default app" and "Reveal in file manager" to the right-click menu of file links in chat.',
   featureImageCopy: 'Image right-click copy',
@@ -290,6 +301,9 @@ const en = {
   imageCopied: 'Image copied to the clipboard.',
   imageCopyFailed: 'Failed to copy the image.',
   openFolderItem: 'Open folder',
+  copyPathItem: 'Copy path',
+  pathCopied: 'Path copied to the clipboard.',
+  pathCopyFailed: 'Failed to copy the path.',
   fileOpenDefault: 'Open with default app',
   fileReveal: 'Reveal in file manager',
   featurePinnedExpand: 'Keep projects collapsed for pinned sessions (experimental)',
@@ -554,10 +568,14 @@ export function observeRadixPopups(onPopup) {
         }
       });
     }
-    // 兜底：直接观察 role=menu 的 content
+    // 兜底：直接观察 role=menu 的 content。延迟一帧再回调——Radix 偶尔分两帧渲染
+    // （先挂 menu 容器、下一帧才填菜单项），立即回调时菜单项为空，调用方找不到
+    // 锚点项就永远漏注入（菜单项填入不会再产生 role=menu 节点添加事件）
     if (node.getAttribute && node.getAttribute('role') === 'menu' && !seen.has(node)) {
       seen.add(node);
-      onPopup(node);
+      requestAnimationFrame(() => {
+        if (node.isConnected) onPopup(node);
+      });
     }
   };
   const process = (mutations) => {

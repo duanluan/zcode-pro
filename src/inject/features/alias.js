@@ -31,7 +31,7 @@ export async function startAliasWatcher() {
 
 async function syncFromConfig() {
   const config = await getConfig();
-  enabled = !(config.features && config.features.projectAlias === false);
+  enabled = !(config.features && config.features.projectMenu === false);
   aliases = enabled ? (config.aliases || {}) : {};
 }
 

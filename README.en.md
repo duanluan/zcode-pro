@@ -26,11 +26,15 @@ Point a project at another folder to change where it lives:
 
 ### Open project folder
 
-A new "Open folder" action in the project "More" menu opens the project directory in your system file manager.
+New "Open folder" and "Copy path" actions in the project "More" menu open the project directory in your file manager or copy the project path to the clipboard.
 
 ### Session ordering
 
 Drag sessions within the pinned, project and group lists to reorder them. The order is remembered and survives refreshes.
+
+### Session quick switch
+
+`alt+z` toggles between the current and the last-used session; hold `alt` and press `x` / `c` to move through recent sessions (across projects) in a popup, release `alt` to switch, `Esc` to cancel — like `alt+tab`. Can be toggled in the settings.
 
 ### File menu actions
 
