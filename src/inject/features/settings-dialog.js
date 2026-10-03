@@ -1,13 +1,137 @@
 // “ZCode Pro 增强设置”弹窗：功能开关 + 样式调整 + 运行状态。
 // 顶部标签页切换（视觉参考侧栏「分组/项目」切换）；配置写入 helper（~/.zcode/zcodepro.json）。
 import { h, t, rpc, getConfig, clearConfigCache, errText, HELPER_URL } from '../core.js';
-import { openDialog, dialogFooter, btnPrimary, btnSecondary, settingRow, ensureStyle, showToast, numberField, unitField } from '../ui.js';
+import { openDialog, dialogFooter, btnPrimary, btnSecondary, btnSmall, settingRow, ensureStyle, showToast, numberField, unitField } from '../ui.js';
 import { refreshAliases } from './alias.js';
 import { applyStyles, STYLE_DEFAULTS } from './styles.js';
+
+// 本体升级交互（Headroom 的 pip 与 rtk 的 GitHub Releases 共用）：
+// 检查更新 → 升级（helper 后台任务，轮询进度，输出取最后一行、超长省略中间）→
+// 进行中可停止；关弹窗不中断升级，重开恢复显示。endpoint 为 /headroom 或 /rtk，
+// metaRefresh 在升级完成后刷新各面板自己的版本行与配置。
+function makeUpgradeControls({ endpoint, metaRefresh }) {
+  const L = t();
+  const state = h('span', { class: 'min-w-0 flex-1 truncate text-left text-ui-xs/relaxed text-foreground-subtle' });
+  // 失败原因在状态行直显红字（toast 只有 5 秒且易被弹窗遮挡）
+  const setState = (text, kind = '') => {
+    state.textContent = text;
+    state.className = 'min-w-0 flex-1 truncate text-left text-ui-xs/relaxed '
+      + (kind === 'error' ? 'text-destructive' : 'text-foreground-subtle');
+  };
+  let latest = null;   // 检查到新版本时记录最新版号，按钮随即转为「升级」
+  let busy = false;
+  let timer = null;
+  const stopPoll = () => { if (timer) { clearInterval(timer); timer = null; } };
+  const lastLine = (out) => {
+    const lines = String(out || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    return lines[lines.length - 1] || '';
+  };
+  // 进度行只留一行：先去掉工具自带的结尾省略号，超长截中间——
+  // 头部（动作+包名）和尾部（大小/百分比）信息量最大，配合样式 truncate 不挤压版本行
+  const short = (line) => {
+    const v = line.replace(/[.…]{3,}\s*$/, '').trimEnd();
+    if (v.length <= 80) return v;
+    return v.slice(0, 40) + '…' + v.slice(-39);
+  };
+  const btn = btnSmall(L.upgradeCheck, () => { void runCheck(); }, 'shrink-0');
+  const runCancel = async () => {
+    const res = await rpc(endpoint, { method: 'POST', body: { cancelUpgrade: true } });
+    if (!res.ok) showToast(L.failed + ': ' + errText(res), 'error');
+    // 收尾交给轮询：任务结束后 tick 会恢复按钮并提示「已停止升级」
+  };
+  const runUpgrade = async () => {
+    if (busy) return;
+    busy = true;
+    const res = await rpc(endpoint, { method: 'POST', body: { upgrade: true } });
+    busy = false;
+    if (!res.ok) {
+      btn.textContent = L.upgradeNow;
+      showToast(L.failed + ': ' + errText(res), 'error');
+      return;
+    }
+    pollStart();
+  };
+  const runCheck = async () => {
+    if (busy) return;
+    if (timer) { void runCancel(); return; } // 升级进行中：按钮此时是「停止升级」
+    if (latest) { void runUpgrade(); return; }
+    busy = true;
+    btn.disabled = true;
+    setState(L.upgradeChecking);
+    const res = await rpc(endpoint, { method: 'POST', body: { checkUpdate: true } });
+    busy = false;
+    btn.disabled = false;
+    if (!res.ok) {
+      setState(L.upgradeCheckFailed, 'error');
+      showToast(L.upgradeCheckFailed + ': ' + errText(res), 'error');
+      return;
+    }
+    if (res.upToDate) {
+      latest = null;
+      setState(L.upgradeUpToDate.replaceAll('{v}', res.current || ''));
+      return;
+    }
+    latest = res.latest;
+    setState(L.upgradeFound.replaceAll('{v}', res.latest || ''));
+    btn.textContent = L.upgradeNow;
+  };
+  const tick = async () => {
+    const res = await rpc(endpoint + '/upgrade');
+    if (!res.ok) {
+      stopPoll();
+      latest = null;
+      busy = false;
+      btn.disabled = false;
+      btn.textContent = L.upgradeCheck;
+      showToast(L.failed + ': ' + errText(res), 'error');
+      return;
+    }
+    const snap = res.upgrade || {};
+    if (snap.running) {
+      setState(short(lastLine(snap.output)) || L.upgradeRunning);
+      return;
+    }
+    stopPoll();
+    latest = null;
+    busy = false;
+    btn.disabled = false;
+    btn.textContent = L.upgradeCheck;
+    if (snap.canceled) {
+      setState(L.upgradeStopped);
+      return;
+    }
+    if (snap.error) {
+      setState(String(snap.error).split('\n')[0], 'error');
+      showToast(L.failed + ': ' + String(snap.error).split('\n')[0], 'error');
+      return;
+    }
+    setState(snap.version ? L.upgradeDone.replaceAll('{v}', snap.version) : L.upgradeFinished);
+    showToast(state.textContent, 'success');
+    await metaRefresh();
+  };
+  const pollStart = () => {
+    stopPoll();
+    // 升级中按钮转为「停止升级」，保持可点（点击即中止）
+    btn.disabled = false;
+    btn.textContent = L.upgradeStop;
+    setState(L.upgradeRunning);
+    timer = setInterval(() => { void tick(); }, 1500);
+    void tick();
+  };
+  // 打开弹窗时若升级仍在后台跑，恢复进度显示（关闭弹窗不会中断升级）
+  void (async () => {
+    const res = await rpc(endpoint + '/upgrade');
+    if (res.ok && res.upgrade && res.upgrade.running) pollStart();
+  })();
+  return { btn, state, stop: stopPoll };
+}
 
 export function openSettingsDialog() {
   ensureStyle();
   const L = t();
+  // Headroom / rtk 升级进度轮询的停止句柄：面板代码在 onMount 里赋值，关弹窗时停掉
+  let hrUpgradePollStop = null;
+  let rtkUpgradePollStop = null;
   openDialog({
     title: L.settingsTitle,
     // 宽度类必须用宿主样式表已有的工具类（注入的类名不会生成 CSS）：
@@ -17,12 +141,55 @@ export function openSettingsDialog() {
     draggable: true,
     posKey: 'settings',
     dismissOnOutside: false,
-    onMount: async ({ body, close }) => {
+    onClose: () => {
+      if (hrUpgradePollStop) hrUpgradePollStop();
+      if (rtkUpgradePollStop) rtkUpgradePollStop();
+    },
+    onMount: async ({ body, close, content }) => {
+      // 标题行：左侧「ZCode Pro」点击跳转 GitHub 仓库；右上角 X 关闭弹窗（替代底部按钮）。
+      // h2 仍是拖拽把手——X 上阻止 mousedown 冒泡，避免点关闭时误触发拖拽
+      const titleEl = content && content.firstElementChild;
+      if (titleEl && titleEl.tagName === 'H2') {
+        titleEl.classList.add('flex', 'w-full', 'items-center', 'justify-between');
+        const ns = 'http://www.w3.org/2000/svg';
+        const mkIcon = (paths, cls) => {
+          const svg = h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor',
+            'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', class: cls });
+          for (const d of paths) {
+            const p2 = document.createElementNS(ns, 'path');
+            p2.setAttribute('d', d);
+            svg.append(p2);
+          }
+          return svg;
+        };
+        const titleLeft = h('span', { class: 'flex min-w-0 items-center' }, L.settingsTitle);
+        if (typeof window.zcode?.openExternal === 'function') {
+          const REPO_URL = 'https://github.com/duanluan/zcode-pro';
+          titleLeft.replaceChildren(
+            h('span', {
+              class: 'cursor-pointer underline-offset-4 hover:underline',
+              title: REPO_URL,
+              onClick: () => { try { void window.zcode.openExternal(REPO_URL); } catch { /* ignore */ } },
+            }, L.settingsTitle),
+            mkIcon(['M15 3h6v6', 'M10 14 21 3', 'M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'], 'ml-1 inline-block size-4 text-foreground-subtle'));
+        }
+        // 关闭按钮用文字字形 + 自有样式（.zcodepro-close）：SVG 描边在本应用内不可见
+        const closeX = h('button', {
+          type: 'button',
+          class: 'zcodepro-close',
+          title: L.close,
+          'aria-label': L.close,
+          onMousedown: (e) => { e.stopPropagation(); },
+          onClick: () => { close(); },
+        }, '✕');
+        titleEl.replaceChildren(titleLeft, closeX);
+      }
       const health = await rpc('/health');
       const config = await getConfig(true);
       const agentsRes = await rpc('/agents');
       const visionRes = await rpc('/vision');
       const rtkRes = await rpc('/rtk');
+      const headroomRes = await rpc('/headroom');
 
       const setFeature = async (key, value) => {
         const res = await rpc('/config', { method: 'POST', body: { features: { [key]: value } } });
@@ -124,7 +291,7 @@ export function openSettingsDialog() {
       // 插件更新卡片：显示 duanluan-zcode-plugins 市场状态，一键更新（helper /plugins/* 端点）；
       // 状态异步加载，打开弹窗不等待
       const pluginsStatusLine = h('span', { class: 'text-ui-xs/relaxed text-foreground-subtle' }, '…');
-      const pluginsBtn = btnSecondary(L.pluginsCheckNow, () => { void runPluginsUpdate(); }, 'h-7 px-3 text-ui-xs');
+      const pluginsBtn = btnSmall(L.pluginsCheckNow, () => { void runPluginsUpdate(); });
       const runPluginsUpdate = async () => {
         pluginsBtn.disabled = true;
         pluginsStatusLine.textContent = L.pluginsUpdating;
@@ -159,14 +326,18 @@ export function openSettingsDialog() {
       );
       const paneStyles = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
       const paneAgents = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
+      const paneProxy = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
       const paneVision = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
       const paneRtk = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
-      const panes = { features: paneFeatures, styles: paneStyles, agents: paneAgents, vision: paneVision, rtk: paneRtk };
+      const paneHeadroom = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
+      const panes = { features: paneFeatures, styles: paneStyles, agents: paneAgents, proxy: paneProxy, vision: paneVision, headroom: paneHeadroom, rtk: paneRtk };
       const tabDefs = [
         ['features', L.tabFeatures],
         ['styles', L.tabStyles],
         ['agents', L.tabAgents],
+        ['proxy', L.tabProxy],
         ['vision', L.tabVision],
+        ['headroom', L.tabHeadroom],
         ['rtk', L.tabRtk],
       ];
       const tablist = h('div', { role: 'tablist', 'aria-orientation': 'horizontal', class: 'zcodepro-tablist mt-4' });
@@ -240,10 +411,10 @@ export function openSettingsDialog() {
         h('div', { class: 'grid grid-cols-2 gap-2 rounded-xl border border-border p-1.5' },
           ...cells.map((c) => h('div', { class: 'rounded-lg transition-colors hover:bg-surface-hover' }, c.el))),
         h('div', { class: 'mt-2 flex justify-end' },
-          btnSecondary(L.resetDefault, () => {
+          btnSmall(L.resetDefault, () => {
             for (const c of cells) c.field.reset();
             persistStyles({ rowGap: null, listSpacing: null, listItemSpacing: null, quoteCodeSpacing: null, lineHeight: null, userLineHeight: null, contentWidth: null });
-          }, 'h-7 px-3 text-ui-xs')),
+          })),
       );
 
       // 「全局提示词」：编辑 ~/.zcode/AGENTS.md（helper /agents 端点读写）。
@@ -253,7 +424,7 @@ export function openSettingsDialog() {
         placeholder: L.agentsPlaceholder,
         spellcheck: 'false',
       });
-      const agentsSaveBtn = btnPrimary(L.agentsSave, () => { void saveAgents(); }, 'h-7 px-3 text-ui-xs');
+      const agentsSaveBtn = btnSmall(L.agentsSave, () => { void saveAgents(); }, '', 'primary');
       let agentsOriginal = '';
       let agentsFailed = false;
       if (agentsRes.ok) {
@@ -285,6 +456,65 @@ export function openSettingsDialog() {
           : []),
         h('div', { class: 'mt-3' }, agentsArea),
         h('div', { class: 'mt-3 flex justify-end' }, agentsSaveBtn),
+      );
+
+      // 「代理」：为 helper 发起的网络访问（插件市场更新/安装、headroom 本体升级）设
+      // HTTP 代理；保存即生效（helper 子进程环境变量注入），不影响 ZCode 应用与模型请求。
+      // 「检测」经 curl -x 走代理访问 GitHub / PyPI，测输入框当前的地址（可先测再存）
+      const savedProxy = typeof config.proxy === 'string' ? config.proxy : '';
+      const proxyInputCls = 'h-8 w-full rounded-lg border border-border bg-input px-2.5 text-ui-sm text-foreground outline-none transition-shadow placeholder:text-foreground-subtle focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40';
+      const proxyInput = h('input', { type: 'text', value: savedProxy, placeholder: L.proxyPlaceholder, spellcheck: 'false', class: proxyInputCls + ' min-w-0 flex-1' });
+      const proxySaveBtn = btnSmall(L.proxySave, () => { void saveProxy(); }, 'shrink-0', 'primary');
+      let proxyOriginal = savedProxy;
+      proxySaveBtn.disabled = true;
+      proxyInput.addEventListener('input', () => {
+        proxySaveBtn.disabled = proxyInput.value.trim() === proxyOriginal;
+      });
+      const saveProxy = async () => {
+        proxySaveBtn.disabled = true;
+        const res = await rpc('/config', { method: 'POST', body: { proxy: proxyInput.value.trim() } });
+        if (res.ok) {
+          proxyOriginal = res.config && typeof res.config.proxy === 'string' ? res.config.proxy : proxyInput.value.trim();
+          proxyInput.value = proxyOriginal;
+          showToast(L.proxySaved);
+        } else {
+          proxySaveBtn.disabled = false;
+          showToast(L.failed + ': ' + errText(res), 'error');
+        }
+      };
+      const proxyTestState = h('p', { class: 'mt-2 text-ui-xs/relaxed text-foreground-subtle' });
+      let proxyTesting = false;
+      const proxyTestBtn = btnSmall(L.proxyTest, () => { void runProxyTest(); }, 'shrink-0');
+      const runProxyTest = async () => {
+        if (proxyTesting) return;
+        proxyTesting = true;
+        proxyTestBtn.disabled = true;
+        proxyTestBtn.textContent = L.proxyTesting;
+        proxyTestState.textContent = '';
+        proxyTestState.className = 'mt-2 text-ui-xs/relaxed text-foreground-subtle';
+        const res = await rpc('/proxy/test', { method: 'POST', body: { proxy: proxyInput.value.trim() } });
+        proxyTesting = false;
+        proxyTestBtn.disabled = false;
+        proxyTestBtn.textContent = L.proxyTest;
+        if (!res.ok) {
+          proxyTestState.className = 'mt-2 text-ui-xs/relaxed text-destructive';
+          proxyTestState.textContent = L.proxyTestFailed + ': ' + errText(res);
+          return;
+        }
+        const parts = (res.targets || []).map((t) =>
+          `${t.name} ${t.ok ? '✓ ' + (t.ms != null ? t.ms + 'ms' : '') : '✗ ' + (t.error || t.httpCode || '')}`.trim());
+        const allOk = (res.targets || []).length > 0 && (res.targets || []).every((t) => t.ok);
+        proxyTestState.className = 'mt-2 text-ui-xs/relaxed ' + (allOk ? 'text-foreground-subtle' : 'text-amber-500');
+        proxyTestState.textContent = `${res.proxy}：${parts.join(' · ')}`;
+      };
+      paneProxy.append(
+        h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.proxyDesc),
+        h('div', { class: 'mt-3 flex items-center gap-2' },
+          proxyInput,
+          proxySaveBtn,
+          proxyTestBtn),
+        h('p', { class: 'mt-2 text-ui-xs/relaxed text-foreground-subtle' }, L.proxyHint),
+        proxyTestState,
       );
 
       // 「视觉代理」：编辑 ~/.zcode/zcode-vision.json（zcode-vision 插件与 /vision-* 命令共用同一文件）。
@@ -322,11 +552,11 @@ export function openSettingsDialog() {
       const visionInputCls = 'h-8 w-full rounded-lg border border-border bg-input px-2.5 text-ui-sm text-foreground outline-none transition-shadow placeholder:text-foreground-subtle focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40';
       const renderVision = () => {
         if (!visionCfg) {
-          const initBtn = btnSecondary(L.visionAddProxy, async () => {
+          const initBtn = btnSmall(L.visionAddProxy, async () => {
             const res = await rpc('/vision', { method: 'POST', body: { config: VISION_DEFAULT_CFG } });
             if (res.ok) { visionCfg = structuredClone(res.config); renderVision(); }
             else showToast(L.failed + ': ' + errText(res), 'error');
-          }, 'h-7 px-3 text-ui-xs');
+          });
           paneVision.replaceChildren(
             h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.visionDesc),
             ...(visionRes.ok ? [] : [h('p', { class: 'mt-2 text-ui-sm text-destructive' }, L.visionLoadFailed + ': ' + errText(visionRes))]),
@@ -336,7 +566,7 @@ export function openSettingsDialog() {
         }
         const field = (labelText, node) => h('label', { class: 'block min-w-0' },
           h('span', { class: 'mb-1 block text-ui-xs font-medium text-foreground-subtle' }, labelText), node);
-        const smallBtn = (text, onClick, extra = '') => btnSecondary(text, onClick, 'h-7 px-2.5 text-ui-xs ' + extra);
+        const smallBtn = (text, onClick, extra = '') => btnSmall(text, onClick, extra);
         const modeBtn = (id, label, desc) => h('button', {
           type: 'button',
           class: 'zcodepro-tab',
@@ -352,7 +582,12 @@ export function openSettingsDialog() {
         const cards = visionCfg.proxies.map((p, i) => h('div', { class: 'mt-2 rounded-xl border border-border p-3' },
           h('div', { class: 'flex flex-wrap items-center gap-2' },
             h('span', { class: 'shrink-0 rounded-md bg-surface px-1.5 py-0.5 text-ui-xs tabular-nums text-foreground-subtle' }, String(i + 1)),
-            textIn(p.name, (v) => { p.name = v; saveVisionSoon(); }, { placeholder: L.visionName }),
+            // 名称输入框用 flex-1 占剩余宽度，与序号同行；textIn 的 w-full 会把序号挤成单独一行
+            (() => {
+              const n = h('input', { type: 'text', value: p.name || '', placeholder: L.visionName, class: visionInputCls + ' min-w-0 flex-1' });
+              n.addEventListener('input', () => { p.name = n.value; saveVisionSoon(); });
+              return n;
+            })(),
             (() => {
               const sel = h('select', { class: 'h-7 shrink-0 rounded-lg border border-border bg-input px-1.5 text-ui-xs text-foreground outline-none' },
                 h('option', { value: 'anthropic' }, 'anthropic'),
@@ -449,6 +684,9 @@ export function openSettingsDialog() {
             binPath: rtkRes.binPath || '',
             mode: rtkRes.mode === 'off' ? 'off' : 'hint',
             whitelist: Array.isArray(rtkRes.whitelist) ? [...rtkRes.whitelist] : [],
+            // 钩子内置放行清单（只读展示）
+            builtinGit: Array.isArray(rtkRes.builtinGit) ? [...rtkRes.builtinGit] : [],
+            builtinPlain: Array.isArray(rtkRes.builtinPlain) ? [...rtkRes.builtinPlain] : [],
           }
         : null;
       const persistRtk = async (partial) => {
@@ -457,11 +695,39 @@ export function openSettingsDialog() {
         return res.ok;
       };
       const rtkInputCls = 'h-8 w-full rounded-lg border border-border bg-input px-2.5 text-ui-sm text-foreground outline-none transition-shadow placeholder:text-foreground-subtle focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40';
+      // rtk 本体（GitHub Releases 下载替换）的版本行与升级控件，渲染函数外创建一次
+      const rtkVersionLine = h('span', { class: 'shrink-0 whitespace-nowrap text-ui-xs/relaxed text-foreground-subtle' });
+      const renderRtkVersion = (meta) => {
+        const v = meta.version || 'rtk';
+        rtkVersionLine.textContent = meta.binPath ? `${v} · ${meta.binPath}` : v;
+      };
+      renderRtkVersion(rtkRes);
+      const rtkUp = makeUpgradeControls({
+        endpoint: '/rtk',
+        metaRefresh: async () => {
+          const meta = await rpc('/rtk');
+          if (meta.ok) {
+            // 初始读取失败时 rtkCfg 为 null，此时只刷新版本行
+            if (rtkCfg) Object.assign(rtkCfg, meta);
+            renderRtkVersion(meta);
+          }
+        },
+      });
+      rtkUpgradePollStop = rtkUp.stop;
+      const rtkVersionCard = h('div', { class: 'mt-3 flex items-center justify-between gap-2 rounded-xl border border-border p-3' },
+        h('div', { class: 'flex min-w-0 items-center gap-2' }, rtkVersionLine, rtkUp.state),
+        rtkUp.btn);
+      const rtkBody = h('div');
+      // 简介置顶（与 Headroom 面板一致），其下版本卡、再下开关与白名单
+      paneRtk.append(
+        h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.rtkDesc),
+        rtkVersionCard,
+        rtkBody);
       const renderRtk = () => {
+        rtkVersionCard.style.display = rtkCfg && rtkCfg.installed ? '' : 'none';
         if (!rtkCfg) {
-          paneRtk.replaceChildren(
-            h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.rtkDesc),
-            h('p', { class: 'mt-2 text-ui-sm text-destructive' }, L.rtkLoadFailed + ': ' + errText(rtkRes)),
+          rtkBody.replaceChildren(
+            h('p', { class: 'text-ui-sm text-destructive' }, L.rtkLoadFailed + ': ' + errText(rtkRes)),
           );
           return;
         }
@@ -490,12 +756,10 @@ export function openSettingsDialog() {
             }
           })();
         };
-        paneRtk.replaceChildren(
-          h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.rtkDesc),
+        rtkBody.replaceChildren(
           ...(rtkCfg.installed
-            ? [h('p', { class: 'mt-2 text-ui-xs text-foreground-subtle' },
-                `${rtkCfg.version || 'rtk'}${rtkCfg.binPath ? ' · ' + rtkCfg.binPath : ''}`)]
-            : [h('p', { class: 'mt-2 text-ui-sm text-amber-500' }, L.rtkNotInstalled)]),
+            ? []
+            : [h('p', { class: 'text-ui-sm text-amber-500' }, L.rtkNotInstalled)]),
           h('div', { class: 'mt-3 rounded-xl border border-border p-1.5' },
             settingRow(L.rtkEnabled, L.rtkEnabledDesc, rtkCfg.mode === 'hint', async () => {
               const next = rtkCfg.mode === 'hint' ? 'off' : 'hint';
@@ -507,6 +771,16 @@ export function openSettingsDialog() {
           h('div', { class: 'mt-2 rounded-xl border border-border p-3' },
             h('div', { class: 'text-ui-sm font-medium text-foreground' }, L.rtkWhitelistTitle),
             h('p', { class: 'mt-1 text-ui-xs/relaxed text-foreground-subtle' }, L.rtkWhitelistDesc),
+            ...((rtkCfg.builtinGit.length > 0 || rtkCfg.builtinPlain.length > 0)
+              ? [
+                h('div', { class: 'mt-2 text-ui-xs font-medium text-foreground-subtle' }, L.rtkBuiltinLabel),
+                h('div', { class: 'mt-1 flex flex-wrap items-center gap-1' },
+                  ...rtkCfg.builtinGit.map((g) => `git:${g}`).concat(rtkCfg.builtinPlain)
+                    .map((entry) => h('span', {
+                      class: 'inline-flex items-center rounded-md border border-border bg-surface px-1.5 py-0.5 text-ui-xs text-foreground-subtle/80',
+                    }, entry))),
+              ]
+              : []),
             h('div', { class: 'mt-2 flex flex-wrap items-center gap-1.5' },
               ...rtkCfg.whitelist.map((entry) => h('span', {
                 class: 'inline-flex items-center gap-1 rounded-md border border-border bg-surface px-1.5 py-0.5 text-ui-xs text-foreground',
@@ -520,8 +794,8 @@ export function openSettingsDialog() {
                 : [])),
             h('div', { class: 'mt-2 flex items-center gap-2' },
               input,
-              btnSecondary(L.rtkWhitelistAdd, () => { void addEntry(); }, 'h-7 shrink-0 px-3 text-ui-xs'),
-              btnSecondary(L.rtkWhitelistClear, () => {
+              btnSmall(L.rtkWhitelistAdd, () => { void addEntry(); }, 'shrink-0'),
+              btnSmall(L.rtkWhitelistClear, () => {
                 void (async () => {
                   if (rtkCfg.whitelist.length === 0) return;
                   if (await persistRtk({ whitelist: [] })) {
@@ -530,10 +804,258 @@ export function openSettingsDialog() {
                     showToast(L.rtkWhitelistCleared);
                   }
                 })();
-              }, 'h-7 shrink-0 px-3 text-ui-xs'))),
+              }, 'shrink-0'))),
         );
       };
       renderRtk();
+
+      // 「Headroom」：编辑 headroom 插件配置（~/.zcode/headroom.json，
+      // /hr-* 命令与钩子共用同一文件）。压缩设备/省电切换经 helper 调钩子动作改
+      // （立即生效；切换设备会重启代理）；监视间隔直写配置，监视器下一轮巡检生效。
+      // 可整面重渲染：未装插件时显示安装卡，安装成功后原地恢复完整面板。
+      // 版本行与本体升级控件（pip 通道）在渲染函数外创建一次，重渲染时复用同一组节点
+      const hrVersionLine = h('span', { class: 'shrink-0 whitespace-nowrap text-ui-xs/relaxed text-foreground-subtle' });
+      const renderHrVersion = (meta) => {
+        const parts = [];
+        if (meta.pluginVersion) parts.push(`${L.headroomVersionPlugin} ${meta.pluginVersion}`);
+        if (meta.version) parts.push(`${L.headroomVersionBin} ${meta.version}`);
+        hrVersionLine.textContent = parts.length ? parts.join(' · ') : `${L.headroomVersionPlugin} —`;
+      };
+      renderHrVersion(headroomRes);
+      const hrUp = makeUpgradeControls({
+        endpoint: '/headroom',
+        metaRefresh: async () => {
+          const meta = await rpc('/headroom');
+          if (meta.ok) {
+            renderHrVersion(meta);
+            Object.assign(headroomRes, meta);
+          }
+        },
+      });
+      hrUpgradePollStop = hrUp.stop;
+      const renderHeadroomPane = () => {
+        paneHeadroom.replaceChildren();
+        if (!headroomRes.ok || !headroomRes.config) {
+          paneHeadroom.append(
+            h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.headroomDesc),
+            h('p', { class: 'mt-2 text-ui-sm text-destructive' }, L.headroomLoadFailed + ': ' + errText(headroomRes)),
+          );
+          return;
+        }
+        if (!headroomRes.hook) {
+          // 未装插件：安装卡一键从市场安装（helper 单插件安装），装完原地恢复面板
+          const installBtn = btnSmall(L.headroomInstall, () => { void runInstall(); }, 'shrink-0');
+          const installState = h('div', { class: 'mt-0.5 truncate text-ui-xs/relaxed text-foreground-subtle' });
+          const runInstall = async () => {
+            installBtn.disabled = true;
+            installBtn.textContent = L.headroomInstalling;
+            installState.textContent = '';
+            const res = await rpc('/plugins/update', { method: 'POST', body: { name: 'headroom', installMissing: true } });
+            if (!res.ok) {
+              installBtn.disabled = false;
+              installBtn.textContent = L.headroomInstall;
+              showToast(L.pluginsUpdateFailed + ': ' + errText(res), 'error');
+              return;
+            }
+            const meta = await rpc('/headroom');
+            if (meta.ok) Object.assign(headroomRes, meta);
+            if (headroomRes.hook) {
+              showToast(L.headroomInstalled, 'success');
+              renderHeadroomPane();
+            } else {
+              installBtn.disabled = false;
+              installBtn.textContent = L.headroomInstall;
+              installState.textContent = L.headroomInstallRetry;
+            }
+          };
+          paneHeadroom.append(
+            h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.headroomDesc),
+            h('div', { class: 'mt-3 flex items-center justify-between gap-2 rounded-xl border border-border p-3' },
+              h('div', { class: 'min-w-0' },
+                h('div', { class: 'text-ui-sm font-medium text-foreground' }, L.headroomInstallTitle),
+                h('div', { class: 'mt-0.5 text-ui-xs/relaxed text-foreground-subtle' }, L.headroomInstallDesc),
+                installState),
+              installBtn),
+          );
+          return;
+        }
+        const hrCfg = { ...headroomRes.config };
+        let hrBusy = false;
+        const hrRun = async (reqBody, warn) => {
+          if (hrBusy) return false;
+          hrBusy = true;
+          const res = await rpc('/headroom', { method: 'POST', body: reqBody });
+          hrBusy = false;
+          if (!res.ok) {
+            showToast(L.failed + ': ' + errText(res), 'error');
+            return false;
+          }
+          if (res.config) Object.assign(hrCfg, res.config);
+          if (warn) showToast(warn);
+          // backend/power 动作会重启代理，稍等其就绪再刷状态，避免闪现「未运行」
+          setTimeout(() => { void hrRefresh(); }, 1200);
+          return true;
+        };
+        // 状态值本地化：钩子输出的是 auto/cpu/ac/ok 等内部值，面板显示成人话
+        const hrDevLabel = (v) => (v == null ? '—' : v === 'auto' ? L.hrValAuto : v === 'cpu' ? 'CPU' : v);
+        const HR_PM = { ac: L.hrPmAc, battery: L.hrPmBattery, saver: L.hrPmSaver, 'saver+battery': L.hrPmSaverBat };
+        const HR_DETECT = { ok: L.hrDetectOk, missing: L.hrDetectMissing, broken: L.hrDetectBroken };
+        const hrStatusLine = h('div', { class: 'flex items-center gap-2' },
+          h('span', { class: 'text-ui-sm text-foreground-subtle/70' }, '…'));
+        const hrFacts = h('div', { class: 'mt-1.5 grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-3' });
+        const hrHintLine = h('p', { class: 'mt-1.5 text-ui-xs/relaxed text-amber-500', style: 'display:none' });
+        const hrRefresh = async () => {
+          const res = await rpc('/headroom/status');
+          if (!res.ok) {
+            hrStatusLine.replaceChildren(
+              h('span', { class: 'text-ui-sm text-destructive' }, L.headroomStatusLoadFailed + ': ' + errText(res)));
+            hrFacts.replaceChildren();
+            hrHintLine.style.display = 'none';
+            return;
+          }
+          const s = res.status || {};
+          hrStatusLine.replaceChildren(
+            h('span', { class: 'inline-block size-2 shrink-0 rounded-full ' + (s.up ? 'bg-emerald-500' : 'bg-red-400') }),
+            h('span', { class: 'text-ui-sm font-medium text-foreground' }, s.up ? L.headroomProxyUp : L.headroomProxyDown),
+            ...(s.port ? [h('span', { class: 'text-ui-xs text-foreground-subtle' }, `127.0.0.1:${s.port}`)] : []),
+          );
+          const fact = (label, value) => h('div', { class: 'min-w-0 truncate text-ui-xs text-foreground-subtle' },
+            h('span', { class: 'text-foreground-subtle/70' }, label + '：'),
+            String(value ?? '—'));
+          hrFacts.replaceChildren(
+            fact(L.headroomCurrentBackend, hrDevLabel(s.backend)),
+            fact(L.headroomDesiredBackend, hrDevLabel(s.desiredBackend)),
+            fact(L.headroomPowerState, HR_PM[s.powerMode] || s.powerMode),
+            fact(L.headroomWatcher, s.watcherRunning ? L.headroomWatcherOn : L.headroomWatcherOff),
+            fact(L.headroomSaverDetect, HR_DETECT[s.saverDetect] || s.saverDetect),
+          );
+          hrHintLine.textContent = s.saverHint || '';
+          hrHintLine.style.display = s.saverHint ? '' : 'none';
+        };
+        const hrRefreshBtn = btnSmall(L.headroomRefresh, () => { void hrRefresh(); });
+        const hrStartBtn = btnSmall(L.headroomStart, () => { void hrRun({ action: 'start' }); });
+        const hrRestartBtn = btnSmall(L.headroomRestart, () => { void hrRun({ action: 'restart' }); });
+        const hrStopBtn = btnSmall(L.headroomStopAction, () => {
+          // 停止会断开指向该代理的供应商连接，需二次确认（与「切换文件夹」同款确认弹窗）
+          openDialog({
+            title: L.headroomStopTitle,
+            description: L.headroomStopDesc,
+            width: 'sm:max-w-md',
+            onMount: ({ body: confirmBody, close: closeConfirm }) => {
+              confirmBody.append(
+                dialogFooter(
+                  btnSecondary(L.cancel, () => closeConfirm()),
+                  btnPrimary(L.headroomStopAction, () => {
+                    closeConfirm();
+                    void hrRun({ action: 'stop' }, L.headroomStoppedWarn);
+                  }, 'min-w-24'),
+                ),
+              );
+            },
+          });
+        });
+        void hrRefresh();
+
+
+        // 压缩后端：下拉选择（auto/cpu，配置为原生值时追加显示当前值）
+        const hrBackendSel = h('select', { class: 'h-7 shrink-0 rounded-lg border border-border bg-input px-1.5 text-ui-xs text-foreground outline-none' });
+        const hrBackendOpts = [
+          ['auto', L.headroomBackendAuto],
+          ['cpu', L.headroomBackendCpu],
+        ];
+        if (!['auto', 'cpu'].includes(hrCfg.kompressBackend)) {
+          hrBackendOpts.push([hrCfg.kompressBackend, hrCfg.kompressBackend + L.headroomBackendNative]);
+        }
+        for (const [v, label] of hrBackendOpts) hrBackendSel.append(h('option', { value: v }, label));
+        hrBackendSel.value = hrCfg.kompressBackend;
+        hrBackendSel.addEventListener('change', () => {
+          const v = hrBackendSel.value;
+          void (async () => {
+            if (await hrRun({ backend: v })) updateHrPwrHint();
+            else hrBackendSel.value = hrCfg.kompressBackend;
+          })();
+        });
+
+        // 省电自动切换：三态胶囊（同「链模式」的标签按钮），与监视间隔同一行
+        const hrPowerDefs = [
+          ['off', L.headroomPowerOff, L.headroomPowerOffDesc],
+          ['battery', L.headroomPowerBattery, L.headroomPowerBatteryDesc],
+          ['saver', L.headroomPowerSaver, L.headroomPowerSaverDesc],
+        ];
+        const hrPowerBox = h('div', { class: 'flex min-w-0 flex-wrap items-center gap-1.5' });
+        const renderHrPower = () => hrPowerBox.replaceChildren(
+          h('span', { class: 'shrink-0 text-ui-sm font-medium text-foreground' }, L.headroomPower),
+          ...hrPowerDefs.map(([id, label, desc]) => h('button', {
+            type: 'button',
+            class: 'zcodepro-tab',
+            'data-state': hrCfg.powerSaveCpu === id ? 'active' : 'inactive',
+            title: desc,
+            onClick: () => {
+              void (async () => {
+                if (await hrRun({ power: id })) renderHrPower();
+              })();
+            },
+          }, label)));
+        renderHrPower();
+
+        // 监视间隔：数字框（滚轮/手输），保存后从下一轮巡检起生效
+        const hrIntervalField = numberField({
+          value: hrCfg.powerWatchInterval,
+          fallback: 60,
+          min: 10,
+          max: 3600,
+          step: 5,
+          onCommit: (v) => {
+            void (async () => {
+              const res = await rpc('/headroom', { method: 'POST', body: { interval: v } });
+              if (res.ok && res.config) Object.assign(hrCfg, res.config);
+              else {
+                showToast(L.failed + ': ' + errText(res), 'error');
+                hrIntervalField.set(hrCfg.powerWatchInterval);
+              }
+            })();
+          },
+        });
+
+        // 压缩设备固定为 CPU 时，省电切换没有可切换的空间（规则命中也还是 CPU）
+        const hrPwrHint = h('p', { class: 'px-2.5 pb-1.5 text-ui-xs/relaxed text-foreground-subtle', style: 'display:none' },
+          L.hrCpuPinnedHint);
+        const updateHrPwrHint = () => {
+          hrPwrHint.style.display = hrCfg.kompressBackend === 'cpu' ? '' : 'none';
+        };
+        updateHrPwrHint();
+
+        paneHeadroom.append(
+          h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.headroomDesc),
+          ...(headroomRes.installed === false
+            ? [h('p', { class: 'mt-2 text-ui-sm text-amber-500' }, L.headroomBinMissing)]
+            : []),
+          h('div', { class: 'mt-3 flex items-center justify-between gap-2 rounded-xl border border-border p-3' },
+            h('div', { class: 'flex min-w-0 items-center gap-2' }, hrVersionLine, hrUp.state),
+            hrUp.btn),
+          h('div', { class: 'mt-2 rounded-xl border border-border p-3' },
+            h('div', { class: 'flex flex-wrap items-center justify-between gap-2' },
+              h('span', { class: 'text-ui-sm font-medium text-foreground' }, L.headroomStatusTitle),
+              h('div', { class: 'flex items-center gap-1.5' }, hrRefreshBtn, hrStartBtn, hrRestartBtn, hrStopBtn)),
+            hrStatusLine,
+            hrFacts,
+            hrHintLine),
+          h('div', {
+            class: 'mt-2 rounded-xl border border-border p-1.5',
+          },
+            h('div', { class: 'flex items-center justify-between gap-2 rounded-lg p-2.5 transition-colors hover:bg-surface-hover' },
+              h('span', { class: 'min-w-0 truncate text-ui-sm font-medium text-foreground', title: L.headroomBackendDesc }, L.headroomBackend),
+              hrBackendSel),
+            h('div', { class: 'flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-lg p-2 transition-colors hover:bg-surface-hover' },
+              hrPowerBox,
+              h('div', { class: 'ml-auto flex shrink-0 items-center gap-1.5' },
+                h('span', { class: 'text-ui-xs font-medium text-foreground-subtle', title: L.headroomIntervalDesc }, L.headroomInterval),
+                hrIntervalField.el,
+                h('span', { class: 'w-4 text-ui-xs text-foreground-subtle' }, L.headroomSecUnit))),
+            hrPwrHint),
+        );
+      };
+      renderHeadroomPane();
 
       body.append(
         statusLine,
@@ -541,11 +1063,10 @@ export function openSettingsDialog() {
         paneFeatures,
         paneStyles,
         paneAgents,
+        paneProxy,
         paneVision,
+        paneHeadroom,
         paneRtk,
-      );
-      body.append(
-        dialogFooter(btnPrimary(L.close, () => close()))
       );
     },
   });

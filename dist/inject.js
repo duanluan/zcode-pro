@@ -28,15 +28,24 @@
     configCache = { value: null, at: 0 };
   }
   var zh = {
-    settingsTitle: "ZCode Pro \u589E\u5F3A\u8BBE\u7F6E",
+    settingsTitle: "ZCode Pro",
     tabFeatures: "\u529F\u80FD",
-    tabStyles: "\u6837\u5F0F\u8C03\u6574",
+    tabStyles: "\u6837\u5F0F",
+    tabProxy: "\u4EE3\u7406",
     tabAgents: "\u5168\u5C40\u63D0\u793A\u8BCD",
     agentsDesc: "\u5199\u5165 ~/.zcode/AGENTS.md\uFF0C\u4F5C\u4E3A\u9ED8\u8BA4\u6307\u4EE4\u6CE8\u5165\u6240\u6709\u9879\u76EE\u7684\u6BCF\u6B21\u4F1A\u8BDD\uFF1B\u4FDD\u5B58\u540E\u4ECE\u65B0\u4F1A\u8BDD\u8D77\u751F\u6548\uFF0C\u9879\u76EE\u5185\u7684 AGENTS.md \u53EF\u8865\u5145\u6216\u8986\u76D6\u3002\u5185\u5BB9\u8D85\u8FC7 100KB \u4F1A\u88AB\u5E94\u7528\u622A\u65AD\u3002",
     agentsPlaceholder: "\u586B\u5199\u5E0C\u671B\u6240\u6709\u9879\u76EE\u9ED8\u8BA4\u9075\u5FAA\u7684\u6307\u4EE4\uFF1B\u6E05\u7A7A\u5E76\u4FDD\u5B58\u5373\u79FB\u9664\u5168\u5C40\u63D0\u793A\u8BCD",
     agentsSave: "\u4FDD\u5B58",
     agentsSaved: "\u5168\u5C40\u63D0\u793A\u8BCD\u5DF2\u4FDD\u5B58",
     agentsLoadFailed: "\u8BFB\u53D6\u5168\u5C40\u63D0\u793A\u8BCD\u5931\u8D25",
+    proxyDesc: "\u4E3A ZCode Pro \u672C\u5730\u52A9\u624B\u53D1\u8D77\u7684\u7F51\u7EDC\u8BBF\u95EE\u8BBE\u7F6E HTTP \u4EE3\u7406\uFF1A\u63D2\u4EF6\u5E02\u573A\u7684\u66F4\u65B0\u4E0E\u5B89\u88C5\u3001Headroom \u672C\u4F53\u7684\u68C0\u67E5\u66F4\u65B0\u4E0E\u5347\u7EA7\u90FD\u4F1A\u8D70\u8BE5\u4EE3\u7406\u3002\u4E0D\u5F71\u54CD ZCode \u5E94\u7528\u672C\u8EAB\u4E0E\u6A21\u578B\u8BF7\u6C42\uFF0C\u4FDD\u5B58\u540E\u7ACB\u5373\u751F\u6548\u3002",
+    proxyPlaceholder: "http://127.0.0.1:7890",
+    proxySave: "\u4FDD\u5B58",
+    proxySaved: "\u4EE3\u7406\u8BBE\u7F6E\u5DF2\u4FDD\u5B58",
+    proxyHint: "\u7559\u7A7A\u4FDD\u5B58\u5373\u6E05\u9664\u4EE3\u7406\u3002",
+    proxyTest: "\u68C0\u6D4B",
+    proxyTesting: "\u68C0\u6D4B\u4E2D\u2026",
+    proxyTestFailed: "\u68C0\u6D4B\u5931\u8D25",
     rowGapName: "\u6BB5\u843D\u95F4\u8DDD",
     rowGapDesc: "\u4F1A\u8BDD\u4E2D\u6BB5\u843D\u7B49\u6587\u672C\u5757\u4E4B\u95F4\u7684\u5782\u76F4\u95F4\u8DDD\uFF08\u56DE\u5408\u4E4B\u95F4\u3001\u7B54\u6848\u5185\u90E8\uFF09\u3002",
     listSpacingName: "\u5217\u8868\u95F4\u8DDD",
@@ -82,7 +91,7 @@
     pluginsUpdateFailed: "\u63D2\u4EF6\u66F4\u65B0\u5931\u8D25",
     pluginsUpdatesAvailable: "zcode-plugins \u6709 {n} \u4E2A\u63D2\u4EF6\u53EF\u66F4\u65B0\uFF08ZCode Pro \u8BBE\u7F6E \u2192 \u529F\u80FD\uFF09",
     pluginsAutoUpdated: "zcode-plugins \u63D2\u4EF6\u5DF2\u66F4\u65B0",
-    tabVision: "\u89C6\u89C9\u4EE3\u7406",
+    tabVision: "Vision",
     visionDesc: "\u4E3B\u6A21\u578B\u4E0D\u652F\u6301\u56FE\u7247\u8F93\u5165\u65F6\uFF08\u5982 glm-5.3\uFF09\uFF0C\u81EA\u52A8\u628A\u6D88\u606F\u91CC\u7684\u56FE\u7247\u4EA4\u7ED9\u4E0B\u9762\u7684\u89C6\u89C9\u6A21\u578B\u8BC6\u522B\u5E76\u6CE8\u5165\u5BF9\u8BDD\uFF08zcode-vision \u63D2\u4EF6\uFF1B/vision-* \u547D\u4EE4\u7F16\u8F91\u540C\u4E00\u914D\u7F6E\uFF09\u3002\u6539\u52A8\u81EA\u52A8\u4FDD\u5B58\u3002",
     visionEnabled: "\u542F\u7528\u56FE\u7247\u8BC6\u522B",
     visionEnabledDesc: "\u5173\u95ED\u540E\u94A9\u5B50\u5B8C\u5168\u653E\u884C\uFF0C\u4E0D\u518D\u8BC6\u522B\u6CE8\u5165\u3002",
@@ -111,12 +120,13 @@
     visionCompressKB: "\u538B\u7F29\u9608\u503C KB",
     visionCompressKBHint: "\u8D85\u8FC7\u8BE5\u5927\u5C0F\u7684\u56FE\u5148\u538B\u7F29\u518D\u8BC6\u522B\uFF08\u6700\u957F\u8FB9 2000\u3001JPEG\uFF09\uFF1B0 = \u4E0D\u538B\u7F29",
     visionLoadFailed: "\u8BFB\u53D6\u89C6\u89C9\u4EE3\u7406\u914D\u7F6E\u5931\u8D25",
-    tabRtk: "rtk \u538B\u7F29",
+    tabRtk: "rtk",
     rtkDesc: "rtk \u63D2\u4EF6\uFF1A\u628A\u5E38\u89C1\u5F00\u53D1\u547D\u4EE4\u7684\u8F93\u51FA\u538B\u7F29 60-90% \u518D\u8FDB\u5165\u4E0A\u4E0B\u6587\uFF08/rtk-* \u547D\u4EE4\u7F16\u8F91\u540C\u4E00\u914D\u7F6E\uFF09\u3002\u6539\u52A8\u81EA\u52A8\u4FDD\u5B58\uFF0C\u94A9\u5B50\u5373\u65F6\u751F\u6548\u3002",
     rtkEnabled: "\u6539\u5199\u63D0\u9192",
     rtkEnabledDesc: "\u5173\u95ED\u540E\u94A9\u5B50\u653E\u884C\u4E00\u5207\u547D\u4EE4\u3001\u4E0D\u518D\u63D0\u9192\uFF1B\u4ECD\u53EF\u624B\u52A8 rtk <\u547D\u4EE4> \u4EAB\u53D7\u538B\u7F29\u3002",
     rtkNotInstalled: "\u672A\u5B89\u88C5 rtk\uFF0C\u4EE5\u4E0B\u914D\u7F6E\u5C06\u5728\u5B89\u88C5\u540E\u751F\u6548\uFF08\u4F1A\u8BDD\u91CC\u53EF\u7528 /rtk-install \u5B89\u88C5\uFF09",
     rtkWhitelistTitle: "\u767D\u540D\u5355\uFF08\u4E0D\u63D0\u9192\u76F4\u63A5\u653E\u884C\uFF09",
+    rtkBuiltinLabel: "\u5185\u7F6E\u653E\u884C\uFF08\u53EA\u8BFB\uFF0C\u968F\u63D2\u4EF6\u66F4\u65B0\uFF09\uFF1A",
     rtkWhitelistDesc: "\u6BCF\u6761 name\uFF08\u5982 docker\uFF09\u6216 git:name\uFF08\u5982 git:clone\uFF09\u3002\u8F93\u51FA\u6781\u5C0F\u6216\u7EAF\u526F\u4F5C\u7528\u7684\u547D\u4EE4\u65E0\u9700\u538B\u7F29\uFF0C\u52A0\u5165\u540E\u94A9\u5B50\u4E0D\u518D\u62E6\u622A\u63D0\u9192\uFF1B\u5185\u7F6E\u7684 git add/commit/push\u3001mkdir/cp \u7B49\u4E0D\u53EF\u79FB\u9664\u3002\u5220\u9664\u672C\u6587\u4EF6\u5373\u6062\u590D\u9ED8\u8BA4\u3002",
     rtkWhitelistPlaceholder: "name \u6216 git:name\uFF0C\u56DE\u8F66\u6DFB\u52A0",
     rtkWhitelistAdd: "\u6DFB\u52A0",
@@ -124,6 +134,71 @@
     rtkWhitelistCleared: "\u767D\u540D\u5355\u5DF2\u6E05\u7A7A",
     rtkWhitelistInvalid: "\u6761\u76EE\u683C\u5F0F\u5E94\u4E3A name \u6216 git:name",
     rtkLoadFailed: "\u8BFB\u53D6 rtk \u914D\u7F6E\u5931\u8D25",
+    tabHeadroom: "Headroom",
+    headroomDesc: "Headroom \u63D2\u4EF6\uFF1A\u672C\u5730\u538B\u7F29\u4EE3\u7406\u9A7B\u7559 127.0.0.1\uFF08\u9ED8\u8BA4 8787 \u7AEF\u53E3\uFF09\uFF0C\u538B\u7F29\u53D1\u5F80\u6A21\u578B\u7684\u4E0A\u4E0B\u6587\u4EE5\u7701 token\uFF08/hr-* \u547D\u4EE4\u7F16\u8F91\u540C\u4E00\u914D\u7F6E\uFF09\u3002\u538B\u7F29\u8BBE\u5907\u4E0E\u7701\u7535\u5207\u6362\u4FDD\u5B58\u540E\u7ACB\u5373\u751F\u6548\uFF1B\u5207\u6362\u8BBE\u5907\u4F1A\u91CD\u542F\u4EE3\u7406\uFF0C\u5728\u9014\u8BF7\u6C42\u53EF\u80FD\u95EA\u65AD\u4E00\u6B21\u3002",
+    headroomBinMissing: "\u672A\u627E\u5230 headroom \u7A0B\u5E8F\uFF0C\u4EE3\u7406\u65E0\u6CD5\u542F\u52A8\uFF1B\u5B89\u88C5 headroom \u540E\u4EE5\u4E0B\u8BBE\u7F6E\u81EA\u52A8\u751F\u6548",
+    headroomInstallTitle: "\u672A\u5B89\u88C5 headroom \u63D2\u4EF6",
+    headroomInstallDesc: "\u4ECE zcode-plugins \u5E02\u573A\u5B89\u88C5\u540E\u5373\u53EF\u5728\u6B64\u7BA1\u7406\u538B\u7F29\u4EE3\u7406\uFF1B\u5EFA\u8BAE\u5B89\u88C5\u540E\u91CD\u542F\u4F1A\u8BDD\u8BA9\u94A9\u5B50\u751F\u6548\u3002",
+    headroomInstall: "\u5B89\u88C5",
+    headroomInstalling: "\u5B89\u88C5\u4E2D\u2026",
+    headroomInstalled: "\u5DF2\u5B89\u88C5 headroom \u63D2\u4EF6",
+    headroomInstallRetry: "\u5B89\u88C5\u672A\u751F\u6548\uFF0C\u8BF7\u91CD\u8BD5\u6216\u624B\u52A8\u5728\u63D2\u4EF6\u5E02\u573A\u5B89\u88C5",
+    headroomLoadFailed: "\u8BFB\u53D6 Headroom \u914D\u7F6E\u5931\u8D25",
+    headroomStatusTitle: "\u8FD0\u884C\u72B6\u6001",
+    headroomStatusLoadFailed: "\u8BFB\u53D6\u8FD0\u884C\u72B6\u6001\u5931\u8D25",
+    headroomProxyUp: "\u4EE3\u7406\u8FD0\u884C\u4E2D",
+    headroomProxyDown: "\u4EE3\u7406\u672A\u8FD0\u884C",
+    headroomCurrentBackend: "\u5F53\u524D\u8BBE\u5907",
+    headroomDesiredBackend: "\u76EE\u6807\u8BBE\u5907",
+    hrValAuto: "\u81EA\u52A8",
+    hrPmAc: "\u4EA4\u6D41\u7535",
+    hrPmBattery: "\u7535\u6C60",
+    hrPmSaver: "\u7701\u7535\u6A21\u5F0F",
+    hrPmSaverBat: "\u7701\u7535\u6A21\u5F0F+\u7535\u6C60",
+    hrDetectOk: "\u6B63\u5E38",
+    hrDetectMissing: "\u672A\u5B89\u88C5",
+    hrDetectBroken: "\u4E0D\u53EF\u7528",
+    headroomPowerState: "\u7535\u6E90",
+    headroomWatcher: "\u76D1\u89C6\u5668",
+    headroomWatcherOn: "\u8FD0\u884C\u4E2D",
+    headroomWatcherOff: "\u5DF2\u505C\u6B62",
+    headroomSaverDetect: "\u7701\u7535\u6A21\u5F0F\u68C0\u6D4B",
+    headroomRefresh: "\u5237\u65B0",
+    headroomStart: "\u542F\u52A8",
+    headroomRestart: "\u91CD\u542F",
+    headroomStopAction: "\u505C\u6B62",
+    headroomStopTitle: "\u505C\u6B62 Headroom \u4EE3\u7406",
+    headroomStopDesc: "\u505C\u6B62\u540E\uFF0CZCode \u4E2D\u6307\u5411\u8BE5\u4EE3\u7406\uFF08127.0.0.1\uFF09\u7684\u4F9B\u5E94\u5546\u5C06\u65E0\u6CD5\u8FDE\u63A5\uFF0C\u76F4\u81F3\u91CD\u65B0\u542F\u52A8\u4EE3\u7406\u3002\u786E\u8BA4\u505C\u6B62\uFF1F",
+    headroomStoppedWarn: "\u4EE3\u7406\u5DF2\u505C\u6B62\uFF1B\u6307\u5411 127.0.0.1 \u7684\u4F9B\u5E94\u5546\u5C06\u65E0\u6CD5\u8FDE\u63A5",
+    headroomBackend: "\u538B\u7F29\u8BBE\u5907",
+    headroomBackendAuto: "\u81EA\u52A8 \xB7 \u663E\u5361\u4F18\u5148",
+    headroomBackendCpu: "CPU \xB7 \u7701\u7535",
+    headroomBackendNative: "\uFF08\u539F\u751F\u503C\uFF09",
+    headroomBackendDesc: "\u81EA\u52A8\uFF1Aheadroom \u9009\u6700\u5FEB\u8BBE\u5907\uFF08CUDA/MPS \u663E\u5361\u4F18\u5148\uFF09\uFF1BCPU\uFF1A\u5F3A\u5236 CPU \u538B\u7F29\uFF0C\u7701\u7535\u4E14\u4E0D\u5360\u663E\u5B58\u3002\u4E5F\u652F\u6301 headroom \u539F\u751F\u503C\uFF08onnx\u3001pytorch_mps \u7B49\uFF09\u3002\u5207\u6362\u4F1A\u91CD\u542F\u4EE3\u7406\u7ACB\u5373\u751F\u6548\u3002",
+    headroomPower: "\u7701\u7535\u81EA\u52A8\u5207\u6362",
+    headroomPowerOff: "\u5173\u95ED",
+    headroomPowerOffDesc: "\u4E0D\u81EA\u52A8\u5207\u6362\uFF0C\u59CB\u7EC8\u6309\u300C\u538B\u7F29\u8BBE\u5907\u300D\u8FD0\u884C\u3002",
+    headroomPowerBattery: "\u7528\u7535\u6C60\u65F6",
+    headroomPowerBatteryDesc: "\u62D4\u7535\uFF08\u7535\u6C60\u653E\u7535\uFF09\u2192 CPU \u538B\u7F29\uFF0C\u63D2\u7535\u81EA\u52A8\u5207\u56DE\u3002",
+    headroomPowerSaver: "\u7701\u7535\u6A21\u5F0F\u65F6",
+    headroomPowerSaverDesc: "\u4EC5\u7CFB\u7EDF\u8FDB\u5165\u7701\u7535\u6A21\u5F0F \u2192 CPU \u538B\u7F29\uFF0C\u9000\u51FA\u5207\u56DE\u3002",
+    hrCpuPinnedHint: "\u538B\u7F29\u8BBE\u5907\u5DF2\u56FA\u5B9A\u4E3A CPU\uFF0C\u7701\u7535\u81EA\u52A8\u5207\u6362\u4E0D\u4F1A\u518D\u6539\u53D8\u5B83\u3002",
+    headroomInterval: "\u76D1\u89C6\u95F4\u9694",
+    headroomIntervalDesc: "\u7701\u7535\u76D1\u89C6\u5668\u8F6E\u8BE2\u7535\u6E90\u72B6\u6001\u7684\u95F4\u9694\uFF0810\u20133600 \u79D2\uFF0C\u9ED8\u8BA4 60\uFF09\uFF1B\u4FDD\u5B58\u540E\u4ECE\u4E0B\u4E00\u8F6E\u5DE1\u68C0\u8D77\u751F\u6548\uFF0C\u65E0\u9700\u91CD\u542F\u3002",
+    headroomSecUnit: "\u79D2",
+    headroomVersionPlugin: "\u63D2\u4EF6",
+    headroomVersionBin: "\u7A0B\u5E8F",
+    upgradeCheck: "\u68C0\u67E5\u66F4\u65B0",
+    upgradeChecking: "\u68C0\u67E5\u4E2D\u2026",
+    upgradeUpToDate: "\u5DF2\u662F\u6700\u65B0\uFF08{v}\uFF09",
+    upgradeFound: "\u53EF\u5347\u7EA7\u5230 {v}",
+    upgradeNow: "\u5347\u7EA7",
+    upgradeRunning: "\u5347\u7EA7\u4E2D\u2026",
+    upgradeStop: "\u505C\u6B62\u5347\u7EA7",
+    upgradeStopped: "\u5DF2\u505C\u6B62\u5347\u7EA7",
+    upgradeDone: "\u5DF2\u66F4\u65B0\u5230 {v}",
+    upgradeFinished: "\u5347\u7EA7\u5B8C\u6210",
+    upgradeCheckFailed: "\u68C0\u67E5\u66F4\u65B0\u5931\u8D25",
     version: "\u7248\u672C",
     close: "\u5173\u95ED",
     cancel: "\u53D6\u6D88",
@@ -163,15 +238,24 @@
     retryHint: "\u8BF7\u91CD\u8BD5"
   };
   var en = {
-    settingsTitle: "ZCode Pro Enhancements",
+    settingsTitle: "ZCode Pro",
     tabFeatures: "Features",
     tabStyles: "Styles",
+    tabProxy: "Proxy",
     tabAgents: "Global Prompt",
     agentsDesc: "Written to ~/.zcode/AGENTS.md and injected as default instructions into every session across all projects. Takes effect for new sessions; per-project AGENTS.md can extend or override it. Content over 100 KB is truncated by the app.",
     agentsPlaceholder: "Instructions followed by all projects by default; save empty to remove the global prompt",
     agentsSave: "Save",
     agentsSaved: "Global prompt saved.",
     agentsLoadFailed: "Failed to load the global prompt",
+    proxyDesc: "Set an HTTP proxy for network access made by the local helper: plugin marketplace updates and installs, headroom binary update checks and upgrades. Does not affect the ZCode app itself or model requests. Applies immediately.",
+    proxyPlaceholder: "http://127.0.0.1:7890",
+    proxySave: "Save",
+    proxySaved: "Proxy settings saved.",
+    proxyHint: "Save empty to clear the proxy.",
+    proxyTest: "Test",
+    proxyTesting: "Testing\u2026",
+    proxyTestFailed: "Test failed",
     rowGapName: "Paragraph spacing",
     rowGapDesc: "Vertical spacing between text blocks (turns, paragraphs inside answers).",
     listSpacingName: "List spacing",
@@ -217,7 +301,7 @@
     pluginsUpdateFailed: "Plugin update failed",
     pluginsUpdatesAvailable: "{n} zcode-plugins update(s) available (ZCode Pro settings \u2192 Features)",
     pluginsAutoUpdated: "zcode-plugins updated",
-    tabVision: "Vision Proxy",
+    tabVision: "Vision",
     visionDesc: "When the main model cannot see images (e.g. glm-5.3), images in messages are recognized by the vision models below and injected as text (zcode-vision plugin; /vision-* commands edit the same file). Changes save automatically.",
     visionEnabled: "Enable image recognition",
     visionEnabledDesc: "When off, the hook passes through silently.",
@@ -246,12 +330,13 @@
     visionCompressKB: "Compress threshold KB",
     visionCompressKBHint: "Images above this size are compressed first (max edge 2000, JPEG); 0 = never",
     visionLoadFailed: "Failed to load the vision config",
-    tabRtk: "rtk Compression",
+    tabRtk: "rtk",
     rtkDesc: "rtk plugin: compresses common dev command output by 60-90% before it reaches the context (/rtk-* commands edit the same files). Changes save automatically and apply to the hook immediately.",
     rtkEnabled: "Rewrite hints",
     rtkEnabledDesc: "When off, the hook passes every command through without hints; manual rtk <command> still works.",
     rtkNotInstalled: "rtk is not installed. The settings below take effect after installation (/rtk-install in a session).",
     rtkWhitelistTitle: "Whitelist (pass through without hints)",
+    rtkBuiltinLabel: "Built-in exemptions (read-only, follow plugin updates):",
     rtkWhitelistDesc: "Each entry is name (e.g. docker) or git:name (e.g. git:clone). Commands with tiny or no output need no compression; adding them stops the hook from interrupting. Built-ins (git add/commit/push, mkdir/cp, \u2026) cannot be removed. Delete the file to reset.",
     rtkWhitelistPlaceholder: "name or git:name, press Enter to add",
     rtkWhitelistAdd: "Add",
@@ -259,6 +344,71 @@
     rtkWhitelistCleared: "Whitelist cleared",
     rtkWhitelistInvalid: "Entry must be name or git:name",
     rtkLoadFailed: "Failed to load the rtk config",
+    tabHeadroom: "Headroom",
+    headroomDesc: "Headroom plugin: a local compression proxy on 127.0.0.1 (port 8787 by default) that compresses context sent to the model to save tokens (/hr-* commands edit the same file). Device and power-save changes apply immediately; switching the device restarts the proxy, so in-flight requests may blip once.",
+    headroomBinMissing: "The headroom binary was not found, so the proxy cannot start. The settings below take effect once it is installed.",
+    headroomInstallTitle: "headroom plugin not installed",
+    headroomInstallDesc: "Install it from the zcode-plugins marketplace to manage the compression proxy here; restarting the session afterwards is recommended.",
+    headroomInstall: "Install",
+    headroomInstalling: "Installing\u2026",
+    headroomInstalled: "headroom plugin installed",
+    headroomInstallRetry: "Installation did not take effect; retry or install it from the marketplace manually",
+    headroomLoadFailed: "Failed to load the Headroom config",
+    headroomStatusTitle: "Status",
+    headroomStatusLoadFailed: "Failed to load the status",
+    headroomProxyUp: "Proxy running",
+    headroomProxyDown: "Proxy down",
+    headroomCurrentBackend: "Current device",
+    headroomDesiredBackend: "Target device",
+    hrValAuto: "Auto",
+    hrPmAc: "AC",
+    hrPmBattery: "Battery",
+    hrPmSaver: "Power saver",
+    hrPmSaverBat: "Saver + battery",
+    hrDetectOk: "OK",
+    hrDetectMissing: "missing",
+    hrDetectBroken: "unavailable",
+    headroomPowerState: "Power",
+    headroomWatcher: "Watcher",
+    headroomWatcherOn: "Running",
+    headroomWatcherOff: "Stopped",
+    headroomSaverDetect: "Power-saver detection",
+    headroomRefresh: "Refresh",
+    headroomStart: "Start",
+    headroomRestart: "Restart",
+    headroomStopAction: "Stop",
+    headroomStopTitle: "Stop the Headroom proxy",
+    headroomStopDesc: "Providers in ZCode that point at this proxy (127.0.0.1) will fail to connect until it is started again. Stop it?",
+    headroomStoppedWarn: "Proxy stopped; providers pointing at 127.0.0.1 cannot connect.",
+    headroomBackend: "Compression device",
+    headroomBackendAuto: "Auto \xB7 GPU first",
+    headroomBackendCpu: "CPU \xB7 power saving",
+    headroomBackendNative: " (native)",
+    headroomBackendDesc: "Auto lets headroom pick the fastest device (CUDA/MPS); CPU forces CPU compression (power saving, no VRAM). Native headroom values (onnx, pytorch_mps, \u2026) also work. Switching restarts the proxy to apply.",
+    headroomPower: "Power-save auto switch",
+    headroomPowerOff: "Off",
+    headroomPowerOffDesc: "No auto switching; always follow the compression device.",
+    headroomPowerBattery: "On battery",
+    headroomPowerBatteryDesc: "On battery (discharging) \u2192 CPU; switches back when plugged in.",
+    headroomPowerSaver: "Power-saver",
+    headroomPowerSaverDesc: "Only the system power-saver mode \u2192 CPU; back when it exits.",
+    hrCpuPinnedHint: "The compression device is pinned to CPU, so power-save switching no longer changes anything.",
+    headroomInterval: "Watch interval",
+    headroomIntervalDesc: "Seconds between power checks (10\u20133600, default 60); applies from the next round, no restart needed.",
+    headroomSecUnit: "s",
+    headroomVersionPlugin: "plugin",
+    headroomVersionBin: "binary",
+    upgradeCheck: "Check update",
+    upgradeChecking: "Checking\u2026",
+    upgradeUpToDate: "Up to date ({v})",
+    upgradeFound: "{v} available",
+    upgradeNow: "Update",
+    upgradeRunning: "Updating\u2026",
+    upgradeStop: "Stop",
+    upgradeStopped: "Upgrade stopped",
+    upgradeDone: "Updated to {v}",
+    upgradeFinished: "Update finished",
+    upgradeCheckFailed: "Update check failed",
     version: "Version",
     close: "Close",
     cancel: "Cancel",
@@ -331,8 +481,19 @@
     "vision-read": "Failed to read zcode-vision.json",
     "vision-write": "Failed to write zcode-vision.json",
     "vision-test": "Vision test failed",
+    "proxy-invalid": "Proxy must look like http://127.0.0.1:7890, or be empty",
+    "proxy-not-set": "Set the proxy address first",
     "rtk-invalid": "Invalid rtk config",
+    "rtk-update": "Failed to check rtk updates (GitHub Releases unreachable? Set a proxy in the Proxy tab)",
     "rtk-write": "Failed to write the rtk config",
+    "headroom-read": "Failed to read headroom.json",
+    "headroom-write": "Failed to write headroom.json",
+    "headroom-invalid": "Invalid headroom setting",
+    "headroom-plugin": "headroom plugin not found (install it from the marketplace)",
+    "headroom-sh": "sh not found; cannot run the headroom plugin script",
+    "headroom-action": "The headroom hook action failed",
+    "headroom-status": "Failed to read the headroom status",
+    "headroom-upgrade": "headroom upgrade failed",
     "plugins-status": "Failed to read the plugin list",
     "plugins-update": "Failed to update plugins"
   };
@@ -541,6 +702,14 @@
     return h("button", {
       type: "button",
       class: "inline-flex h-9 items-center justify-center whitespace-nowrap rounded-lg bg-primary px-4 text-ui-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50 " + extra,
+      onClick
+    }, text);
+  }
+  function btnSmall(text, onClick, extra = "", variant = "") {
+    return h("button", {
+      type: "button",
+      class: "zcodepro-btn-sm " + extra,
+      "data-variant": variant || void 0,
       onClick
     }, text);
   }
@@ -790,6 +959,59 @@
       background-color: var(--color-background, #fff);
       color: var(--color-foreground, #111);
       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+    }
+    /* \u7D27\u51D1\u5C0F\u6309\u94AE\uFF1A\u51E0\u4F55/\u914D\u8272\u5199\u5165\u81EA\u6709\u89C4\u5219\u5E76\u53D6\u4E3B\u9898\u53D8\u91CF\uFF08\u9AD8\u5EA6=24px\uFF0C\u4E0E\u6807\u7B7E\u9875\u4E00\u81F4\uFF09 */
+    .zcodepro-btn-sm {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 24px;
+      padding: 0 10px;
+      border: 1px solid var(--color-border, rgba(0, 0, 0, 0.12));
+      border-radius: 8px;
+      background-color: transparent;
+      cursor: pointer;
+      font-size: 12px;
+      line-height: 1;
+      white-space: nowrap;
+      color: var(--color-foreground, #111);
+      transition: background-color 0.12s ease;
+    }
+    .zcodepro-btn-sm:hover:not(:disabled) {
+      background-color: color-mix(in oklab, var(--color-foreground, #888) 8%, transparent);
+    }
+    .zcodepro-btn-sm:disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+    .zcodepro-btn-sm[data-variant="primary"] {
+      border-color: transparent;
+      background-color: var(--color-primary, #111);
+      color: var(--color-primary-foreground, #fff);
+    }
+    .zcodepro-btn-sm[data-variant="primary"]:hover:not(:disabled) {
+      background-color: color-mix(in oklab, var(--color-primary, #111) 88%, #fff);
+    }
+    /* \u5F39\u7A97\u53F3\u4E0A\u89D2\u5173\u95ED\u6309\u94AE\uFF1A\u7528\u6587\u5B57\u5B57\u5F62\u800C\u975E SVG \u63CF\u8FB9\uFF08\u5E94\u7528\u73AF\u5883\u91CC\u6CE8\u5165\u7684 SVG \u63CF\u8FB9\u4E0D\u53EF\u89C1\uFF09\uFF0C
+       \u51E0\u4F55/\u914D\u8272\u5199\u5165\u81EA\u6709\u89C4\u5219\u5E76\u53D6\u4E3B\u9898\u53D8\u91CF\uFF0C\u4FDD\u8BC1\u5E38\u663E */
+    .zcodepro-close {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      cursor: pointer;
+      font-size: 15px;
+      line-height: 1;
+      color: var(--color-muted-foreground, #888);
+      transition: background-color 0.12s ease, color 0.12s ease;
+    }
+    .zcodepro-close:hover {
+      background-color: color-mix(in oklab, var(--color-foreground, #888) 8%, transparent);
+      color: var(--color-foreground, #111);
     }
     /* \u5168\u5C40\u63D0\u793A\u8BCD\u7F16\u8F91\u6846\uFF08\u8BBE\u7F6E\u5F39\u7A97\uFF09\uFF1A\u4E0E\u5F00\u5173/\u6807\u7B7E\u9875\u540C\u7406\uFF0C\u51E0\u4F55/\u914D\u8272\u5199\u5165\u81EA\u6709\u89C4\u5219\u5E76\u53D6\u4E3B\u9898\u53D8\u91CF\u3002
        \u8FB9\u6846\u7528 border \u800C\u975E box-shadow\uFF1A\u5E94\u7528\u5168\u5C40\u6837\u5F0F\u5BF9 :focus/:focus-visible \u5F3A\u5236
@@ -1694,9 +1916,135 @@
   }
 
   // src/inject/features/settings-dialog.js
+  function makeUpgradeControls({ endpoint, metaRefresh }) {
+    const L = t();
+    const state = h("span", { class: "min-w-0 flex-1 truncate text-left text-ui-xs/relaxed text-foreground-subtle" });
+    const setState = (text, kind = "") => {
+      state.textContent = text;
+      state.className = "min-w-0 flex-1 truncate text-left text-ui-xs/relaxed " + (kind === "error" ? "text-destructive" : "text-foreground-subtle");
+    };
+    let latest = null;
+    let busy = false;
+    let timer = null;
+    const stopPoll = () => {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+      }
+    };
+    const lastLine = (out) => {
+      const lines = String(out || "").split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+      return lines[lines.length - 1] || "";
+    };
+    const short = (line) => {
+      const v = line.replace(/[.…]{3,}\s*$/, "").trimEnd();
+      if (v.length <= 80) return v;
+      return v.slice(0, 40) + "\u2026" + v.slice(-39);
+    };
+    const btn = btnSmall(L.upgradeCheck, () => {
+      void runCheck();
+    }, "shrink-0");
+    const runCancel = async () => {
+      const res = await rpc(endpoint, { method: "POST", body: { cancelUpgrade: true } });
+      if (!res.ok) showToast(L.failed + ": " + errText(res), "error");
+    };
+    const runUpgrade = async () => {
+      if (busy) return;
+      busy = true;
+      const res = await rpc(endpoint, { method: "POST", body: { upgrade: true } });
+      busy = false;
+      if (!res.ok) {
+        btn.textContent = L.upgradeNow;
+        showToast(L.failed + ": " + errText(res), "error");
+        return;
+      }
+      pollStart();
+    };
+    const runCheck = async () => {
+      if (busy) return;
+      if (timer) {
+        void runCancel();
+        return;
+      }
+      if (latest) {
+        void runUpgrade();
+        return;
+      }
+      busy = true;
+      btn.disabled = true;
+      setState(L.upgradeChecking);
+      const res = await rpc(endpoint, { method: "POST", body: { checkUpdate: true } });
+      busy = false;
+      btn.disabled = false;
+      if (!res.ok) {
+        setState(L.upgradeCheckFailed, "error");
+        showToast(L.upgradeCheckFailed + ": " + errText(res), "error");
+        return;
+      }
+      if (res.upToDate) {
+        latest = null;
+        setState(L.upgradeUpToDate.replaceAll("{v}", res.current || ""));
+        return;
+      }
+      latest = res.latest;
+      setState(L.upgradeFound.replaceAll("{v}", res.latest || ""));
+      btn.textContent = L.upgradeNow;
+    };
+    const tick = async () => {
+      const res = await rpc(endpoint + "/upgrade");
+      if (!res.ok) {
+        stopPoll();
+        latest = null;
+        busy = false;
+        btn.disabled = false;
+        btn.textContent = L.upgradeCheck;
+        showToast(L.failed + ": " + errText(res), "error");
+        return;
+      }
+      const snap = res.upgrade || {};
+      if (snap.running) {
+        setState(short(lastLine(snap.output)) || L.upgradeRunning);
+        return;
+      }
+      stopPoll();
+      latest = null;
+      busy = false;
+      btn.disabled = false;
+      btn.textContent = L.upgradeCheck;
+      if (snap.canceled) {
+        setState(L.upgradeStopped);
+        return;
+      }
+      if (snap.error) {
+        setState(String(snap.error).split("\n")[0], "error");
+        showToast(L.failed + ": " + String(snap.error).split("\n")[0], "error");
+        return;
+      }
+      setState(snap.version ? L.upgradeDone.replaceAll("{v}", snap.version) : L.upgradeFinished);
+      showToast(state.textContent, "success");
+      await metaRefresh();
+    };
+    const pollStart = () => {
+      stopPoll();
+      btn.disabled = false;
+      btn.textContent = L.upgradeStop;
+      setState(L.upgradeRunning);
+      timer = setInterval(() => {
+        void tick();
+      }, 1500);
+      void tick();
+    };
+    void (async () => {
+      const res = await rpc(endpoint + "/upgrade");
+      if (res.ok && res.upgrade && res.upgrade.running) pollStart();
+    })();
+    return { btn, state, stop: stopPoll };
+  }
   function openSettingsDialog() {
     ensureStyle();
     const L = t();
+    let hrUpgradePollStop = null;
+    let rtkUpgradePollStop = null;
     openDialog({
       title: L.settingsTitle,
       // 宽度类必须用宿主样式表已有的工具类（注入的类名不会生成 CSS）：
@@ -1706,12 +2054,69 @@
       draggable: true,
       posKey: "settings",
       dismissOnOutside: false,
-      onMount: async ({ body, close }) => {
+      onClose: () => {
+        if (hrUpgradePollStop) hrUpgradePollStop();
+        if (rtkUpgradePollStop) rtkUpgradePollStop();
+      },
+      onMount: async ({ body, close, content }) => {
+        const titleEl = content && content.firstElementChild;
+        if (titleEl && titleEl.tagName === "H2") {
+          titleEl.classList.add("flex", "w-full", "items-center", "justify-between");
+          const ns = "http://www.w3.org/2000/svg";
+          const mkIcon = (paths, cls) => {
+            const svg = h("svg", {
+              viewBox: "0 0 24 24",
+              fill: "none",
+              stroke: "currentColor",
+              "stroke-width": "2",
+              "stroke-linecap": "round",
+              "stroke-linejoin": "round",
+              class: cls
+            });
+            for (const d of paths) {
+              const p2 = document.createElementNS(ns, "path");
+              p2.setAttribute("d", d);
+              svg.append(p2);
+            }
+            return svg;
+          };
+          const titleLeft = h("span", { class: "flex min-w-0 items-center" }, L.settingsTitle);
+          if (typeof window.zcode?.openExternal === "function") {
+            const REPO_URL = "https://github.com/duanluan/zcode-pro";
+            titleLeft.replaceChildren(
+              h("span", {
+                class: "cursor-pointer underline-offset-4 hover:underline",
+                title: REPO_URL,
+                onClick: () => {
+                  try {
+                    void window.zcode.openExternal(REPO_URL);
+                  } catch {
+                  }
+                }
+              }, L.settingsTitle),
+              mkIcon(["M15 3h6v6", "M10 14 21 3", "M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"], "ml-1 inline-block size-4 text-foreground-subtle")
+            );
+          }
+          const closeX = h("button", {
+            type: "button",
+            class: "zcodepro-close",
+            title: L.close,
+            "aria-label": L.close,
+            onMousedown: (e) => {
+              e.stopPropagation();
+            },
+            onClick: () => {
+              close();
+            }
+          }, "\u2715");
+          titleEl.replaceChildren(titleLeft, closeX);
+        }
         const health = await rpc("/health");
         const config = await getConfig(true);
         const agentsRes = await rpc("/agents");
         const visionRes = await rpc("/vision");
         const rtkRes = await rpc("/rtk");
+        const headroomRes = await rpc("/headroom");
         const setFeature = async (key, value) => {
           const res = await rpc("/config", { method: "POST", body: { features: { [key]: value } } });
           clearConfigCache();
@@ -1823,9 +2228,9 @@
         }
         let activeTab = "features";
         const pluginsStatusLine = h("span", { class: "text-ui-xs/relaxed text-foreground-subtle" }, "\u2026");
-        const pluginsBtn = btnSecondary(L.pluginsCheckNow, () => {
+        const pluginsBtn = btnSmall(L.pluginsCheckNow, () => {
           void runPluginsUpdate();
-        }, "h-7 px-3 text-ui-xs");
+        });
         const runPluginsUpdate = async () => {
           pluginsBtn.disabled = true;
           pluginsStatusLine.textContent = L.pluginsUpdating;
@@ -1867,14 +2272,18 @@
         );
         const paneStyles = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
         const paneAgents = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
+        const paneProxy = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
         const paneVision = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
         const paneRtk = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
-        const panes = { features: paneFeatures, styles: paneStyles, agents: paneAgents, vision: paneVision, rtk: paneRtk };
+        const paneHeadroom = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
+        const panes = { features: paneFeatures, styles: paneStyles, agents: paneAgents, proxy: paneProxy, vision: paneVision, headroom: paneHeadroom, rtk: paneRtk };
         const tabDefs = [
           ["features", L.tabFeatures],
           ["styles", L.tabStyles],
           ["agents", L.tabAgents],
+          ["proxy", L.tabProxy],
           ["vision", L.tabVision],
+          ["headroom", L.tabHeadroom],
           ["rtk", L.tabRtk]
         ];
         const tablist = h("div", { role: "tablist", "aria-orientation": "horizontal", class: "zcodepro-tablist mt-4" });
@@ -1961,10 +2370,10 @@
           h(
             "div",
             { class: "mt-2 flex justify-end" },
-            btnSecondary(L.resetDefault, () => {
+            btnSmall(L.resetDefault, () => {
               for (const c of cells) c.field.reset();
               persistStyles({ rowGap: null, listSpacing: null, listItemSpacing: null, quoteCodeSpacing: null, lineHeight: null, userLineHeight: null, contentWidth: null });
-            }, "h-7 px-3 text-ui-xs")
+            })
           )
         );
         const agentsArea = h("textarea", {
@@ -1972,9 +2381,9 @@
           placeholder: L.agentsPlaceholder,
           spellcheck: "false"
         });
-        const agentsSaveBtn = btnPrimary(L.agentsSave, () => {
+        const agentsSaveBtn = btnSmall(L.agentsSave, () => {
           void saveAgents();
-        }, "h-7 px-3 text-ui-xs");
+        }, "", "primary");
         let agentsOriginal = "";
         let agentsFailed = false;
         if (agentsRes.ok) {
@@ -2004,6 +2413,67 @@
           ...agentsFailed ? [h("p", { class: "mt-2 text-ui-sm text-destructive" }, L.agentsLoadFailed + ": " + errText(agentsRes))] : [],
           h("div", { class: "mt-3" }, agentsArea),
           h("div", { class: "mt-3 flex justify-end" }, agentsSaveBtn)
+        );
+        const savedProxy = typeof config.proxy === "string" ? config.proxy : "";
+        const proxyInputCls = "h-8 w-full rounded-lg border border-border bg-input px-2.5 text-ui-sm text-foreground outline-none transition-shadow placeholder:text-foreground-subtle focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40";
+        const proxyInput = h("input", { type: "text", value: savedProxy, placeholder: L.proxyPlaceholder, spellcheck: "false", class: proxyInputCls + " min-w-0 flex-1" });
+        const proxySaveBtn = btnSmall(L.proxySave, () => {
+          void saveProxy();
+        }, "shrink-0", "primary");
+        let proxyOriginal = savedProxy;
+        proxySaveBtn.disabled = true;
+        proxyInput.addEventListener("input", () => {
+          proxySaveBtn.disabled = proxyInput.value.trim() === proxyOriginal;
+        });
+        const saveProxy = async () => {
+          proxySaveBtn.disabled = true;
+          const res = await rpc("/config", { method: "POST", body: { proxy: proxyInput.value.trim() } });
+          if (res.ok) {
+            proxyOriginal = res.config && typeof res.config.proxy === "string" ? res.config.proxy : proxyInput.value.trim();
+            proxyInput.value = proxyOriginal;
+            showToast(L.proxySaved);
+          } else {
+            proxySaveBtn.disabled = false;
+            showToast(L.failed + ": " + errText(res), "error");
+          }
+        };
+        const proxyTestState = h("p", { class: "mt-2 text-ui-xs/relaxed text-foreground-subtle" });
+        let proxyTesting = false;
+        const proxyTestBtn = btnSmall(L.proxyTest, () => {
+          void runProxyTest();
+        }, "shrink-0");
+        const runProxyTest = async () => {
+          if (proxyTesting) return;
+          proxyTesting = true;
+          proxyTestBtn.disabled = true;
+          proxyTestBtn.textContent = L.proxyTesting;
+          proxyTestState.textContent = "";
+          proxyTestState.className = "mt-2 text-ui-xs/relaxed text-foreground-subtle";
+          const res = await rpc("/proxy/test", { method: "POST", body: { proxy: proxyInput.value.trim() } });
+          proxyTesting = false;
+          proxyTestBtn.disabled = false;
+          proxyTestBtn.textContent = L.proxyTest;
+          if (!res.ok) {
+            proxyTestState.className = "mt-2 text-ui-xs/relaxed text-destructive";
+            proxyTestState.textContent = L.proxyTestFailed + ": " + errText(res);
+            return;
+          }
+          const parts = (res.targets || []).map((t2) => `${t2.name} ${t2.ok ? "\u2713 " + (t2.ms != null ? t2.ms + "ms" : "") : "\u2717 " + (t2.error || t2.httpCode || "")}`.trim());
+          const allOk = (res.targets || []).length > 0 && (res.targets || []).every((t2) => t2.ok);
+          proxyTestState.className = "mt-2 text-ui-xs/relaxed " + (allOk ? "text-foreground-subtle" : "text-amber-500");
+          proxyTestState.textContent = `${res.proxy}\uFF1A${parts.join(" \xB7 ")}`;
+        };
+        paneProxy.append(
+          h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.proxyDesc),
+          h(
+            "div",
+            { class: "mt-3 flex items-center gap-2" },
+            proxyInput,
+            proxySaveBtn,
+            proxyTestBtn
+          ),
+          h("p", { class: "mt-2 text-ui-xs/relaxed text-foreground-subtle" }, L.proxyHint),
+          proxyTestState
         );
         const VISION_DEFAULT_CFG = {
           enabled: true,
@@ -2037,13 +2507,13 @@
         const visionInputCls = "h-8 w-full rounded-lg border border-border bg-input px-2.5 text-ui-sm text-foreground outline-none transition-shadow placeholder:text-foreground-subtle focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40";
         const renderVision = () => {
           if (!visionCfg) {
-            const initBtn = btnSecondary(L.visionAddProxy, async () => {
+            const initBtn = btnSmall(L.visionAddProxy, async () => {
               const res = await rpc("/vision", { method: "POST", body: { config: VISION_DEFAULT_CFG } });
               if (res.ok) {
                 visionCfg = structuredClone(res.config);
                 renderVision();
               } else showToast(L.failed + ": " + errText(res), "error");
-            }, "h-7 px-3 text-ui-xs");
+            });
             paneVision.replaceChildren(
               h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.visionDesc),
               ...visionRes.ok ? [] : [h("p", { class: "mt-2 text-ui-sm text-destructive" }, L.visionLoadFailed + ": " + errText(visionRes))],
@@ -2057,7 +2527,7 @@
             h("span", { class: "mb-1 block text-ui-xs font-medium text-foreground-subtle" }, labelText),
             node
           );
-          const smallBtn = (text, onClick, extra = "") => btnSecondary(text, onClick, "h-7 px-2.5 text-ui-xs " + extra);
+          const smallBtn = (text, onClick, extra = "") => btnSmall(text, onClick, extra);
           const modeBtn = (id, label, desc) => h("button", {
             type: "button",
             class: "zcodepro-tab",
@@ -2081,10 +2551,15 @@
               "div",
               { class: "flex flex-wrap items-center gap-2" },
               h("span", { class: "shrink-0 rounded-md bg-surface px-1.5 py-0.5 text-ui-xs tabular-nums text-foreground-subtle" }, String(i + 1)),
-              textIn(p.name, (v) => {
-                p.name = v;
-                saveVisionSoon();
-              }, { placeholder: L.visionName }),
+              // 名称输入框用 flex-1 占剩余宽度，与序号同行；textIn 的 w-full 会把序号挤成单独一行
+              (() => {
+                const n = h("input", { type: "text", value: p.name || "", placeholder: L.visionName, class: visionInputCls + " min-w-0 flex-1" });
+                n.addEventListener("input", () => {
+                  p.name = n.value;
+                  saveVisionSoon();
+                });
+                return n;
+              })(),
               (() => {
                 const sel = h(
                   "select",
@@ -2221,7 +2696,10 @@
           version: rtkRes.version || "",
           binPath: rtkRes.binPath || "",
           mode: rtkRes.mode === "off" ? "off" : "hint",
-          whitelist: Array.isArray(rtkRes.whitelist) ? [...rtkRes.whitelist] : []
+          whitelist: Array.isArray(rtkRes.whitelist) ? [...rtkRes.whitelist] : [],
+          // 钩子内置放行清单（只读展示）
+          builtinGit: Array.isArray(rtkRes.builtinGit) ? [...rtkRes.builtinGit] : [],
+          builtinPlain: Array.isArray(rtkRes.builtinPlain) ? [...rtkRes.builtinPlain] : []
         } : null;
         const persistRtk = async (partial) => {
           const res = await rpc("/rtk", { method: "POST", body: partial });
@@ -2229,11 +2707,40 @@
           return res.ok;
         };
         const rtkInputCls = "h-8 w-full rounded-lg border border-border bg-input px-2.5 text-ui-sm text-foreground outline-none transition-shadow placeholder:text-foreground-subtle focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40";
+        const rtkVersionLine = h("span", { class: "shrink-0 whitespace-nowrap text-ui-xs/relaxed text-foreground-subtle" });
+        const renderRtkVersion = (meta) => {
+          const v = meta.version || "rtk";
+          rtkVersionLine.textContent = meta.binPath ? `${v} \xB7 ${meta.binPath}` : v;
+        };
+        renderRtkVersion(rtkRes);
+        const rtkUp = makeUpgradeControls({
+          endpoint: "/rtk",
+          metaRefresh: async () => {
+            const meta = await rpc("/rtk");
+            if (meta.ok) {
+              if (rtkCfg) Object.assign(rtkCfg, meta);
+              renderRtkVersion(meta);
+            }
+          }
+        });
+        rtkUpgradePollStop = rtkUp.stop;
+        const rtkVersionCard = h(
+          "div",
+          { class: "mt-3 flex items-center justify-between gap-2 rounded-xl border border-border p-3" },
+          h("div", { class: "flex min-w-0 items-center gap-2" }, rtkVersionLine, rtkUp.state),
+          rtkUp.btn
+        );
+        const rtkBody = h("div");
+        paneRtk.append(
+          h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.rtkDesc),
+          rtkVersionCard,
+          rtkBody
+        );
         const renderRtk = () => {
+          rtkVersionCard.style.display = rtkCfg && rtkCfg.installed ? "" : "none";
           if (!rtkCfg) {
-            paneRtk.replaceChildren(
-              h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.rtkDesc),
-              h("p", { class: "mt-2 text-ui-sm text-destructive" }, L.rtkLoadFailed + ": " + errText(rtkRes))
+            rtkBody.replaceChildren(
+              h("p", { class: "text-ui-sm text-destructive" }, L.rtkLoadFailed + ": " + errText(rtkRes))
             );
             return;
           }
@@ -2265,13 +2772,8 @@
               }
             })();
           };
-          paneRtk.replaceChildren(
-            h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.rtkDesc),
-            ...rtkCfg.installed ? [h(
-              "p",
-              { class: "mt-2 text-ui-xs text-foreground-subtle" },
-              `${rtkCfg.version || "rtk"}${rtkCfg.binPath ? " \xB7 " + rtkCfg.binPath : ""}`
-            )] : [h("p", { class: "mt-2 text-ui-sm text-amber-500" }, L.rtkNotInstalled)],
+          rtkBody.replaceChildren(
+            ...rtkCfg.installed ? [] : [h("p", { class: "text-ui-sm text-amber-500" }, L.rtkNotInstalled)],
             h(
               "div",
               { class: "mt-3 rounded-xl border border-border p-1.5" },
@@ -2288,6 +2790,16 @@
               { class: "mt-2 rounded-xl border border-border p-3" },
               h("div", { class: "text-ui-sm font-medium text-foreground" }, L.rtkWhitelistTitle),
               h("p", { class: "mt-1 text-ui-xs/relaxed text-foreground-subtle" }, L.rtkWhitelistDesc),
+              ...rtkCfg.builtinGit.length > 0 || rtkCfg.builtinPlain.length > 0 ? [
+                h("div", { class: "mt-2 text-ui-xs font-medium text-foreground-subtle" }, L.rtkBuiltinLabel),
+                h(
+                  "div",
+                  { class: "mt-1 flex flex-wrap items-center gap-1" },
+                  ...rtkCfg.builtinGit.map((g) => `git:${g}`).concat(rtkCfg.builtinPlain).map((entry) => h("span", {
+                    class: "inline-flex items-center rounded-md border border-border bg-surface px-1.5 py-0.5 text-ui-xs text-foreground-subtle/80"
+                  }, entry))
+                )
+              ] : [],
               h(
                 "div",
                 { class: "mt-2 flex flex-wrap items-center gap-1.5" },
@@ -2310,10 +2822,10 @@
                 "div",
                 { class: "mt-2 flex items-center gap-2" },
                 input,
-                btnSecondary(L.rtkWhitelistAdd, () => {
+                btnSmall(L.rtkWhitelistAdd, () => {
                   void addEntry();
-                }, "h-7 shrink-0 px-3 text-ui-xs"),
-                btnSecondary(L.rtkWhitelistClear, () => {
+                }, "shrink-0"),
+                btnSmall(L.rtkWhitelistClear, () => {
                   void (async () => {
                     if (rtkCfg.whitelist.length === 0) return;
                     if (await persistRtk({ whitelist: [] })) {
@@ -2322,23 +2834,296 @@
                       showToast(L.rtkWhitelistCleared);
                     }
                   })();
-                }, "h-7 shrink-0 px-3 text-ui-xs")
+                }, "shrink-0")
               )
             )
           );
         };
         renderRtk();
+        const hrVersionLine = h("span", { class: "shrink-0 whitespace-nowrap text-ui-xs/relaxed text-foreground-subtle" });
+        const renderHrVersion = (meta) => {
+          const parts = [];
+          if (meta.pluginVersion) parts.push(`${L.headroomVersionPlugin} ${meta.pluginVersion}`);
+          if (meta.version) parts.push(`${L.headroomVersionBin} ${meta.version}`);
+          hrVersionLine.textContent = parts.length ? parts.join(" \xB7 ") : `${L.headroomVersionPlugin} \u2014`;
+        };
+        renderHrVersion(headroomRes);
+        const hrUp = makeUpgradeControls({
+          endpoint: "/headroom",
+          metaRefresh: async () => {
+            const meta = await rpc("/headroom");
+            if (meta.ok) {
+              renderHrVersion(meta);
+              Object.assign(headroomRes, meta);
+            }
+          }
+        });
+        hrUpgradePollStop = hrUp.stop;
+        const renderHeadroomPane = () => {
+          paneHeadroom.replaceChildren();
+          if (!headroomRes.ok || !headroomRes.config) {
+            paneHeadroom.append(
+              h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.headroomDesc),
+              h("p", { class: "mt-2 text-ui-sm text-destructive" }, L.headroomLoadFailed + ": " + errText(headroomRes))
+            );
+            return;
+          }
+          if (!headroomRes.hook) {
+            const installBtn = btnSmall(L.headroomInstall, () => {
+              void runInstall();
+            }, "shrink-0");
+            const installState = h("div", { class: "mt-0.5 truncate text-ui-xs/relaxed text-foreground-subtle" });
+            const runInstall = async () => {
+              installBtn.disabled = true;
+              installBtn.textContent = L.headroomInstalling;
+              installState.textContent = "";
+              const res = await rpc("/plugins/update", { method: "POST", body: { name: "headroom", installMissing: true } });
+              if (!res.ok) {
+                installBtn.disabled = false;
+                installBtn.textContent = L.headroomInstall;
+                showToast(L.pluginsUpdateFailed + ": " + errText(res), "error");
+                return;
+              }
+              const meta = await rpc("/headroom");
+              if (meta.ok) Object.assign(headroomRes, meta);
+              if (headroomRes.hook) {
+                showToast(L.headroomInstalled, "success");
+                renderHeadroomPane();
+              } else {
+                installBtn.disabled = false;
+                installBtn.textContent = L.headroomInstall;
+                installState.textContent = L.headroomInstallRetry;
+              }
+            };
+            paneHeadroom.append(
+              h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.headroomDesc),
+              h(
+                "div",
+                { class: "mt-3 flex items-center justify-between gap-2 rounded-xl border border-border p-3" },
+                h(
+                  "div",
+                  { class: "min-w-0" },
+                  h("div", { class: "text-ui-sm font-medium text-foreground" }, L.headroomInstallTitle),
+                  h("div", { class: "mt-0.5 text-ui-xs/relaxed text-foreground-subtle" }, L.headroomInstallDesc),
+                  installState
+                ),
+                installBtn
+              )
+            );
+            return;
+          }
+          const hrCfg = { ...headroomRes.config };
+          let hrBusy = false;
+          const hrRun = async (reqBody, warn) => {
+            if (hrBusy) return false;
+            hrBusy = true;
+            const res = await rpc("/headroom", { method: "POST", body: reqBody });
+            hrBusy = false;
+            if (!res.ok) {
+              showToast(L.failed + ": " + errText(res), "error");
+              return false;
+            }
+            if (res.config) Object.assign(hrCfg, res.config);
+            if (warn) showToast(warn);
+            setTimeout(() => {
+              void hrRefresh();
+            }, 1200);
+            return true;
+          };
+          const hrDevLabel = (v) => v == null ? "\u2014" : v === "auto" ? L.hrValAuto : v === "cpu" ? "CPU" : v;
+          const HR_PM = { ac: L.hrPmAc, battery: L.hrPmBattery, saver: L.hrPmSaver, "saver+battery": L.hrPmSaverBat };
+          const HR_DETECT = { ok: L.hrDetectOk, missing: L.hrDetectMissing, broken: L.hrDetectBroken };
+          const hrStatusLine = h(
+            "div",
+            { class: "flex items-center gap-2" },
+            h("span", { class: "text-ui-sm text-foreground-subtle/70" }, "\u2026")
+          );
+          const hrFacts = h("div", { class: "mt-1.5 grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-3" });
+          const hrHintLine = h("p", { class: "mt-1.5 text-ui-xs/relaxed text-amber-500", style: "display:none" });
+          const hrRefresh = async () => {
+            const res = await rpc("/headroom/status");
+            if (!res.ok) {
+              hrStatusLine.replaceChildren(
+                h("span", { class: "text-ui-sm text-destructive" }, L.headroomStatusLoadFailed + ": " + errText(res))
+              );
+              hrFacts.replaceChildren();
+              hrHintLine.style.display = "none";
+              return;
+            }
+            const s = res.status || {};
+            hrStatusLine.replaceChildren(
+              h("span", { class: "inline-block size-2 shrink-0 rounded-full " + (s.up ? "bg-emerald-500" : "bg-red-400") }),
+              h("span", { class: "text-ui-sm font-medium text-foreground" }, s.up ? L.headroomProxyUp : L.headroomProxyDown),
+              ...s.port ? [h("span", { class: "text-ui-xs text-foreground-subtle" }, `127.0.0.1:${s.port}`)] : []
+            );
+            const fact = (label, value) => h(
+              "div",
+              { class: "min-w-0 truncate text-ui-xs text-foreground-subtle" },
+              h("span", { class: "text-foreground-subtle/70" }, label + "\uFF1A"),
+              String(value ?? "\u2014")
+            );
+            hrFacts.replaceChildren(
+              fact(L.headroomCurrentBackend, hrDevLabel(s.backend)),
+              fact(L.headroomDesiredBackend, hrDevLabel(s.desiredBackend)),
+              fact(L.headroomPowerState, HR_PM[s.powerMode] || s.powerMode),
+              fact(L.headroomWatcher, s.watcherRunning ? L.headroomWatcherOn : L.headroomWatcherOff),
+              fact(L.headroomSaverDetect, HR_DETECT[s.saverDetect] || s.saverDetect)
+            );
+            hrHintLine.textContent = s.saverHint || "";
+            hrHintLine.style.display = s.saverHint ? "" : "none";
+          };
+          const hrRefreshBtn = btnSmall(L.headroomRefresh, () => {
+            void hrRefresh();
+          });
+          const hrStartBtn = btnSmall(L.headroomStart, () => {
+            void hrRun({ action: "start" });
+          });
+          const hrRestartBtn = btnSmall(L.headroomRestart, () => {
+            void hrRun({ action: "restart" });
+          });
+          const hrStopBtn = btnSmall(L.headroomStopAction, () => {
+            openDialog({
+              title: L.headroomStopTitle,
+              description: L.headroomStopDesc,
+              width: "sm:max-w-md",
+              onMount: ({ body: confirmBody, close: closeConfirm }) => {
+                confirmBody.append(
+                  dialogFooter(
+                    btnSecondary(L.cancel, () => closeConfirm()),
+                    btnPrimary(L.headroomStopAction, () => {
+                      closeConfirm();
+                      void hrRun({ action: "stop" }, L.headroomStoppedWarn);
+                    }, "min-w-24")
+                  )
+                );
+              }
+            });
+          });
+          void hrRefresh();
+          const hrBackendSel = h("select", { class: "h-7 shrink-0 rounded-lg border border-border bg-input px-1.5 text-ui-xs text-foreground outline-none" });
+          const hrBackendOpts = [
+            ["auto", L.headroomBackendAuto],
+            ["cpu", L.headroomBackendCpu]
+          ];
+          if (!["auto", "cpu"].includes(hrCfg.kompressBackend)) {
+            hrBackendOpts.push([hrCfg.kompressBackend, hrCfg.kompressBackend + L.headroomBackendNative]);
+          }
+          for (const [v, label] of hrBackendOpts) hrBackendSel.append(h("option", { value: v }, label));
+          hrBackendSel.value = hrCfg.kompressBackend;
+          hrBackendSel.addEventListener("change", () => {
+            const v = hrBackendSel.value;
+            void (async () => {
+              if (await hrRun({ backend: v })) updateHrPwrHint();
+              else hrBackendSel.value = hrCfg.kompressBackend;
+            })();
+          });
+          const hrPowerDefs = [
+            ["off", L.headroomPowerOff, L.headroomPowerOffDesc],
+            ["battery", L.headroomPowerBattery, L.headroomPowerBatteryDesc],
+            ["saver", L.headroomPowerSaver, L.headroomPowerSaverDesc]
+          ];
+          const hrPowerBox = h("div", { class: "flex min-w-0 flex-wrap items-center gap-1.5" });
+          const renderHrPower = () => hrPowerBox.replaceChildren(
+            h("span", { class: "shrink-0 text-ui-sm font-medium text-foreground" }, L.headroomPower),
+            ...hrPowerDefs.map(([id, label, desc]) => h("button", {
+              type: "button",
+              class: "zcodepro-tab",
+              "data-state": hrCfg.powerSaveCpu === id ? "active" : "inactive",
+              title: desc,
+              onClick: () => {
+                void (async () => {
+                  if (await hrRun({ power: id })) renderHrPower();
+                })();
+              }
+            }, label))
+          );
+          renderHrPower();
+          const hrIntervalField = numberField({
+            value: hrCfg.powerWatchInterval,
+            fallback: 60,
+            min: 10,
+            max: 3600,
+            step: 5,
+            onCommit: (v) => {
+              void (async () => {
+                const res = await rpc("/headroom", { method: "POST", body: { interval: v } });
+                if (res.ok && res.config) Object.assign(hrCfg, res.config);
+                else {
+                  showToast(L.failed + ": " + errText(res), "error");
+                  hrIntervalField.set(hrCfg.powerWatchInterval);
+                }
+              })();
+            }
+          });
+          const hrPwrHint = h(
+            "p",
+            { class: "px-2.5 pb-1.5 text-ui-xs/relaxed text-foreground-subtle", style: "display:none" },
+            L.hrCpuPinnedHint
+          );
+          const updateHrPwrHint = () => {
+            hrPwrHint.style.display = hrCfg.kompressBackend === "cpu" ? "" : "none";
+          };
+          updateHrPwrHint();
+          paneHeadroom.append(
+            h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.headroomDesc),
+            ...headroomRes.installed === false ? [h("p", { class: "mt-2 text-ui-sm text-amber-500" }, L.headroomBinMissing)] : [],
+            h(
+              "div",
+              { class: "mt-3 flex items-center justify-between gap-2 rounded-xl border border-border p-3" },
+              h("div", { class: "flex min-w-0 items-center gap-2" }, hrVersionLine, hrUp.state),
+              hrUp.btn
+            ),
+            h(
+              "div",
+              { class: "mt-2 rounded-xl border border-border p-3" },
+              h(
+                "div",
+                { class: "flex flex-wrap items-center justify-between gap-2" },
+                h("span", { class: "text-ui-sm font-medium text-foreground" }, L.headroomStatusTitle),
+                h("div", { class: "flex items-center gap-1.5" }, hrRefreshBtn, hrStartBtn, hrRestartBtn, hrStopBtn)
+              ),
+              hrStatusLine,
+              hrFacts,
+              hrHintLine
+            ),
+            h(
+              "div",
+              {
+                class: "mt-2 rounded-xl border border-border p-1.5"
+              },
+              h(
+                "div",
+                { class: "flex items-center justify-between gap-2 rounded-lg p-2.5 transition-colors hover:bg-surface-hover" },
+                h("span", { class: "min-w-0 truncate text-ui-sm font-medium text-foreground", title: L.headroomBackendDesc }, L.headroomBackend),
+                hrBackendSel
+              ),
+              h(
+                "div",
+                { class: "flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-lg p-2 transition-colors hover:bg-surface-hover" },
+                hrPowerBox,
+                h(
+                  "div",
+                  { class: "ml-auto flex shrink-0 items-center gap-1.5" },
+                  h("span", { class: "text-ui-xs font-medium text-foreground-subtle", title: L.headroomIntervalDesc }, L.headroomInterval),
+                  hrIntervalField.el,
+                  h("span", { class: "w-4 text-ui-xs text-foreground-subtle" }, L.headroomSecUnit)
+                )
+              ),
+              hrPwrHint
+            )
+          );
+        };
+        renderHeadroomPane();
         body.append(
           statusLine,
           tablist,
           paneFeatures,
           paneStyles,
           paneAgents,
+          paneProxy,
           paneVision,
+          paneHeadroom,
           paneRtk
-        );
-        body.append(
-          dialogFooter(btnPrimary(L.close, () => close()))
         );
       }
     });

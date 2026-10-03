@@ -65,21 +65,38 @@ The "Global Prompt" tab in the settings window edits the default instructions sh
 - Takes effect from new sessions; a project's own `AGENTS.md` can extend or override the global rules;
 - Clear the content and save to remove the global prompt.
 
+### Software proxy
+
+The "Proxy" tab of the settings window sets an HTTP proxy for the local helper of ZCode Pro: plugin marketplace updates and installs, headroom binary update checks and upgrades all go through it. The ZCode app itself and model requests are not affected. Applies immediately; save empty to clear.
+
 ### Vision proxy
 
-When the main model cannot take image input (e.g. glm-5.3), images in chat are automatically sent to a vision model and the recognition result is injected into the conversation as text (requires the zcode-vision plugin). Edit it visually in the "Vision Proxy" tab of the settings window:
+When the main model cannot take image input (e.g. glm-5.3), images in chat are automatically sent to a vision model and the recognition result is injected into the conversation as text (requires the zcode-vision plugin). Edit it visually in the "Vision" tab of the settings window:
 
 - Enable switch, chain mode (fallback / pipeline), compression threshold, proxy chain and recognition prompts;
 - Shares the same configuration as the `/vision-*` commands; changes save automatically, take effect instantly, with one-click testing.
 
 ### rtk compression
 
-The rtk plugin compresses output of common dev commands by 60–90% before it enters the context. Manage it in the "rtk Compression" tab of the settings window:
+The rtk plugin compresses output of common dev commands by 60–90% before it enters the context. Manage it in the "rtk" tab of the settings window:
 
 - Rewrite-hint switch: turn it off to stop the interception hints; you can still run `rtk <command>` manually to enjoy the compression;
-- Command whitelist: commands passed through without hints (e.g. `docker`, `git:clone`).
+- Command whitelist: commands passed through without hints (e.g. `docker`, `git:clone`);
+- rtk binary version display and update check, with one-click upgrade (downloads from GitHub Releases, verifies and replaces; goes through the proxy set in the "Proxy" tab).
 
 Shares the same configuration as the `/rtk-*` commands; changes save automatically and take effect immediately.
+
+### Headroom
+
+The headroom plugin keeps a local compression proxy that compresses context sent to the model to save tokens (requires the headroom plugin and providers pointed at the proxy). Manage it in the "Headroom" tab of the settings window:
+
+- Compression device: auto (GPU first) or CPU (power saving, no VRAM); applies immediately;
+- Power-save auto switch: switch to CPU compression on battery or in the system power-saver mode;
+- Watch interval: how often the power watcher polls, in seconds;
+- Runtime status plus proxy start / restart / stop;
+- Shows plugin and binary versions; check for and upgrade the headroom binary via the pip environment it was installed into.
+
+Shares the same configuration as the `/hr-*` commands (`~/.zcode/headroom.json`); changes save automatically and take effect immediately.
 
 ### Plugin updates
 
@@ -89,7 +106,7 @@ Shares the same configuration as the `/rtk-*` commands; changes save automatical
 
 ### Settings entry
 
-Right-click the settings button at the bottom of the ZCode sidebar to open the ZCode Pro settings window (left-click still opens the ZCode settings page). It has five tabs — "Features", "Styles", "Global Prompt", "Vision Proxy" and "rtk Compression" — to toggle each enhancement, adjust UI styles, edit the global prompt, manage companion plugins and check the runtime status. Settings apply instantly.
+Right-click the settings button at the bottom of the ZCode sidebar to open the ZCode Pro settings window (left-click still opens the ZCode settings page). It has seven tabs — "Features", "Styles", "Global Prompt", "Proxy", "Vision", "Headroom" and "rtk" — to toggle each enhancement, adjust UI styles, edit the global prompt, set a network proxy, manage companion plugins and check the runtime status. Settings apply instantly.
 
 ## Installation
 
@@ -163,6 +180,8 @@ zcode-pro [--cdp-port 9333] [--helper-port 47889] [--zcode-path <path>]
 - Global prompt: `~/.zcode/AGENTS.md` (backed up before saving: `~/.zcode/AGENTS.md.zcodepro-backup`)
 - Vision proxy settings (zcode-vision plugin): `~/.zcode/zcode-vision.json`
 - rtk compression settings (rtk plugin): `~/.zcode-rtk/` (mode and whitelist)
+- Headroom settings (headroom plugin): `~/.zcode/headroom.json`
+- Software proxy: the `proxy` field of `~/.zcode/zcodepro.json`
 - Config backup created when relocating a folder: `~/.zcode/v2/setting.json.zcodepro-backup`
 - After uninstalling, just launch ZCode through its official entry — nothing to clean up.
 

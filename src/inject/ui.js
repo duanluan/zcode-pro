@@ -156,6 +156,19 @@ export function btnPrimary(text, onClick, extra = '') {
   }, text);
 }
 
+// 紧凑小按钮（面板内与文本同行的操作按钮）：高度对齐 .zcodepro-tab（24px）。
+// 不能走 btnSecondary + 'h-7' 追加类——基类的 h-9 与 h-7 同属性冲突，
+// Tailwind 按样式表顺序决胜，h-7 永远盖不过 h-9，按钮会一直是 36px。
+// variant='primary' 用于需要强调的小按钮（如「保存」）。
+export function btnSmall(text, onClick, extra = '', variant = '') {
+  return h('button', {
+    type: 'button',
+    class: 'zcodepro-btn-sm ' + extra,
+    'data-variant': variant || undefined,
+    onClick,
+  }, text);
+}
+
 export function textInput({ value = '', placeholder = '', onInput, onEnter, autofocus = true } = {}) {
   const input = h('input', {
     type: 'text',
@@ -372,6 +385,59 @@ export function ensureStyle() {
       background-color: var(--color-background, #fff);
       color: var(--color-foreground, #111);
       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+    }
+    /* 紧凑小按钮：几何/配色写入自有规则并取主题变量（高度=24px，与标签页一致） */
+    .zcodepro-btn-sm {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 24px;
+      padding: 0 10px;
+      border: 1px solid var(--color-border, rgba(0, 0, 0, 0.12));
+      border-radius: 8px;
+      background-color: transparent;
+      cursor: pointer;
+      font-size: 12px;
+      line-height: 1;
+      white-space: nowrap;
+      color: var(--color-foreground, #111);
+      transition: background-color 0.12s ease;
+    }
+    .zcodepro-btn-sm:hover:not(:disabled) {
+      background-color: color-mix(in oklab, var(--color-foreground, #888) 8%, transparent);
+    }
+    .zcodepro-btn-sm:disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+    .zcodepro-btn-sm[data-variant="primary"] {
+      border-color: transparent;
+      background-color: var(--color-primary, #111);
+      color: var(--color-primary-foreground, #fff);
+    }
+    .zcodepro-btn-sm[data-variant="primary"]:hover:not(:disabled) {
+      background-color: color-mix(in oklab, var(--color-primary, #111) 88%, #fff);
+    }
+    /* 弹窗右上角关闭按钮：用文字字形而非 SVG 描边（应用环境里注入的 SVG 描边不可见），
+       几何/配色写入自有规则并取主题变量，保证常显 */
+    .zcodepro-close {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      cursor: pointer;
+      font-size: 15px;
+      line-height: 1;
+      color: var(--color-muted-foreground, #888);
+      transition: background-color 0.12s ease, color 0.12s ease;
+    }
+    .zcodepro-close:hover {
+      background-color: color-mix(in oklab, var(--color-foreground, #888) 8%, transparent);
+      color: var(--color-foreground, #111);
     }
     /* 全局提示词编辑框（设置弹窗）：与开关/标签页同理，几何/配色写入自有规则并取主题变量。
        边框用 border 而非 box-shadow：应用全局样式对 :focus/:focus-visible 强制
