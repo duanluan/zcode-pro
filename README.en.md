@@ -4,119 +4,36 @@
 
 ZCode Pro enhances the ZCode desktop UI. Launch ZCode through the "ZCode Pro" launcher and the enhancements are enabled automatically; official app files are never modified, and ZCode returns to its original state after exit.
 
-![Platform](https://img.shields.io/badge/platform-win%20%7C%20mac%20%7C%20linux%20%7C%20AUR-blue)
+![AUR](https://img.shields.io/aur/version/zcode-pro) ![Platform](https://img.shields.io/badge/platform-win%20%7C%20mac%20%7C%20linux%20%7C%20AUR-blue)
 
 > **Opening settings: after launching ZCode Pro, right-click the settings button (gear) at the bottom of the ZCode sidebar to open the ZCode Pro settings window.**
 
-## Features
+## ✨ Features
 
-### Custom project aliases
+| Feature | Description |
+| --- | --- |
+| Custom project alias | Show a custom name for a project in the sidebar; UI-only, revert anytime |
+| Switch project folder | Point a project at another folder; sidebar, tabs and task history follow. Stop running tasks before switching; historical checkpoints still reference the original path |
+| Open folder / Copy path | Project "More" menu: open the project directory in the file manager, or copy its path |
+| Session drag ordering | Reorder sessions in Pinned, Projects and Groups; persists across refreshes |
+| Session quick switch | `alt+z` toggles between the current and the last session; hold `alt` and press `x` / `c` to pick from recent sessions, release `alt` to switch (like `alt+tab`) |
+| File menu actions | Adds "Open with default app" and "Reveal in file manager" to file links in chat |
+| Copy image | Right-click an image in chat or the enlarged preview to copy it to the clipboard |
+| UI style adjustments | Fine-tune paragraph spacing, content width, line heights, list and code spacing; applies instantly |
+| Global prompt | Edit default instructions shared by all projects; applies to new sessions |
+| Software proxy | Set an HTTP proxy for plugin updates/installs and binary upgrades, with connectivity test |
+| Vision proxy | Recognize images via vision models when the main model cannot see them; visual chain editor (zcode-vision plugin) |
+| rtk compression | Manage rewrite hints and the command whitelist; check and upgrade the rtk binary (rtk plugin) |
+| Headroom | Manage compression device, power-save switching and proxy status; check and upgrade the headroom binary (headroom plugin) |
+| Plugin updates | Check and update zcode-plugins marketplace plugins in one click, optional auto-update on startup |
 
-Set a custom display name for any project in the sidebar, for the UI only:
+All features can be toggled or adjusted in the settings window.
 
-- Takes effect immediately, no refresh needed, and you can restore the original name anytime;
-- The folder on disk, session records and all ZCode data stay untouched.
-
-### Relocate project folder
-
-Point a project at another folder to change where it lives:
-
-- The sidebar project list, open tabs and local task history move together — no sessions are lost;
-- The directory itself is never moved or modified.
-
-### Open project folder
-
-New "Open folder" and "Copy path" actions in the project "More" menu open the project directory in your file manager or copy the project path to the clipboard.
-
-### Session ordering
-
-Drag sessions within the pinned, project and group lists to reorder them. The order is remembered and survives refreshes.
-
-### Session quick switch
-
-`alt+z` toggles between the current and the last-used session; hold `alt` and press `x` / `c` to move through recent sessions (across projects) in a popup, release `alt` to switch, `Esc` to cancel — like `alt+tab`. Can be toggled in the settings.
-
-### File menu actions
-
-Two new actions in the right-click menu of file links in chat:
-
-- Open with default app: open the file with the system's default application;
-- Reveal in file manager: show the file in your system file manager.
-
-Can be toggled in the settings window.
-
-### Copy image
-
-Right-click an image in chat or the enlarged preview and choose "Copy image" to copy it to the system clipboard. Can be toggled in the settings window.
-
-### UI style adjustments
-
-The "Styles" tab in the settings window fine-tunes the UI. Number fields support mouse-wheel adjustment and changes apply instantly:
-
-- Paragraph spacing: vertical spacing between turns and between paragraphs inside answers;
-- Content width: max width of conversation content, in px or %;
-- Question / answer line height: line height of question and answer text (multiplier);
-- List spacing / list item spacing: list margins and spacing between list items;
-- Quote & code spacing: space above and below quotes and code blocks.
-
-All of the above can be reset to defaults with one click.
-
-### Global prompt
-
-The "Global Prompt" tab in the settings window edits the default instructions shared by all projects:
-
-- Written to `~/.zcode/AGENTS.md` and injected into every session of every project;
-- Takes effect from new sessions; a project's own `AGENTS.md` can extend or override the global rules;
-- Clear the content and save to remove the global prompt.
-
-### Software proxy
-
-The "Proxy" tab of the settings window sets an HTTP proxy for the local helper of ZCode Pro: plugin marketplace updates and installs, headroom binary update checks and upgrades all go through it. The ZCode app itself and model requests are not affected. Applies immediately; save empty to clear.
-
-### Vision proxy
-
-When the main model cannot take image input (e.g. glm-5.3), images in chat are automatically sent to a vision model and the recognition result is injected into the conversation as text (requires the zcode-vision plugin). Edit it visually in the "Vision" tab of the settings window:
-
-- Enable switch, chain mode (fallback / pipeline), compression threshold, proxy chain and recognition prompts;
-- Shares the same configuration as the `/vision-*` commands; changes save automatically, take effect instantly, with one-click testing.
-
-### rtk compression
-
-The rtk plugin compresses output of common dev commands by 60–90% before it enters the context. Manage it in the "rtk" tab of the settings window:
-
-- Rewrite-hint switch: turn it off to stop the interception hints; you can still run `rtk <command>` manually to enjoy the compression;
-- Command whitelist: commands passed through without hints (e.g. `docker`, `git:clone`);
-- rtk binary version display and update check, with one-click upgrade (downloads from GitHub Releases, verifies and replaces; goes through the proxy set in the "Proxy" tab).
-
-Shares the same configuration as the `/rtk-*` commands; changes save automatically and take effect immediately.
-
-### Headroom
-
-The headroom plugin keeps a local compression proxy that compresses context sent to the model to save tokens (requires the headroom plugin and providers pointed at the proxy). Manage it in the "Headroom" tab of the settings window:
-
-- Compression device: auto (GPU first) or CPU (power saving, no VRAM); applies immediately;
-- Power-save auto switch: switch to CPU compression on battery or in the system power-saver mode;
-- Watch interval: how often the power watcher polls, in seconds;
-- Runtime status plus proxy start / restart / stop;
-- Shows plugin and binary versions; check for and upgrade the headroom binary via the pip environment it was installed into.
-
-Shares the same configuration as the `/hr-*` commands (`~/.zcode/headroom.json`); changes save automatically and take effect immediately.
-
-### Plugin updates
-
-- A "Plugin updates" card in the "Features" tab checks and updates installed plugins from the zcode-plugins marketplace in one click;
-- Optional auto-update runs the updates automatically at startup;
-- With auto-update off, new versions are reported once when detected.
-
-### Settings entry
-
-Right-click the settings button at the bottom of the ZCode sidebar to open the ZCode Pro settings window (left-click still opens the ZCode settings page). It has seven tabs — "Features", "Styles", "Global Prompt", "Proxy", "Vision", "Headroom" and "rtk" — to toggle each enhancement, adjust UI styles, edit the global prompt, set a network proxy, manage companion plugins and check the runtime status. Settings apply instantly.
-
-## Installation
+## 📦 Installation
 
 Once installed, launch ZCode via the "ZCode Pro" shortcut in your app menu / Start menu, or the `zcode-pro` command in a terminal — the enhancements are enabled automatically in this mode; launching ZCode through its original entry does not load them. After launching, right-click the settings button at the bottom of the ZCode sidebar to open the ZCode Pro settings window.
 
-### Linux / macOS
+### 🐧 Linux / macOS
 
 ```bash
 git clone https://github.com/duanluan/zcode-pro.git
@@ -128,7 +45,7 @@ cd zcode-pro && ./scripts/install.sh
 - Do not use this script while the AUR package is installed (the script detects this and refuses): the user-level install would shadow the system-wide one;
 - Uninstall: `./scripts/install.sh --uninstall`.
 
-### Windows
+### 🪟 Windows
 
 ```powershell
 git clone https://github.com/duanluan/zcode-pro.git
@@ -140,7 +57,7 @@ powershell -ExecutionPolicy Bypass -File scripts\install.ps1 -Desktop # plus a d
 - Installs to `%LOCALAPPDATA%\ZCodePro`; shortcuts launch silently without a console window;
 - Uninstall: `powershell -ExecutionPolicy Bypass -File scripts\install.ps1 -Uninstall`.
 
-### AUR (Arch / Manjaro)
+### 📦 AUR (Arch / Manjaro)
 
 Installs `/usr/bin/zcode-pro` and a system-level app-menu shortcut. Depends on the [zcode](https://aur.archlinux.org/packages/zcode) package from the AUR.
 
@@ -153,7 +70,7 @@ git clone https://aur.archlinux.org/zcode-pro.git && cd zcode-pro && makepkg -si
 
 If you previously installed via `install.sh`, run `./scripts/install.sh --uninstall` in that repository clone before switching to the AUR package. Leftover user-level files would keep shadowing the system-wide entry, and you would keep launching the old version.
 
-### Run without installing
+### 🚀 Run without installing
 
 No standalone Node.js required: when a system Node is missing, the runtime bundled with ZCode is used.
 
@@ -163,42 +80,37 @@ git clone https://github.com/duanluan/zcode-pro.git && cd zcode-pro
 bin\zcode-pro.cmd          # Windows (auto-detects %LOCALAPPDATA%\Programs\ZCode\ZCode.exe)
 ```
 
-## Command-line options
+## 📖 Reference
 
-```
-zcode-pro [--cdp-port 9333] [--helper-port 47889] [--zcode-path <path>]
-        [--inject-only] [--verbose]
-```
+Command-line options (see `zcode-pro --help` for all):
 
 | Option | Description |
 | --- | --- |
-| `--cdp-port` | Debug port, default 9333 (or env var `ZCODEPRO_CDP_PORT`) |
-| `--helper-port` | Local helper service port, default 47889 (`ZCODEPRO_HELPER_PORT`) |
-| `--zcode-path` | Explicit path to the ZCode executable (`ZCODEPRO_ZCODE_PATH`) |
-| `--inject-only` | Attach to an instance already listening on the debug port instead of starting a new one |
+| `--cdp-port` | Debug port, default 9333 |
+| `--helper-port` | Local helper port, default 47889 |
+| `--zcode-path` | Explicit path to the ZCode executable |
+| `--inject-only` | Attach to a running instance only; do not launch a new one |
 | `--verbose` | Verbose logging |
 
-## Configuration & data
+Each option can also be overridden with a `ZCODEPRO_*` environment variable.
 
-- Feature switches and project aliases: `~/.zcode/zcodepro.json`
-- Global prompt: `~/.zcode/AGENTS.md` (backed up before saving: `~/.zcode/AGENTS.md.zcodepro-backup`)
-- Vision proxy settings (zcode-vision plugin): `~/.zcode/zcode-vision.json`
-- rtk compression settings (rtk plugin): `~/.zcode-rtk/` (mode and whitelist)
-- Headroom settings (headroom plugin): `~/.zcode/headroom.json`
-- Software proxy: the `proxy` field of `~/.zcode/zcodepro.json`
-- Config backup created when relocating a folder: `~/.zcode/v2/setting.json.zcodepro-backup`
-- After uninstalling, just launch ZCode through its official entry — nothing to clean up.
+Configuration and data locations:
 
-## Known limitations
+| Content | Location |
+| --- | --- |
+| Feature switches, aliases, software proxy | `~/.zcode/zcodepro.json` |
+| Global prompt | `~/.zcode/AGENTS.md` |
+| Vision proxy (zcode-vision plugin) | `~/.zcode/zcode-vision.json` |
+| rtk compression (rtk plugin) | `~/.zcode-rtk/` |
+| Headroom (headroom plugin) | `~/.zcode/headroom.json` |
 
-- If a task is running inside the project, stop it before relocating the folder;
-- Checkpoint snapshots still reference the original path; restoring an old checkpoint may write back to the original directory.
+After uninstalling, just start ZCode from the official entry; no system cleanup is needed.
 
-## Plugin recommendation
+## 🔌 Plugin recommendation
 
 [duanluan/zcode-plugins](https://github.com/duanluan/zcode-plugins) is a companion plugin marketplace for ZCode: AI code review, request compression and command-output compression plugins that save tokens. To install: ZCode → Plugin Marketplace → "Add" (top right) → Add plugin marketplace, and enter `duanluan/zcode-plugins`. Installed plugins can be checked and updated from ZCode Pro settings.
 
-## Community
+## 💬 Community
 
 - QQ group: **428403354** ([join](https://qm.qq.com/q/WXuISJK3ug))
 - WeChat group: add **ai4only** on WeChat to be invited

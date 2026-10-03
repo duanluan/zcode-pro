@@ -4,119 +4,36 @@
 
 ZCode 桌面版界面增强工具。通过「ZCode Pro」启动 ZCode 时自动启用增强；不修改官方应用文件，退出后 ZCode 恢复原状。
 
-![平台](https://img.shields.io/badge/platform-win%20%7C%20mac%20%7C%20linux%20%7C%20AUR-blue)
+![AUR 版本](https://img.shields.io/aur/version/zcode-pro) ![平台](https://img.shields.io/badge/platform-win%20%7C%20mac%20%7C%20linux%20%7C%20AUR-blue)
 
-> **打开设置：启动 ZCode Pro 后，右键点击 ZCode 侧边栏底部的设置按钮（齿轮）即可打开 ZCode Pro 设置窗口。**
+> ⚙️ **打开设置：启动 ZCode Pro 后，右键点击 ZCode 侧边栏底部的设置按钮（齿轮）即可打开 ZCode Pro 设置窗口。**
 
-## 功能
+## ✨ 功能
 
-### 项目自定义别名
+| 功能 | 说明 |
+| --- | --- |
+| 项目自定义别名 | 侧边栏显示自定义名称，仅界面显示，随时恢复 |
+| 切换文件夹 | 将项目指向另一个文件夹，侧边栏、标签页与任务历史一并迁移；切换前建议先停止运行中的任务，历史检查点仍引用原路径 |
+| 打开文件夹 / 复制路径 | 项目「更多」菜单：在系统文件管理器中打开项目目录，或复制项目路径 |
+| 会话拖动排序 | 拖动置顶、项目与分组中的会话调整顺序，刷新后保持 |
+| 会话快捷切换 | `alt+z` 在当前与上次会话间来回切换；按住 `alt` 按 `x` / `c` 弹出最近会话列表选择，松开 `alt` 切换（类 `alt+tab`） |
+| 文件菜单增强 | 会话中文件链接的右键菜单新增「默认应用打开」「打开所在目录」 |
+| 复制图片 | 右键会话中的图片或放大的预览图，复制到剪贴板 |
+| 界面样式调整 | 微调段落间距、内容宽度、行高、列表与代码块留白，即改即生效 |
+| 全局提示词 | 编辑所有项目共享的默认指令，新会话起生效 |
+| 软件代理 | 为插件更新安装与本体升级设置 HTTP 代理，附连通性检测 |
+| 视觉代理 | 主模型不识图时自动交给视觉模型识别注入；可视化编辑代理链（zcode-vision 插件） |
+| rtk 压缩 | 管理改写提醒与命令白名单，rtk 本体检查更新与一键升级（rtk 插件） |
+| Headroom | 管理压缩设备、省电切换与代理运行状态，headroom 本体检查更新与升级（headroom 插件） |
+| 插件更新 | 一键检查并更新 zcode-plugins 市场插件，可选启动时自动更新 |
 
-为侧边栏中的项目设置自定义名称，仅用于界面显示：
+各项功能均可在设置弹窗中开关或调整。
 
-- 即时生效，无需刷新，可随时恢复为原始名称；
-- 磁盘目录、会话记录与所有 ZCode 数据保持不变。
+## 📦 安装与使用
 
-### 项目切换文件夹
+安装后，通过应用菜单 / 开始菜单中的「ZCode Pro」快捷方式或终端命令 `zcode-pro` 启动 ZCode，增强在该方式下自动生效；使用原有 ZCode 入口启动时不加载增强。
 
-将项目指向另一个文件夹，用于调整项目的所在位置：
-
-- 侧边栏项目列表、已打开标签页与本地任务历史一并迁移，会话记录不会丢失；
-- 目录本身不会被移动或修改。
-
-### 打开项目文件夹
-
-项目「更多」菜单新增「打开文件夹」与「复制路径」：在系统文件管理器中打开项目目录，或把项目路径复制到剪贴板。
-
-### 会话排序
-
-在置顶、项目与分组中的会话列表里拖动会话即可调整顺序，顺序会被记住，刷新后保持不变。
-
-### 会话快捷切换
-
-`alt+z` 在当前与上次使用的会话间来回切换；按住 `alt` 再按 `x` / `c` 弹出最近使用的会话列表（跨项目）前后选择，松开 `alt` 切换，`Esc` 取消，类似 `alt+tab`。可在设置中开关。
-
-### 文件菜单增强
-
-会话中文件链接的右键菜单新增两项操作：
-
-- 默认应用打开：用系统默认程序打开该文件；
-- 打开所在目录：在系统文件管理器中显示该文件。
-
-可在设置弹窗中开关。
-
-### 复制图片
-
-会话中的图片与点击放大的预览图新增右键「复制图片」，直接复制到系统剪贴板；可在设置弹窗中开关。
-
-### 界面样式调整
-
-设置弹窗中的「样式」标签页可微调界面样式，数值框支持鼠标滚轮调节，改动立即生效：
-
-- 段落间距：回合之间与答案内部段落之间的垂直间距；
-- 内容宽度：会话内容的最大宽度，支持 px 或 %；
-- 提问行高 / 回答行高：提问与回答正文的行高（倍数）；
-- 列表间距 / 列表项间距：列表自身留白与列表项之间的间距；
-- 引用与代码块间距：引用、代码块上下的留白。
-
-以上均可一键恢复默认。
-
-### 全局提示词
-
-设置弹窗中的「全局提示词」标签页可直接编辑所有项目共享的默认指令：
-
-- 写入 `~/.zcode/AGENTS.md`，自动注入所有项目的每次会话；
-- 保存后从新会话起生效，项目内的 `AGENTS.md` 可继续补充或覆盖全局规则；
-- 清空内容并保存即移除全局提示词。
-
-### 软件代理
-
-设置弹窗中的「代理」标签页可为 ZCode Pro 的本地助手设置 HTTP 代理，插件市场的更新与安装、Headroom 本体的检查更新与升级等网络访问都会走该代理；不影响 ZCode 应用本身与模型请求。保存后立即生效，留空保存即清除。
-
-### 视觉代理
-
-主模型不支持图片输入时（如 glm-5.3），自动把会话中的图片交给视觉模型识别，识别结果以文字注入对话（需安装 zcode-vision 插件）。设置弹窗中的「Vision」标签页可视化编辑：
-
-- 启用开关、链模式（依次尝试 / 逐级加工）、压缩阈值、代理链与识别提示词；
-- 与 `/vision-*` 命令编辑同一份配置，改动自动保存、即时生效，支持一键测试。
-
-### rtk 压缩
-
-rtk 插件把常见开发命令的输出压缩 60~90% 再进入上下文。设置弹窗中的「rtk」标签页可管理：
-
-- 改写提醒开关：关闭后不再拦截提醒，仍可手动用 `rtk <命令>` 享受压缩；
-- 命令白名单：不提醒直接放行的命令（如 `docker`、`git:clone`）；
-- rtk 本体版本显示与检查更新，可一键升级（经 GitHub Releases 下载并校验后替换，走「代理」标签页设置的代理）。
-
-与 `/rtk-*` 命令编辑同一份配置，改动自动保存、钩子即时生效。
-
-### Headroom
-
-Headroom 插件在本地驻留压缩代理，压缩发往模型的上下文以节省 token（需安装 headroom 插件并让供应商指向该代理）。设置弹窗中的「Headroom」标签页可管理：
-
-- 压缩设备：自动（显卡优先）或 CPU（省电、不占显存），切换后立即生效；
-- 省电自动切换：用电池或系统省电模式时自动改用 CPU 压缩；
-- 监视间隔：省电监视器轮询电源的间隔秒数；
-- 运行状态与代理的启动 / 重启 / 停止；
-- 显示插件与程序版本，可检查并升级 headroom 本体（经其安装环境的 pip）。
-
-与 `/hr-*` 命令编辑同一份配置（`~/.zcode/headroom.json`），改动自动保存、钩子即时生效。
-
-### 插件更新
-
-- 设置弹窗「功能」标签页新增「插件更新」卡片：一键检查并更新 zcode-plugins 市场里已安装的插件；
-- 可开启自动更新，启动时自动完成；
-- 未开启自动更新时，检测到新版本会提醒一次。
-
-### 设置入口
-
-右键点击 ZCode 侧边栏底部的设置按钮即可打开 ZCode Pro 设置窗口（左键仍打开 ZCode 设置页），分为「功能」「样式」「全局提示词」「代理」「Vision」「Headroom」「rtk」七个标签页，可开关各项增强功能、调整界面样式、编辑全局提示词、设置网络代理、管理配套插件并查看运行状态，设置即时生效。
-
-## 安装与使用
-
-安装后，通过应用菜单 / 开始菜单中的「ZCode Pro」快捷方式或终端命令 `zcode-pro` 启动 ZCode，增强在该方式下自动生效；使用原有 ZCode 入口启动时不加载增强。启动后右键点击 ZCode 侧边栏底部的设置按钮即可打开 ZCode Pro 设置窗口。
-
-### Linux / macOS
+### 🐧 Linux / macOS
 
 - 安装至 `~/.local`，可通过 `PREFIX=` 指定其他位置；
 - Linux 会注册应用菜单快捷方式「ZCode Pro」（图标复用已安装的 ZCode）；
@@ -128,7 +45,7 @@ git clone https://github.com/duanluan/zcode-pro.git
 cd zcode-pro && ./scripts/install.sh
 ```
 
-### Windows
+### 🪟 Windows
 
 - 程序安装至 `%LOCALAPPDATA%\ZCodePro`，快捷方式静默启动，不显示控制台窗口；
 - 卸载：`powershell -ExecutionPolicy Bypass -File scripts\install.ps1 -Uninstall`。
@@ -140,7 +57,7 @@ powershell -ExecutionPolicy Bypass -File scripts\install.ps1          # 开始�
 powershell -ExecutionPolicy Bypass -File scripts\install.ps1 -Desktop # 加桌面快捷方式
 ```
 
-### AUR
+### 📦 AUR
 
 安装 `/usr/bin/zcode-pro` 与系统级应用菜单快捷方式，依赖 AUR 的 [zcode](https://aur.archlinux.org/packages/zcode) 包。
 
@@ -153,7 +70,7 @@ git clone https://aur.archlinux.org/zcode-pro.git && cd zcode-pro && makepkg -si
 
 从手动安装（`install.sh`）迁移到 AUR 前，请先在原仓库执行 `./scripts/install.sh --uninstall` 清理 `~/.local` 下的旧文件，再安装本包；否则旧的用户级快捷方式会一直遮蔽系统级入口，实际运行的仍是旧版本。
 
-### 手动运行（不安装）
+### 🚀 手动运行（不安装）
 
 无需单独安装 Node.js：缺少系统 Node 时自动使用 ZCode 内置运行时。
 
@@ -163,42 +80,37 @@ git clone https://github.com/duanluan/zcode-pro.git && cd zcode-pro
 bin\zcode-pro.cmd          # Windows（自动探测 %LOCALAPPDATA%\Programs\ZCode\ZCode.exe）
 ```
 
-## 命令行选项
+## 📖 参考
 
-```
-zcode-pro [--cdp-port 9333] [--helper-port 47889] [--zcode-path <路径>]
-        [--inject-only] [--verbose]
-```
+命令行选项（`zcode-pro --help` 查看全部）：
 
 | 选项 | 说明 |
 | --- | --- |
-| `--cdp-port` | 调试端口，默认 9333（也可用环境变量 `ZCODEPRO_CDP_PORT`） |
-| `--helper-port` | 本地辅助服务端口，默认 47889（`ZCODEPRO_HELPER_PORT`） |
-| `--zcode-path` | 显式指定 ZCode 可执行文件（`ZCODEPRO_ZCODE_PATH`） |
-| `--inject-only` | 只接管已在监听调试端口的实例，不启动新实例 |
+| `--cdp-port` | 调试端口，默认 9333 |
+| `--helper-port` | 本地辅助服务端口，默认 47889 |
+| `--zcode-path` | 显式指定 ZCode 可执行文件 |
+| `--inject-only` | 只接管已在运行的实例，不启动新实例 |
 | `--verbose` | 详细日志 |
 
-## 配置与数据
+各选项也可用环境变量 `ZCODEPRO_*` 覆盖。
 
-- 功能开关与项目别名：`~/.zcode/zcodepro.json`
-- 全局提示词：`~/.zcode/AGENTS.md`（保存前一份备份：`~/.zcode/AGENTS.md.zcodepro-backup`）
-- 视觉代理设置（zcode-vision 插件）：`~/.zcode/zcode-vision.json`
-- rtk 压缩设置（rtk 插件）：`~/.zcode-rtk/`（mode 与 whitelist）
-- Headroom 设置（headroom 插件）：`~/.zcode/headroom.json`
-- 软件代理：`~/.zcode/zcodepro.json` 的 `proxy` 字段
-- 切换文件夹时的配置备份：`~/.zcode/v2/setting.json.zcodepro-backup`
-- 卸载后直接使用官方 ZCode 入口启动即可，无需清理系统位置。
+配置与数据位置：
 
-## 已知限制
+| 内容 | 位置 |
+| --- | --- |
+| 功能开关、项目别名、软件代理 | `~/.zcode/zcodepro.json` |
+| 全局提示词 | `~/.zcode/AGENTS.md` |
+| 视觉代理（zcode-vision 插件） | `~/.zcode/zcode-vision.json` |
+| rtk 压缩（rtk 插件） | `~/.zcode-rtk/` |
+| Headroom（headroom 插件） | `~/.zcode/headroom.json` |
 
-- 项目内存在正在运行的任务时，建议先停止再切换文件夹；
-- 检查点快照仍引用原路径，恢复历史检查点可能写回原目录。
+卸载后直接使用官方 ZCode 入口启动即可，无需清理系统位置。
 
-## 插件推荐
+## 🔌 插件推荐
 
 [duanluan/zcode-plugins](https://github.com/duanluan/zcode-plugins) 是配套的 ZCode 插件市场，提供 AI 代码评审、对话请求压缩、命令输出压缩等插件，可显著节省 token。安装方式：ZCode → 插件市场 → 右上角「添加」→ 添加插件市场，填写 `duanluan/zcode-plugins`。已安装的插件可在 ZCode Pro 设置中一键检查并更新。
 
-## 交流与反馈
+## 💬 交流与反馈
 
 - QQ 群：**428403354**（[点击加入](https://qm.qq.com/q/WXuISJK3ug)）
 - 微信群：添加微信 **ai4only** 邀请进群
