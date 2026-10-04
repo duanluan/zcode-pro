@@ -188,6 +188,7 @@ export function openSettingsDialog() {
       const config = await getConfig(true);
       const agentsRes = await rpc('/agents');
       const visionRes = await rpc('/vision');
+      const visionProvidersRes = await rpc('/vision/providers');
       const rtkRes = await rpc('/rtk');
       const headroomRes = await rpc('/headroom');
 
@@ -520,17 +521,25 @@ export function openSettingsDialog() {
       // 「视觉代理」：编辑 ~/.zcode/zcode-vision.json（zcode-vision 插件与 /vision-* 命令共用同一文件）。
       // 代理列表顺序即执行链；结构性改动（开关/模式/排序/删增）即时保存，文本输入防抖保存。
       // 注意：保存时链按全部代理重建——若用 /vision-chain 配过子集链，会被这里覆盖（两套入口语义如此，面板以列表为准）。
+      // 默认两级链与 zcode-vision 插件 DEFAULT_CONFIG 保持一致：glm-session（跟随会话）→ glm-flash（GLM 订阅直连）。
+      // 赠送额度级 trust-build 暂不进默认：ZCode 网关不放行无人值守调用（ADR-0002）。
+      const VISION_DEFAULT_PROMPT = '请详细描述这张图片的全部内容。若是界面或图表截图，请先把所有错误、警告、异常状态逐字引用出来（含完整原文），再描述整体布局、文字与关键数据。';
       const VISION_DEFAULT_CFG = {
         enabled: true,
         chainMode: 'fallback',
-        chain: ['glm-flash'],
+        chain: ['glm-session', 'glm-flash'],
         proxies: [
-          { name: 'glm-flash', baseUrl: 'https://open.bigmodel.cn/api/anthropic', model: 'glm-5.3-flash', apiKey: '', format: 'anthropic', prompt: '请详细描述这张图片的全部内容。若是界面或图表截图，请先把所有错误、警告、异常状态逐字引用出来（含完整原文），再描述整体布局、文字与关键数据。' },
+          { name: 'glm-session', useProvider: 'session', model: 'glm-5.3-flash', prompt: VISION_DEFAULT_PROMPT },
+          { name: 'glm-flash', baseUrl: 'https://open.bigmodel.cn/api/anthropic', model: 'glm-5.3-flash', apiKey: '', format: 'anthropic', prompt: VISION_DEFAULT_PROMPT },
         ],
         pollMs: 3000,
-        apiTimeoutMs: 60000,
+        apiTimeoutMs: 120000, // 视觉上游冷启动可能近 2 分钟，与插件 DEFAULT_CONFIG 一致
         compressThresholdKB: 1024,
+        skipAfterFailures: 4,
+        skipMinutes: 30,
       };
+      // 供应商下拉数据：合并 zcode 两张供应商表（config.json 的 provider 与 provider_config.json 的 providerRules）
+      const visionProviders = visionProvidersRes.ok && Array.isArray(visionProvidersRes.providers) ? visionProvidersRes.providers : [];
       let visionCfg = visionRes.ok && visionRes.config && typeof visionRes.config === 'object'
         ? structuredClone(visionRes.config)
         : null;
@@ -579,6 +588,19 @@ export function openSettingsDialog() {
           n.addEventListener('input', () => onInput(n.value));
           return n;
         };
+        const numIn = (value, { min, dflt, title, label, commit }) => {
+          const n = h('input', { type: 'number', min: String(min), step: '1', title,
+            class: 'h-7 w-16 rounded-lg border border-border bg-input px-2 text-right text-ui-xs tabular-nums text-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40' });
+          n.value = String(Number.isFinite(value) ? value : dflt);
+          n.addEventListener('change', () => {
+            const v = Math.max(min, Math.round(Number(n.value) || 0));
+            n.value = String(v);
+            commit(v);
+            void persistVision();
+          });
+          return h('label', { class: 'flex shrink-0 items-center gap-1.5', title },
+            h('span', { class: 'text-ui-xs font-medium text-foreground-subtle' }, label), n);
+        };
         const cards = visionCfg.proxies.map((p, i) => h('div', { class: 'mt-2 rounded-xl border border-border p-3' },
           h('div', { class: 'flex flex-wrap items-center gap-2' },
             h('span', { class: 'shrink-0 rounded-md bg-surface px-1.5 py-0.5 text-ui-xs tabular-nums text-foreground-subtle' }, String(i + 1)),
@@ -610,9 +632,38 @@ export function openSettingsDialog() {
           ),
           h('div', { class: 'mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2' },
             field(L.visionUseProvider, (() => {
-              const n = h('input', { type: 'text', value: p.useProvider || '', placeholder: L.visionUseProviderHint, class: visionInputCls });
-              n.addEventListener('input', () => { p.useProvider = n.value.trim(); saveVisionSoon(); });
-              return n;
+              // 组合框：下拉（不跟随/session/全部供应商）+ 手动输入；手输失焦校验，未知供应商给提示
+              const wrap = h('div', { class: 'flex flex-col gap-1' });
+              const input = h('input', { type: 'text', value: p.useProvider || '', placeholder: L.visionUseProviderHint, class: visionInputCls });
+              const warn = h('p', { class: 'text-ui-xs text-destructive', style: 'display:none' }, L.visionUseProviderUnknown);
+              const isKnown = (v) => !v || v === 'session'
+                || visionProviders.some((pr) => pr.id === v || pr.name === v || (pr.aliases || []).includes(v));
+              const sel = h('select', { class: visionInputCls });
+              const syncSelect = () => {
+                const cur = (p.useProvider || '').trim();
+                const opts = [h('option', { value: '' }, L.visionUseProviderNone), h('option', { value: 'session' }, L.visionUseProviderSession)];
+                for (const pr of visionProviders) {
+                  opts.push(h('option', { value: pr.id }, pr.name && pr.name !== pr.id ? `${pr.name}（${pr.id}）` : pr.id));
+                }
+                if (cur && !opts.some((o) => o.value === cur)) opts.push(h('option', { value: cur }, `${cur}（${L.visionUseProvider}）`));
+                sel.replaceChildren(...opts);
+                sel.value = cur;
+              };
+              sel.addEventListener('change', () => {
+                input.value = sel.value;
+                p.useProvider = sel.value.trim();
+                warn.style.display = 'none';
+                saveVisionSoon();
+              });
+              input.addEventListener('input', () => { p.useProvider = input.value.trim(); saveVisionSoon(); });
+              input.addEventListener('blur', () => {
+                p.useProvider = input.value.trim();
+                warn.style.display = isKnown(p.useProvider) ? 'none' : '';
+                syncSelect();
+              });
+              syncSelect();
+              wrap.append(sel, input, warn);
+              return wrap;
             })()),
             field(L.visionModel, textIn(p.model, (v) => { p.model = v; saveVisionSoon(); })),
             field(L.visionBaseUrl, textIn(p.baseUrl, (v) => { p.baseUrl = v; saveVisionSoon(); })),
@@ -662,13 +713,25 @@ export function openSettingsDialog() {
               return h('label', { class: 'flex shrink-0 items-center gap-1.5', title: L.visionCompressKBHint },
                 h('span', { class: 'text-ui-xs font-medium text-foreground-subtle' }, L.visionCompressKB), n);
             })()),
+          h('div', { class: 'mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-xl border border-border p-1.5' },
+            numIn(visionCfg.skipAfterFailures, { min: 0, dflt: 4, title: L.visionSkipAfterFailuresHint, label: L.visionSkipAfterFailures, commit: (v) => { visionCfg.skipAfterFailures = v; } }),
+            numIn(visionCfg.skipMinutes, { min: 1, dflt: 30, title: L.visionSkipMinutesHint, label: L.visionSkipMinutes, commit: (v) => { visionCfg.skipMinutes = v; } }),
+          ),
           ...cards,
           h('div', { class: 'mt-2 flex items-center justify-between' },
-            smallBtn('+ ' + L.visionAddProxy, () => {
-              // 名称留空时 helper 校验会拒绝保存；等用户输入名称后防抖保存
-              visionCfg.proxies.push({ name: '', baseUrl: 'https://open.bigmodel.cn/api/anthropic', model: 'glm-5.3-flash', apiKey: '', format: 'anthropic', prompt: '' });
-              renderVision();
-            }),
+            h('div', { class: 'flex items-center gap-1.5' },
+              smallBtn('+ ' + L.visionAddProxy, () => {
+                // 名称留空时 helper 校验会拒绝保存；等用户输入名称后防抖保存
+                visionCfg.proxies.push({ name: '', baseUrl: 'https://open.bigmodel.cn/api/anthropic', model: 'glm-5.3-flash', apiKey: '', format: 'anthropic', prompt: '' });
+                renderVision();
+              }),
+              smallBtn(L.visionResetChain, () => {
+                if (!window.confirm(L.visionResetChainConfirm)) return;
+                visionCfg.chainMode = VISION_DEFAULT_CFG.chainMode;
+                visionCfg.proxies = structuredClone(VISION_DEFAULT_CFG.proxies);
+                void persistVision();
+                renderVision();
+              })),
             testBtn),
           visionTestPre,
         );

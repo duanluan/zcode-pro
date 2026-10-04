@@ -14,7 +14,7 @@ import { taskIndexPath, probeTaskIndexWritable, remapTaskIndexPaths, taskIndexDr
 import { pickFolderSystem } from './pickFolder.mjs';
 import { reorderWorkspaceTasks, reorderGroupMembers } from './taskOrder.mjs';
 
-const VERSION = '0.10.0';
+const VERSION = '0.11.0';
 
 // 全局提示词固定在用户主目录：官方加载器按 HOME/USERPROFILE 拼 .zcode/AGENTS.md，
 // 不读 ZCODE_DATA_BASE_DIR（数据根迁走时全局指令仍在原位）。
@@ -330,6 +330,11 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
           return;
         }
         json(res, 200, { ok: true, config: cfg });
+        return;
+      }
+      // 供应商下拉取数（视觉代理「供应商」组合框用）：合并两张供应商表，只回 id/名称/别名，不含密钥
+      if (req.method === 'GET' && url.pathname === '/vision/providers') {
+        json(res, 200, { ok: true, providers: listVisionProviders() });
         return;
       }
       // 用最近一张会话图片跑通视觉识别（zcode-vision 钩子的 --test 模式）
@@ -674,6 +679,35 @@ function clampInt(v, min, max, dflt) {
   return Math.min(max, Math.max(min, Math.round(n)));
 }
 
+// 跟随供应商下拉取数：合并 ~/.zcode/v2/config.json 的 provider（优先）与
+// ~/.zcode/v2/provider_config.json 的 providerRules（同 id 时规则表的名字保留为别名）；只回 id/名称/别名，不含密钥。
+// 导出以便测试脚本直接驱动。
+export function listVisionProviders() {
+  const list = [];
+  const byId = new Map();
+  const v2 = readJsonFile(join(homedir(), '.zcode', 'v2', 'config.json'));
+  for (const [id, p] of Object.entries((v2 && typeof v2.provider === 'object' && v2.provider) || {})) {
+    const entry = { id, name: (p && typeof p.name === 'string' && p.name.trim()) || id, aliases: [] };
+    list.push(entry);
+    byId.set(id, entry);
+  }
+  const rulesDoc = readJsonFile(join(homedir(), '.zcode', 'v2', 'provider_config.json'));
+  const rules = (rulesDoc && rulesDoc.config?.providerConfigRules?.providerRules) || [];
+  for (const r of rules) {
+    if (!r || typeof r.providerId !== 'string' || !r.providerId) continue;
+    const existing = byId.get(r.providerId);
+    if (existing) {
+      const alias = (typeof r.providerName === 'string' && r.providerName.trim()) || r.providerId;
+      if (alias !== existing.name && !existing.aliases.includes(alias)) existing.aliases.push(alias);
+      continue;
+    }
+    const entry = { id: r.providerId, name: (typeof r.providerName === 'string' && r.providerName.trim()) || r.providerId, aliases: [] };
+    list.push(entry);
+    byId.set(r.providerId, entry);
+  }
+  return list;
+}
+
 // zcode-vision 配置校验：只保留已知字段并规范化；出错时返回中文原因。
 // 导出以便测试脚本直接驱动。
 export function validateVisionConfig(raw) {
@@ -687,8 +721,11 @@ export function validateVisionConfig(raw) {
     chain: raw.chain.map((s) => s.trim()).filter(Boolean),
     proxies: [],
     pollMs: clampInt(raw.pollMs, 0, 60000, 3000),
-    apiTimeoutMs: clampInt(raw.apiTimeoutMs, 1000, 600000, 60000),
+    apiTimeoutMs: clampInt(raw.apiTimeoutMs, 1000, 600000, 120000),
     compressThresholdKB: clampInt(raw.compressThresholdKB, 0, 102400, 1024),
+    // 连续失败跳过（0 = 不跳过）；跳过时长（分钟）
+    skipAfterFailures: clampInt(raw.skipAfterFailures, 0, 100, 4),
+    skipMinutes: clampInt(raw.skipMinutes, 1, 10080, 30),
   };
   const names = new Set();
   for (const p of raw.proxies) {
@@ -700,6 +737,10 @@ export function validateVisionConfig(raw) {
       if (typeof v !== 'string') return [null, `代理字段 ${k} 必须是字符串`];
       if (k === 'prompt' ? v.length > 20000 : v.length > 500) return [null, `代理字段 ${k} 过长`];
       proxy[k] = v;
+    }
+    // 单代理超时（毫秒）：0/缺省 = 用全局 apiTimeoutMs；面板没有输入框，但保存时不能弄丢（/vision-proxy edit 可改）
+    if (p.timeoutMs !== undefined && p.timeoutMs !== null && p.timeoutMs !== '') {
+      proxy.timeoutMs = clampInt(p.timeoutMs, 0, 600000, 0);
     }
     const name = (proxy.name || '').trim();
     if (!name) return [null, '每个代理都需要名称'];

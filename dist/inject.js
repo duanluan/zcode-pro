@@ -112,8 +112,17 @@
     visionMoveUp: "\u4E0A\u79FB",
     visionMoveDown: "\u4E0B\u79FB",
     visionName: "\u540D\u79F0",
-    visionUseProvider: "\u8DDF\u968F\u4F9B\u5E94\u5546 useProvider",
-    visionUseProviderHint: "\u586B session=\u5F53\u524D\u4F1A\u8BDD\u4F9B\u5E94\u5546\uFF0C\u6216\u4F9B\u5E94\u5546\u540D/ID\uFF1B\u586B\u5199\u540E baseUrl/Key/\u683C\u5F0F\u81EA\u52A8\u53D6\u8BE5\u4F9B\u5E94\u5546",
+    visionUseProvider: "\u4F9B\u5E94\u5546",
+    visionUseProviderHint: "\u4E0B\u62C9\u9009\u62E9\u6216\u624B\u52A8\u8F93\u5165\uFF1Asession=\u8DDF\u968F\u5F53\u524D\u4F1A\u8BDD\u4F9B\u5E94\u5546\uFF0C\u6216\u4F9B\u5E94\u5546\u540D/ID\uFF1B\u8BBE\u7F6E\u540E baseUrl/API Key/\u683C\u5F0F\u81EA\u52A8\u53D6\u8BE5\u4F9B\u5E94\u5546",
+    visionUseProviderNone: "\u4E0D\u8DDF\u968F\uFF08\u81EA\u586B\u5730\u5740\uFF09",
+    visionUseProviderSession: "\u8DDF\u968F\u5F53\u524D\u4F1A\u8BDD\uFF08session\uFF09",
+    visionUseProviderUnknown: "\u672A\u627E\u5230\u8BE5\u4F9B\u5E94\u5546\uFF0C\u8BC6\u522B\u65F6\u4F1A\u62A5\u9519\uFF1B\u8BF7\u4ECE\u4E0B\u62C9\u9009\u62E9\uFF0C\u6216\u8F93\u5165 session",
+    visionSkipAfterFailures: "\u8FDE\u7EED\u5931\u8D25\u6B21\u6570",
+    visionSkipAfterFailuresHint: "\u67D0\u4EE3\u7406\u8FDE\u7EED\u5931\u8D25\u6EE1\u6B21\u6570\u540E\u6682\u65F6\u8DF3\u8FC7\u5B83\uFF0C\u76F4\u63A5\u8BD5\u4E0B\u4E00\u4E2A\uFF1B0 = \u4E0D\u8DF3\u8FC7",
+    visionSkipMinutes: "\u8DF3\u8FC7\u5206\u949F\u6570",
+    visionSkipMinutesHint: "\u8DF3\u8FC7\u591A\u4E45\u540E\u81EA\u52A8\u6062\u590D\u5C1D\u8BD5\uFF1B\u671F\u95F4\u4EFB\u4E00\u6B21\u6210\u529F\u5373\u6E05\u96F6\u8BA1\u6570",
+    visionResetChain: "\u6062\u590D\u9ED8\u8BA4\u94FE",
+    visionResetChainConfirm: "\u5C06\u94FE\u6A21\u5F0F\u4E0E\u4EE3\u7406\u5217\u8868\u6062\u590D\u4E3A\u9ED8\u8BA4\u4E24\u7EA7\uFF08glm-session \u2192 glm-flash\uFF09\uFF0C\u5F53\u524D\u5BF9\u4EE3\u7406\u7684\u4FEE\u6539\u4F1A\u4E22\u5931\u3002\u7EE7\u7EED\uFF1F",
     visionBaseUrl: "\u63A5\u53E3\u5730\u5740 baseUrl",
     visionModel: "\u6A21\u578B",
     visionFormat: "\u683C\u5F0F",
@@ -329,8 +338,17 @@
     visionMoveUp: "Up",
     visionMoveDown: "Down",
     visionName: "Name",
-    visionUseProvider: "Follow provider (useProvider)",
-    visionUseProviderHint: "session = the current session provider, or a provider name/ID; overrides baseUrl/key/format",
+    visionUseProvider: "Provider",
+    visionUseProviderHint: "Pick from the list or type: session = follow the current session provider, or a provider name/ID; baseUrl/API key/format follow that provider",
+    visionUseProviderNone: "Not following (enter base URL)",
+    visionUseProviderSession: "Follow session provider (session)",
+    visionUseProviderUnknown: "Unknown provider; recognition will fail. Pick from the list or type session",
+    visionSkipAfterFailures: "Skip after failures",
+    visionSkipAfterFailuresHint: "After this many consecutive failures a proxy is skipped and the next one is tried; 0 = never skip",
+    visionSkipMinutes: "Skip minutes",
+    visionSkipMinutesHint: "How long a skipped proxy rests before being retried; any success resets the counter",
+    visionResetChain: "Reset default chain",
+    visionResetChainConfirm: "Reset chain mode and the proxy list to the default 2-level chain (glm-session \u2192 glm-flash)? Current proxy edits will be lost. Continue?",
     visionBaseUrl: "Base URL",
     visionModel: "Model",
     visionFormat: "Format",
@@ -641,16 +659,26 @@
       titleEl,
       ...description ? [h("p", { class: "mt-2 text-ui-sm/relaxed text-foreground-subtle" }, description)] : []
     );
-    const body = h("div", { class: "mt-4" });
+    const body = h("div", { class: "mt-4 zcodepro-dialog-body" });
     content.append(body);
+    let restorePos = null;
     if (draggable) {
       titleEl.style.cursor = "move";
       titleEl.style.userSelect = "none";
       let dragging = false, sx = 0, sy = 0, ox = 0, oy = 0;
       const clampPos = (x, y) => {
-        const mx = Math.max(0, (window.innerWidth - content.offsetWidth) / 2 - 8);
-        const my = Math.max(0, (window.innerHeight - content.offsetHeight) / 2 - 8);
+        const ob = overlayEl.getBoundingClientRect();
+        const mx = Math.max(0, (ob.width - content.offsetWidth) / 2 - 8);
+        const my = Math.max(0, (ob.height - content.offsetHeight) / 2 - 8);
         return [Math.min(mx, Math.max(-mx, x)), Math.min(my, Math.max(-my, y))];
+      };
+      const applyPos = () => {
+        content.style.transform = ox || oy ? `translate(${ox}px, ${oy}px)` : "";
+      };
+      const reclamp = () => {
+        if (dragging) return;
+        [ox, oy] = clampPos(ox, oy);
+        applyPos();
       };
       const restore = () => {
         if (!posKey) return;
@@ -658,7 +686,7 @@
           const saved = JSON.parse(localStorage.getItem("zcodepro-dialog-pos:" + posKey) || "null");
           if (saved && Number.isFinite(saved.x) && Number.isFinite(saved.y)) {
             [ox, oy] = clampPos(saved.x, saved.y);
-            if (ox || oy) content.style.transform = `translate(${ox}px, ${oy}px)`;
+            applyPos();
           }
         } catch {
         }
@@ -673,7 +701,7 @@
       const onMove = (e) => {
         if (!dragging) return;
         [ox, oy] = clampPos(e.clientX - sx, e.clientY - sy);
-        content.style.transform = `translate(${ox}px, ${oy}px)`;
+        applyPos();
       };
       const onUp = () => {
         if (!dragging) return;
@@ -688,15 +716,21 @@
       titleEl.addEventListener("mousedown", onDown);
       document.addEventListener("mousemove", onMove);
       document.addEventListener("mouseup", onUp);
+      const posObserver = new ResizeObserver(reclamp);
+      posObserver.observe(content);
+      window.addEventListener("resize", reclamp);
       cleanupDrag = () => {
         titleEl.removeEventListener("mousedown", onDown);
         document.removeEventListener("mousemove", onMove);
         document.removeEventListener("mouseup", onUp);
+        posObserver.disconnect();
+        window.removeEventListener("resize", reclamp);
       };
-      restore();
+      restorePos = restore;
     }
     document.addEventListener("keydown", onKey, true);
     document.body.append(overlayEl);
+    if (restorePos) restorePos();
     try {
       onMount && onMount({ body, close, content });
     } catch (err) {
@@ -923,6 +957,21 @@
       border-radius: 16px;
       outline: none;
       box-shadow: 0 0 0 1px var(--color-border, rgba(0, 0, 0, 0.1)), 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      /* \u9650\u9AD8 + \u7EB5\u5411\u5E03\u5C40\uFF1A\u5185\u5BB9\u6BD4\u7A97\u53E3\u9AD8\u65F6\uFF08\u5982\u89C6\u89C9\u4EE3\u7406\u591A\u5361\u7247\uFF09\u4E0D\u518D\u6EA2\u51FA\u7A97\u53E3\uFF0C
+         \u7531\u6B63\u6587\u533A\u5185\u90E8\u6EDA\u52A8\uFF1B\u6807\u9898\u4E0E\u5173\u95ED\u6309\u94AE\u56FA\u5B9A\u53EF\u89C1\u3002max-height \u7528\u767E\u5206\u6BD4\u8DDF\u968F
+         \u906E\u7F69\u5B9E\u9645\u9AD8\u5EA6\uFF08Linux \u4E0B\u9876\u90E8\u8BA9\u51FA\u81EA\u7ED8\u6807\u9898\u680F\uFF09\uFF0C\u4E0D\u7528 vh \u624B\u7B97 */
+      display: flex;
+      flex-direction: column;
+      max-height: 100%;
+    }
+    /* \u6807\u9898/\u63CF\u8FF0\u4E0D\u53C2\u4E0E\u538B\u7F29\uFF0C\u6B63\u6587\u533A\u72EC\u5360\u6536\u7F29\uFF08flex \u5E03\u5C40\u4E0B\u7684\u4FDD\u9669\u5199\u6CD5\uFF09 */
+    .zcodepro-card > * { flex-shrink: 0; }
+    .zcodepro-dialog-body {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      /* \u6EDA\u5230\u5E95\u4E0D\u518D\u628A\u6EDA\u52A8\u4F20\u7ED9\u5F39\u7A97\u540E\u9762\u7684\u9875\u9762 */
+      overscroll-behavior: contain;
     }
     /* \u5F00\u5173\uFF08\u8BBE\u7F6E\u5F39\u7A97\uFF09\uFF1A\u51E0\u4F55\u56FA\u5B9A\u5199\u5165\uFF0C\u989C\u8272\u968F\u4E3B\u9898\u53D8\u91CF */
     [data-zcodepro-switch] {
@@ -2274,6 +2323,7 @@
         const config = await getConfig(true);
         const agentsRes = await rpc("/agents");
         const visionRes = await rpc("/vision");
+        const visionProvidersRes = await rpc("/vision/providers");
         const rtkRes = await rpc("/rtk");
         const headroomRes = await rpc("/headroom");
         const setFeature = async (key, value) => {
@@ -2634,17 +2684,23 @@
           h("p", { class: "mt-2 text-ui-xs/relaxed text-foreground-subtle" }, L.proxyHint),
           proxyTestState
         );
+        const VISION_DEFAULT_PROMPT = "\u8BF7\u8BE6\u7EC6\u63CF\u8FF0\u8FD9\u5F20\u56FE\u7247\u7684\u5168\u90E8\u5185\u5BB9\u3002\u82E5\u662F\u754C\u9762\u6216\u56FE\u8868\u622A\u56FE\uFF0C\u8BF7\u5148\u628A\u6240\u6709\u9519\u8BEF\u3001\u8B66\u544A\u3001\u5F02\u5E38\u72B6\u6001\u9010\u5B57\u5F15\u7528\u51FA\u6765\uFF08\u542B\u5B8C\u6574\u539F\u6587\uFF09\uFF0C\u518D\u63CF\u8FF0\u6574\u4F53\u5E03\u5C40\u3001\u6587\u5B57\u4E0E\u5173\u952E\u6570\u636E\u3002";
         const VISION_DEFAULT_CFG = {
           enabled: true,
           chainMode: "fallback",
-          chain: ["glm-flash"],
+          chain: ["glm-session", "glm-flash"],
           proxies: [
-            { name: "glm-flash", baseUrl: "https://open.bigmodel.cn/api/anthropic", model: "glm-5.3-flash", apiKey: "", format: "anthropic", prompt: "\u8BF7\u8BE6\u7EC6\u63CF\u8FF0\u8FD9\u5F20\u56FE\u7247\u7684\u5168\u90E8\u5185\u5BB9\u3002\u82E5\u662F\u754C\u9762\u6216\u56FE\u8868\u622A\u56FE\uFF0C\u8BF7\u5148\u628A\u6240\u6709\u9519\u8BEF\u3001\u8B66\u544A\u3001\u5F02\u5E38\u72B6\u6001\u9010\u5B57\u5F15\u7528\u51FA\u6765\uFF08\u542B\u5B8C\u6574\u539F\u6587\uFF09\uFF0C\u518D\u63CF\u8FF0\u6574\u4F53\u5E03\u5C40\u3001\u6587\u5B57\u4E0E\u5173\u952E\u6570\u636E\u3002" }
+            { name: "glm-session", useProvider: "session", model: "glm-5.3-flash", prompt: VISION_DEFAULT_PROMPT },
+            { name: "glm-flash", baseUrl: "https://open.bigmodel.cn/api/anthropic", model: "glm-5.3-flash", apiKey: "", format: "anthropic", prompt: VISION_DEFAULT_PROMPT }
           ],
           pollMs: 3e3,
-          apiTimeoutMs: 6e4,
-          compressThresholdKB: 1024
+          apiTimeoutMs: 12e4,
+          // 视觉上游冷启动可能近 2 分钟，与插件 DEFAULT_CONFIG 一致
+          compressThresholdKB: 1024,
+          skipAfterFailures: 4,
+          skipMinutes: 30
         };
+        const visionProviders = visionProvidersRes.ok && Array.isArray(visionProvidersRes.providers) ? visionProvidersRes.providers : [];
         let visionCfg = visionRes.ok && visionRes.config && typeof visionRes.config === "object" ? structuredClone(visionRes.config) : null;
         let visionSaveTimer = null;
         const persistVision = async () => {
@@ -2703,6 +2759,28 @@
             n.addEventListener("input", () => onInput(n.value));
             return n;
           };
+          const numIn = (value, { min, dflt, title, label, commit }) => {
+            const n = h("input", {
+              type: "number",
+              min: String(min),
+              step: "1",
+              title,
+              class: "h-7 w-16 rounded-lg border border-border bg-input px-2 text-right text-ui-xs tabular-nums text-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
+            });
+            n.value = String(Number.isFinite(value) ? value : dflt);
+            n.addEventListener("change", () => {
+              const v = Math.max(min, Math.round(Number(n.value) || 0));
+              n.value = String(v);
+              commit(v);
+              void persistVision();
+            });
+            return h(
+              "label",
+              { class: "flex shrink-0 items-center gap-1.5", title },
+              h("span", { class: "text-ui-xs font-medium text-foreground-subtle" }, label),
+              n
+            );
+          };
           const cards = visionCfg.proxies.map((p, i) => h(
             "div",
             { class: "mt-2 rounded-xl border border-border p-3" },
@@ -2755,12 +2833,39 @@
               "div",
               { class: "mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2" },
               field(L.visionUseProvider, (() => {
-                const n = h("input", { type: "text", value: p.useProvider || "", placeholder: L.visionUseProviderHint, class: visionInputCls });
-                n.addEventListener("input", () => {
-                  p.useProvider = n.value.trim();
+                const wrap = h("div", { class: "flex flex-col gap-1" });
+                const input = h("input", { type: "text", value: p.useProvider || "", placeholder: L.visionUseProviderHint, class: visionInputCls });
+                const warn = h("p", { class: "text-ui-xs text-destructive", style: "display:none" }, L.visionUseProviderUnknown);
+                const isKnown = (v) => !v || v === "session" || visionProviders.some((pr) => pr.id === v || pr.name === v || (pr.aliases || []).includes(v));
+                const sel = h("select", { class: visionInputCls });
+                const syncSelect = () => {
+                  const cur = (p.useProvider || "").trim();
+                  const opts = [h("option", { value: "" }, L.visionUseProviderNone), h("option", { value: "session" }, L.visionUseProviderSession)];
+                  for (const pr of visionProviders) {
+                    opts.push(h("option", { value: pr.id }, pr.name && pr.name !== pr.id ? `${pr.name}\uFF08${pr.id}\uFF09` : pr.id));
+                  }
+                  if (cur && !opts.some((o) => o.value === cur)) opts.push(h("option", { value: cur }, `${cur}\uFF08${L.visionUseProvider}\uFF09`));
+                  sel.replaceChildren(...opts);
+                  sel.value = cur;
+                };
+                sel.addEventListener("change", () => {
+                  input.value = sel.value;
+                  p.useProvider = sel.value.trim();
+                  warn.style.display = "none";
                   saveVisionSoon();
                 });
-                return n;
+                input.addEventListener("input", () => {
+                  p.useProvider = input.value.trim();
+                  saveVisionSoon();
+                });
+                input.addEventListener("blur", () => {
+                  p.useProvider = input.value.trim();
+                  warn.style.display = isKnown(p.useProvider) ? "none" : "";
+                  syncSelect();
+                });
+                syncSelect();
+                wrap.append(sel, input, warn);
+                return wrap;
               })()),
               field(L.visionModel, textIn(p.model, (v) => {
                 p.model = v;
@@ -2836,14 +2941,35 @@
                 );
               })()
             ),
+            h(
+              "div",
+              { class: "mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-xl border border-border p-1.5" },
+              numIn(visionCfg.skipAfterFailures, { min: 0, dflt: 4, title: L.visionSkipAfterFailuresHint, label: L.visionSkipAfterFailures, commit: (v) => {
+                visionCfg.skipAfterFailures = v;
+              } }),
+              numIn(visionCfg.skipMinutes, { min: 1, dflt: 30, title: L.visionSkipMinutesHint, label: L.visionSkipMinutes, commit: (v) => {
+                visionCfg.skipMinutes = v;
+              } })
+            ),
             ...cards,
             h(
               "div",
               { class: "mt-2 flex items-center justify-between" },
-              smallBtn("+ " + L.visionAddProxy, () => {
-                visionCfg.proxies.push({ name: "", baseUrl: "https://open.bigmodel.cn/api/anthropic", model: "glm-5.3-flash", apiKey: "", format: "anthropic", prompt: "" });
-                renderVision();
-              }),
+              h(
+                "div",
+                { class: "flex items-center gap-1.5" },
+                smallBtn("+ " + L.visionAddProxy, () => {
+                  visionCfg.proxies.push({ name: "", baseUrl: "https://open.bigmodel.cn/api/anthropic", model: "glm-5.3-flash", apiKey: "", format: "anthropic", prompt: "" });
+                  renderVision();
+                }),
+                smallBtn(L.visionResetChain, () => {
+                  if (!window.confirm(L.visionResetChainConfirm)) return;
+                  visionCfg.chainMode = VISION_DEFAULT_CFG.chainMode;
+                  visionCfg.proxies = structuredClone(VISION_DEFAULT_CFG.proxies);
+                  void persistVision();
+                  renderVision();
+                })
+              ),
               testBtn
             ),
             visionTestPre

@@ -76,17 +76,30 @@ export function openDialog({ title, description, onMount, onClose, width = 'sm:m
     // 注意不能把 null 直接传给 append：DOM 会把 null 渲染成字面量 "null" 文本
     ...(description ? [h('p', { class: 'mt-2 text-ui-sm/relaxed text-foreground-subtle' }, description)] : [])
   );
-  const body = h('div', { class: 'mt-4' });
+  const body = h('div', { class: 'mt-4 zcodepro-dialog-body' });
   content.append(body);
+  let restorePos = null;
   if (draggable) {
     titleEl.style.cursor = 'move';
     titleEl.style.userSelect = 'none';
     let dragging = false, sx = 0, sy = 0, ox = 0, oy = 0;
+    // 边界按遮罩实际范围算（Linux 下遮罩顶部让出自绘标题栏），不能按窗口算：
+    // 否则卡片能被拖进标题栏下面，拖动把手和关闭按钮被标题栏盖住就都点不到了
     const clampPos = (x, y) => {
-      // 卡片在遮罩内居中，平移量不能超过卡片边缘到视口边缘的距离（留 8px 余量）
-      const mx = Math.max(0, (window.innerWidth - content.offsetWidth) / 2 - 8);
-      const my = Math.max(0, (window.innerHeight - content.offsetHeight) / 2 - 8);
+      const ob = overlayEl.getBoundingClientRect();
+      // 卡片在遮罩内居中，平移量不能超过卡片边缘到遮罩边缘的距离（留 8px 余量）
+      const mx = Math.max(0, (ob.width - content.offsetWidth) / 2 - 8);
+      const my = Math.max(0, (ob.height - content.offsetHeight) / 2 - 8);
       return [Math.min(mx, Math.max(-mx, x)), Math.min(my, Math.max(-my, y))];
+    };
+    const applyPos = () => {
+      content.style.transform = (ox || oy) ? `translate(${ox}px, ${oy}px)` : '';
+    };
+    // 内容异步加载变高、窗口尺寸变化都会改变可拖范围，随时把当前位置收回边界内
+    const reclamp = () => {
+      if (dragging) return;
+      [ox, oy] = clampPos(ox, oy);
+      applyPos();
     };
     const restore = () => {
       if (!posKey) return;
@@ -94,7 +107,7 @@ export function openDialog({ title, description, onMount, onClose, width = 'sm:m
         const saved = JSON.parse(localStorage.getItem('zcodepro-dialog-pos:' + posKey) || 'null');
         if (saved && Number.isFinite(saved.x) && Number.isFinite(saved.y)) {
           [ox, oy] = clampPos(saved.x, saved.y);
-          if (ox || oy) content.style.transform = `translate(${ox}px, ${oy}px)`;
+          applyPos();
         }
       } catch { /* ignore */ }
     };
@@ -107,7 +120,7 @@ export function openDialog({ title, description, onMount, onClose, width = 'sm:m
     const onMove = (e) => {
       if (!dragging) return;
       [ox, oy] = clampPos(e.clientX - sx, e.clientY - sy);
-      content.style.transform = `translate(${ox}px, ${oy}px)`;
+      applyPos();
     };
     const onUp = () => {
       if (!dragging) return;
@@ -119,15 +132,22 @@ export function openDialog({ title, description, onMount, onClose, width = 'sm:m
     titleEl.addEventListener('mousedown', onDown);
     document.addEventListener('mousemove', onMove);
     document.addEventListener('mouseup', onUp);
+    const posObserver = new ResizeObserver(reclamp);
+    posObserver.observe(content);
+    window.addEventListener('resize', reclamp);
     cleanupDrag = () => {
       titleEl.removeEventListener('mousedown', onDown);
       document.removeEventListener('mousemove', onMove);
       document.removeEventListener('mouseup', onUp);
+      posObserver.disconnect();
+      window.removeEventListener('resize', reclamp);
     };
-    restore();
+    restorePos = restore;
   }
   document.addEventListener('keydown', onKey, true);
   document.body.append(overlayEl);
+  // 恢复位置要在挂载后测尺寸（未挂载时 offsetWidth 为 0，边界算不出来）
+  if (restorePos) restorePos();
   try {
     onMount && onMount({ body, close, content });
   } catch (err) {
@@ -333,6 +353,21 @@ export function ensureStyle() {
       border-radius: 16px;
       outline: none;
       box-shadow: 0 0 0 1px var(--color-border, rgba(0, 0, 0, 0.1)), 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      /* 限高 + 纵向布局：内容比窗口高时（如视觉代理多卡片）不再溢出窗口，
+         由正文区内部滚动；标题与关闭按钮固定可见。max-height 用百分比跟随
+         遮罩实际高度（Linux 下顶部让出自绘标题栏），不用 vh 手算 */
+      display: flex;
+      flex-direction: column;
+      max-height: 100%;
+    }
+    /* 标题/描述不参与压缩，正文区独占收缩（flex 布局下的保险写法） */
+    .zcodepro-card > * { flex-shrink: 0; }
+    .zcodepro-dialog-body {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      /* 滚到底不再把滚动传给弹窗后面的页面 */
+      overscroll-behavior: contain;
     }
     /* 开关（设置弹窗）：几何固定写入，颜色随主题变量 */
     [data-zcodepro-switch] {
