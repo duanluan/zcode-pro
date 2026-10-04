@@ -42,7 +42,7 @@ function New-ZcodeProShortcut([string]$path) {
   $lnk.TargetPath = "$env:SystemRoot\System32\wscript.exe"
   $lnk.Arguments = "`"$dest\bin\zcode-pro.vbs`""
   $lnk.WorkingDirectory = "$dest"
-  $lnk.Description = "ZCode 桌面版增强启动器（CDP 注入，不修改应用文件）"
+  $lnk.Description = "ZCode 桌面版增强启动器（自定义别名等，不修改客户端文件）"
   foreach ($c in @("$env:LOCALAPPDATA\Programs\ZCode\ZCode.exe", "$env:ProgramFiles\ZCode\ZCode.exe")) {
     if (Test-Path $c) { $lnk.IconLocation = $c; break }
   }

@@ -473,7 +473,7 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
           }
           const r = await runHeadroomHook([body.action]);
           if (!r.ok) {
-            json(res, 500, { ok: false, code: 'headroom-action', error: r.output || r.error || '钩子执行失败' });
+            json(res, 500, { ok: false, code: 'headroom-action', error: r.output || r.error || '代理操作失败' });
             return;
           }
           output = r.output;
@@ -485,7 +485,7 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
           }
           const r = await runHeadroomHook(['backend', v]);
           if (!r.ok) {
-            json(res, 500, { ok: false, code: 'headroom-action', error: r.output || r.error || '钩子执行失败' });
+            json(res, 500, { ok: false, code: 'headroom-action', error: r.output || r.error || '代理操作失败' });
             return;
           }
           output = r.output;
@@ -496,7 +496,7 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
           }
           const r = await runHeadroomHook(['power', body.power]);
           if (!r.ok) {
-            json(res, 500, { ok: false, code: 'headroom-action', error: r.output || r.error || '钩子执行失败' });
+            json(res, 500, { ok: false, code: 'headroom-action', error: r.output || r.error || '代理操作失败' });
             return;
           }
           output = r.output;
@@ -814,7 +814,7 @@ function writeRtkState(dir, { mode, whitelist }) {
     return;
   }
   const wlTmp = wlFile + '.tmp';
-  writeFileSync(wlTmp, '# rtk 钩子白名单：每行 name 或 git:name（git 子命令）。删除本文件即恢复默认。\n'
+  writeFileSync(wlTmp, '# rtk 白名单（不提醒直接放行）：每行 name 或 git:name（git 子命令）。删除本文件即恢复默认。\n'
     + whitelist.join('\n') + '\n', 'utf8');
   renameSync(wlTmp, wlFile);
 }

@@ -2,7 +2,7 @@
 
 [简体中文](README.md) | English
 
-ZCode Pro enhances the ZCode desktop UI. Launch ZCode through the "ZCode Pro" launcher and the enhancements are enabled automatically; official app files are never modified, and ZCode returns to its original state after exit.
+ZCode Pro enhances the ZCode desktop UI. No client files are modified; just launch via the ZCode Pro shortcut.
 
 ![AUR](https://img.shields.io/aur/version/zcode-pro) ![Platform](https://img.shields.io/badge/platform-win%20%7C%20mac%20%7C%20linux%20%7C%20AUR-blue)
 
@@ -21,10 +21,10 @@ ZCode Pro enhances the ZCode desktop UI. Launch ZCode through the "ZCode Pro" la
 | Copy image | Right-click an image in chat or the enlarged preview to copy it to the clipboard |
 | UI style adjustments | Fine-tune paragraph spacing, content width, line heights, list and code spacing; applies instantly |
 | Global prompt | Edit default instructions shared by all projects; applies to new sessions |
-| Software proxy | Set an HTTP proxy for plugin updates/installs and binary upgrades, with connectivity test |
+| Software proxy | Set an HTTP proxy for plugin updates/installs and tool upgrades, with connectivity test |
 | Vision proxy | Recognize images via vision models when the main model cannot see them; visual chain editor (zcode-vision plugin) |
-| rtk compression | Manage rewrite hints and the command whitelist; check and upgrade the rtk binary (rtk plugin) |
-| Headroom | Manage compression device, power-save switching and proxy status; check and upgrade the headroom binary (headroom plugin) |
+| rtk compression | Manage rewrite hints and the command whitelist; check and upgrade the rtk program (rtk plugin) |
+| Headroom | Manage compression device, power-save switching and proxy status; check and upgrade the headroom program (headroom plugin) |
 | Plugin updates | Check and update zcode-plugins marketplace plugins in one click, optional auto-update on startup |
 
 All features can be toggled or adjusted in the settings window.

@@ -2,7 +2,7 @@
 
 [English](README.en.md) | 简体中文
 
-ZCode 桌面版界面增强工具。通过「ZCode Pro」启动 ZCode 时自动启用增强；不修改官方应用文件，退出后 ZCode 恢复原状。
+ZCode 桌面版界面增强工具。不修改客户端文件，通过 ZCode Pro 快捷方式启动即可。
 
 ![AUR 版本](https://img.shields.io/aur/version/zcode-pro) ![平台](https://img.shields.io/badge/platform-win%20%7C%20mac%20%7C%20linux%20%7C%20AUR-blue)
 
@@ -22,7 +22,7 @@ ZCode 桌面版界面增强工具。通过「ZCode Pro」启动 ZCode 时自动�
 | 界面样式调整 | 微调段落间距、内容宽度、行高、列表与代码块留白，即改即生效 |
 | 全局提示词 | 编辑所有项目共享的默认指令，新会话起生效 |
 | 软件代理 | 为插件更新安装与本体升级设置 HTTP 代理，附连通性检测 |
-| 视觉代理 | 主模型不识图时自动交给视觉模型识别注入；可视化编辑代理链（zcode-vision 插件） |
+| 视觉代理 | 主模型不识图时自动交给视觉模型识别图片，识别描述带给主模型；可视化编辑代理链（zcode-vision 插件） |
 | rtk 压缩 | 管理改写提醒与命令白名单，rtk 本体检查更新与一键升级（rtk 插件） |
 | Headroom | 管理压缩设备、省电切换与代理运行状态，headroom 本体检查更新与升级（headroom 插件） |
 | 插件更新 | 一键检查并更新 zcode-plugins 市场插件，可选启动时自动更新 |
