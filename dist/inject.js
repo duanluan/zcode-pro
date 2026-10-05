@@ -229,10 +229,11 @@
     aliasCleared: "\u5DF2\u6062\u590D\u771F\u5B9E\u540D\u79F0",
     aliasHint: "\u78C1\u76D8\u76EE\u5F55\u540D\u4E0D\u53D8\uFF1A\u7EC8\u7AEF\u3001\u6587\u4EF6\u7BA1\u7406\u5668\u4E0E\u5176\u4ED6\u5F15\u7528\u771F\u5B9E\u8DEF\u5F84\u7684\u754C\u9762\u4ECD\u663E\u793A\u539F\u540D\u3002",
     taskOrderSaved: "\u987A\u5E8F\u5DF2\u66F4\u65B0",
-    plugTitle: "\u63D2\u4EF6\u63A8\u8350\uFF1Azcode-plugins",
-    plugDesc: "AI \u4EE3\u7801\u8BC4\u5BA1\u4E0E token \u538B\u7F29",
     qqGroupTitle: "QQ \u7FA4\uFF1A428403354",
     qqGroupDesc: "\u95EE\u9898\u53CD\u9988\u4E0E\u4EA4\u6D41",
+    wechatGroupTitle: "\u5FAE\u4FE1\u7FA4",
+    wechatGroupDesc: "\u6DFB\u52A0\u5FAE\u4FE1 {id} \u9080\u8BF7\u8FDB\u7FA4",
+    wechatIdCopied: "\u5FAE\u4FE1\u53F7\u5DF2\u590D\u5236",
     browse: "\u6D4F\u89C8",
     relocateItem: "\u5207\u6362\u6587\u4EF6\u5939",
     relocateTitle: "\u5207\u6362\u6587\u4EF6\u5939",
@@ -454,10 +455,11 @@
     aliasCleared: "Real name restored.",
     aliasHint: "The directory name on disk is unchanged: terminals, file managers and other path-based UI still show the real name.",
     taskOrderSaved: "Order updated.",
-    plugTitle: "Plugin pick: zcode-plugins",
-    plugDesc: "AI code review & token saving",
     qqGroupTitle: "QQ group: 428403354",
     qqGroupDesc: "Feedback & discussion",
+    wechatGroupTitle: "WeChat group",
+    wechatGroupDesc: "Add WeChat {id} for a group invite",
+    wechatIdCopied: "WeChat ID copied.",
     browse: "Browse",
     relocateItem: "Switch folder",
     relocateTitle: "Switch folder",
@@ -921,7 +923,7 @@
     const row = h(
       "div",
       {
-        class: "flex cursor-pointer items-start gap-3 rounded-lg p-3 transition-colors hover:bg-surface-hover",
+        class: `flex cursor-pointer items-start gap-2 rounded-lg ${desc ? "p-2" : "p-1.5"} transition-colors hover:bg-surface-hover`,
         onClick: () => {
           onToggle();
         }
@@ -1617,12 +1619,15 @@
   }
   async function copyText(text) {
     const L = t();
+    if (await copyToClipboard(text)) showToast(L.pathCopied);
+    else showToast(L.pathCopyFailed, "error");
+  }
+  async function copyToClipboard(text) {
     try {
       await navigator.clipboard.writeText(text);
-      showToast(L.pathCopied);
+      return true;
     } catch {
-      if (copyViaHiddenInput(text)) showToast(L.pathCopied);
-      else showToast(L.pathCopyFailed, "error");
+      return copyViaHiddenInput(text);
     }
   }
   function copyViaHiddenInput(text) {
@@ -2122,6 +2127,12 @@
   }
 
   // src/inject/features/settings-dialog.js
+  function openExternal(url) {
+    try {
+      void window.zcode.openExternal(url);
+    } catch {
+    }
+  }
   function makeUpgradeControls({ endpoint, metaRefresh }) {
     const L = t();
     const state = h("span", { class: "min-w-0 flex-1 truncate text-left text-ui-xs/relaxed text-foreground-subtle" });
@@ -2268,7 +2279,7 @@
         const titleEl = content && content.firstElementChild;
         if (titleEl && titleEl.tagName === "H2") {
           titleEl.classList.add("flex", "w-full", "items-center", "justify-between");
-          const ns = "http://www.w3.org/2000/svg";
+          const ns2 = "http://www.w3.org/2000/svg";
           const mkIcon = (paths, cls) => {
             const svg = h("svg", {
               viewBox: "0 0 24 24",
@@ -2280,7 +2291,7 @@
               class: cls
             });
             for (const d of paths) {
-              const p2 = document.createElementNS(ns, "path");
+              const p2 = document.createElementNS(ns2, "path");
               p2.setAttribute("d", d);
               svg.append(p2);
             }
@@ -2293,12 +2304,7 @@
               h("span", {
                 class: "cursor-pointer underline-offset-4 hover:underline",
                 title: REPO_URL,
-                onClick: () => {
-                  try {
-                    void window.zcode.openExternal(REPO_URL);
-                  } catch {
-                  }
-                }
+                onClick: () => openExternal(REPO_URL)
               }, L.settingsTitle),
               mkIcon(["M15 3h6v6", "M10 14 21 3", "M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"], "ml-1 inline-block size-4 text-foreground-subtle")
             );
@@ -2387,52 +2393,52 @@
           );
         };
         refreshRows();
-        let recCards = null;
-        if (typeof window !== "undefined" && typeof window.zcode?.openExternal === "function") {
-          const ns = "http://www.w3.org/2000/svg";
-          const extIcon = () => {
-            const icon = h("svg", {
-              viewBox: "0 0 24 24",
-              fill: "none",
-              stroke: "currentColor",
-              "stroke-width": "2",
-              "stroke-linecap": "round",
-              "stroke-linejoin": "round",
-              class: "size-4 shrink-0 text-foreground-subtle"
-            });
-            for (const d of ["M15 3h6v6", "M10 14 21 3", "M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"]) {
-              const p2 = document.createElementNS(ns, "path");
-              p2.setAttribute("d", d);
-              icon.append(p2);
+        const WECHAT_ID = "ai4only";
+        const ns = "http://www.w3.org/2000/svg";
+        const extIcon = () => {
+          const icon = h("svg", {
+            viewBox: "0 0 24 24",
+            fill: "none",
+            stroke: "currentColor",
+            "stroke-width": "2",
+            "stroke-linecap": "round",
+            "stroke-linejoin": "round",
+            class: "size-4 shrink-0 text-foreground-subtle"
+          });
+          for (const d of ["M15 3h6v6", "M10 14 21 3", "M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"]) {
+            const p2 = document.createElementNS(ns, "path");
+            p2.setAttribute("d", d);
+            icon.append(p2);
+          }
+          return icon;
+        };
+        const communityCard = (title, desc, icon, onClick) => h(
+          "div",
+          {
+            class: "flex cursor-pointer items-center justify-between gap-2 rounded-xl border border-border p-2 transition-colors hover:bg-surface-hover",
+            onClick
+          },
+          h(
+            "div",
+            { class: "min-w-0" },
+            h("div", { class: "truncate text-ui-sm font-medium text-foreground" }, title),
+            h("div", { class: "mt-0.5 truncate text-ui-xs/relaxed text-foreground-subtle" }, desc)
+          ),
+          icon()
+        );
+        const communityCards = h(
+          "div",
+          { class: "mt-3 grid grid-cols-2 gap-2" },
+          ...typeof window !== "undefined" && typeof window.zcode?.openExternal === "function" ? [communityCard(L.qqGroupTitle, L.qqGroupDesc, extIcon, () => openExternal("https://qm.qq.com/q/WXuISJK3ug"))] : [],
+          communityCard(
+            L.wechatGroupTitle,
+            L.wechatGroupDesc.replaceAll("{id}", WECHAT_ID),
+            () => hCopyIcon("size-4 shrink-0 text-foreground-subtle"),
+            async () => {
+              if (await copyToClipboard(WECHAT_ID)) showToast(L.wechatIdCopied);
             }
-            return icon;
-          };
-          const recCard = (title, desc, url) => h(
-            "div",
-            {
-              class: "flex cursor-pointer items-center justify-between gap-2 rounded-xl border border-border p-3 transition-colors hover:bg-surface-hover",
-              onClick: () => {
-                try {
-                  void window.zcode.openExternal(url);
-                } catch {
-                }
-              }
-            },
-            h(
-              "div",
-              { class: "min-w-0" },
-              h("div", { class: "truncate text-ui-sm font-medium text-foreground" }, title),
-              h("div", { class: "mt-0.5 truncate text-ui-xs/relaxed text-foreground-subtle" }, desc)
-            ),
-            extIcon()
-          );
-          recCards = h(
-            "div",
-            { class: "mt-3 grid grid-cols-2 gap-2" },
-            recCard(L.plugTitle, L.plugDesc, "https://github.com/duanluan/zcode-plugins"),
-            recCard(L.qqGroupTitle, L.qqGroupDesc, "https://qm.qq.com/q/WXuISJK3ug")
-          );
-        }
+          )
+        );
         let activeTab = "features";
         const pluginsStatusLine = h("span", { class: "text-ui-xs/relaxed text-foreground-subtle" }, "\u2026");
         const pluginsBtn = btnSmall(L.pluginsCheckNow, () => {
@@ -2459,13 +2465,30 @@
           }
           pluginsStatusLine.textContent = (res.updates || []).length > 0 ? L.pluginsUpdatesFound.replaceAll("{n}", String(res.updates.length)) : L.pluginsUpToDate;
         })();
+        const PLUGINS_REPO_URL = "https://github.com/duanluan/zcode-plugins";
+        const repoName = "zcode-plugins";
+        const titleParts = L.pluginsUpdateTitle.split(repoName);
+        const pluginsTitle = h("div", { class: "truncate text-ui-sm font-medium text-foreground" });
+        if (titleParts.length === 2 && typeof window.zcode?.openExternal === "function") {
+          pluginsTitle.append(
+            titleParts[0],
+            h("span", {
+              class: "cursor-pointer underline-offset-4 hover:underline",
+              title: PLUGINS_REPO_URL,
+              onClick: () => openExternal(PLUGINS_REPO_URL)
+            }, repoName),
+            titleParts[1]
+          );
+        } else {
+          pluginsTitle.append(L.pluginsUpdateTitle);
+        }
         const pluginsCard = h(
           "div",
-          { class: "mt-3 flex items-center justify-between gap-2 rounded-xl border border-border p-3" },
+          { class: "mt-3 flex items-center justify-between gap-2 rounded-xl border border-border p-2" },
           h(
             "div",
             { class: "min-w-0" },
-            h("div", { class: "truncate text-ui-sm font-medium text-foreground" }, L.pluginsUpdateTitle),
+            pluginsTitle,
             h("div", { class: "mt-0.5 truncate text-ui-xs/relaxed text-foreground-subtle" }, pluginsStatusLine)
           ),
           pluginsBtn
@@ -2475,7 +2498,7 @@
           { role: "tabpanel", class: "mt-4" },
           h("div", {}, rows),
           pluginsCard,
-          ...recCards ? [recCards] : []
+          communityCards
         );
         const paneStyles = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
         const paneAgents = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
@@ -2532,7 +2555,7 @@
             field,
             el: h(
               "div",
-              { class: "flex items-center justify-between gap-2 p-2.5" },
+              { class: "flex items-center justify-between gap-2 p-2" },
               h("span", { class: "min-w-0 truncate text-ui-sm font-medium text-foreground", title: tip }, name),
               h(
                 "span",
@@ -2554,7 +2577,7 @@
           field: widthField,
           el: h(
             "div",
-            { class: "flex items-center justify-between gap-2 p-2.5" },
+            { class: "flex items-center justify-between gap-2 p-2" },
             h("span", { class: "min-w-0 truncate text-ui-sm font-medium text-foreground", title: L.contentWidthDesc }, L.contentWidthName),
             widthField.el
           )
@@ -2571,7 +2594,7 @@
         paneStyles.append(
           h(
             "div",
-            { class: "grid grid-cols-2 gap-2 rounded-xl border border-border p-1.5" },
+            { class: "grid grid-cols-2 gap-2 rounded-xl border border-border p-1" },
             ...cells.map((c) => h("div", { class: "rounded-lg transition-colors hover:bg-surface-hover" }, c.el))
           ),
           h(
@@ -2782,7 +2805,7 @@
           };
           const cards = visionCfg.proxies.map((p, i) => h(
             "div",
-            { class: "mt-2 rounded-xl border border-border p-3" },
+            { class: "mt-2 rounded-xl border border-border p-2" },
             h(
               "div",
               { class: "flex flex-wrap items-center gap-2" },
@@ -2906,7 +2929,7 @@
             // 链模式 + 两个开关合到一行（顶部已有简介，开关不再单占一块、不带描述）
             h(
               "div",
-              { class: "mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-xl border border-border p-1.5" },
+              { class: "mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-xl border border-border p-1" },
               h("span", { class: "ml-1.5 shrink-0 text-ui-sm font-medium text-foreground" }, L.visionMode),
               modeBtn("fallback", L.visionModeFallback, L.visionModeFallbackDesc),
               modeBtn("pipeline", L.visionModePipeline, L.visionModePipelineDesc),
@@ -2928,7 +2951,7 @@
             // 压缩阈值 / 连续失败次数 / 跳过分钟数 三个数字一行
             h(
               "div",
-              { class: "mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-xl border border-border p-1.5" },
+              { class: "mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-xl border border-border p-1" },
               (() => {
                 const n = h("input", {
                   type: "number",
@@ -3018,7 +3041,7 @@
         const rtkSwitchRow = h("div");
         const rtkVersionCard = h(
           "div",
-          { class: "mt-3 flex items-center gap-2 rounded-xl border border-border p-3" },
+          { class: "mt-3 flex items-center gap-2 rounded-xl border border-border p-2" },
           rtkVersionLine,
           rtkUp.state,
           rtkUp.btn,
@@ -3079,7 +3102,7 @@
             ...rtkCfg.installed ? [] : [h("p", { class: "text-ui-sm text-amber-500" }, L.rtkNotInstalled)],
             h(
               "div",
-              { class: "mt-2 rounded-xl border border-border p-3" },
+              { class: "mt-2 rounded-xl border border-border p-2" },
               h("div", { class: "text-ui-sm font-medium text-foreground" }, L.rtkWhitelistTitle),
               h("p", { class: "mt-1 text-ui-xs/relaxed text-foreground-subtle" }, L.rtkWhitelistDesc),
               ...rtkCfg.builtinGit.length > 0 || rtkCfg.builtinPlain.length > 0 ? [
@@ -3191,7 +3214,7 @@
               h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.headroomDesc),
               h(
                 "div",
-                { class: "mt-3 flex items-center justify-between gap-2 rounded-xl border border-border p-3" },
+                { class: "mt-3 flex items-center justify-between gap-2 rounded-xl border border-border p-2" },
                 h(
                   "div",
                   { class: "min-w-0" },
@@ -3361,13 +3384,13 @@
             ...headroomRes.installed === false ? [h("p", { class: "mt-2 text-ui-sm text-amber-500" }, L.headroomBinMissing)] : [],
             h(
               "div",
-              { class: "mt-3 flex items-center justify-between gap-2 rounded-xl border border-border p-3" },
+              { class: "mt-3 flex items-center justify-between gap-2 rounded-xl border border-border p-2" },
               h("div", { class: "flex min-w-0 items-center gap-2" }, hrVersionLine, hrUp.state),
               hrUp.btn
             ),
             h(
               "div",
-              { class: "mt-2 rounded-xl border border-border p-3" },
+              { class: "mt-2 rounded-xl border border-border p-2" },
               h(
                 "div",
                 { class: "flex flex-wrap items-center justify-between gap-2" },
@@ -3381,17 +3404,17 @@
             h(
               "div",
               {
-                class: "mt-2 rounded-xl border border-border p-1.5"
+                class: "mt-2 rounded-xl border border-border p-1"
               },
               h(
                 "div",
-                { class: "flex items-center justify-between gap-2 rounded-lg p-2.5 transition-colors hover:bg-surface-hover" },
+                { class: "flex items-center justify-between gap-2 rounded-lg p-2 transition-colors hover:bg-surface-hover" },
                 h("span", { class: "min-w-0 truncate text-ui-sm font-medium text-foreground", title: L.headroomBackendDesc }, L.headroomBackend),
                 hrBackendSel
               ),
               h(
                 "div",
-                { class: "flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-lg p-2 transition-colors hover:bg-surface-hover" },
+                { class: "flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-lg p-1.5 transition-colors hover:bg-surface-hover" },
                 hrPowerBox,
                 h(
                   "div",

@@ -14,7 +14,7 @@ import { taskIndexPath, probeTaskIndexWritable, remapTaskIndexPaths, taskIndexDr
 import { pickFolderSystem } from './pickFolder.mjs';
 import { reorderWorkspaceTasks, reorderGroupMembers } from './taskOrder.mjs';
 
-const VERSION = '0.11.0';
+const VERSION = '0.12.0';
 
 // 全局提示词固定在用户主目录：官方加载器按 HOME/USERPROFILE 拼 .zcode/AGENTS.md，
 // 不读 ZCODE_DATA_BASE_DIR（数据根迁走时全局指令仍在原位）。
@@ -816,7 +816,7 @@ function writeRtkState(dir, { mode, whitelist }) {
     return;
   }
   const wlTmp = wlFile + '.tmp';
-  writeFileSync(wlTmp, '# rtk 白名单（不提醒直接放行）：每行 name 或 git:name（git 子命令）。删除本文件即恢复默认。\n'
+  writeFileSync(wlTmp, '# rtk 白名单（不压缩直接放行）：每行 name 或 git:name（git 子命令）。删除本文件即恢复默认。\n'
     + whitelist.join('\n') + '\n', 'utf8');
   renameSync(wlTmp, wlFile);
 }

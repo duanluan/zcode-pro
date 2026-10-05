@@ -28,12 +28,17 @@ export async function appendCopyPathItem(menu, anchorItem, project) {
 
 async function copyText(text) {
   const L = t();
+  if (await copyToClipboard(text)) showToast(L.pathCopied);
+  else showToast(L.pathCopyFailed, 'error');
+}
+
+// 通用文本复制：成功返回 true，调用方自己决定提示文案
+export async function copyToClipboard(text) {
   try {
     await navigator.clipboard.writeText(text);
-    showToast(L.pathCopied);
+    return true;
   } catch {
-    if (copyViaHiddenInput(text)) showToast(L.pathCopied);
-    else showToast(L.pathCopyFailed, 'error');
+    return copyViaHiddenInput(text);
   }
 }
 
@@ -52,7 +57,7 @@ function copyViaHiddenInput(text) {
   }
 }
 
-function hCopyIcon(cls) {
+export function hCopyIcon(cls) {
   const ns = 'http://www.w3.org/2000/svg';
   const svg = document.createElementNS(ns, 'svg');
   svg.setAttribute('viewBox', '0 0 24 24');

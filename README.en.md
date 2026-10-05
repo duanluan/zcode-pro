@@ -22,7 +22,7 @@ ZCode Pro enhances the ZCode desktop UI. No client files are modified; just laun
 | UI style adjustments | Fine-tune paragraph spacing, content width, line heights, list and code spacing; applies instantly |
 | Global prompt | Edit default instructions shared by all projects; applies to new sessions |
 | Software proxy | Set an HTTP proxy for plugin updates/installs and tool upgrades, with connectivity test |
-| Vision proxy | Recognize images via vision models when the main model cannot see them; visual chain editor (zcode-vision plugin) |
+| Vision proxy | Automatically hand images to vision models for recognition when the main model cannot see them, and feed the descriptions to the main model; visual chain editor (zcode-vision plugin) |
 | rtk compression | Manage rewrite hints and the command whitelist; check and upgrade the rtk program (rtk plugin) |
 | Headroom | Manage compression device, power-save switching and proxy status; check and upgrade the headroom program (headroom plugin) |
 | Plugin updates | Check and update zcode-plugins marketplace plugins in one click, optional auto-update on startup |

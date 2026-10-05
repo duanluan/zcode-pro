@@ -4,6 +4,12 @@ import { h, t, rpc, getConfig, clearConfigCache, errText, HELPER_URL } from '../
 import { openDialog, dialogFooter, btnPrimary, btnSecondary, btnSmall, settingRow, ensureStyle, showToast, numberField, unitField } from '../ui.js';
 import { refreshAliases } from './alias.js';
 import { applyStyles, STYLE_DEFAULTS } from './styles.js';
+import { copyToClipboard, hCopyIcon } from './copy-path.js';
+
+// 调宿主桥在系统浏览器打开外链；宿主没暴露该能力时静默忽略
+function openExternal(url) {
+  try { void window.zcode.openExternal(url); } catch { /* ignore */ }
+}
 
 // 本体升级交互（Headroom 的 pip 与 rtk 的 GitHub Releases 共用）：
 // 检查更新 → 升级（helper 后台任务，轮询进度，输出取最后一行、超长省略中间）→
@@ -169,7 +175,7 @@ export function openSettingsDialog() {
             h('span', {
               class: 'cursor-pointer underline-offset-4 hover:underline',
               title: REPO_URL,
-              onClick: () => { try { void window.zcode.openExternal(REPO_URL); } catch { /* ignore */ } },
+              onClick: () => openExternal(REPO_URL),
             }, L.settingsTitle),
             mkIcon(['M15 3h6v6', 'M10 14 21 3', 'M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'], 'ml-1 inline-block size-4 text-foreground-subtle'));
         }
@@ -257,35 +263,39 @@ export function openSettingsDialog() {
       };
       refreshRows();
 
-      // 底部推荐卡片：插件市场 + QQ 交流群，同一行两列（依赖宿主 openExternal 打开系统浏览器）
-      let recCards = null;
-      if (typeof window !== 'undefined' && typeof window.zcode?.openExternal === 'function') {
-        const ns = 'http://www.w3.org/2000/svg';
-        const extIcon = () => {
-          const icon = h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor',
-            'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round',
-            class: 'size-4 shrink-0 text-foreground-subtle' });
-          for (const d of ['M15 3h6v6', 'M10 14 21 3', 'M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6']) {
-            const p2 = document.createElementNS(ns, 'path');
-            p2.setAttribute('d', d);
-            icon.append(p2);
-          }
-          return icon;
-        };
-        const recCard = (title, desc, url) => h('div', {
-          class: 'flex cursor-pointer items-center justify-between gap-2 rounded-xl border border-border p-3 transition-colors hover:bg-surface-hover',
-          onClick: () => {
-            try { void window.zcode.openExternal(url); } catch { /* ignore */ }
-          },
-        },
-          h('div', { class: 'min-w-0' },
-            h('div', { class: 'truncate text-ui-sm font-medium text-foreground' }, title),
-            h('div', { class: 'mt-0.5 truncate text-ui-xs/relaxed text-foreground-subtle' }, desc)),
-          extIcon());
-        recCards = h('div', { class: 'mt-3 grid grid-cols-2 gap-2' },
-          recCard(L.plugTitle, L.plugDesc, 'https://github.com/duanluan/zcode-plugins'),
-          recCard(L.qqGroupTitle, L.qqGroupDesc, 'https://qm.qq.com/q/WXuISJK3ug'));
-      }
+      // 底部交流卡片：QQ 群 + 微信群，同一行两列。
+      // QQ 群点击用宿主 openExternal 打开系统浏览器（宿主没该能力时不出 QQ 卡）；
+      // 微信群点击把微信号复制到剪贴板，不依赖宿主能力
+      const WECHAT_ID = 'ai4only';
+      const ns = 'http://www.w3.org/2000/svg';
+      const extIcon = () => {
+        const icon = h('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor',
+          'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round',
+          class: 'size-4 shrink-0 text-foreground-subtle' });
+        for (const d of ['M15 3h6v6', 'M10 14 21 3', 'M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6']) {
+          const p2 = document.createElementNS(ns, 'path');
+          p2.setAttribute('d', d);
+          icon.append(p2);
+        }
+        return icon;
+      };
+      const communityCard = (title, desc, icon, onClick) => h('div', {
+        class: 'flex cursor-pointer items-center justify-between gap-2 rounded-xl border border-border p-2 transition-colors hover:bg-surface-hover',
+        onClick,
+      },
+        h('div', { class: 'min-w-0' },
+          h('div', { class: 'truncate text-ui-sm font-medium text-foreground' }, title),
+          h('div', { class: 'mt-0.5 truncate text-ui-xs/relaxed text-foreground-subtle' }, desc)),
+        icon());
+      const communityCards = h('div', { class: 'mt-3 grid grid-cols-2 gap-2' },
+        ...(typeof window !== 'undefined' && typeof window.zcode?.openExternal === 'function'
+          ? [communityCard(L.qqGroupTitle, L.qqGroupDesc, extIcon, () => openExternal('https://qm.qq.com/q/WXuISJK3ug'))]
+          : []),
+        communityCard(L.wechatGroupTitle, L.wechatGroupDesc.replaceAll('{id}', WECHAT_ID),
+          () => hCopyIcon('size-4 shrink-0 text-foreground-subtle'),
+          async () => {
+            if (await copyToClipboard(WECHAT_ID)) showToast(L.wechatIdCopied);
+          }));
 
       // 标签页切换：功能（现有内容）/ 样式调整 / 全局提示词 / 视觉代理
       let activeTab = 'features';
@@ -315,15 +325,31 @@ export function openSettingsDialog() {
           ? L.pluginsUpdatesFound.replaceAll('{n}', String(res.updates.length))
           : L.pluginsUpToDate;
       })();
-      const pluginsCard = h('div', { class: 'mt-3 flex items-center justify-between gap-2 rounded-xl border border-border p-3' },
+      // 标题中的 zcode-plugins 可点击跳转插件市场仓库（依赖宿主 openExternal 打开系统浏览器）
+      const PLUGINS_REPO_URL = 'https://github.com/duanluan/zcode-plugins';
+      const repoName = 'zcode-plugins';
+      const titleParts = L.pluginsUpdateTitle.split(repoName);
+      const pluginsTitle = h('div', { class: 'truncate text-ui-sm font-medium text-foreground' });
+      if (titleParts.length === 2 && typeof window.zcode?.openExternal === 'function') {
+        pluginsTitle.append(titleParts[0],
+          h('span', {
+            class: 'cursor-pointer underline-offset-4 hover:underline',
+            title: PLUGINS_REPO_URL,
+            onClick: () => openExternal(PLUGINS_REPO_URL),
+          }, repoName),
+          titleParts[1]);
+      } else {
+        pluginsTitle.append(L.pluginsUpdateTitle);
+      }
+      const pluginsCard = h('div', { class: 'mt-3 flex items-center justify-between gap-2 rounded-xl border border-border p-2' },
         h('div', { class: 'min-w-0' },
-          h('div', { class: 'truncate text-ui-sm font-medium text-foreground' }, L.pluginsUpdateTitle),
+          pluginsTitle,
           h('div', { class: 'mt-0.5 truncate text-ui-xs/relaxed text-foreground-subtle' }, pluginsStatusLine)),
         pluginsBtn);
       const paneFeatures = h('div', { role: 'tabpanel', class: 'mt-4' },
         h('div', {}, rows),
         pluginsCard,
-        ...(recCards ? [recCards] : []),
+        communityCards,
       );
       const paneStyles = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
       const paneAgents = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
@@ -378,7 +404,7 @@ export function openSettingsDialog() {
         });
         return {
           field,
-          el: h('div', { class: 'flex items-center justify-between gap-2 p-2.5' },
+          el: h('div', { class: 'flex items-center justify-between gap-2 p-2' },
             h('span', { class: 'min-w-0 truncate text-ui-sm font-medium text-foreground', title: tip }, name),
             h('span', { class: 'flex shrink-0 items-center gap-1' }, field.el,
               h('span', { class: 'w-3 text-ui-xs text-foreground-subtle' }, unit))),
@@ -395,7 +421,7 @@ export function openSettingsDialog() {
       });
       const widthCell = {
         field: widthField,
-        el: h('div', { class: 'flex items-center justify-between gap-2 p-2.5' },
+        el: h('div', { class: 'flex items-center justify-between gap-2 p-2' },
           h('span', { class: 'min-w-0 truncate text-ui-sm font-medium text-foreground', title: L.contentWidthDesc }, L.contentWidthName),
           widthField.el),
       };
@@ -409,7 +435,7 @@ export function openSettingsDialog() {
         styleCell(L.quoteCodeSpacingName, L.quoteCodeSpacingDesc, 'quoteCodeSpacing'),
       ];
       paneStyles.append(
-        h('div', { class: 'grid grid-cols-2 gap-2 rounded-xl border border-border p-1.5' },
+        h('div', { class: 'grid grid-cols-2 gap-2 rounded-xl border border-border p-1' },
           ...cells.map((c) => h('div', { class: 'rounded-lg transition-colors hover:bg-surface-hover' }, c.el))),
         h('div', { class: 'mt-2 flex justify-end' },
           btnSmall(L.resetDefault, () => {
@@ -602,7 +628,7 @@ export function openSettingsDialog() {
           return h('label', { class: 'flex shrink-0 items-center gap-1.5', title },
             h('span', { class: 'text-ui-xs font-medium text-foreground-subtle' }, label), n);
         };
-        const cards = visionCfg.proxies.map((p, i) => h('div', { class: 'mt-2 rounded-xl border border-border p-3' },
+        const cards = visionCfg.proxies.map((p, i) => h('div', { class: 'mt-2 rounded-xl border border-border p-2' },
           h('div', { class: 'flex flex-wrap items-center gap-2' },
             h('span', { class: 'shrink-0 rounded-md bg-surface px-1.5 py-0.5 text-ui-xs tabular-nums text-foreground-subtle' }, String(i + 1)),
             // 名称输入框用 flex-1 占剩余宽度，与序号同行；textIn 的 w-full 会把序号挤成单独一行
@@ -692,7 +718,7 @@ export function openSettingsDialog() {
         paneVision.replaceChildren(
           h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.visionDesc),
           // 链模式 + 两个开关合到一行（顶部已有简介，开关不再单占一块、不带描述）
-          h('div', { class: 'mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-xl border border-border p-1.5' },
+          h('div', { class: 'mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-xl border border-border p-1' },
             h('span', { class: 'ml-1.5 shrink-0 text-ui-sm font-medium text-foreground' }, L.visionMode),
             modeBtn('fallback', L.visionModeFallback, L.visionModeFallbackDesc),
             modeBtn('pipeline', L.visionModePipeline, L.visionModePipelineDesc),
@@ -710,7 +736,7 @@ export function openSettingsDialog() {
             ),
           ),
           // 压缩阈值 / 连续失败次数 / 跳过分钟数 三个数字一行
-          h('div', { class: 'mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-xl border border-border p-1.5' },
+          h('div', { class: 'mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-xl border border-border p-1' },
             (() => {
               const n = h('input', { type: 'number', min: '0', step: '128', title: L.visionCompressKBHint,
                 class: 'h-7 w-16 rounded-lg border border-border bg-input px-2 text-right text-ui-xs tabular-nums text-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40' });
@@ -786,12 +812,12 @@ export function openSettingsDialog() {
         },
       });
       rtkUpgradePollStop = rtkUp.stop;
-      // 版本/路径/检查更新 + 改写提醒开关合到一行（开关靠右，顶部已有简介不带描述）
+      // 版本/路径/检查更新 + 启用 rtk 压缩开关合到一行（开关靠右，顶部已有简介不带描述）
       const rtkSwitchRow = h('div');
-      const rtkVersionCard = h('div', { class: 'mt-3 flex items-center gap-2 rounded-xl border border-border p-3' },
+      const rtkVersionCard = h('div', { class: 'mt-3 flex items-center gap-2 rounded-xl border border-border p-2' },
         rtkVersionLine, rtkUp.state, rtkUp.btn, rtkSwitchRow);
       const rtkBody = h('div');
-      // 简介置顶（与 Headroom 面板一致），其下版本卡（含改写提醒开关），再下白名单
+      // 简介置顶（与 Headroom 面板一致），其下版本卡（含启用 rtk 压缩开关），再下白名单
       paneRtk.append(
         h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.rtkDesc),
         rtkVersionCard,
@@ -841,7 +867,7 @@ export function openSettingsDialog() {
           ...(rtkCfg.installed
             ? []
             : [h('p', { class: 'text-ui-sm text-amber-500' }, L.rtkNotInstalled)]),
-          h('div', { class: 'mt-2 rounded-xl border border-border p-3' },
+          h('div', { class: 'mt-2 rounded-xl border border-border p-2' },
             h('div', { class: 'text-ui-sm font-medium text-foreground' }, L.rtkWhitelistTitle),
             h('p', { class: 'mt-1 text-ui-xs/relaxed text-foreground-subtle' }, L.rtkWhitelistDesc),
             ...((rtkCfg.builtinGit.length > 0 || rtkCfg.builtinPlain.length > 0)
@@ -943,7 +969,7 @@ export function openSettingsDialog() {
           };
           paneHeadroom.append(
             h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.headroomDesc),
-            h('div', { class: 'mt-3 flex items-center justify-between gap-2 rounded-xl border border-border p-3' },
+            h('div', { class: 'mt-3 flex items-center justify-between gap-2 rounded-xl border border-border p-2' },
               h('div', { class: 'min-w-0' },
                 h('div', { class: 'text-ui-sm font-medium text-foreground' }, L.headroomInstallTitle),
                 h('div', { class: 'mt-0.5 text-ui-xs/relaxed text-foreground-subtle' }, L.headroomInstallDesc),
@@ -1103,10 +1129,10 @@ export function openSettingsDialog() {
           ...(headroomRes.installed === false
             ? [h('p', { class: 'mt-2 text-ui-sm text-amber-500' }, L.headroomBinMissing)]
             : []),
-          h('div', { class: 'mt-3 flex items-center justify-between gap-2 rounded-xl border border-border p-3' },
+          h('div', { class: 'mt-3 flex items-center justify-between gap-2 rounded-xl border border-border p-2' },
             h('div', { class: 'flex min-w-0 items-center gap-2' }, hrVersionLine, hrUp.state),
             hrUp.btn),
-          h('div', { class: 'mt-2 rounded-xl border border-border p-3' },
+          h('div', { class: 'mt-2 rounded-xl border border-border p-2' },
             h('div', { class: 'flex flex-wrap items-center justify-between gap-2' },
               h('span', { class: 'text-ui-sm font-medium text-foreground' }, L.headroomStatusTitle),
               h('div', { class: 'flex items-center gap-1.5' }, hrRefreshBtn, hrStartBtn, hrRestartBtn, hrStopBtn)),
@@ -1114,12 +1140,12 @@ export function openSettingsDialog() {
             hrFacts,
             hrHintLine),
           h('div', {
-            class: 'mt-2 rounded-xl border border-border p-1.5',
+            class: 'mt-2 rounded-xl border border-border p-1',
           },
-            h('div', { class: 'flex items-center justify-between gap-2 rounded-lg p-2.5 transition-colors hover:bg-surface-hover' },
+            h('div', { class: 'flex items-center justify-between gap-2 rounded-lg p-2 transition-colors hover:bg-surface-hover' },
               h('span', { class: 'min-w-0 truncate text-ui-sm font-medium text-foreground', title: L.headroomBackendDesc }, L.headroomBackend),
               hrBackendSel),
-            h('div', { class: 'flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-lg p-2 transition-colors hover:bg-surface-hover' },
+            h('div', { class: 'flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-lg p-1.5 transition-colors hover:bg-surface-hover' },
               hrPowerBox,
               h('div', { class: 'ml-auto flex shrink-0 items-center gap-1.5' },
                 h('span', { class: 'text-ui-xs font-medium text-foreground-subtle', title: L.headroomIntervalDesc }, L.headroomInterval),

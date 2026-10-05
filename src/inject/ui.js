@@ -315,7 +315,7 @@ export function unitField({ value = null, fallback = { value: 100, unit: '%' }, 
 // 开关样式完全由 ensureStyle 中的自有规则驱动（几何/配色固定写入，
 // 颜色取主题变量），不依赖应用的 Tailwind 工具类——v4 只为应用源码
 // 实际用过的类生成 CSS，注入标记里"长得像"的类名不保证有样式。
-// desc 留空时只渲染名称行（紧凑变体，Vision/rtk 面板用，那里顶部已有简介）。
+// desc 留空时只渲染名称行、内边距也收紧（紧凑变体，Vision/rtk 面板用，那里顶部已有简介）。
 export function settingRow(name, desc, checked, onToggle) {
   const knob = h('span', { class: 'zcodepro-switch-knob' });
   const track = h('span', {
@@ -324,7 +324,7 @@ export function settingRow(name, desc, checked, onToggle) {
     'data-state': checked ? 'on' : 'off',
   }, knob);
   const row = h('div', {
-    class: 'flex cursor-pointer items-start gap-3 rounded-lg p-3 transition-colors hover:bg-surface-hover',
+    class: `flex cursor-pointer items-start gap-2 rounded-lg ${desc ? 'p-2' : 'p-1.5'} transition-colors hover:bg-surface-hover`,
     onClick: () => { onToggle(); },
   },
     h('div', { class: 'min-w-0 flex-1' },
