@@ -726,6 +726,8 @@ export function validateVisionConfig(raw) {
     // 连续失败跳过（0 = 不跳过）；跳过时长（分钟）
     skipAfterFailures: clampInt(raw.skipAfterFailures, 0, 100, 4),
     skipMinutes: clampInt(raw.skipMinutes, 1, 10080, 30),
+    // 主模型能看图时是否也拦截识别（false = 跳过；flash 主模型始终不触发，见插件）
+    forceIntercept: raw.forceIntercept !== false,
   };
   const names = new Set();
   for (const p of raw.proxies) {

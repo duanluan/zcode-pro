@@ -537,6 +537,7 @@ export function openSettingsDialog() {
         compressThresholdKB: 1024,
         skipAfterFailures: 4,
         skipMinutes: 30,
+        forceIntercept: true,
       };
       // 供应商下拉数据：合并 zcode 两张供应商表（config.json 的 provider 与 provider_config.json 的 providerRules）
       const visionProviders = visionProvidersRes.ok && Array.isArray(visionProvidersRes.providers) ? visionProvidersRes.providers : [];
@@ -693,6 +694,11 @@ export function openSettingsDialog() {
           h('div', { class: 'mt-3 rounded-xl border border-border p-1.5' },
             settingRow(L.visionEnabled, L.visionEnabledDesc, visionCfg.enabled !== false, async () => {
               visionCfg.enabled = !(visionCfg.enabled !== false);
+              await persistVision();
+              renderVision();
+            }),
+            settingRow(L.visionForceIntercept, L.visionForceInterceptDesc, visionCfg.forceIntercept !== false, async () => {
+              visionCfg.forceIntercept = !(visionCfg.forceIntercept !== false);
               await persistVision();
               renderVision();
             }),
