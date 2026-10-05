@@ -101,9 +101,7 @@
     tabVision: "Vision",
     visionDesc: "\u4E3B\u6A21\u578B\u4E0D\u652F\u6301\u56FE\u7247\u8F93\u5165\u65F6\uFF08\u5982 glm-5.3\uFF09\uFF0C\u81EA\u52A8\u628A\u6D88\u606F\u91CC\u7684\u56FE\u7247\u4EA4\u7ED9\u4E0B\u9762\u7684\u89C6\u89C9\u6A21\u578B\u8BC6\u522B\uFF0C\u628A\u63CF\u8FF0\u5E26\u7ED9\u4E3B\u6A21\u578B\uFF08zcode-vision \u63D2\u4EF6\uFF1B/vision-* \u547D\u4EE4\u7F16\u8F91\u540C\u4E00\u914D\u7F6E\uFF09\u3002\u6539\u52A8\u81EA\u52A8\u4FDD\u5B58\u3002",
     visionEnabled: "\u542F\u7528\u56FE\u7247\u8BC6\u522B",
-    visionEnabledDesc: "\u5173\u95ED\u540E\u4E0D\u518D\u81EA\u52A8\u8BC6\u522B\u56FE\u7247\u3002",
     visionForceIntercept: "\u4E3B\u6A21\u578B\u80FD\u770B\u56FE\u4E5F\u62E6\u622A",
-    visionForceInterceptDesc: "\u5C31\u7B97\u4E3B\u6A21\u578B\u652F\u6301\u56FE\u7247\u8F93\u5165\u4E5F\u62E6\u622A\u56FE\u7247\u3001\u4EA4\u7ED9\u89C6\u89C9\u4EE3\u7406\u8BC6\u522B\u5E76\u628A\u63CF\u8FF0\u6CE8\u5165\u5BF9\u8BDD\uFF1B\u5173\u95ED\u540E\u4E3B\u6A21\u578B\u80FD\u770B\u56FE\u65F6\u4E0D\u62E6\u622A\uFF08\u4E3B\u6A21\u578B\u662F flash \u5C0F\u6A21\u578B\u65F6\u59CB\u7EC8\u4E0D\u62E6\u622A\uFF09\u3002",
     visionMode: "\u94FE\u6A21\u5F0F",
     visionModeFallback: "\u4F9D\u6B21\u5C1D\u8BD5",
     visionModeFallbackDesc: "\u524D\u4E00\u4E2A\u5931\u8D25\u624D\u8BD5\u4E0B\u4E00\u4E2A\uFF0C\u4EFB\u4E00\u6210\u529F\u5373\u6B62\uFF08\u4E3B\u529B + \u5907\u7528\uFF09\u3002",
@@ -140,12 +138,11 @@
     visionLoadFailed: "\u8BFB\u53D6\u89C6\u89C9\u4EE3\u7406\u914D\u7F6E\u5931\u8D25",
     tabRtk: "rtk",
     rtkDesc: "rtk \u63D2\u4EF6\uFF1A\u628A\u5E38\u89C1\u5F00\u53D1\u547D\u4EE4\u7684\u8F93\u51FA\u538B\u7F29 60-90% \u518D\u8FDB\u5165\u4E0A\u4E0B\u6587\uFF08/rtk-* \u547D\u4EE4\u7F16\u8F91\u540C\u4E00\u914D\u7F6E\uFF09\u3002\u6539\u52A8\u81EA\u52A8\u4FDD\u5B58\u5E76\u7ACB\u5373\u751F\u6548\u3002",
-    rtkEnabled: "\u6539\u5199\u63D0\u9192",
-    rtkEnabledDesc: "\u5173\u95ED\u540E\u4E00\u5207\u547D\u4EE4\u90FD\u4E0D\u518D\u63D0\u9192\uFF1B\u4ECD\u53EF\u624B\u52A8 rtk <\u547D\u4EE4> \u538B\u7F29\u8F93\u51FA\u3002",
+    rtkEnabled: "\u542F\u7528 rtk \u538B\u7F29",
     rtkNotInstalled: "\u672A\u5B89\u88C5 rtk\uFF0C\u4EE5\u4E0B\u914D\u7F6E\u5C06\u5728\u5B89\u88C5\u540E\u751F\u6548\uFF08\u4F1A\u8BDD\u91CC\u53EF\u7528 /rtk-setup \u5B89\u88C5\uFF09",
-    rtkWhitelistTitle: "\u767D\u540D\u5355\uFF08\u4E0D\u63D0\u9192\u76F4\u63A5\u653E\u884C\uFF09",
+    rtkWhitelistTitle: "\u767D\u540D\u5355\uFF08\u4E0D\u538B\u7F29\u76F4\u63A5\u653E\u884C\uFF09",
     rtkBuiltinLabel: "\u5185\u7F6E\u653E\u884C\uFF08\u53EA\u8BFB\uFF0C\u968F\u63D2\u4EF6\u66F4\u65B0\uFF09\uFF1A",
-    rtkWhitelistDesc: "\u6BCF\u6761 name\uFF08\u5982 docker\uFF09\u6216 git:name\uFF08\u5982 git:clone\uFF09\u3002\u8F93\u51FA\u6781\u5C0F\u6216\u7EAF\u526F\u4F5C\u7528\u7684\u547D\u4EE4\u65E0\u9700\u538B\u7F29\uFF0C\u52A0\u5165\u540E\u4E0D\u518D\u63D0\u9192\uFF1B\u5185\u7F6E\u7684 git add/commit/push\u3001mkdir/cp \u7B49\u4E0D\u53EF\u79FB\u9664\u3002\u5220\u9664\u672C\u6587\u4EF6\u5373\u6062\u590D\u9ED8\u8BA4\u3002",
+    rtkWhitelistDesc: "\u6BCF\u6761 name\uFF08\u5982 docker\uFF09\u6216 git:name\uFF08\u5982 git:clone\uFF09\u3002\u8F93\u51FA\u6781\u5C0F\u6216\u7EAF\u526F\u4F5C\u7528\u7684\u547D\u4EE4\u65E0\u9700\u538B\u7F29\uFF0C\u52A0\u5165\u540E\u4E0D\u518D\u538B\u7F29\uFF1B\u5185\u7F6E\u7684 git add/commit/push\u3001mkdir/cp \u7B49\u4E0D\u53EF\u79FB\u9664\u3002\u5220\u9664\u672C\u6587\u4EF6\u5373\u6062\u590D\u9ED8\u8BA4\u3002",
     rtkWhitelistPlaceholder: "name \u6216 git:name\uFF0C\u56DE\u8F66\u6DFB\u52A0",
     rtkWhitelistAdd: "\u6DFB\u52A0",
     rtkWhitelistClear: "\u6E05\u7A7A",
@@ -329,9 +326,7 @@
     tabVision: "Vision",
     visionDesc: "When the main model cannot see images (e.g. glm-5.3), images in messages are recognized by the vision models below and passed to the main model as text (zcode-vision plugin; /vision-* commands edit the same file). Changes save automatically.",
     visionEnabled: "Enable image recognition",
-    visionEnabledDesc: "When off, images are no longer recognized.",
     visionForceIntercept: "Intercept even if the main model sees images",
-    visionForceInterceptDesc: "Intercept images and inject vision-proxy descriptions even when the main model supports image input; when off, vision-capable main models get the images directly (flash-tier main models are never intercepted).",
     visionMode: "Chain mode",
     visionModeFallback: "Fallback",
     visionModeFallbackDesc: "Try in order until one succeeds (primary + backup).",
@@ -368,12 +363,11 @@
     visionLoadFailed: "Failed to load the vision config",
     tabRtk: "rtk",
     rtkDesc: "rtk plugin: compresses common dev command output by 60-90% before it reaches the context (/rtk-* commands edit the same files). Changes save automatically and apply immediately.",
-    rtkEnabled: "Rewrite hints",
-    rtkEnabledDesc: "When off, no hints are shown; manual rtk <command> still works.",
+    rtkEnabled: "Enable rtk compression",
     rtkNotInstalled: "rtk is not installed. The settings below take effect after installation (/rtk-setup in a session).",
-    rtkWhitelistTitle: "Whitelist (pass through without hints)",
+    rtkWhitelistTitle: "Whitelist (pass through without compression)",
     rtkBuiltinLabel: "Built-in exemptions (read-only, follow plugin updates):",
-    rtkWhitelistDesc: "Each entry is name (e.g. docker) or git:name (e.g. git:clone). Commands with tiny or no output need no compression; adding them stops the hints. Built-ins (git add/commit/push, mkdir/cp, \u2026) cannot be removed. Delete the file to reset.",
+    rtkWhitelistDesc: "Each entry is name (e.g. docker) or git:name (e.g. git:clone). Commands with tiny or no output need no compression; adding them skips compression. Built-ins (git add/commit/push, mkdir/cp, \u2026) cannot be removed. Delete the file to reset.",
     rtkWhitelistPlaceholder: "name or git:name, press Enter to add",
     rtkWhitelistAdd: "Add",
     rtkWhitelistClear: "Clear",
@@ -936,7 +930,7 @@
         "div",
         { class: "min-w-0 flex-1" },
         h("div", { class: "text-ui-sm font-medium text-foreground" }, name),
-        h("div", { class: "mt-0.5 text-ui-xs/relaxed text-foreground-subtle" }, desc)
+        ...desc ? [h("div", { class: "mt-0.5 text-ui-xs/relaxed text-foreground-subtle" }, desc)] : []
       ),
       h("button", {
         type: "button",
@@ -2909,33 +2903,39 @@
           });
           paneVision.replaceChildren(
             h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.visionDesc),
+            // 链模式 + 两个开关合到一行（顶部已有简介，开关不再单占一块、不带描述）
             h(
               "div",
-              { class: "mt-3 rounded-xl border border-border p-1.5" },
-              settingRow(L.visionEnabled, L.visionEnabledDesc, visionCfg.enabled !== false, async () => {
-                visionCfg.enabled = !(visionCfg.enabled !== false);
-                await persistVision();
-                renderVision();
-              }),
-              settingRow(L.visionForceIntercept, L.visionForceInterceptDesc, visionCfg.forceIntercept !== false, async () => {
-                visionCfg.forceIntercept = !(visionCfg.forceIntercept !== false);
-                await persistVision();
-                renderVision();
-              })
-            ),
-            h(
-              "div",
-              { class: "mt-2 flex items-center gap-1.5 rounded-xl border border-border p-1.5" },
+              { class: "mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-xl border border-border p-1.5" },
               h("span", { class: "ml-1.5 shrink-0 text-ui-sm font-medium text-foreground" }, L.visionMode),
               modeBtn("fallback", L.visionModeFallback, L.visionModeFallbackDesc),
               modeBtn("pipeline", L.visionModePipeline, L.visionModePipelineDesc),
+              h(
+                "div",
+                { class: "ml-auto flex items-center gap-4" },
+                settingRow(L.visionEnabled, "", visionCfg.enabled !== false, async () => {
+                  visionCfg.enabled = !(visionCfg.enabled !== false);
+                  await persistVision();
+                  renderVision();
+                }),
+                settingRow(L.visionForceIntercept, "", visionCfg.forceIntercept !== false, async () => {
+                  visionCfg.forceIntercept = !(visionCfg.forceIntercept !== false);
+                  await persistVision();
+                  renderVision();
+                })
+              )
+            ),
+            // 压缩阈值 / 连续失败次数 / 跳过分钟数 三个数字一行
+            h(
+              "div",
+              { class: "mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-xl border border-border p-1.5" },
               (() => {
                 const n = h("input", {
                   type: "number",
                   min: "0",
                   step: "128",
                   title: L.visionCompressKBHint,
-                  class: "ml-auto h-7 w-28 rounded-lg border border-border bg-input px-2 text-right text-ui-xs tabular-nums text-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
+                  class: "h-7 w-16 rounded-lg border border-border bg-input px-2 text-right text-ui-xs tabular-nums text-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
                 });
                 n.value = String(Number.isFinite(visionCfg.compressThresholdKB) ? visionCfg.compressThresholdKB : 1024);
                 n.addEventListener("change", () => {
@@ -2949,11 +2949,7 @@
                   h("span", { class: "text-ui-xs font-medium text-foreground-subtle" }, L.visionCompressKB),
                   n
                 );
-              })()
-            ),
-            h(
-              "div",
-              { class: "mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-xl border border-border p-1.5" },
+              })(),
               numIn(visionCfg.skipAfterFailures, { min: 0, dflt: 4, title: L.visionSkipAfterFailuresHint, label: L.visionSkipAfterFailures, commit: (v) => {
                 visionCfg.skipAfterFailures = v;
               } }),
@@ -3019,11 +3015,14 @@
           }
         });
         rtkUpgradePollStop = rtkUp.stop;
+        const rtkSwitchRow = h("div");
         const rtkVersionCard = h(
           "div",
-          { class: "mt-3 flex items-center justify-between gap-2 rounded-xl border border-border p-3" },
-          h("div", { class: "flex min-w-0 items-center gap-2" }, rtkVersionLine, rtkUp.state),
-          rtkUp.btn
+          { class: "mt-3 flex items-center gap-2 rounded-xl border border-border p-3" },
+          rtkVersionLine,
+          rtkUp.state,
+          rtkUp.btn,
+          rtkSwitchRow
         );
         const rtkBody = h("div");
         paneRtk.append(
@@ -3067,19 +3066,17 @@
               }
             })();
           };
+          rtkSwitchRow.replaceChildren(
+            settingRow(L.rtkEnabled, "", rtkCfg.mode === "hint", async () => {
+              const next = rtkCfg.mode === "hint" ? "off" : "hint";
+              if (await persistRtk({ mode: next })) {
+                rtkCfg.mode = next;
+                renderRtk();
+              }
+            })
+          );
           rtkBody.replaceChildren(
             ...rtkCfg.installed ? [] : [h("p", { class: "text-ui-sm text-amber-500" }, L.rtkNotInstalled)],
-            h(
-              "div",
-              { class: "mt-3 rounded-xl border border-border p-1.5" },
-              settingRow(L.rtkEnabled, L.rtkEnabledDesc, rtkCfg.mode === "hint", async () => {
-                const next = rtkCfg.mode === "hint" ? "off" : "hint";
-                if (await persistRtk({ mode: next })) {
-                  rtkCfg.mode = next;
-                  renderRtk();
-                }
-              })
-            ),
             h(
               "div",
               { class: "mt-2 rounded-xl border border-border p-3" },

@@ -691,25 +691,29 @@ export function openSettingsDialog() {
         });
         paneVision.replaceChildren(
           h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.visionDesc),
-          h('div', { class: 'mt-3 rounded-xl border border-border p-1.5' },
-            settingRow(L.visionEnabled, L.visionEnabledDesc, visionCfg.enabled !== false, async () => {
-              visionCfg.enabled = !(visionCfg.enabled !== false);
-              await persistVision();
-              renderVision();
-            }),
-            settingRow(L.visionForceIntercept, L.visionForceInterceptDesc, visionCfg.forceIntercept !== false, async () => {
-              visionCfg.forceIntercept = !(visionCfg.forceIntercept !== false);
-              await persistVision();
-              renderVision();
-            }),
-          ),
-          h('div', { class: 'mt-2 flex items-center gap-1.5 rounded-xl border border-border p-1.5' },
+          // 链模式 + 两个开关合到一行（顶部已有简介，开关不再单占一块、不带描述）
+          h('div', { class: 'mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-xl border border-border p-1.5' },
             h('span', { class: 'ml-1.5 shrink-0 text-ui-sm font-medium text-foreground' }, L.visionMode),
             modeBtn('fallback', L.visionModeFallback, L.visionModeFallbackDesc),
             modeBtn('pipeline', L.visionModePipeline, L.visionModePipelineDesc),
+            h('div', { class: 'ml-auto flex items-center gap-4' },
+              settingRow(L.visionEnabled, '', visionCfg.enabled !== false, async () => {
+                visionCfg.enabled = !(visionCfg.enabled !== false);
+                await persistVision();
+                renderVision();
+              }),
+              settingRow(L.visionForceIntercept, '', visionCfg.forceIntercept !== false, async () => {
+                visionCfg.forceIntercept = !(visionCfg.forceIntercept !== false);
+                await persistVision();
+                renderVision();
+              }),
+            ),
+          ),
+          // 压缩阈值 / 连续失败次数 / 跳过分钟数 三个数字一行
+          h('div', { class: 'mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-xl border border-border p-1.5' },
             (() => {
               const n = h('input', { type: 'number', min: '0', step: '128', title: L.visionCompressKBHint,
-                class: 'ml-auto h-7 w-28 rounded-lg border border-border bg-input px-2 text-right text-ui-xs tabular-nums text-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40' });
+                class: 'h-7 w-16 rounded-lg border border-border bg-input px-2 text-right text-ui-xs tabular-nums text-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40' });
               n.value = String(Number.isFinite(visionCfg.compressThresholdKB) ? visionCfg.compressThresholdKB : 1024);
               n.addEventListener('change', () => {
                 visionCfg.compressThresholdKB = Math.max(0, Math.round(Number(n.value) || 0));
@@ -718,8 +722,7 @@ export function openSettingsDialog() {
               });
               return h('label', { class: 'flex shrink-0 items-center gap-1.5', title: L.visionCompressKBHint },
                 h('span', { class: 'text-ui-xs font-medium text-foreground-subtle' }, L.visionCompressKB), n);
-            })()),
-          h('div', { class: 'mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-xl border border-border p-1.5' },
+            })(),
             numIn(visionCfg.skipAfterFailures, { min: 0, dflt: 4, title: L.visionSkipAfterFailuresHint, label: L.visionSkipAfterFailures, commit: (v) => { visionCfg.skipAfterFailures = v; } }),
             numIn(visionCfg.skipMinutes, { min: 1, dflt: 30, title: L.visionSkipMinutesHint, label: L.visionSkipMinutes, commit: (v) => { visionCfg.skipMinutes = v; } }),
           ),
@@ -783,11 +786,12 @@ export function openSettingsDialog() {
         },
       });
       rtkUpgradePollStop = rtkUp.stop;
-      const rtkVersionCard = h('div', { class: 'mt-3 flex items-center justify-between gap-2 rounded-xl border border-border p-3' },
-        h('div', { class: 'flex min-w-0 items-center gap-2' }, rtkVersionLine, rtkUp.state),
-        rtkUp.btn);
+      // 版本/路径/检查更新 + 改写提醒开关合到一行（开关靠右，顶部已有简介不带描述）
+      const rtkSwitchRow = h('div');
+      const rtkVersionCard = h('div', { class: 'mt-3 flex items-center gap-2 rounded-xl border border-border p-3' },
+        rtkVersionLine, rtkUp.state, rtkUp.btn, rtkSwitchRow);
       const rtkBody = h('div');
-      // 简介置顶（与 Headroom 面板一致），其下版本卡、再下开关与白名单
+      // 简介置顶（与 Headroom 面板一致），其下版本卡（含改写提醒开关），再下白名单
       paneRtk.append(
         h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.rtkDesc),
         rtkVersionCard,
@@ -825,18 +829,18 @@ export function openSettingsDialog() {
             }
           })();
         };
+        rtkSwitchRow.replaceChildren(
+          settingRow(L.rtkEnabled, '', rtkCfg.mode === 'hint', async () => {
+            const next = rtkCfg.mode === 'hint' ? 'off' : 'hint';
+            if (await persistRtk({ mode: next })) {
+              rtkCfg.mode = next;
+              renderRtk();
+            }
+          }));
         rtkBody.replaceChildren(
           ...(rtkCfg.installed
             ? []
             : [h('p', { class: 'text-ui-sm text-amber-500' }, L.rtkNotInstalled)]),
-          h('div', { class: 'mt-3 rounded-xl border border-border p-1.5' },
-            settingRow(L.rtkEnabled, L.rtkEnabledDesc, rtkCfg.mode === 'hint', async () => {
-              const next = rtkCfg.mode === 'hint' ? 'off' : 'hint';
-              if (await persistRtk({ mode: next })) {
-                rtkCfg.mode = next;
-                renderRtk();
-              }
-            })),
           h('div', { class: 'mt-2 rounded-xl border border-border p-3' },
             h('div', { class: 'text-ui-sm font-medium text-foreground' }, L.rtkWhitelistTitle),
             h('p', { class: 'mt-1 text-ui-xs/relaxed text-foreground-subtle' }, L.rtkWhitelistDesc),
