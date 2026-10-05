@@ -21,10 +21,28 @@ let aliases = {};       // 规范化路径 → 别名（与 helper 配置同步�
 let enabled = true;   // 功能总开关（关闭时还原真实名）
 let observer = null;
 
+// 只关心项目行的变动（行新增、行内重渲染、行内文本替换）；聊天区流式输出等
+// 全页高频变动在此滤掉，不再触发别名重扫（否则长会话流式期间 60ms 一轮全页查询）。
+const rowSel = '[data-testid^="workspace-item-"]';
+const inProjectRow = (node) => node instanceof Element && !!node.closest && !!node.closest(rowSel);
+function projectRowMutations(muts) {
+  for (const m of muts) {
+    if (m.type === 'characterData') {
+      if (m.target.parentElement && inProjectRow(m.target.parentElement)) return true;
+      continue;
+    }
+    if (inProjectRow(m.target)) return true;
+    for (const n of m.addedNodes) {
+      if (n instanceof Element && (n.matches(rowSel) || !!n.querySelector(rowSel))) return true;
+    }
+  }
+  return false;
+}
+
 export async function startAliasWatcher() {
   await syncFromConfig();
   if (observer) return;
-  observer = new MutationObserver(() => scheduleApply());
+  observer = new MutationObserver((muts) => { if (projectRowMutations(muts)) scheduleApply(); });
   observer.observe(document.body, { childList: true, subtree: true, characterData: true });
   applyAliass();
 }

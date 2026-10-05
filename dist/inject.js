@@ -1221,10 +1221,27 @@
   var aliases = {};
   var enabled = true;
   var observer = null;
+  var rowSel = '[data-testid^="workspace-item-"]';
+  var inProjectRow = (node) => node instanceof Element && !!node.closest && !!node.closest(rowSel);
+  function projectRowMutations(muts) {
+    for (const m of muts) {
+      if (m.type === "characterData") {
+        if (m.target.parentElement && inProjectRow(m.target.parentElement)) return true;
+        continue;
+      }
+      if (inProjectRow(m.target)) return true;
+      for (const n of m.addedNodes) {
+        if (n instanceof Element && (n.matches(rowSel) || !!n.querySelector(rowSel))) return true;
+      }
+    }
+    return false;
+  }
   async function startAliasWatcher() {
     await syncFromConfig();
     if (observer) return;
-    observer = new MutationObserver(() => scheduleApply());
+    observer = new MutationObserver((muts) => {
+      if (projectRowMutations(muts)) scheduleApply();
+    });
     observer.observe(document.body, { childList: true, subtree: true, characterData: true });
     applyAliass();
   }
@@ -3524,14 +3541,15 @@
 
   // src/inject/features/session-switch.js
   var MRU_LIMIT = 50;
-  var SCAN_MS = 800;
+  var SCAN_DEBOUNCE_MS = 150;
+  var SCAN_FALLBACK_MS = 5e3;
   var mru = [];
   var current = null;
   var titles = /* @__PURE__ */ new Map();
   var popupEl = null;
   var aliasesCache = {};
   var highlight = 0;
-  var scanTimer = null;
+  var scanDebounce = 0;
   function firstLineOf(item) {
     const tEl = item.querySelector('[class*="truncate"]');
     return (tEl ? tEl.textContent : (item.innerText || "").split("\n")[0])?.trim() || "";
@@ -3560,6 +3578,31 @@
     for (const el of document.querySelectorAll("[data-task-item-key]")) {
       titles.set(el.getAttribute("data-task-item-key"), firstLineOf(el));
     }
+  }
+  var rowSel2 = "[data-task-item-key]";
+  var inTaskRow = (node) => node instanceof Element && !!node.closest && !!node.closest(rowSel2);
+  function taskRowMutations(muts) {
+    for (const m of muts) {
+      if (m.type === "attributes") {
+        if (inTaskRow(m.target)) return true;
+      } else if (m.type === "characterData") {
+        if (m.target.parentElement && inTaskRow(m.target.parentElement)) return true;
+      } else if (inTaskRow(m.target)) {
+        return true;
+      } else {
+        for (const n of m.addedNodes) {
+          if (n instanceof Element && (n.matches(rowSel2) || !!n.querySelector(rowSel2))) return true;
+        }
+      }
+    }
+    return false;
+  }
+  function scheduleScan() {
+    if (scanDebounce) return;
+    scanDebounce = setTimeout(() => {
+      scanDebounce = 0;
+      scan();
+    }, SCAN_DEBOUNCE_MS);
   }
   async function switchTo(key) {
     const find = () => document.querySelector(`[data-task-item-key="${CSS.escape(key)}"]`);
@@ -3663,7 +3706,15 @@
   }
   function startSessionSwitch() {
     scan();
-    scanTimer = setInterval(scan, SCAN_MS);
+    new MutationObserver((muts) => {
+      if (taskRowMutations(muts)) scheduleScan();
+    }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
+    setInterval(() => {
+      if (!document.hidden) scan();
+    }, SCAN_FALLBACK_MS);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) scan();
+    });
     document.addEventListener("click", (e) => {
       const item = e.target instanceof Element && e.target.closest("[data-task-item-key]");
       if (item) record(item.getAttribute("data-task-item-key"));
@@ -3724,20 +3775,38 @@
   // src/inject/features/pinned-expand.js
   var installed2 = false;
   var keepCollapsed = false;
+  var CONFIG_POLL_MIN_MS = 5e3;
+  var CONFIG_POLL_MAX_MS = 6e4;
+  var pollMs = CONFIG_POLL_MIN_MS;
   async function refreshConfig() {
     try {
       const res = await rpc("/config");
       if (res && res.ok && res.config && res.config.features) {
-        keepCollapsed = res.config.features.pinnedKeepCollapsed !== false;
+        const next = res.config.features.pinnedKeepCollapsed !== false;
+        if (next !== keepCollapsed) {
+          keepCollapsed = next;
+          return true;
+        }
       }
     } catch {
     }
+    return false;
+  }
+  function pollConfig() {
+    setTimeout(async () => {
+      if (document.hidden) pollMs = CONFIG_POLL_MAX_MS;
+      else pollMs = await refreshConfig() ? CONFIG_POLL_MIN_MS : Math.min(Math.round(pollMs * 1.5), CONFIG_POLL_MAX_MS);
+      pollConfig();
+    }, pollMs);
   }
   function startPinnedExpandSuppression() {
     if (installed2 || typeof document === "undefined") return;
     installed2 = true;
     void refreshConfig();
-    setInterval(refreshConfig, 5e3);
+    pollConfig();
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) void refreshConfig();
+    });
     document.addEventListener("click", (e) => {
       if (!keepCollapsed) return;
       const taskRow = e.target.closest && e.target.closest('[data-testid^="task-item-"]');
@@ -3757,6 +3826,17 @@
       if (row) row.__zcodeproUserTouched = Date.now();
     }, true);
   }
+  function currentTaskRow() {
+    for (const el of document.querySelectorAll("[data-task-item-key]")) {
+      if ((el.className + "").includes("bg-selected")) return el;
+    }
+    return null;
+  }
+  function collapseNavSafe(head) {
+    head.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+    const cur = currentTaskRow();
+    if (cur) cur.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+  }
   function collapseAfterContentLoaded(wsRow) {
     const deadline = Date.now() + 25e3;
     let lastLen = (document.querySelector("main") || document.body).innerText.length;
@@ -3775,12 +3855,12 @@
       lastLen = len;
       const head = headOf();
       if (head && head.getAttribute("aria-expanded") === "true" && !userTouched()) {
-        head.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+        collapseNavSafe(head);
       }
       if (settledAt && Date.now() - settledAt >= 1e3) {
         const h2 = headOf();
         if (h2 && h2.getAttribute("aria-expanded") === "true" && !userTouched()) {
-          h2.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+          collapseNavSafe(h2);
         }
         return done();
       }

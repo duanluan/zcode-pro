@@ -13,20 +13,41 @@ import { rpc } from '../core.js';
 let installed = false;
 let keepCollapsed = false; // 默认关闭：实现为「先展开再缩起」，有闪烁（应用无拦截点，详见文件头）
 
+const CONFIG_POLL_MIN_MS = 5000;   // 配置未变化时逐次拉长轮询间隔，减轻常驻开销
+const CONFIG_POLL_MAX_MS = 60000;
+let pollMs = CONFIG_POLL_MIN_MS;
+
+// 返回本次请求是否改变了开关值（用于轮询间隔回弹）
 async function refreshConfig() {
   try {
     const res = await rpc('/config');
     if (res && res.ok && res.config && res.config.features) {
-      keepCollapsed = res.config.features.pinnedKeepCollapsed !== false;
+      const next = res.config.features.pinnedKeepCollapsed !== false;
+      if (next !== keepCollapsed) {
+        keepCollapsed = next;
+        return true;
+      }
     }
   } catch { /* helper 未就绪时保持默认 */ }
+  return false;
+}
+
+// 自适应轮询：值未变化间隔 ×1.5 直至上限，变化即回到最短；页面隐藏时跳过请求
+function pollConfig() {
+  setTimeout(async () => {
+    if (document.hidden) pollMs = CONFIG_POLL_MAX_MS;
+    else pollMs = (await refreshConfig()) ? CONFIG_POLL_MIN_MS : Math.min(Math.round(pollMs * 1.5), CONFIG_POLL_MAX_MS);
+    pollConfig();
+  }, pollMs);
 }
 
 export function startPinnedExpandSuppression() {
   if (installed || typeof document === 'undefined') return;
   installed = true;
   void refreshConfig();
-  setInterval(refreshConfig, 5000);
+  pollConfig();
+  // 回到前台立即补一次，避免长退避期间拿不到刚改的配置
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) void refreshConfig(); });
 
   document.addEventListener('click', (e) => {
     if (!keepCollapsed) return;
@@ -50,6 +71,21 @@ export function startPinnedExpandSuppression() {
     const row = e.target.closest && e.target.closest('[data-testid^="workspace-item-"]');
     if (row) row.__zcodeproUserTouched = Date.now();
   }, true);
+}
+
+// 收起用的点击必须点回当前会话：应用把项目行点击当作「切换到该项目」，只点项目行
+// 会把当前会话取消选中、主视图跳进新建任务。点完立刻点回当前会话行，两次提交都在
+// 浏览器绘制前完成，收起生效而视图不被带走。还原行每次现找（React 重挂载会换元素）。
+function currentTaskRow() {
+  for (const el of document.querySelectorAll('[data-task-item-key]')) {
+    if ((el.className + '').includes('bg-selected')) return el;
+  }
+  return null;
+}
+function collapseNavSafe(head) {
+  head.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+  const cur = currentTaskRow();
+  if (cur) cur.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
 }
 
 // 实测时序（探针 v2）：点击后 ~6s 出现第一次自动展开并被收起；
@@ -78,13 +114,13 @@ function collapseAfterContentLoaded(wsRow) {
     const head = headOf();
     // 持续压制：监听期内任何展开都收起（用户刚点过头部则跳过）
     if (head && head.getAttribute('aria-expanded') === 'true' && !userTouched()) {
-      head.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+      collapseNavSafe(head);
     }
     // 结束条件：正文已增长且稳定 1s（此时收起已完成）——再做最后一次确认收起
     if (settledAt && Date.now() - settledAt >= 1000) {
       const h2 = headOf();
       if (h2 && h2.getAttribute('aria-expanded') === 'true' && !userTouched()) {
-        h2.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+        collapseNavSafe(h2);
       }
       return done();
     }

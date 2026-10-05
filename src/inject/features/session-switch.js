@@ -2,21 +2,23 @@
 // MRU 弹窗前后移动高亮（x 更早 / c 更新，两端循环），松开 alt 切换，Esc / 点弹窗外
 // 取消，点行即切。MRU（最近使用序）从注入起记录（不回填历史库，上限 50 条），
 // 与侧栏展示顺序无关；当前会话靠侧栏条目的 bg-selected 类识别（实测标记），
-// 轮询扫描记录——点击、新建任务自动跳转等任何方式的切换都能捕捉。
+// 事件驱动扫描（会话行增删/选中标记移动才触发）+ 低频兜底轮询——
+// 点击、新建任务自动跳转等任何方式的切换都能捕捉，聊天区流式输出不产生扫描。
 // 目标条目在折叠项目下时先展开项目行再点击（展开先例见 pinned-expand.js）。
 import { h, t, getConfig } from '../core.js';
 import { ensureStyle, showToast } from '../ui.js';
 
 const MRU_LIMIT = 50;
-const SCAN_MS = 800;
+const SCAN_DEBOUNCE_MS = 150;   // 相关 DOM 变动后的去抖，合并连续变动
+const SCAN_FALLBACK_MS = 5000;  // 兜底轮询周期：仅补观察器覆盖不到的路径
 
 let mru = [];          // 会话键（data-task-item-key），最近使用的在最前
 let current = null;    // 当前会话键
 let titles = new Map(); // 键 → 会话标题（展示缓存；条目在 DOM 时实时读取）
-let popupEl = null;    // 打开的切换弹窗（null = 未开）
+let popupEl = null;    // 打开的切换弹窗（null = 未打开）
 let aliasesCache = {}; // 项目路径 → 别名（打开弹窗时预取，renderPopup 同步使用）
 let highlight = 0;
-let scanTimer = null;
+let scanDebounce = 0;
 
 function firstLineOf(item) {
   // 条目文本含相对时间等杂项，取首个截断类标题元素，兜底 innerText 首行
@@ -48,7 +50,7 @@ function record(key) {
   }
 }
 
-// 轮询扫描：bg-selected 标记识别当前会话（新建任务自动跳转等非点击切换也能捕捉）；
+// 扫描：bg-selected 标记识别当前会话（新建任务自动跳转等非点击切换也能捕捉）；
 // 标记缺失时由点击兜底记录。顺带刷新在场条目的标题缓存
 function scan() {
   const cur = findCurrent();
@@ -56,6 +58,33 @@ function scan() {
   for (const el of document.querySelectorAll('[data-task-item-key]')) {
     titles.set(el.getAttribute('data-task-item-key'), firstLineOf(el));
   }
+}
+
+// 只有任务条目相关变动才值得重扫：会话行新增（项目展开/新任务）、行内 class 变化
+// （bg-selected 选中标记移动）。聊天区流式输出等全页高频变动在此滤掉——
+// 这是本功能从 800ms 固定轮询改为事件驱动的关键。
+const rowSel = '[data-task-item-key]';
+const inTaskRow = (node) => node instanceof Element && !!node.closest && !!node.closest(rowSel);
+function taskRowMutations(muts) {
+  for (const m of muts) {
+    if (m.type === 'attributes') {
+      if (inTaskRow(m.target)) return true;
+    } else if (m.type === 'characterData') {
+      if (m.target.parentElement && inTaskRow(m.target.parentElement)) return true;
+    } else if (inTaskRow(m.target)) {
+      return true;
+    } else {
+      for (const n of m.addedNodes) {
+        if (n instanceof Element && (n.matches(rowSel) || !!n.querySelector(rowSel))) return true;
+      }
+    }
+  }
+  return false;
+}
+
+function scheduleScan() {
+  if (scanDebounce) return;
+  scanDebounce = setTimeout(() => { scanDebounce = 0; scan(); }, SCAN_DEBOUNCE_MS);
 }
 
 // 切到指定会话：条目不在 DOM（项目折叠）时先展开项目行，等条目出现再点击
@@ -152,7 +181,12 @@ function moveHighlight(delta) {
 
 export function startSessionSwitch() {
   scan();
-  scanTimer = setInterval(scan, SCAN_MS);
+  // 事件驱动为主：任务条目相关变动（去抖 150ms）立即重扫
+  new MutationObserver((muts) => { if (taskRowMutations(muts)) scheduleScan(); })
+    .observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+  // 低频兜底轮询 + 页面隐藏时不扫、回到前台立即补一次
+  setInterval(() => { if (!document.hidden) scan(); }, SCAN_FALLBACK_MS);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) scan(); });
 
   // 点击兜底：bg-selected 标记不可用/未出现时，点条目（含本功能派发的合成点击）即记录
   document.addEventListener('click', (e) => {
