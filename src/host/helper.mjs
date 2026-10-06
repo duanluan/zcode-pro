@@ -14,7 +14,7 @@ import { taskIndexPath, probeTaskIndexWritable, remapTaskIndexPaths, taskIndexDr
 import { pickFolderSystem } from './pickFolder.mjs';
 import { reorderWorkspaceTasks, reorderGroupMembers } from './taskOrder.mjs';
 
-const VERSION = '0.12.0';
+const VERSION = '0.13.0';
 
 // 全局提示词固定在用户主目录：官方加载器按 HOME/USERPROFILE 拼 .zcode/AGENTS.md，
 // 不读 ZCODE_DATA_BASE_DIR（数据根迁走时全局指令仍在原位）。
@@ -54,6 +54,7 @@ export function defaultConfig() {
       pinnedKeepCollapsed: false, // 点击置顶会话保持项目折叠（实验性：会先展开再缩起，有闪烁）
       autoUpdatePlugins: false,  // 启动时自动更新已装的 zcode-plugins 插件（含安装市场里新增的）
       sessionSwitch: true,     // 会话快捷切换（alt+z 上次会话；按住 alt x/c 弹窗导航，类 alt+tab）
+      wsRunningSpin: true,     // 折叠项目运行提示：折叠后其中仍有会话运行时项目图标旋转
     },
     // 样式调整（设置弹窗「样式调整」标签页）。null = 不覆盖，跟随应用默认。
     styles: {

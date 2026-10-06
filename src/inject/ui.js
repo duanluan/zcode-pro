@@ -603,5 +603,19 @@ export function ensureStyle() {
     .zcodepro-imgmenu-item:hover {
       background-color: var(--color-accent, color-mix(in oklab, var(--color-foreground, #888) 10%, transparent));
     }
+    /* 折叠项目运行提示（ws-running.js）：项目图标旋转。动画类挂在图标外层的
+       稳定 span 上，展开/收起时应用重建 svg 也不受影响；时长与应用 loader 一致 */
+    @keyframes zcodepro-ws-spin { to { transform: rotate(360deg); } }
+    span.zcodepro-ws-running > svg {
+      animation: zcodepro-ws-spin 1s linear infinite;
+      transform-origin: center;
+    }
+    /* 无感探查期间盖在项目行上的冻结克隆：固定定位、不响应指针 */
+    .zcodepro-ws-frozen {
+      position: fixed;
+      z-index: 2147483000;
+      pointer-events: none;
+      margin: 0;
+    }
   `));
 }

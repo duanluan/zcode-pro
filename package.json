@@ -1,6 +1,6 @@
 {
   "name": "zcode-pro",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "description": "ZCode Pro — 为 ZCode 桌面版增加界面增强（不修改客户端文件，通过 ZCode Pro 快捷方式启动即可），核心功能：项目自定义别名",
   "type": "module",
   "private": true,

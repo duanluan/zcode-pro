@@ -17,6 +17,7 @@ ZCode Pro enhances the ZCode desktop UI. No client files are modified; just laun
 | Open folder / Copy path | Project "More" menu: open the project directory in the file manager, or copy its path |
 | Session drag ordering | Reorder sessions in Pinned, Projects and Groups; persists across refreshes |
 | Session quick switch | `alt+z` toggles between the current and the last session; hold `alt` and press `x` / `c` to pick from recent sessions, release `alt` to switch (like `alt+tab`) |
+| Running indicator on collapsed projects | Spins a collapsed project's icon while any of its sessions is still running; stops when they all finish |
 | File menu actions | Adds "Open with default app" and "Reveal in file manager" to file links in chat |
 | Copy image | Right-click an image in chat or the enlarged preview to copy it to the clipboard |
 | UI style adjustments | Fine-tune paragraph spacing, content width, line heights, list and code spacing; applies instantly |

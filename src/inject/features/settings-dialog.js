@@ -239,6 +239,11 @@ export function openSettingsDialog() {
             if (await setFeature('sessionSwitch', next)) f.sessionSwitch = next;
             refreshRows();
           }),
+          settingRow(L.featureWsRunning, L.featureWsRunningDesc, f.wsRunningSpin !== false, async () => {
+            const next = !(f.wsRunningSpin !== false);
+            if (await setFeature('wsRunningSpin', next)) f.wsRunningSpin = next;
+            refreshRows();
+          }),
           settingRow(L.featureFileActions, L.featureFileActionsDesc, f.fileActions !== false, async () => {
             const next = !(f.fileActions !== false);
             if (await setFeature('fileActions', next)) f.fileActions = next;

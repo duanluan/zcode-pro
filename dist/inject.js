@@ -68,6 +68,8 @@
     featureTaskOrderDesc: "\u8BA9\u7F6E\u9876\u3001\u9879\u76EE\u4E0E\u5206\u7EC4\u4E2D\u7684\u4F1A\u8BDD\u62D6\u52A8\u540E\u8BB0\u4F4F\u987A\u5E8F\uFF0C\u5237\u65B0\u540E\u4FDD\u6301\u3002",
     featureSessionSwitch: "\u4F1A\u8BDD\u5FEB\u6377\u5207\u6362",
     featureSessionSwitchDesc: "alt+z \u5728\u5F53\u524D\u4E0E\u4E0A\u6B21\u4F1A\u8BDD\u95F4\u6765\u56DE\u5207\u6362\uFF1B\u6309\u4F4F alt \u518D\u6309 x/c \u5F39\u51FA\u6700\u8FD1\u4F1A\u8BDD\u5217\u8868\u524D\u540E\u9009\u62E9\uFF0C\u677E\u5F00 alt \u5207\u6362\uFF08\u7C7B alt+tab\uFF09\u3002",
+    featureWsRunning: "\u6298\u53E0\u9879\u76EE\u8FD0\u884C\u63D0\u793A",
+    featureWsRunningDesc: "\u6298\u53E0\u7684\u9879\u76EE\u91CC\u4ECD\u6709\u4F1A\u8BDD\u5728\u8FD0\u884C\u65F6\uFF0C\u9879\u76EE\u56FE\u6807\u65CB\u8F6C\u63D0\u793A\uFF1B\u5168\u90E8\u7ED3\u675F\u6216\u5C55\u5F00\u9879\u76EE\u540E\u6062\u590D\u3002",
     switcherHint: "x / c \u9009\u62E9\uFF0C\u677E\u5F00 alt \u5207\u6362\uFF0CEsc \u53D6\u6D88",
     switcherCurrent: "\u5F53\u524D",
     switcherEmpty: "\u6682\u65E0\u4E0A\u6B21\u4F1A\u8BDD\uFF08\u5207\u6362\u8FC7\u4F1A\u8BDD\u540E\u53EF\u7528\uFF09",
@@ -294,6 +296,8 @@
     featureTaskOrderDesc: "Makes session drags in Pinned, Projects and Groups persist across refreshes.",
     featureSessionSwitch: "Session quick switch",
     featureSessionSwitchDesc: "alt+z toggles between the current and the last session; hold alt and press x/c to move the highlight across recently used sessions, release alt to switch (like alt+tab).",
+    featureWsRunning: "Running indicator on collapsed projects",
+    featureWsRunningDesc: "Spins a collapsed project's icon while any of its sessions is still running; stops when they all finish or the project is expanded.",
     switcherHint: "x / c to choose, release alt to switch, Esc to cancel",
     switcherCurrent: "current",
     switcherEmpty: "No previous session yet (available after you switch sessions)",
@@ -1206,6 +1210,20 @@
     .zcodepro-imgmenu-item:hover {
       background-color: var(--color-accent, color-mix(in oklab, var(--color-foreground, #888) 10%, transparent));
     }
+    /* \u6298\u53E0\u9879\u76EE\u8FD0\u884C\u63D0\u793A\uFF08ws-running.js\uFF09\uFF1A\u9879\u76EE\u56FE\u6807\u65CB\u8F6C\u3002\u52A8\u753B\u7C7B\u6302\u5728\u56FE\u6807\u5916\u5C42\u7684
+       \u7A33\u5B9A span \u4E0A\uFF0C\u5C55\u5F00/\u6536\u8D77\u65F6\u5E94\u7528\u91CD\u5EFA svg \u4E5F\u4E0D\u53D7\u5F71\u54CD\uFF1B\u65F6\u957F\u4E0E\u5E94\u7528 loader \u4E00\u81F4 */
+    @keyframes zcodepro-ws-spin { to { transform: rotate(360deg); } }
+    span.zcodepro-ws-running > svg {
+      animation: zcodepro-ws-spin 1s linear infinite;
+      transform-origin: center;
+    }
+    /* \u65E0\u611F\u63A2\u67E5\u671F\u95F4\u76D6\u5728\u9879\u76EE\u884C\u4E0A\u7684\u51BB\u7ED3\u514B\u9686\uFF1A\u56FA\u5B9A\u5B9A\u4F4D\u3001\u4E0D\u54CD\u5E94\u6307\u9488 */
+    .zcodepro-ws-frozen {
+      position: fixed;
+      z-index: 2147483000;
+      pointer-events: none;
+      margin: 0;
+    }
   `));
   }
 
@@ -2045,10 +2063,10 @@
   function startImageMenu() {
     if (typeof window === "undefined") return;
     if (typeof navigator.clipboard?.write !== "function" || typeof window.ClipboardItem === "undefined") return;
-    let enabled2 = true;
+    let enabled3 = true;
     const refresh = () => {
       void getConfig().then((c) => {
-        enabled2 = !(c.features && c.features.imageCopy === false);
+        enabled3 = !(c.features && c.features.imageCopy === false);
       });
     };
     refresh();
@@ -2057,7 +2075,7 @@
       const img = copyTargetOf(e.target, e.clientX, e.clientY);
       if (!img) return;
       e.preventDefault();
-      if (enabled2) showMenu(e.clientX, e.clientY, img);
+      if (enabled3) showMenu(e.clientX, e.clientY, img);
       refresh();
     }, true);
   }
@@ -2385,6 +2403,11 @@
             settingRow(L.featureSessionSwitch, L.featureSessionSwitchDesc, f.sessionSwitch !== false, async () => {
               const next = !(f.sessionSwitch !== false);
               if (await setFeature("sessionSwitch", next)) f.sessionSwitch = next;
+              refreshRows();
+            }),
+            settingRow(L.featureWsRunning, L.featureWsRunningDesc, f.wsRunningSpin !== false, async () => {
+              const next = !(f.wsRunningSpin !== false);
+              if (await setFeature("wsRunningSpin", next)) f.wsRunningSpin = next;
               refreshRows();
             }),
             settingRow(L.featureFileActions, L.featureFileActionsDesc, f.fileActions !== false, async () => {
@@ -3846,7 +3869,7 @@
       const h2 = wsRow.matches("[aria-expanded]") ? wsRow : wsRow.querySelector("[aria-expanded]");
       return h2 || null;
     };
-    const userTouched = () => wsRow.__zcodeproUserTouched && Date.now() - wsRow.__zcodeproUserTouched < 800;
+    const userTouched2 = () => wsRow.__zcodeproUserTouched && Date.now() - wsRow.__zcodeproUserTouched < 800;
     const tick = () => {
       if (!keepCollapsed || Date.now() > deadline || !wsRow.isConnected) return done();
       const len = (document.querySelector("main") || document.body).innerText.length;
@@ -3854,12 +3877,12 @@
       if (grewAt && Date.now() - grewAt >= 1e3) settledAt = settledAt || Date.now();
       lastLen = len;
       const head = headOf();
-      if (head && head.getAttribute("aria-expanded") === "true" && !userTouched()) {
+      if (head && head.getAttribute("aria-expanded") === "true" && !userTouched2()) {
         collapseNavSafe(head);
       }
       if (settledAt && Date.now() - settledAt >= 1e3) {
         const h2 = headOf();
-        if (h2 && h2.getAttribute("aria-expanded") === "true" && !userTouched()) {
+        if (h2 && h2.getAttribute("aria-expanded") === "true" && !userTouched2()) {
           collapseNavSafe(h2);
         }
         return done();
@@ -3874,6 +3897,359 @@
   }
   function cssEscape(s) {
     return String(s).replace(/(["\\\]])/g, "\\$1");
+  }
+
+  // src/inject/features/ws-running.js
+  var installed3 = false;
+  var enabled2 = true;
+  var SCAN_DEBOUNCE_MS2 = 150;
+  var SCAN_FALLBACK_MS2 = 5e3;
+  var PEEK_FIRST_MS = 2e4;
+  var PEEK_REPEAT_MS = 6e4;
+  var PEEK_SETTLE_MS = 160;
+  var PEEK_MAX_MS = 1500;
+  var CONFIG_POLL_MIN_MS2 = 5e3;
+  var CONFIG_POLL_MAX_MS2 = 6e4;
+  var TASK_SEL = "[data-task-item-key]";
+  var WS_SEL = '[data-testid^="workspace-item-"]';
+  var runningByWs = /* @__PURE__ */ new Map();
+  var peekTimers = /* @__PURE__ */ new Map();
+  var activePeeks = /* @__PURE__ */ new Set();
+  var peekedWs = /* @__PURE__ */ new Set();
+  var peekHidden = /* @__PURE__ */ new Map();
+  var wsWithRows = /* @__PURE__ */ new Set();
+  function workspaceOf2(key) {
+    const i = key.indexOf(":sess_");
+    return i > 0 ? key.slice(0, i) : key;
+  }
+  function findWsRow(ws) {
+    return document.querySelector(`[data-testid="workspace-item-${CSS.escape(ws)}"]`);
+  }
+  function wsHead(row) {
+    return row.matches("[aria-expanded]") ? row : row.querySelector("[aria-expanded]");
+  }
+  function isRunningRow(el) {
+    const holder = el.firstElementChild && el.firstElementChild.querySelector(":scope > span");
+    if (!holder) return false;
+    return [...holder.children].some((c) => c.tagName === "svg" && (c.getAttribute("class") || "").includes("lucide-loader"));
+  }
+  function domRowsOf(ws) {
+    return [...document.querySelectorAll(TASK_SEL)].filter((e) => workspaceOf2(e.getAttribute("data-task-item-key") || "") === ws);
+  }
+  function currentTaskRow2() {
+    for (const el of document.querySelectorAll(TASK_SEL)) {
+      if ((el.className + "").includes("bg-selected")) return el;
+    }
+    return null;
+  }
+  var synthClick = (el) => {
+    try {
+      el.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+    } catch {
+    }
+  };
+  function toggleNavSafe(head) {
+    synthClick(head);
+    const cur = currentTaskRow2();
+    if (cur) synthClick(cur);
+  }
+  function scan2() {
+    wsWithRows = /* @__PURE__ */ new Set();
+    for (const el of document.querySelectorAll(TASK_SEL)) {
+      const key = el.getAttribute("data-task-item-key") || "";
+      const ws = workspaceOf2(key);
+      if (!ws) continue;
+      wsWithRows.add(ws);
+      const run = isRunningRow(el);
+      let set = runningByWs.get(ws);
+      if (run) {
+        if (!set) {
+          set = /* @__PURE__ */ new Set();
+          runningByWs.set(ws, set);
+        }
+        set.add(key);
+      } else if (set) {
+        set.delete(key);
+      }
+    }
+    syncPeeks();
+    apply();
+  }
+  function handleRemovals(muts) {
+    const removed = [];
+    for (const m of muts) {
+      if (m.type !== "childList") continue;
+      for (const n of m.removedNodes) {
+        if (!(n instanceof Element)) continue;
+        if (n.matches(TASK_SEL)) removed.push(n);
+        else for (const r of n.querySelectorAll(TASK_SEL)) removed.push(r);
+      }
+    }
+    if (!removed.length) return;
+    const infos = removed.map((el) => {
+      const key = el.getAttribute("data-task-item-key") || "";
+      const ws = workspaceOf2(key);
+      return key && ws ? { key, ws, run: isRunningRow(el) } : null;
+    }).filter(Boolean);
+    if (!infos.length) return;
+    setTimeout(() => {
+      for (const info of infos) {
+        const row = findWsRow(info.ws);
+        const head = row && wsHead(row);
+        const collapsed = !row || !head || head.getAttribute("aria-expanded") === "false";
+        let set = runningByWs.get(info.ws);
+        if (collapsed && info.run) {
+          if (!set) {
+            set = /* @__PURE__ */ new Set();
+            runningByWs.set(info.ws, set);
+          }
+          set.add(info.key);
+        } else if (set) {
+          set.delete(info.key);
+        }
+      }
+      syncPeeks();
+      apply();
+    }, 0);
+  }
+  function apply() {
+    const seen = /* @__PURE__ */ new Set();
+    for (const row of document.querySelectorAll(WS_SEL)) {
+      const path = row.getAttribute("data-testid").slice("workspace-item-".length);
+      seen.add(path);
+      const head = wsHead(row);
+      const collapsed = !head || head.getAttribute("aria-expanded") === "false";
+      const running = !!(enabled2 && collapsed && runningByWs.get(path) && runningByWs.get(path).size);
+      const icon = row.firstElementChild && row.firstElementChild.querySelector(":scope > span");
+      if (icon) icon.classList.toggle("zcodepro-ws-running", running);
+    }
+    for (const ws of [...runningByWs.keys()]) if (!seen.has(ws)) runningByWs.delete(ws);
+  }
+  function schedulePeek(ws, delay) {
+    clearTimeout(peekTimers.get(ws));
+    peekTimers.set(ws, setTimeout(() => {
+      peekTimers.delete(ws);
+      void peek(ws);
+    }, delay));
+  }
+  function clearPeek(ws) {
+    const t2 = peekTimers.get(ws);
+    if (t2) {
+      clearTimeout(t2);
+      peekTimers.delete(ws);
+    }
+  }
+  function syncPeeks() {
+    for (const [ws, set] of runningByWs) {
+      if (!enabled2 || !set.size) {
+        clearPeek(ws);
+        continue;
+      }
+      const row = findWsRow(ws);
+      const head = row && wsHead(row);
+      if (!row || !head || head.getAttribute("aria-expanded") !== "false" || wsWithRows.has(ws)) {
+        clearPeek(ws);
+        continue;
+      }
+      if (!peekTimers.has(ws) && !activePeeks.has(ws)) schedulePeek(ws, peekedWs.has(ws) ? PEEK_REPEAT_MS : PEEK_FIRST_MS);
+    }
+  }
+  var peekChain = Promise.resolve();
+  async function peek(ws) {
+    const run = () => peekInner(ws);
+    const p = peekChain.then(run, run);
+    peekChain = p.catch(() => {
+    });
+    return p;
+  }
+  async function peekInner(ws) {
+    if (!enabled2 || document.hidden || activePeeks.has(ws)) return;
+    const row = findWsRow(ws);
+    const head = row && wsHead(row);
+    if (!row || !head || head.getAttribute("aria-expanded") !== "false") return;
+    if (!currentTaskRow2() && !document.querySelector('[data-testid^="conversation-new-task"]')) {
+      schedulePeek(ws, PEEK_REPEAT_MS);
+      return;
+    }
+    activePeeks.add(ws);
+    peekedWs.add(ws);
+    const rect = row.getBoundingClientRect();
+    const frozen = row.cloneNode(true);
+    frozen.classList.add("zcodepro-ws-frozen");
+    frozen.style.left = rect.left + "px";
+    frozen.style.top = rect.top + "px";
+    frozen.style.width = rect.width + "px";
+    frozen.style.height = rect.height + "px";
+    document.body.append(frozen);
+    row.style.visibility = "hidden";
+    try {
+      toggleNavSafe(head);
+      await settleAndRead(ws);
+      const rowNow = findWsRow(ws) || row;
+      const headNow = wsHead(rowNow);
+      if (headNow && headNow.getAttribute("aria-expanded") === "true" && !userTouched(rowNow)) {
+        toggleNavSafe(headNow);
+      }
+    } finally {
+      cleanupPeekHidden(ws);
+      row.style.visibility = "";
+      frozen.remove();
+      activePeeks.delete(ws);
+    }
+    apply();
+    const set = runningByWs.get(ws);
+    if (set && set.size && enabled2) schedulePeek(ws, PEEK_REPEAT_MS);
+  }
+  function settleAndRead(ws) {
+    return new Promise((resolve) => {
+      const t0 = Date.now();
+      let lastCount = -1;
+      let stableAt = 0;
+      const timer = setInterval(() => {
+        const rows = domRowsOf(ws);
+        const elapsed = Date.now() - t0;
+        if (rows.length !== lastCount) {
+          lastCount = rows.length;
+          stableAt = Date.now();
+        }
+        const settled = rows.length > 0 && rows.length === lastCount && Date.now() - stableAt >= PEEK_SETTLE_MS;
+        if (!settled && elapsed < PEEK_MAX_MS) return;
+        clearInterval(timer);
+        if (lastCount === 0) {
+          runningByWs.delete(ws);
+        } else {
+          let set = runningByWs.get(ws);
+          if (!set) {
+            set = /* @__PURE__ */ new Set();
+            runningByWs.set(ws, set);
+          }
+          for (const el of rows) {
+            const key = el.getAttribute("data-task-item-key") || "";
+            if (isRunningRow(el)) set.add(key);
+            else set.delete(key);
+          }
+        }
+        resolve();
+      }, 80);
+    });
+  }
+  function hidePeekRows(muts) {
+    if (!activePeeks.size) return;
+    for (const m of muts) {
+      if (m.type !== "childList") continue;
+      for (const n of m.addedNodes) {
+        if (!(n instanceof Element)) continue;
+        const rows = n.matches(TASK_SEL) ? [n] : [...n.querySelectorAll(TASK_SEL)];
+        for (const r of rows) {
+          const ws = workspaceOf2(r.getAttribute("data-task-item-key") || "");
+          if (!activePeeks.has(ws)) continue;
+          r.style.display = "none";
+          pushHidden(ws, r);
+          const ul = r.closest("ul");
+          if (ul && !ul.__zcodeproPeekHidden) {
+            ul.__zcodeproPeekHidden = true;
+            ul.style.display = "none";
+            pushHidden(ws, ul);
+            const holder = ul.parentElement;
+            if (holder && [...holder.classList].includes("empty:hidden") && !holder.__zcodeproPeekHidden) {
+              holder.__zcodeproPeekHidden = true;
+              holder.style.display = "none";
+              pushHidden(ws, holder);
+            }
+          }
+        }
+      }
+    }
+  }
+  function pushHidden(ws, el) {
+    if (!peekHidden.has(ws)) peekHidden.set(ws, []);
+    peekHidden.get(ws).push(el);
+  }
+  function cleanupPeekHidden(ws) {
+    const els = peekHidden.get(ws) || [];
+    for (const el of els) {
+      el.style.display = "";
+      delete el.__zcodeproPeekHidden;
+    }
+    peekHidden.delete(ws);
+  }
+  var TOUCH_WINDOW_MS = 800;
+  var wsTouchAt = /* @__PURE__ */ new WeakMap();
+  function userTouched(row) {
+    const at = wsTouchAt.get(row);
+    return !!at && Date.now() - at < TOUCH_WINDOW_MS;
+  }
+  function inSel(node, sel) {
+    return !!(node instanceof Element && node.closest && node.closest(sel));
+  }
+  function relevant(muts) {
+    for (const m of muts) {
+      if (inSel(m.target, TASK_SEL) || inSel(m.target, WS_SEL)) return true;
+      for (const n of m.addedNodes) {
+        if (n instanceof Element && (n.matches(TASK_SEL) || n.matches(WS_SEL) || n.querySelector(TASK_SEL) || n.querySelector(WS_SEL))) return true;
+      }
+      for (const n of m.removedNodes) {
+        if (n instanceof Element && (n.matches(TASK_SEL) || n.matches(WS_SEL) || n.querySelector(TASK_SEL))) return true;
+      }
+    }
+    return false;
+  }
+  var pollMs2 = CONFIG_POLL_MIN_MS2;
+  async function refreshConfig2() {
+    try {
+      const res = await rpc("/config");
+      if (res && res.ok && res.config && res.config.features) {
+        const next = res.config.features.wsRunningSpin !== false;
+        if (next !== enabled2) {
+          enabled2 = next;
+          if (!next) {
+            for (const ws of [...peekTimers.keys()]) clearPeek(ws);
+            apply();
+          }
+          return true;
+        }
+      }
+    } catch {
+    }
+    return false;
+  }
+  function pollConfig2() {
+    setTimeout(async () => {
+      if (document.hidden) pollMs2 = CONFIG_POLL_MAX_MS2;
+      else pollMs2 = await refreshConfig2() ? CONFIG_POLL_MIN_MS2 : Math.min(Math.round(pollMs2 * 1.5), CONFIG_POLL_MAX_MS2);
+      pollConfig2();
+    }, pollMs2);
+  }
+  var scanDebounce2 = 0;
+  function startWsRunningSpin() {
+    if (installed3 || typeof document === "undefined") return;
+    installed3 = true;
+    void refreshConfig2();
+    pollConfig2();
+    const observer2 = new MutationObserver((muts) => {
+      if (!relevant(muts)) return;
+      handleRemovals(muts);
+      hidePeekRows(muts);
+      if (!scanDebounce2) {
+        scanDebounce2 = setTimeout(() => {
+          scanDebounce2 = 0;
+          scan2();
+        }, SCAN_DEBOUNCE_MS2);
+      }
+    });
+    observer2.observe(document.body, { childList: true, subtree: true });
+    scan2();
+    setInterval(() => {
+      if (!document.hidden && enabled2) scan2();
+    }, SCAN_FALLBACK_MS2);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) scan2();
+    });
+    document.addEventListener("click", (e) => {
+      if (!e.isTrusted) return;
+      const row = e.target instanceof Element && e.target.closest(WS_SEL);
+      if (row) wsTouchAt.set(row, Date.now());
+    }, true);
   }
 
   // src/inject/features/plugin-updates.js
@@ -3939,6 +4315,10 @@
       }
       try {
         startPinnedExpandSuppression();
+      } catch {
+      }
+      try {
+        startWsRunningSpin();
       } catch {
       }
       try {
