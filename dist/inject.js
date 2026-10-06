@@ -48,12 +48,18 @@
     proxyTestFailed: "\u68C0\u6D4B\u5931\u8D25",
     rowGapName: "\u6BB5\u843D\u95F4\u8DDD",
     rowGapDesc: "\u4F1A\u8BDD\u4E2D\u6BB5\u843D\u7B49\u6587\u672C\u5757\u4E4B\u95F4\u7684\u5782\u76F4\u95F4\u8DDD\uFF08\u56DE\u5408\u4E4B\u95F4\u3001\u7B54\u6848\u5185\u90E8\uFF09\u3002",
-    listSpacingName: "\u5217\u8868\u95F4\u8DDD",
+    listSpacingName: "\u5217\u8868\u4E0A\u4E0B\u8FB9\u8DDD",
     listSpacingDesc: "\u7B54\u6848\u4E2D\u5217\u8868\u4E0A\u4E0B\u7684\u7559\u767D\u3002",
     listItemSpacingName: "\u5217\u8868\u9879\u95F4\u8DDD",
     listItemSpacingDesc: "\u5217\u8868\u4E2D\u76F8\u90BB\u5217\u8868\u9879\u4E4B\u95F4\u7684\u95F4\u8DDD\u3002",
-    quoteCodeSpacingName: "\u5F15\u7528\u4E0E\u4EE3\u7801\u5757\u95F4\u8DDD",
-    quoteCodeSpacingDesc: "\u5F15\u7528\u3001\u4EE3\u7801\u5757\u4E0A\u4E0B\u7684\u7559\u767D\u3002",
+    quoteCodeSpacingName: "\u5F15\u7528\u5757\u4E0A\u4E0B\u8FB9\u8DDD",
+    quoteCodeSpacingDesc: "\u5F15\u7528\u5757\u4E0E\u4EE3\u7801\u5757\u4E0A\u4E0B\u7684\u7559\u767D\u3002",
+    codeLineHeightName: "\u4EE3\u7801\u5757\u884C\u9AD8",
+    codeLineHeightDesc: "\u4EE3\u7801\u5757\u5185\u4EE3\u7801\u884C\u7684\u884C\u9AD8\uFF08\u500D\u6570\uFF09\u3002",
+    tableSpacingName: "\u8868\u683C\u4E0A\u4E0B\u8FB9\u8DDD",
+    tableSpacingDesc: "\u8868\u683C\u4E0A\u4E0B\u7684\u7559\u767D\u3002",
+    tableCellPaddingName: "\u5355\u5143\u683C\u4E0A\u4E0B/\u5DE6\u53F3\u8FB9\u8DDD",
+    tableCellPaddingDesc: "\u8868\u683C\u5355\u5143\u683C\u5185\u7684\u7559\u767D\uFF1B\u5DE6\u8F93\u5165\u6846\u4E3A\u4E0A\u4E0B\u3001\u53F3\u4E3A\u5DE6\u53F3\u3002",
     lineHeightName: "\u56DE\u7B54\u884C\u9AD8",
     lineHeightDesc: "\u56DE\u7B54\u6B63\u6587\u7684\u884C\u9AD8\uFF08\u500D\u6570\uFF09\u3002",
     userLineHeightName: "\u63D0\u95EE\u884C\u9AD8",
@@ -293,8 +299,14 @@
     listSpacingDesc: "Space above and below lists.",
     listItemSpacingName: "List item spacing",
     listItemSpacingDesc: "Spacing between adjacent list items.",
-    quoteCodeSpacingName: "Quote & code spacing",
+    quoteCodeSpacingName: "Quote block spacing",
     quoteCodeSpacingDesc: "Space above and below quotes and code blocks.",
+    codeLineHeightName: "Code line height",
+    codeLineHeightDesc: "Line height of lines inside code blocks (multiplier).",
+    tableSpacingName: "Table spacing",
+    tableSpacingDesc: "Space above and below tables.",
+    tableCellPaddingName: "Cell padding (V/H)",
+    tableCellPaddingDesc: "Padding inside table cells; left input is vertical, right is horizontal.",
     lineHeightName: "Answer line height",
     lineHeightDesc: "Line height of answer text (multiplier).",
     userLineHeightName: "Question line height",
@@ -830,6 +842,7 @@
       class: "h-8 w-16 rounded-lg border border-border bg-input px-2 text-right text-ui-sm tabular-nums text-foreground outline-none transition-shadow focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
     });
     const clamp = (v) => Math.min(max, Math.max(min, v));
+    const quantize = (v) => step >= 1 ? Math.round(v) : Math.round(Math.round(v / step) * step * 1e4) / 1e4;
     const display = (v) => {
       input.value = String(v);
     };
@@ -846,8 +859,7 @@
     input.addEventListener("wheel", (e) => {
       e.preventDefault();
       const dir = (e.deltaY || 0) < 0 ? 1 : -1;
-      const raw = current2 + dir * step;
-      commit(step < 1 ? Math.round(raw / step) * step : Math.round(raw));
+      commit(quantize(current2 + dir * step));
     }, { passive: false });
     const submitTyped = () => {
       const parsed = parseFloat(String(input.value).trim());
@@ -855,7 +867,7 @@
         display(current2);
         return;
       }
-      commit(step < 1 ? Math.round(parsed / step) * step : parsed);
+      commit(step >= 1 ? parsed : quantize(parsed));
     };
     input.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
@@ -2218,7 +2230,15 @@
     listItemSpacing: 6,
     // 列表项之间的间距（space-y-1.5）
     quoteCodeSpacing: 16,
-    // 引用/代码块上下留白（my-4）
+    // 引用块上下留白（my-4；代码块同规则）
+    codeLineHeight: 1.65,
+    // 代码块行高（应用默认 12px 字号 × 20px 行盒）
+    tableSpacing: 20,
+    // 表格上下边距（未设置时跟随段落间距）
+    tableCellPaddingV: 3,
+    // 单元格上下边距（应用默认 3px）
+    tableCellPaddingH: 3,
+    // 单元格左右边距（应用默认 3px）
     lineHeight: 1.75,
     // 回答行高（leading-[1.75]，挂在答案内容容器上）
     userLineHeight: 1.5,
@@ -2232,11 +2252,15 @@
   };
   var styleEl = null;
   var CONV = '[class*="@md/conversation"]';
-  var SPECIAL = ":is(ul, ol, blockquote, pre, table)";
+  var SPECIAL = ':is(ul, ol, blockquote, pre, table, div:has(table), div:has(pre), [class*="code-block"])';
+  var SEL_LIST = `${CONV} .space-y-4 > :is(ul, ol)`;
+  var SEL_QUOTE = `${CONV} .space-y-4 > :is(blockquote, div:has(pre), [class*="code-block"])`;
+  var SEL_TABLE = `${CONV} .space-y-4 > div:has(table)`;
   function buildCss(styles) {
     const parts = [];
     const n = styles.rowGap;
-    if (typeof n === "number" && Number.isFinite(n) && n >= 0) {
+    const rowGapSet = typeof n === "number" && Number.isFinite(n) && n >= 0;
+    if (rowGapSet) {
       parts.push(
         // 回合内外各级容器（SECTION 自身或后代，二者都覆盖）
         `${CONV}.pb-5,${CONV} .pb-5{padding-bottom:${n}px !important;}`,
@@ -2248,20 +2272,50 @@
         // 特殊块后接文本块：去掉文本块的段落间距，避免与特殊块自身留白叠加
         `${CONV} .space-y-4 > ${SPECIAL} + *:not(${SPECIAL}){margin-block-start:0 !important;margin-top:0 !important;}`,
         // 回合内部条目之间（思考触发条 ↔ 正文等）
-        `.history-message.flex.flex-col > * + *:not([data-slot="collapsible-content"]){margin-block-start:${n}px !important;margin-top:${n}px !important;}`
+        `.history-message.flex.flex-col > * + *:not([data-slot="collapsible-content"]){margin-block-start:${n}px !important;margin-top:${n}px !important;}`,
+        // 工具/状态卡片（「N 个文件已更改」等）上方间距下限 8px：
+        // 段落间距调到 0 时也不至于贴死（gap 与 margin 在弹性布局里相加）
+        `${CONV} .flex.flex-col.gap-5 > [data-slot="collapsible"]{margin-block-start:max(0px, calc(8px - ${n}px)) !important;margin-top:max(0px, calc(8px - ${n}px)) !important;}`
       );
     }
-    const ls = styles.listSpacing;
-    if (typeof ls === "number" && Number.isFinite(ls) && ls >= 0) {
-      parts.push(`${CONV} .space-y-4 > :is(ul, ol){margin-block:${ls}px !important;}`);
+    const own = (v) => typeof v === "number" && Number.isFinite(v) && v >= 0 ? v : rowGapSet ? n : null;
+    const ls = own(styles.listSpacing);
+    const qc = own(styles.quoteCodeSpacing);
+    const tsp = own(styles.tableSpacing);
+    const anySet = ls !== null || qc !== null || tsp !== null;
+    if (ls !== null) parts.push(`${SEL_LIST}{margin-block:${ls}px !important;}`);
+    if (qc !== null) parts.push(`${SEL_QUOTE}{margin-block:${qc}px !important;}`);
+    if (rowGapSet || anySet) {
+      parts.push(`${CONV} .space-y-4 > :not(${SPECIAL}){margin-block-end:0 !important;margin-bottom:0 !important;}`);
+    }
+    if (tsp !== null) {
+      parts.push(
+        `${SEL_TABLE}{margin-block:${tsp}px !important;position:relative !important;}`,
+        `${SEL_TABLE} > .flex.items-center.justify-end{position:absolute !important;top:0;right:0;}`,
+        `${SEL_TABLE} [class*="markdown-table-frame"] > .pointer-events-none.py-1{position:absolute !important;left:0;right:0;bottom:0;}`
+      );
     }
     const li = styles.listItemSpacing;
     if (typeof li === "number" && Number.isFinite(li) && li >= 0) {
-      parts.push(`${CONV} :is(ul, ol) > li + li{margin-block-start:${li}px !important;margin-top:${li}px !important;}`);
+      parts.push(
+        `${CONV} :is(ul, ol) > li{margin-block-end:0 !important;margin-bottom:0 !important;}`,
+        `${CONV} :is(ul, ol) > li + li{margin-block-start:${li}px !important;margin-top:${li}px !important;}`
+      );
     }
-    const qc = styles.quoteCodeSpacing;
-    if (typeof qc === "number" && Number.isFinite(qc) && qc >= 0) {
-      parts.push(`${CONV} .space-y-4 > :is(blockquote, pre, table){margin-block:${qc}px !important;}`);
+    const clh = styles.codeLineHeight;
+    if (typeof clh === "number" && Number.isFinite(clh) && clh >= 0.8) {
+      parts.push(
+        `${CONV} diffs-container{line-height:${clh} !important;}`,
+        `${CONV} pre,${CONV} pre code,${CONV} pre [class*="line"]{line-height:${clh} !important;}`
+      );
+    }
+    const tcv = styles.tableCellPaddingV;
+    if (typeof tcv === "number" && Number.isFinite(tcv) && tcv >= 0) {
+      parts.push(`${CONV} table :is(td, th){padding-block:${tcv}px !important;padding-top:${tcv}px !important;padding-bottom:${tcv}px !important;}`);
+    }
+    const tch = styles.tableCellPaddingH;
+    if (typeof tch === "number" && Number.isFinite(tch) && tch >= 0) {
+      parts.push(`${CONV} table :is(td, th){padding-inline:${tch}px !important;padding-left:${tch}px !important;padding-right:${tch}px !important;}`);
     }
     const lh = styles.lineHeight;
     if (typeof lh === "number" && Number.isFinite(lh) && lh >= 0.8) {
@@ -2337,6 +2391,54 @@
       void getConfig(true).then((cfg) => applyStyles(cfg.styles)).catch(() => {
       });
     });
+  }
+  var HL_SELECTORS = {
+    rowGap: `${CONV} .space-y-4 > *, ${CONV} .flex.flex-col.gap-5 > *`,
+    listSpacing: `${CONV} :is(ul, ol)`,
+    listItemSpacing: `${CONV} :is(ul, ol) > li`,
+    quoteCodeSpacing: SEL_QUOTE,
+    tableSpacing: SEL_TABLE,
+    tableCellPaddingV: `${CONV} td, ${CONV} th`,
+    tableCellPaddingH: `${CONV} td, ${CONV} th`,
+    codeLineHeight: `${CONV} diffs-container, ${CONV} pre`,
+    lineHeight: `${CONV} .space-y-4`,
+    userLineHeight: `${CONV} [class*="user-row"] .whitespace-pre-wrap`,
+    contentWidth: "[data-v4-timeline-content-column]",
+    sidebarProjectSpacing: '[data-testid^="workspace-item-"]',
+    sidebarTaskSpacing: "li[data-task-item-key]"
+  };
+  var HL_MARGIN = {
+    rowGap: { sel: `${CONV} .space-y-4 > * + *:not(${SPECIAL}):not(${SPECIAL} + *)`, top: true },
+    listSpacing: { sel: SEL_LIST, top: true, bottom: true },
+    listItemSpacing: { sel: `${CONV} :is(ul, ol) > li + li`, top: true },
+    quoteCodeSpacing: { sel: SEL_QUOTE, top: true, bottom: true },
+    tableSpacing: { sel: SEL_TABLE, top: true, bottom: true }
+  };
+  var HL_AMBER = "rgba(255, 213, 79, 0.5)";
+  var hlEl = null;
+  function showStyleHighlight(key, value = null) {
+    const outlineSel = HL_SELECTORS[key];
+    const margin = HL_MARGIN[key];
+    if (!outlineSel && !margin) return;
+    if (!hlEl || !hlEl.isConnected) {
+      hlEl = document.createElement("style");
+      hlEl.id = "__zcodepro_hl__";
+      (document.head || document.documentElement).append(hlEl);
+    }
+    const parts = [];
+    if (outlineSel) {
+      parts.push(`${outlineSel}{box-shadow:inset 0 0 0 0.5px color-mix(in oklab, var(--color-primary, #3b82f6) 65%, transparent) !important;}`);
+    }
+    if (margin) {
+      const v = typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : 0;
+      parts.push(`${margin.sel}{position:relative !important;}`);
+      if (margin.top) parts.push(`${margin.sel}::before{content:'' !important;position:absolute;left:0;right:0;bottom:100%;height:${v}px;background:${HL_AMBER};pointer-events:none;}`);
+      if (margin.bottom) parts.push(`${margin.sel}::after{content:'' !important;position:absolute;left:0;right:0;top:100%;height:${v}px;background:${HL_AMBER};pointer-events:none;}`);
+    }
+    hlEl.textContent = parts.join("");
+  }
+  function hideStyleHighlight() {
+    if (hlEl) hlEl.textContent = "";
   }
 
   // src/inject/features/settings-dialog.js
@@ -2766,6 +2868,10 @@
             else showToast(L.failed + ": " + errText(res), "error");
           }, 150);
         };
+        const bindHighlight = (field, key) => {
+          field.el.addEventListener("focus", () => showStyleHighlight(key, field.get()));
+          field.el.addEventListener("blur", () => hideStyleHighlight());
+        };
         const styleCell = (name, tip, key, { min = 0, max = 48, step = 1, unit = "px" } = {}) => {
           const field = numberField({
             value: typeof savedStyles[key] === "number" ? savedStyles[key] : null,
@@ -2773,8 +2879,12 @@
             min,
             max,
             step,
-            onCommit: (v) => persistStyles({ [key]: v })
+            onCommit: (v) => {
+              persistStyles({ [key]: v });
+              showStyleHighlight(key, v);
+            }
           });
+          bindHighlight(field, key);
           return {
             field,
             el: h(
@@ -2797,6 +2907,7 @@
           fallback: { value: currentWidth > 0 ? currentWidth : 1152, unit: "px" },
           onCommit: (v) => persistStyles({ contentWidth: v })
         });
+        bindHighlight(widthField, "contentWidth");
         const widthCell = {
           field: widthField,
           el: h(
@@ -2806,6 +2917,40 @@
             widthField.el
           )
         };
+        const cellPadField = (key) => numberField({
+          value: typeof savedStyles[key] === "number" ? savedStyles[key] : null,
+          fallback: STYLE_DEFAULTS[key],
+          min: 0,
+          max: 24,
+          step: 1,
+          onCommit: (v) => {
+            persistStyles({ [key]: v });
+            showStyleHighlight(key, v);
+          }
+        });
+        const cellPadV = cellPadField("tableCellPaddingV");
+        const cellPadH = cellPadField("tableCellPaddingH");
+        bindHighlight(cellPadV, "tableCellPaddingV");
+        bindHighlight(cellPadH, "tableCellPaddingH");
+        const cellPadCell = {
+          field: { reset() {
+            cellPadV.reset();
+            cellPadH.reset();
+          } },
+          el: h(
+            "div",
+            { class: "flex items-center justify-between gap-2 p-2" },
+            h("span", { class: "min-w-0 truncate text-ui-sm font-medium text-foreground", title: L.tableCellPaddingDesc }, L.tableCellPaddingName),
+            h(
+              "span",
+              { class: "flex shrink-0 items-center gap-1" },
+              cellPadV.el,
+              h("span", { class: "text-ui-xs text-foreground-subtle" }, "/"),
+              cellPadH.el,
+              h("span", { class: "w-3 text-ui-xs text-foreground-subtle" }, "px")
+            )
+          )
+        };
         const cells = [
           styleCell(L.sidebarProjectSpacingName, L.sidebarProjectSpacingDesc, "sidebarProjectSpacing", { max: 24 }),
           styleCell(L.sidebarTaskSpacingName, L.sidebarTaskSpacingDesc, "sidebarTaskSpacing", { max: 24 }),
@@ -2813,9 +2958,12 @@
           styleCell(L.rowGapName, L.rowGapDesc, "rowGap"),
           styleCell(L.userLineHeightName, L.userLineHeightDesc, "userLineHeight", { min: 1, max: 3, step: 0.05, unit: "x" }),
           styleCell(L.lineHeightName, L.lineHeightDesc, "lineHeight", { min: 1, max: 3, step: 0.05, unit: "x" }),
+          styleCell(L.codeLineHeightName, L.codeLineHeightDesc, "codeLineHeight", { min: 1, max: 3, step: 0.05, unit: "x" }),
           styleCell(L.listSpacingName, L.listSpacingDesc, "listSpacing"),
           styleCell(L.listItemSpacingName, L.listItemSpacingDesc, "listItemSpacing"),
-          styleCell(L.quoteCodeSpacingName, L.quoteCodeSpacingDesc, "quoteCodeSpacing")
+          styleCell(L.quoteCodeSpacingName, L.quoteCodeSpacingDesc, "quoteCodeSpacing"),
+          styleCell(L.tableSpacingName, L.tableSpacingDesc, "tableSpacing"),
+          cellPadCell
         ];
         const toolbarSwitchWrap = h("div");
         const renderToolbarSwitch = () => {
@@ -2839,7 +2987,7 @@
             { class: "mt-2 flex justify-end" },
             btnSmall(L.resetDefault, () => {
               for (const c of cells) c.field.reset();
-              persistStyles({ rowGap: null, listSpacing: null, listItemSpacing: null, quoteCodeSpacing: null, lineHeight: null, userLineHeight: null, contentWidth: null, sidebarProjectSpacing: null, sidebarTaskSpacing: null });
+              persistStyles(Object.fromEntries(Object.keys(STYLE_DEFAULTS).map((k) => [k, null])));
             })
           )
         );

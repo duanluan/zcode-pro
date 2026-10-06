@@ -22,7 +22,7 @@ ZCode Pro enhances the ZCode desktop UI. No client files are modified; just laun
 | Collapsible Pinned section | The sidebar "Pinned" header collapses/expands its task list; the state is remembered |
 | File menu actions | Adds "Open with default app" and "Reveal in file manager" to file links in chat |
 | Copy image | Right-click an image in chat or the enlarged preview to copy it to the clipboard |
-| UI style adjustments | Fine-tune paragraph spacing, content width, line heights, list and code spacing; applies instantly |
+| UI style adjustments | Fine-tune paragraph spacing, content width, line heights, list/quote/table spacing and cell padding; focusing an input highlights the affected areas; applies instantly |
 | Sidebar spacing | Fine-tune sidebar project spacing and task spacing; applies instantly |
 | Global prompt | Edit default instructions shared by all projects; applies to new sessions |
 | Software proxy | Set an HTTP proxy for plugin updates/installs and tool upgrades, with connectivity test |

@@ -1,5 +1,7 @@
 // 样式调整（设置弹窗「样式调整」标签页）：
-// 把配置里的样式覆盖写入独立 <style>，改动即时生效、无需刷新页面。
+// 把配置里的样式覆盖写入独立 <style>，改动即时生效、无需刷新页面；
+// 另提供聚焦预览高亮（showStyleHighlight）：设置弹窗聚焦某个样式输入框时，
+// 把会话/侧栏中受影响的区域描边标出，间距类项再把边距区域涂成淡黄条。
 // 策略：不逐个追应用的间距机制（回合列表/包裹层/行分组/内容容器各有各的写法），
 // 而是定位到会话容器（SECTION[class*="@md/conversation"]），在其范围内统一重映射
 // 相关间距工具类（gap-5/gap-4/pt-5/pb-5/space-y-4）——对应用内部结构调整更稳。
@@ -12,7 +14,11 @@ export const STYLE_DEFAULTS = {
   rowGap: 20,           // 段落间距：会话内各块之间的垂直间距
   listSpacing: 12,      // 列表上下留白（my-3）
   listItemSpacing: 6,   // 列表项之间的间距（space-y-1.5）
-  quoteCodeSpacing: 16, // 引用/代码块上下留白（my-4）
+  quoteCodeSpacing: 16, // 引用块上下留白（my-4；代码块同规则）
+  codeLineHeight: 1.65,  // 代码块行高（应用默认 12px 字号 × 20px 行盒）
+  tableSpacing: 20,      // 表格上下边距（未设置时跟随段落间距）
+  tableCellPaddingV: 3,  // 单元格上下边距（应用默认 3px）
+  tableCellPaddingH: 3,  // 单元格左右边距（应用默认 3px）
   lineHeight: 1.75,     // 回答行高（leading-[1.75]，挂在答案内容容器上）
   userLineHeight: 1.5,  // 提问行高（用户消息文本容器，默认 normal=1.5）
   contentWidth: null,   // 内容宽度：默认 100%（跟随应用，不覆盖）
@@ -24,12 +30,17 @@ let styleEl = null;
 
 const CONV = '[class*="@md/conversation"]';
 // 答案内容容器里的“特殊块”：段落间距规则跳过它们，由各自的间距项独立控制
-const SPECIAL = ':is(ul, ol, blockquote, pre, table)';
+const SPECIAL = ':is(ul, ol, blockquote, pre, table, div:has(table), div:has(pre), [class*="code-block"])';
+// 特殊块的定位选择器：buildCss 的覆盖规则与高亮预览共用一份，避免两处平行维护后漂移
+const SEL_LIST = `${CONV} .space-y-4 > :is(ul, ol)`;
+const SEL_QUOTE = `${CONV} .space-y-4 > :is(blockquote, div:has(pre), [class*="code-block"])`;
+const SEL_TABLE = `${CONV} .space-y-4 > div:has(table)`;
 
 function buildCss(styles) {
   const parts = [];
   const n = styles.rowGap;
-  if (typeof n === 'number' && Number.isFinite(n) && n >= 0) {
+  const rowGapSet = typeof n === 'number' && Number.isFinite(n) && n >= 0;
+  if (rowGapSet) {
     parts.push(
       // 回合内外各级容器（SECTION 自身或后代，二者都覆盖）
       `${CONV}.pb-5,${CONV} .pb-5{padding-bottom:${n}px !important;}`,
@@ -42,19 +53,66 @@ function buildCss(styles) {
       `${CONV} .space-y-4 > ${SPECIAL} + *:not(${SPECIAL}){margin-block-start:0 !important;margin-top:0 !important;}`,
       // 回合内部条目之间（思考触发条 ↔ 正文等）
       `.history-message.flex.flex-col > * + *:not([data-slot="collapsible-content"]){margin-block-start:${n}px !important;margin-top:${n}px !important;}`,
+      // 工具/状态卡片（「N 个文件已更改」等）上方间距下限 8px：
+      // 段落间距调到 0 时也不至于贴死（gap 与 margin 在弹性布局里相加）
+      `${CONV} .flex.flex-col.gap-5 > [data-slot="collapsible"]{margin-block-start:max(0px, calc(8px - ${n}px)) !important;margin-top:max(0px, calc(8px - ${n}px)) !important;}`,
     );
   }
-  const ls = styles.listSpacing;
-  if (typeof ls === 'number' && Number.isFinite(ls) && ls >= 0) {
-    parts.push(`${CONV} .space-y-4 > :is(ul, ol){margin-block:${ls}px !important;}`);
+  // 特殊块（列表/引用块/表格）自身间距项未设置时跟随段落间距，
+  // 否则它们带的原生默认边距（12/16px）会与段落间距合并取大值，调小于该值无效
+  const own = (v) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : (rowGapSet ? n : null));
+  const ls = own(styles.listSpacing);
+  const qc = own(styles.quoteCodeSpacing);
+  const tsp = own(styles.tableSpacing);
+  const anySet = ls !== null || qc !== null || tsp !== null;
+  if (ls !== null) parts.push(`${SEL_LIST}{margin-block:${ls}px !important;}`);
+  if (qc !== null) parts.push(`${SEL_QUOTE}{margin-block:${qc}px !important;}`);
+  // 文本块自带的底边距（应用给段落默认 16px）清零：相邻块的边距合并会取大值，
+  // 不清零时段落间距调小于 16 无效，列表也会上边距大、下边距小。
+  // 任一间距项设置时启用，间距完全由设置的起始边距决定
+  if (rowGapSet || anySet) {
+    parts.push(`${CONV} .space-y-4 > :not(${SPECIAL}){margin-block-end:0 !important;margin-bottom:0 !important;}`);
+  }
+  if (tsp !== null) {
+    // 表格包在 div.my-0.flex 里（space-y-4 的直接子块），边距落在包裹层上。
+    // 包裹层里还有一条 28px 的悬浮工具条（复制/缩放，悬停才显现）+ 8px 内隙，
+    // 占着布局会让文字到表格卡片的间距远大于设置值、调了看不出变化——
+    // 改为浮动到表格卡片右上角，不占布局；表格框架底部另有一条隐藏的
+    // 宽度调节把手（悬停显现，常占 26px），同样浮动到卡片底边
+    parts.push(
+      `${SEL_TABLE}{margin-block:${tsp}px !important;position:relative !important;}`,
+      `${SEL_TABLE} > .flex.items-center.justify-end{position:absolute !important;top:0;right:0;}`,
+      `${SEL_TABLE} [class*="markdown-table-frame"] > .pointer-events-none.py-1{position:absolute !important;left:0;right:0;bottom:0;}`,
+    );
   }
   const li = styles.listItemSpacing;
   if (typeof li === 'number' && Number.isFinite(li) && li >= 0) {
-    parts.push(`${CONV} :is(ul, ol) > li + li{margin-block-start:${li}px !important;margin-top:${li}px !important;}`);
+    // 应用的 space-y-1.5 把项间距放在上一项的 margin-block-end 上，一并覆盖：
+    // 只设下一项的起始边距会被合并取大值（设 0 仍剩 6px）
+    parts.push(
+      `${CONV} :is(ul, ol) > li{margin-block-end:0 !important;margin-bottom:0 !important;}`,
+      `${CONV} :is(ul, ol) > li + li{margin-block-start:${li}px !important;margin-top:${li}px !important;}`,
+    );
   }
-  const qc = styles.quoteCodeSpacing;
-  if (typeof qc === 'number' && Number.isFinite(qc) && qc >= 0) {
-    parts.push(`${CONV} .space-y-4 > :is(blockquote, pre, table){margin-block:${qc}px !important;}`);
+
+  const clh = styles.codeLineHeight;
+  if (typeof clh === 'number' && Number.isFinite(clh) && clh >= 0.8) {
+    // 代码行在 diffs-container 自定义元素的 Shadow DOM 里（pre > code > 行 div），
+    // 行高全部继承自宿主自身的显式值（20px）——直接覆盖宿主，倍数按各元素
+    // 自身字号计算；保留 pre 规则兜底其他结构
+    parts.push(
+      `${CONV} diffs-container{line-height:${clh} !important;}`,
+      `${CONV} pre,${CONV} pre code,${CONV} pre [class*="line"]{line-height:${clh} !important;}`,
+    );
+  }
+
+  const tcv = styles.tableCellPaddingV;
+  if (typeof tcv === 'number' && Number.isFinite(tcv) && tcv >= 0) {
+    parts.push(`${CONV} table :is(td, th){padding-block:${tcv}px !important;padding-top:${tcv}px !important;padding-bottom:${tcv}px !important;}`);
+  }
+  const tch = styles.tableCellPaddingH;
+  if (typeof tch === 'number' && Number.isFinite(tch) && tch >= 0) {
+    parts.push(`${CONV} table :is(td, th){padding-inline:${tch}px !important;padding-left:${tch}px !important;padding-right:${tch}px !important;}`);
   }
   const lh = styles.lineHeight;
   if (typeof lh === 'number' && Number.isFinite(lh) && lh >= 0.8) {
@@ -144,4 +202,69 @@ export function startStyleAdjustments() {
   window.addEventListener('zcodepro:config-changed', () => {
     void getConfig(true).then((cfg) => applyStyles(cfg.styles)).catch(() => { /* ignore */ });
   });
+}
+
+// —— 样式预览高亮：设置弹窗里聚焦某个样式输入框时，把会话/侧栏中受影响的
+// 区域标出（类浏览器开发者工具）：元素本身 0.5px 内描边（描边间距离即真实
+// 边距，数值直观）；间距类项再把实际边距区域用淡黄色涂出，调值时黄条
+// 随设置实时变宽变窄。设置弹窗本身用透明遮罩，正好看得见后面的会话 ——
+const HL_SELECTORS = {
+  rowGap: `${CONV} .space-y-4 > *, ${CONV} .flex.flex-col.gap-5 > *`,
+  listSpacing: `${CONV} :is(ul, ol)`,
+  listItemSpacing: `${CONV} :is(ul, ol) > li`,
+  quoteCodeSpacing: SEL_QUOTE,
+  tableSpacing: SEL_TABLE,
+  tableCellPaddingV: `${CONV} td, ${CONV} th`,
+  tableCellPaddingH: `${CONV} td, ${CONV} th`,
+  codeLineHeight: `${CONV} diffs-container, ${CONV} pre`,
+  lineHeight: `${CONV} .space-y-4`,
+  userLineHeight: `${CONV} [class*="user-row"] .whitespace-pre-wrap`,
+  contentWidth: '[data-v4-timeline-content-column]',
+  sidebarProjectSpacing: '[data-testid^="workspace-item-"]',
+  sidebarTaskSpacing: 'li[data-task-item-key]',
+};
+
+// 间距类项的边距黄条：受影响元素与边距方向（与 buildCss 里的规则选择器保持一致）
+// rowGap 的黄条排除两种边距实际为零的元素：特殊块自身（走各自间距项）、
+// 紧跟特殊块的文本（其起始边距被清零，画了会失真）
+const HL_MARGIN = {
+  rowGap: { sel: `${CONV} .space-y-4 > * + *:not(${SPECIAL}):not(${SPECIAL} + *)`, top: true },
+  listSpacing: { sel: SEL_LIST, top: true, bottom: true },
+  listItemSpacing: { sel: `${CONV} :is(ul, ol) > li + li`, top: true },
+  quoteCodeSpacing: { sel: SEL_QUOTE, top: true, bottom: true },
+  tableSpacing: { sel: SEL_TABLE, top: true, bottom: true },
+};
+
+const HL_AMBER = 'rgba(255, 213, 79, 0.5)';
+
+let hlEl = null;
+
+export function showStyleHighlight(key, value = null) {
+  const outlineSel = HL_SELECTORS[key];
+  const margin = HL_MARGIN[key];
+  if (!outlineSel && !margin) return;
+  if (!hlEl || !hlEl.isConnected) {
+    hlEl = document.createElement('style');
+    hlEl.id = '__zcodepro_hl__';
+    (document.head || document.documentElement).append(hlEl);
+  }
+  const parts = [];
+  if (outlineSel) {
+    // 0.5px 内描边：画在元素边界内侧、不向外延伸，两条描边之间的可见距离
+    // 严格等于实际边距（数值直观），也不挤动内容
+    parts.push(`${outlineSel}{box-shadow:inset 0 0 0 0.5px color-mix(in oklab, var(--color-primary, #3b82f6) 65%, transparent) !important;}`);
+  }
+  if (margin) {
+    const v = typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : 0;
+    // 伪元素画在边距所在的区域（元素边界外侧），高度跟随当前设置值；
+    // 调值提交时调用方会带新值重进，黄条随之变宽变窄
+    parts.push(`${margin.sel}{position:relative !important;}`);
+    if (margin.top) parts.push(`${margin.sel}::before{content:'' !important;position:absolute;left:0;right:0;bottom:100%;height:${v}px;background:${HL_AMBER};pointer-events:none;}`);
+    if (margin.bottom) parts.push(`${margin.sel}::after{content:'' !important;position:absolute;left:0;right:0;top:100%;height:${v}px;background:${HL_AMBER};pointer-events:none;}`);
+  }
+  hlEl.textContent = parts.join('');
+}
+
+export function hideStyleHighlight() {
+  if (hlEl) hlEl.textContent = '';
 }

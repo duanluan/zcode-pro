@@ -14,7 +14,7 @@ import { taskIndexPath, probeTaskIndexWritable, remapTaskIndexPaths, taskIndexDr
 import { pickFolderSystem } from './pickFolder.mjs';
 import { reorderWorkspaceTasks, reorderGroupMembers } from './taskOrder.mjs';
 
-const VERSION = '0.14.0';
+const VERSION = '0.15.0';
 
 // 全局提示词固定在用户主目录：官方加载器按 HOME/USERPROFILE 拼 .zcode/AGENTS.md，
 // 不读 ZCODE_DATA_BASE_DIR（数据根迁走时全局指令仍在原位）。
@@ -65,6 +65,10 @@ export function defaultConfig() {
       listItemSpacing: null,  // 列表项之间的间距（应用默认 6px）
       quoteCodeSpacing: null, // 引用/代码块上下留白（应用默认 16px，my-4）
       lineHeight: null,       // 回答行高，倍数（应用默认 1.75）
+      codeLineHeight: null,    // 代码块行高，倍数（应用默认 12px 字号 × 20px 行盒，约 1.65）
+      tableSpacing: null,      // 表格上下边距（未设置时跟随段落间距）
+      tableCellPaddingV: null, // 单元格上下边距（应用默认 3px）
+      tableCellPaddingH: null, // 单元格左右边距（应用默认 3px）
       userLineHeight: null,   // 提问行高，倍数（应用默认 1.5）
       contentWidth: null,     // 内容宽度：{ value, unit }，unit 为 'px'（320–3840）或 '%'（20–100）
       sidebarProjectSpacing: null, // 侧栏项目间距：视觉总量（行内留白+边距，应用默认 20px）
@@ -199,17 +203,19 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         if (body && typeof body === 'object' && body.styles && typeof body.styles === 'object') {
           if (!current.styles || typeof current.styles !== 'object') current.styles = {};
           // 各样式键：null 恢复默认；px 类 0–96 取整；行距 0.8–4 保留两位小数
-          for (const key of ['rowGap', 'listSpacing', 'listItemSpacing', 'quoteCodeSpacing', 'sidebarProjectSpacing', 'sidebarTaskSpacing']) {
+          for (const key of ['rowGap', 'listSpacing', 'listItemSpacing', 'quoteCodeSpacing', 'tableSpacing', 'tableCellPaddingV', 'tableCellPaddingH', 'sidebarProjectSpacing', 'sidebarTaskSpacing']) {
             if (key in body.styles) {
               const v = body.styles[key];
               if (v === null) current.styles[key] = null;
               else if (typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 96) current.styles[key] = Math.round(v);
             }
           }
-          if ('lineHeight' in body.styles) {
-            const v = body.styles.lineHeight;
-            if (v === null) current.styles.lineHeight = null;
-            else if (typeof v === 'number' && Number.isFinite(v) && v >= 0.8 && v <= 4) current.styles.lineHeight = Math.round(v * 100) / 100;
+          for (const key of ['lineHeight', 'codeLineHeight']) {
+            if (key in body.styles) {
+              const v = body.styles[key];
+              if (v === null) current.styles[key] = null;
+              else if (typeof v === 'number' && Number.isFinite(v) && v >= 0.8 && v <= 4) current.styles[key] = Math.round(v * 100) / 100;
+            }
           }
           if ('userLineHeight' in body.styles) {
             const v = body.styles.userLineHeight;

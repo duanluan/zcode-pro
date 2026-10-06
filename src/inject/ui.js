@@ -230,6 +230,8 @@ export function numberField({ value = null, fallback = 0, min = 0, max = 48, ste
     class: 'h-8 w-16 rounded-lg border border-border bg-input px-2 text-right text-ui-sm tabular-nums text-foreground outline-none transition-shadow focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40',
   });
   const clamp = (v) => Math.min(max, Math.max(min, v));
+  // 按步长对齐后再清洗浮点误差（0.05 步长下 24*0.05 会得到 1.2000000000000002）
+  const quantize = (v) => step >= 1 ? Math.round(v) : Math.round(Math.round(v / step) * step * 1e4) / 1e4;
   const display = (v) => { input.value = String(v); };
   const commit = (v) => {
     const next = clamp(v);
@@ -242,14 +244,14 @@ export function numberField({ value = null, fallback = 0, min = 0, max = 48, ste
   input.addEventListener('wheel', (e) => {
     e.preventDefault();
     const dir = (e.deltaY || 0) < 0 ? 1 : -1;
-    const raw = current + dir * step;
-    commit(step < 1 ? Math.round(raw / step) * step : Math.round(raw));
+    commit(quantize(current + dir * step));
   }, { passive: false });
-  // 手输：回车/失焦提交；非法或空回退
+  // 手输：回车/失焦提交；非法或空回退。整数步进项保留手输小数（如 3.5px），
+  // 仅小数步进项按步长对齐
   const submitTyped = () => {
     const parsed = parseFloat(String(input.value).trim());
     if (!Number.isFinite(parsed)) { display(current); return; }
-    commit(step < 1 ? Math.round(parsed / step) * step : parsed);
+    commit(step >= 1 ? parsed : quantize(parsed));
   };
   input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); submitTyped(); } });
   input.addEventListener('blur', submitTyped);

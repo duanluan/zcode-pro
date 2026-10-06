@@ -3,7 +3,7 @@
 import { h, t, rpc, getConfig, clearConfigCache, errText, HELPER_URL } from '../core.js';
 import { openDialog, dialogFooter, btnPrimary, btnSecondary, btnSmall, settingRow, ensureStyle, showToast, numberField, unitField } from '../ui.js';
 import { refreshAliases } from './alias.js';
-import { applyStyles, STYLE_DEFAULTS } from './styles.js';
+import { applyStyles, STYLE_DEFAULTS, showStyleHighlight, hideStyleHighlight } from './styles.js';
 import { copyToClipboard, hCopyIcon } from './copy-path.js';
 
 // 调宿主桥在系统浏览器打开外链；宿主没暴露该能力时静默忽略
@@ -407,13 +407,23 @@ export function openSettingsDialog() {
           else showToast(L.failed + ': ' + errText(res), 'error');
         }, 150);
       };
+      // 聚焦预览接线：聚焦标出影响位置（取输入框当前值，打开弹窗后调过的值
+      // 不在 savedStyles 快照里），调值提交时黄条随新值实时变宽变窄
+      const bindHighlight = (field, key) => {
+        field.el.addEventListener('focus', () => showStyleHighlight(key, field.get()));
+        field.el.addEventListener('blur', () => hideStyleHighlight());
+      };
       const styleCell = (name, tip, key, { min = 0, max = 48, step = 1, unit = 'px' } = {}) => {
         const field = numberField({
           value: typeof savedStyles[key] === 'number' ? savedStyles[key] : null,
           fallback: STYLE_DEFAULTS[key],
           min, max, step,
-          onCommit: (v) => persistStyles({ [key]: v }),
+          onCommit: (v) => {
+            persistStyles({ [key]: v });
+            showStyleHighlight(key, v);
+          },
         });
+        bindHighlight(field, key);
         return {
           field,
           el: h('div', { class: 'flex items-center justify-between gap-2 p-2' },
@@ -431,11 +441,31 @@ export function openSettingsDialog() {
         fallback: { value: currentWidth > 0 ? currentWidth : 1152, unit: 'px' },
         onCommit: (v) => persistStyles({ contentWidth: v }),
       });
+      bindHighlight(widthField, 'contentWidth');
       const widthCell = {
         field: widthField,
         el: h('div', { class: 'flex items-center justify-between gap-2 p-2' },
           h('span', { class: 'min-w-0 truncate text-ui-sm font-medium text-foreground', title: L.contentWidthDesc }, L.contentWidthName),
           widthField.el),
+      };
+      // 单元格上下/左右边距：一行两个输入框（先上下后左右）
+      const cellPadField = (key) => numberField({
+        value: typeof savedStyles[key] === 'number' ? savedStyles[key] : null,
+        fallback: STYLE_DEFAULTS[key],
+        min: 0, max: 24, step: 1,
+        onCommit: (v) => { persistStyles({ [key]: v }); showStyleHighlight(key, v); },
+      });
+      const cellPadV = cellPadField('tableCellPaddingV');
+      const cellPadH = cellPadField('tableCellPaddingH');
+      bindHighlight(cellPadV, 'tableCellPaddingV');
+      bindHighlight(cellPadH, 'tableCellPaddingH');
+      const cellPadCell = {
+        field: { reset() { cellPadV.reset(); cellPadH.reset(); } },
+        el: h('div', { class: 'flex items-center justify-between gap-2 p-2' },
+          h('span', { class: 'min-w-0 truncate text-ui-sm font-medium text-foreground', title: L.tableCellPaddingDesc }, L.tableCellPaddingName),
+          h('span', { class: 'flex shrink-0 items-center gap-1' },
+            cellPadV.el, h('span', { class: 'text-ui-xs text-foreground-subtle' }, '/'),
+            cellPadH.el, h('span', { class: 'w-3 text-ui-xs text-foreground-subtle' }, 'px'))),
       };
       const cells = [
         styleCell(L.sidebarProjectSpacingName, L.sidebarProjectSpacingDesc, 'sidebarProjectSpacing', { max: 24 }),
@@ -444,9 +474,12 @@ export function openSettingsDialog() {
         styleCell(L.rowGapName, L.rowGapDesc, 'rowGap'),
         styleCell(L.userLineHeightName, L.userLineHeightDesc, 'userLineHeight', { min: 1, max: 3, step: 0.05, unit: 'x' }),
         styleCell(L.lineHeightName, L.lineHeightDesc, 'lineHeight', { min: 1, max: 3, step: 0.05, unit: 'x' }),
+        styleCell(L.codeLineHeightName, L.codeLineHeightDesc, 'codeLineHeight', { min: 1, max: 3, step: 0.05, unit: 'x' }),
         styleCell(L.listSpacingName, L.listSpacingDesc, 'listSpacing'),
         styleCell(L.listItemSpacingName, L.listItemSpacingDesc, 'listItemSpacing'),
         styleCell(L.quoteCodeSpacingName, L.quoteCodeSpacingDesc, 'quoteCodeSpacing'),
+        styleCell(L.tableSpacingName, L.tableSpacingDesc, 'tableSpacing'),
+        cellPadCell,
       ];
       // 「侧栏菜单并入顶栏」开关放在样式页（属界面布局调整，存仍是 features 配置）；
       // 切换后重渲本行让开关状态即时反映
@@ -467,7 +500,7 @@ export function openSettingsDialog() {
         h('div', { class: 'mt-2 flex justify-end' },
           btnSmall(L.resetDefault, () => {
             for (const c of cells) c.field.reset();
-            persistStyles({ rowGap: null, listSpacing: null, listItemSpacing: null, quoteCodeSpacing: null, lineHeight: null, userLineHeight: null, contentWidth: null, sidebarProjectSpacing: null, sidebarTaskSpacing: null });
+            persistStyles(Object.fromEntries(Object.keys(STYLE_DEFAULTS).map((k) => [k, null])));
           })),
       );
 
