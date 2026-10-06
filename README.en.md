@@ -18,9 +18,12 @@ ZCode Pro enhances the ZCode desktop UI. No client files are modified; just laun
 | Session drag ordering | Reorder sessions in Pinned, Projects and Groups; persists across refreshes |
 | Session quick switch | `alt+z` toggles between the current and the last session; hold `alt` and press `x` / `c` to pick from recent sessions, release `alt` to switch (like `alt+tab`) |
 | Running indicator on collapsed projects | Spins a collapsed project's icon while any of its sessions is still running; stops when they all finish |
+| Sidebar menu in the top bar | Turns the sidebar menu (New task / Search / Automations / Plugin store) into icon buttons next to the top-bar arrows: hover shows the name, highlighted while its view is open, shortcuts still work |
+| Collapsible Pinned section | The sidebar "Pinned" header collapses/expands its task list; the state is remembered |
 | File menu actions | Adds "Open with default app" and "Reveal in file manager" to file links in chat |
 | Copy image | Right-click an image in chat or the enlarged preview to copy it to the clipboard |
 | UI style adjustments | Fine-tune paragraph spacing, content width, line heights, list and code spacing; applies instantly |
+| Sidebar spacing | Fine-tune sidebar project spacing and task spacing; applies instantly |
 | Global prompt | Edit default instructions shared by all projects; applies to new sessions |
 | Software proxy | Set an HTTP proxy for plugin updates/installs and tool upgrades, with connectivity test |
 | Vision proxy | Automatically hand images to vision models for recognition when the main model cannot see them, and feed the descriptions to the main model; visual chain editor (zcode-vision plugin) |

@@ -16,6 +16,8 @@ export const STYLE_DEFAULTS = {
   lineHeight: 1.75,     // 回答行高（leading-[1.75]，挂在答案内容容器上）
   userLineHeight: 1.5,  // 提问行高（用户消息文本容器，默认 normal=1.5）
   contentWidth: null,   // 内容宽度：默认 100%（跟随应用，不覆盖）
+  sidebarProjectSpacing: 20,  // 侧栏项目间距：项目行视觉间距（行内留白 12 + 边距 8）
+  sidebarTaskSpacing: 10,    // 侧栏任务间距：行内留白加行间边距（py-1 + space-y-0.5）
 };
 
 let styleEl = null;
@@ -71,6 +73,55 @@ function buildCss(styles) {
     // % 相对会话区域可用宽度，且沿用应用自带的居中与过渡。
     parts.push(`[data-v4-timeline-content-column]{max-width:${cw.value}${cw.unit} !important;}`);
   }
+  // —— 侧栏间距（选择器不依赖分区文案，跟随界面语言）——
+  const SCROLL = '.flex.flex-1.min-h-0.flex-col.gap-3.overflow-y-auto';
+  const sps = styles.sidebarProjectSpacing;
+  if (typeof sps === 'number' && Number.isFinite(sps) && sps >= 0) {
+    // 项目间距按视觉总量映射（与任务间距同一套）：应用默认 = 行内留白约 12px
+    // + 块间边距 8px = 20px。边距封顶 8px，余量均分行内；项目行（role=button
+    // 的 div，固定 h-8）、分区标题按钮及其 h-7 包装行的固定行高改为按内容+留白。
+    // 注意：类名里的点要转义（\.），否则整条选择器非法、规则被丢弃
+    const m = Math.min(sps, 8);
+    const pad = Math.max(0, Math.round((sps - m) / 2));
+    const LIST = '.space-y-2.pb-4:has(div [data-testid^="workspace-item-"])';
+    parts.push(
+      // 块间边距（应用的 space-y 落在非末尾子块的 margin-block-end 上，同方向覆盖不叠加）
+      `${LIST} > :not(:last-child){margin-block-end:${m}px !important;margin-bottom:${m}px !important;}`,
+      // 列表底部留白（pb-4）清零：分区间距由 gap 统一给，避免叠加出大空隙
+      `${LIST}{padding-bottom:0 !important;}`,
+      // 分区间距：外层滚动容器与项目/任务分区所在的 gap-3 容器。
+      // 注意不能用嵌套 :has()（:has 里再套 LIST 的 :has）——当前 Chromium 不支持，
+      // 整条选择器会被判非法而丢弃；这里用单层 :has 定位 pb-4 列表容器即可
+      `${SCROLL}:has(> div .space-y-2.pb-4),.flex.min-h-0.flex-col.gap-3.px-2:has(.space-y-2.pb-4){gap:${m}px !important;row-gap:${m}px !important;}`,
+      // 已置顶分区内层 gap-1（标题与列表间）与项目块内层 gap-1（项目行与任务列表间）
+      `${SCROLL} .flex.flex-col.gap-1{gap:${m}px !important;row-gap:${m}px !important;}`,
+      // 行高压缩：项目行（role=button 的 div，固定 h-8）、分区标题按钮及其 h-7 包装行。
+      // 行高随设置压缩，但要留不小于悬停内容的稳定下限（悬停会渲染约 25px 高的
+      // 操作按钮组，实际高约 26.2px 含小数，下限需留出余量，行高若随内容伸缩，
+      // 行间无空隙时邻居会被推得上下抖动）；
+      // box-sizing 为 border-box，min-height 已含上下留白。
+      // 文字容器占满行高：否则悬停按钮组（比文字高）入场时行内重新居中，
+      // 项目名称会被顶起约 2px
+      `${LIST} [data-testid^="workspace-item-"]{height:auto !important;min-height:${28 + 2 * pad}px !important;padding-block:${pad}px !important;padding-top:${pad}px !important;padding-bottom:${pad}px !important;}`,
+      `${LIST} [data-testid^="workspace-item-"] > div:first-child{align-self:stretch !important;}`,
+      `${SCROLL} [data-slot="collapsible-trigger"],${SCROLL} .flex.h-7{height:auto !important;}`,
+      `${SCROLL} [data-slot="collapsible-trigger"]{min-height:${28 + 2 * pad}px !important;padding-block:${pad}px !important;padding-top:${pad}px !important;padding-bottom:${pad}px !important;}`,
+    );
+  }
+  const sts = styles.sidebarTaskSpacing;
+  if (typeof sts === 'number' && Number.isFinite(sts) && sts >= 0) {
+    // 任务行间距按视觉总量映射：应用默认 = 行内上下留白 4px + 行间边距 2px = 10px，
+    // 一个数值同时落到两者（边距封顶 2px，余量均分行内），视觉间距与数值一致。
+    // 「显示更多」行与列表之间的 gap-2 也随任务间距（同属任务区）
+    const m = Math.min(sts, 2);
+    const pad = Math.max(0, Math.round((sts - m) / 2));
+    parts.push(
+      `ul.space-y-0\\.5:has(> li[data-task-item-key]) > :not(:last-child){margin-block-end:${m}px !important;margin-bottom:${m}px !important;}`,
+      `ul.space-y-0\\.5:has(> li[data-task-item-key]) > li{padding-block:${pad}px !important;padding-top:${pad}px !important;padding-bottom:${pad}px !important;}`,
+      `${SCROLL} .flex.flex-col.gap-2{gap:${m}px !important;row-gap:${m}px !important;}`,
+      `${SCROLL} div.cursor-pointer[class*="pl-8"]{padding-block:${pad}px !important;padding-top:${pad}px !important;padding-bottom:${pad}px !important;}`,
+    );
+  }
   return parts.join('');
 }
 
@@ -89,4 +140,8 @@ export function startStyleAdjustments() {
     root.append(styleEl);
   }
   void getConfig().then((cfg) => applyStyles(cfg.styles)).catch(() => { /* 配置读取失败时保持应用默认 */ });
+  // 配置变更（设置弹窗保存等）后即时重应用
+  window.addEventListener('zcodepro:config-changed', () => {
+    void getConfig(true).then((cfg) => applyStyles(cfg.styles)).catch(() => { /* ignore */ });
+  });
 }

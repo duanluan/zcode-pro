@@ -617,5 +617,108 @@ export function ensureStyle() {
       pointer-events: none;
       margin: 0;
     }
+    /* 侧栏菜单并入顶栏（toolbar-icons.js）：自有图标按钮 + 悬停提示 + 原菜单隐藏。
+       几何对齐应用导航按钮（icon-md：28×28、圆角 8px），颜色走主题变量，
+       与开关/标签页同理不依赖应用 Tailwind 类 */
+    .zcodepro-tb-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-left: 6px;
+      padding-left: 8px;
+      border-left: 1px solid var(--color-border, rgba(127, 127, 127, 0.25));
+      -webkit-app-region: no-drag;
+    }
+    .zcodepro-tb-btn {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      border: none;
+      border-radius: 8px;
+      background-color: transparent;
+      color: var(--color-foreground-subtle, #666);
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background-color 0.12s ease, color 0.12s ease;
+    }
+    .zcodepro-tb-btn:hover,
+    .zcodepro-tb-btn:focus-visible {
+      outline: none;
+      background-color: var(--color-hover, color-mix(in oklab, var(--color-foreground, #888) 8%, transparent));
+      color: var(--color-foreground, #111);
+    }
+    .zcodepro-tb-btn[data-active="1"] {
+      background-color: color-mix(in oklab, var(--color-foreground, #888) 10%, transparent);
+      color: var(--color-foreground, #111);
+    }
+    .zcodepro-tb-icon {
+      display: block;
+      width: 16px;
+      height: 16px;
+    }
+    /* 悬停提示：按钮下方居中出现（约 0.3s 延迟，对齐应用提示节奏），移开立即消失 */
+    .zcodepro-tb-btn::after {
+      content: attr(data-zcodepro-tip);
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 4px 8px;
+      border-radius: 6px;
+      border: 1px solid var(--color-border, rgba(127, 127, 127, 0.25));
+      background-color: var(--color-menu, #171717);
+      color: var(--color-foreground, #fff);
+      font-size: 11px;
+      line-height: 1.5;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      visibility: hidden;
+      z-index: 60;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    }
+    .zcodepro-tb-btn:hover::after,
+    .zcodepro-tb-btn:focus-visible::after {
+      opacity: 1;
+      visibility: visible;
+      transition: opacity 0.15s ease 0.3s;
+    }
+    /* 原侧栏菜单整体隐藏（toolbar-icons 开启时） */
+    .zcodepro-tb-hidden { display: none !important; }
+    /* 已置顶分区可折叠（pinned-collapse.js）：标题整行可点，折叠时藏起任务列表，
+       chevron 旋向与「项目」分区一致（收起指向右侧） */
+    .zcodepro-pin-head {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      transition: color 0.15s ease;
+    }
+    .zcodepro-pin-head:hover { color: var(--color-foreground, #111); }
+    .zcodepro-pin-chevron {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      border: none;
+      background-color: transparent;
+      color: inherit;
+      cursor: pointer;
+    }
+    .zcodepro-pin-chevron svg {
+      width: 14px;
+      height: 14px;
+      opacity: 0.55;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+    .zcodepro-pin-head:hover .zcodepro-pin-chevron svg { opacity: 1; }
+    .zcodepro-pin-collapsed .zcodepro-pin-chevron svg { transform: rotate(-90deg); }
+    .zcodepro-pin-collapsed > ul { display: none !important; }
+    /* 折叠后去掉标题自带的底部留白，与下一分区的间隔和其他分区节奏一致 */
+    .zcodepro-pin-collapsed .zcodepro-pin-head { padding-bottom: 0; }
   `));
 }

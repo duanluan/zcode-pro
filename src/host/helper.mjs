@@ -14,7 +14,7 @@ import { taskIndexPath, probeTaskIndexWritable, remapTaskIndexPaths, taskIndexDr
 import { pickFolderSystem } from './pickFolder.mjs';
 import { reorderWorkspaceTasks, reorderGroupMembers } from './taskOrder.mjs';
 
-const VERSION = '0.13.0';
+const VERSION = '0.14.0';
 
 // 全局提示词固定在用户主目录：官方加载器按 HOME/USERPROFILE 拼 .zcode/AGENTS.md，
 // 不读 ZCODE_DATA_BASE_DIR（数据根迁走时全局指令仍在原位）。
@@ -55,6 +55,8 @@ export function defaultConfig() {
       autoUpdatePlugins: false,  // 启动时自动更新已装的 zcode-plugins 插件（含安装市场里新增的）
       sessionSwitch: true,     // 会话快捷切换（alt+z 上次会话；按住 alt x/c 弹窗导航，类 alt+tab）
       wsRunningSpin: true,     // 折叠项目运行提示：折叠后其中仍有会话运行时项目图标旋转
+      toolbarIcons: true,      // 侧栏菜单并入顶栏：新建任务/搜索/自动化/插件市场收成顶栏图标按钮（原菜单隐藏，点击转发）
+      pinnedCollapse: true,    // 已置顶分区可折叠：标题可点折叠/展开任务列表（状态记 localStorage）
     },
     // 样式调整（设置弹窗「样式调整」标签页）。null = 不覆盖，跟随应用默认。
     styles: {
@@ -65,6 +67,8 @@ export function defaultConfig() {
       lineHeight: null,       // 回答行高，倍数（应用默认 1.75）
       userLineHeight: null,   // 提问行高，倍数（应用默认 1.5）
       contentWidth: null,     // 内容宽度：{ value, unit }，unit 为 'px'（320–3840）或 '%'（20–100）
+      sidebarProjectSpacing: null, // 侧栏项目间距：视觉总量（行内留白+边距，应用默认 20px）
+      sidebarTaskSpacing: null,    // 侧栏任务间距：行内留白+行间边距的视觉总量（应用默认 10px）
     },
     // 项目路径（规范化，无尾分隔符）→ 自定义别名。只影响界面渲染，不改动任何真实数据。
     aliases: {},
@@ -195,7 +199,7 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         if (body && typeof body === 'object' && body.styles && typeof body.styles === 'object') {
           if (!current.styles || typeof current.styles !== 'object') current.styles = {};
           // 各样式键：null 恢复默认；px 类 0–96 取整；行距 0.8–4 保留两位小数
-          for (const key of ['rowGap', 'listSpacing', 'listItemSpacing', 'quoteCodeSpacing']) {
+          for (const key of ['rowGap', 'listSpacing', 'listItemSpacing', 'quoteCodeSpacing', 'sidebarProjectSpacing', 'sidebarTaskSpacing']) {
             if (key in body.styles) {
               const v = body.styles[key];
               if (v === null) current.styles[key] = null;

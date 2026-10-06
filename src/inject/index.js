@@ -10,6 +10,8 @@ import { startTaskOrderWatcher } from './features/task-order.js';
 import { startSessionSwitch } from './features/session-switch.js';
 import { startPinnedExpandSuppression } from './features/pinned-expand.js';
 import { startWsRunningSpin } from './features/ws-running.js';
+import { startToolbarIcons } from './features/toolbar-icons.js';
+import { startPinnedCollapse } from './features/pinned-collapse.js';
 import { startStyleAdjustments } from './features/styles.js';
 import { startPluginUpdateCheck } from './features/plugin-updates.js';
 import { ensureStyle } from './ui.js';
@@ -33,6 +35,8 @@ import { ensureStyle } from './ui.js';
     try { startImageMenu(); } catch { /* ignore */ }
     try { startPinnedExpandSuppression(); } catch { /* ignore */ }
     try { startWsRunningSpin(); } catch { /* ignore */ }
+    try { startToolbarIcons(); } catch { /* ignore */ }
+    try { startPinnedCollapse(); } catch { /* ignore */ }
     try { startStyleAdjustments(); } catch { /* ignore */ }
     try { startSettingsEntry(); } catch { /* ignore */ }
     // 插件更新检查慢（可能 git pull），异步进行，不阻塞其他功能

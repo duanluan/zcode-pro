@@ -201,6 +201,8 @@ export function openSettingsDialog() {
       const setFeature = async (key, value) => {
         const res = await rpc('/config', { method: 'POST', body: { features: { [key]: value } } });
         clearConfigCache();
+        // 通知常驻功能（如侧栏菜单并入顶栏）立即按新配置启用/停用
+        window.dispatchEvent(new CustomEvent('zcodepro:config-changed'));
         if (!res.ok) {
           body.querySelector('[data-zcodepro-status]').replaceChildren(
             h('span', { class: 'text-ui-sm text-destructive' }, L.failed + ': ' + errText(res))
@@ -242,6 +244,11 @@ export function openSettingsDialog() {
           settingRow(L.featureWsRunning, L.featureWsRunningDesc, f.wsRunningSpin !== false, async () => {
             const next = !(f.wsRunningSpin !== false);
             if (await setFeature('wsRunningSpin', next)) f.wsRunningSpin = next;
+            refreshRows();
+          }),
+          settingRow(L.featurePinnedCollapse, L.featurePinnedCollapseDesc, f.pinnedCollapse !== false, async () => {
+            const next = !(f.pinnedCollapse !== false);
+            if (await setFeature('pinnedCollapse', next)) f.pinnedCollapse = next;
             refreshRows();
           }),
           settingRow(L.featureFileActions, L.featureFileActionsDesc, f.fileActions !== false, async () => {
@@ -431,6 +438,8 @@ export function openSettingsDialog() {
           widthField.el),
       };
       const cells = [
+        styleCell(L.sidebarProjectSpacingName, L.sidebarProjectSpacingDesc, 'sidebarProjectSpacing', { max: 24 }),
+        styleCell(L.sidebarTaskSpacingName, L.sidebarTaskSpacingDesc, 'sidebarTaskSpacing', { max: 24 }),
         widthCell,
         styleCell(L.rowGapName, L.rowGapDesc, 'rowGap'),
         styleCell(L.userLineHeightName, L.userLineHeightDesc, 'userLineHeight', { min: 1, max: 3, step: 0.05, unit: 'x' }),
@@ -439,13 +448,26 @@ export function openSettingsDialog() {
         styleCell(L.listItemSpacingName, L.listItemSpacingDesc, 'listItemSpacing'),
         styleCell(L.quoteCodeSpacingName, L.quoteCodeSpacingDesc, 'quoteCodeSpacing'),
       ];
+      // 「侧栏菜单并入顶栏」开关放在样式页（属界面布局调整，存仍是 features 配置）；
+      // 切换后重渲本行让开关状态即时反映
+      const toolbarSwitchWrap = h('div');
+      const renderToolbarSwitch = () => {
+        const f = config.features || {};
+        toolbarSwitchWrap.replaceChildren(settingRow(L.featureToolbarIcons, L.featureToolbarIconsDesc, f.toolbarIcons !== false, async () => {
+          const next = !(f.toolbarIcons !== false);
+          if (await setFeature('toolbarIcons', next)) f.toolbarIcons = next;
+          renderToolbarSwitch();
+        }));
+      };
+      renderToolbarSwitch();
       paneStyles.append(
-        h('div', { class: 'grid grid-cols-2 gap-2 rounded-xl border border-border p-1' },
+        toolbarSwitchWrap,
+        h('div', { class: 'mt-2 grid grid-cols-2 gap-2 rounded-xl border border-border p-1' },
           ...cells.map((c) => h('div', { class: 'rounded-lg transition-colors hover:bg-surface-hover' }, c.el))),
         h('div', { class: 'mt-2 flex justify-end' },
           btnSmall(L.resetDefault, () => {
             for (const c of cells) c.field.reset();
-            persistStyles({ rowGap: null, listSpacing: null, listItemSpacing: null, quoteCodeSpacing: null, lineHeight: null, userLineHeight: null, contentWidth: null });
+            persistStyles({ rowGap: null, listSpacing: null, listItemSpacing: null, quoteCodeSpacing: null, lineHeight: null, userLineHeight: null, contentWidth: null, sidebarProjectSpacing: null, sidebarTaskSpacing: null });
           })),
       );
 

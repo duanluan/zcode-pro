@@ -214,17 +214,18 @@ export function startSessionSwitch() {
     if (cfg.features && cfg.features.sessionSwitch === false) return;
     if (k === 'z') {
       if (e.repeat) return;
-      // 即时切换：关掉可能开着的弹窗，切到 MRU 第二位（上次使用的会话）
+      // 即时切换：关掉可能开着的弹窗，切到最近使用的会话（上次使用的会话）
       closePopup(false);
-      if (mru.length < 2 || mru[0] !== current) {
-        // 记录头不是当前会话（刚注入/扫描间隙）：直接取头一条非当前项
-        const target = mru.find((mk) => mk !== current);
-        if (!target) { showToast(t().switcherEmpty); return; }
-        void switchTo(target).then((ok) => { if (!ok) showToast(t().switcherFailed, 'error'); });
-        return;
-      }
-      if (!mru[1]) { showToast(t().switcherEmpty); return; }
-      void switchTo(mru[1]).then((ok) => { if (!ok) showToast(t().switcherFailed, 'error'); });
+      // 先按侧栏选中标记实时识别当前会话：新建任务视图里没有选中行，
+      // 此时「当前」视为空，直接回最近使用的会话（新开应用点开过一个会话、
+      // 进了新建任务再按 alt+z 也能切回去）
+      const live = findCurrent();
+      if (live) record(live.getAttribute('data-task-item-key'));
+      const target = live
+        ? (mru[0] === current ? mru[1] : mru.find((mk) => mk !== current))
+        : mru[0];
+      if (!target) { showToast(t().switcherEmpty); return; }
+      void switchTo(target).then((ok) => { if (!ok) showToast(t().switcherFailed, 'error'); });
       return;
     }
     // x/c：弹窗导航（无可导航会话时与 z 一致轻提示）

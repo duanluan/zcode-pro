@@ -70,6 +70,19 @@
     featureSessionSwitchDesc: "alt+z \u5728\u5F53\u524D\u4E0E\u4E0A\u6B21\u4F1A\u8BDD\u95F4\u6765\u56DE\u5207\u6362\uFF1B\u6309\u4F4F alt \u518D\u6309 x/c \u5F39\u51FA\u6700\u8FD1\u4F1A\u8BDD\u5217\u8868\u524D\u540E\u9009\u62E9\uFF0C\u677E\u5F00 alt \u5207\u6362\uFF08\u7C7B alt+tab\uFF09\u3002",
     featureWsRunning: "\u6298\u53E0\u9879\u76EE\u8FD0\u884C\u63D0\u793A",
     featureWsRunningDesc: "\u6298\u53E0\u7684\u9879\u76EE\u91CC\u4ECD\u6709\u4F1A\u8BDD\u5728\u8FD0\u884C\u65F6\uFF0C\u9879\u76EE\u56FE\u6807\u65CB\u8F6C\u63D0\u793A\uFF1B\u5168\u90E8\u7ED3\u675F\u6216\u5C55\u5F00\u9879\u76EE\u540E\u6062\u590D\u3002",
+    featureToolbarIcons: "\u4FA7\u680F\u83DC\u5355\u5E76\u5165\u9876\u680F",
+    featureToolbarIconsDesc: "\u628A\u4FA7\u8FB9\u680F\u9876\u90E8\u7684\u300C\u65B0\u5EFA\u4EFB\u52A1 / \u641C\u7D22 / \u81EA\u52A8\u5316 / \u63D2\u4EF6\u5E02\u573A\u300D\u6536\u6210\u9876\u90E8\u5BFC\u822A\u680F\uFF08\u540E\u9000/\u524D\u8FDB\u65C1\uFF09\u7684\u56FE\u6807\u6309\u94AE\uFF1A\u60AC\u505C\u663E\u793A\u540D\u79F0\uFF0C\u5BF9\u5E94\u754C\u9762\u6253\u5F00\u65F6\u9AD8\u4EAE\uFF0C\u5FEB\u6377\u952E\u7167\u5E38\u53EF\u7528\uFF1B\u4FA7\u8FB9\u680F\u539F\u83DC\u5355\u9690\u85CF\u3002",
+    tbNewTask: "\u65B0\u5EFA\u4EFB\u52A1",
+    tbSearch: "\u641C\u7D22",
+    tbAutomations: "\u81EA\u52A8\u5316",
+    tbPluginStore: "\u63D2\u4EF6\u5E02\u573A",
+    featurePinnedCollapse: "\u5DF2\u7F6E\u9876\u5206\u533A\u53EF\u6298\u53E0",
+    featurePinnedCollapseDesc: "\u4FA7\u8FB9\u680F\u300C\u5DF2\u7F6E\u9876\u300D\u6807\u9898\u53EF\u70B9\u51FB\u6298\u53E0/\u5C55\u5F00\u5176\u4EFB\u52A1\u5217\u8868\uFF08\u4E0E\u300C\u9879\u76EE\u300D\u300C\u5206\u7EC4\u300D\u5206\u533A\u4E00\u81F4\uFF09\uFF0C\u72B6\u6001\u8BB0\u4F4F\u3002",
+    pinnedToggleAria: "\u6298\u53E0/\u5C55\u5F00\u5DF2\u7F6E\u9876",
+    sidebarProjectSpacingName: "\u9879\u76EE\u95F4\u8DDD",
+    sidebarProjectSpacingDesc: "\u4FA7\u8FB9\u680F\u4E2D\u76F8\u90BB\u9879\u76EE\u884C\u4E4B\u95F4\u7684\u89C6\u89C9\u95F4\u8DDD\uFF08\u542B\u884C\u5185\u7559\u767D\uFF09\uFF1B\u8BBE\u7F6E\u540E\u5404\u5206\u533A\uFF08\u5DF2\u7F6E\u9876/\u9879\u76EE/\u4EFB\u52A1\uFF09\u4E4B\u95F4\u7684\u95F4\u8DDD\u4E5F\u7EDF\u4E00\u4E3A\u8BE5\u503C\u3002",
+    sidebarTaskSpacingName: "\u4EFB\u52A1\u95F4\u8DDD",
+    sidebarTaskSpacingDesc: "\u4FA7\u8FB9\u680F\u4E2D\u76F8\u90BB\u4EFB\u52A1\u884C\u4E4B\u95F4\u7684\u5782\u76F4\u95F4\u8DDD\uFF08\u542B\u884C\u5185\u4E0A\u4E0B\u7559\u767D\uFF09\u3002",
     switcherHint: "x / c \u9009\u62E9\uFF0C\u677E\u5F00 alt \u5207\u6362\uFF0CEsc \u53D6\u6D88",
     switcherCurrent: "\u5F53\u524D",
     switcherEmpty: "\u6682\u65E0\u4E0A\u6B21\u4F1A\u8BDD\uFF08\u5207\u6362\u8FC7\u4F1A\u8BDD\u540E\u53EF\u7528\uFF09",
@@ -298,6 +311,19 @@
     featureSessionSwitchDesc: "alt+z toggles between the current and the last session; hold alt and press x/c to move the highlight across recently used sessions, release alt to switch (like alt+tab).",
     featureWsRunning: "Running indicator on collapsed projects",
     featureWsRunningDesc: "Spins a collapsed project's icon while any of its sessions is still running; stops when they all finish or the project is expanded.",
+    featureToolbarIcons: "Sidebar menu in the top bar",
+    featureToolbarIconsDesc: "Turns the sidebar menu (New task / Search / Automations / Plugin store) into icon buttons next to the back/forward arrows in the top bar: hover shows the name, the button stays highlighted while its view is open, and shortcuts still work; the original sidebar menu is hidden.",
+    tbNewTask: "New task",
+    tbSearch: "Search",
+    tbAutomations: "Automations",
+    tbPluginStore: "Plugin store",
+    featurePinnedCollapse: "Collapsible Pinned section",
+    featurePinnedCollapseDesc: 'The sidebar "Pinned" header collapses/expands its task list (like Projects and Groups); the state is remembered.',
+    pinnedToggleAria: "Collapse/expand Pinned",
+    sidebarProjectSpacingName: "Project spacing",
+    sidebarProjectSpacingDesc: "Visual spacing between adjacent project rows in the sidebar (row padding included); when set, section gaps (Pinned/Projects/Tasks) follow the same value.",
+    sidebarTaskSpacingName: "Task spacing",
+    sidebarTaskSpacingDesc: "Vertical spacing between adjacent task rows in the sidebar (row padding included).",
     switcherHint: "x / c to choose, release alt to switch, Esc to cancel",
     switcherCurrent: "current",
     switcherEmpty: "No previous session yet (available after you switch sessions)",
@@ -1224,6 +1250,109 @@
       pointer-events: none;
       margin: 0;
     }
+    /* \u4FA7\u680F\u83DC\u5355\u5E76\u5165\u9876\u680F\uFF08toolbar-icons.js\uFF09\uFF1A\u81EA\u6709\u56FE\u6807\u6309\u94AE + \u60AC\u505C\u63D0\u793A + \u539F\u83DC\u5355\u9690\u85CF\u3002
+       \u51E0\u4F55\u5BF9\u9F50\u5E94\u7528\u5BFC\u822A\u6309\u94AE\uFF08icon-md\uFF1A28\xD728\u3001\u5706\u89D2 8px\uFF09\uFF0C\u989C\u8272\u8D70\u4E3B\u9898\u53D8\u91CF\uFF0C
+       \u4E0E\u5F00\u5173/\u6807\u7B7E\u9875\u540C\u7406\u4E0D\u4F9D\u8D56\u5E94\u7528 Tailwind \u7C7B */
+    .zcodepro-tb-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-left: 6px;
+      padding-left: 8px;
+      border-left: 1px solid var(--color-border, rgba(127, 127, 127, 0.25));
+      -webkit-app-region: no-drag;
+    }
+    .zcodepro-tb-btn {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      border: none;
+      border-radius: 8px;
+      background-color: transparent;
+      color: var(--color-foreground-subtle, #666);
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background-color 0.12s ease, color 0.12s ease;
+    }
+    .zcodepro-tb-btn:hover,
+    .zcodepro-tb-btn:focus-visible {
+      outline: none;
+      background-color: var(--color-hover, color-mix(in oklab, var(--color-foreground, #888) 8%, transparent));
+      color: var(--color-foreground, #111);
+    }
+    .zcodepro-tb-btn[data-active="1"] {
+      background-color: color-mix(in oklab, var(--color-foreground, #888) 10%, transparent);
+      color: var(--color-foreground, #111);
+    }
+    .zcodepro-tb-icon {
+      display: block;
+      width: 16px;
+      height: 16px;
+    }
+    /* \u60AC\u505C\u63D0\u793A\uFF1A\u6309\u94AE\u4E0B\u65B9\u5C45\u4E2D\u51FA\u73B0\uFF08\u7EA6 0.3s \u5EF6\u8FDF\uFF0C\u5BF9\u9F50\u5E94\u7528\u63D0\u793A\u8282\u594F\uFF09\uFF0C\u79FB\u5F00\u7ACB\u5373\u6D88\u5931 */
+    .zcodepro-tb-btn::after {
+      content: attr(data-zcodepro-tip);
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 4px 8px;
+      border-radius: 6px;
+      border: 1px solid var(--color-border, rgba(127, 127, 127, 0.25));
+      background-color: var(--color-menu, #171717);
+      color: var(--color-foreground, #fff);
+      font-size: 11px;
+      line-height: 1.5;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      visibility: hidden;
+      z-index: 60;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    }
+    .zcodepro-tb-btn:hover::after,
+    .zcodepro-tb-btn:focus-visible::after {
+      opacity: 1;
+      visibility: visible;
+      transition: opacity 0.15s ease 0.3s;
+    }
+    /* \u539F\u4FA7\u680F\u83DC\u5355\u6574\u4F53\u9690\u85CF\uFF08toolbar-icons \u5F00\u542F\u65F6\uFF09 */
+    .zcodepro-tb-hidden { display: none !important; }
+    /* \u5DF2\u7F6E\u9876\u5206\u533A\u53EF\u6298\u53E0\uFF08pinned-collapse.js\uFF09\uFF1A\u6807\u9898\u6574\u884C\u53EF\u70B9\uFF0C\u6298\u53E0\u65F6\u85CF\u8D77\u4EFB\u52A1\u5217\u8868\uFF0C
+       chevron \u65CB\u5411\u4E0E\u300C\u9879\u76EE\u300D\u5206\u533A\u4E00\u81F4\uFF08\u6536\u8D77\u6307\u5411\u53F3\u4FA7\uFF09 */
+    .zcodepro-pin-head {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      transition: color 0.15s ease;
+    }
+    .zcodepro-pin-head:hover { color: var(--color-foreground, #111); }
+    .zcodepro-pin-chevron {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      border: none;
+      background-color: transparent;
+      color: inherit;
+      cursor: pointer;
+    }
+    .zcodepro-pin-chevron svg {
+      width: 14px;
+      height: 14px;
+      opacity: 0.55;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+    .zcodepro-pin-head:hover .zcodepro-pin-chevron svg { opacity: 1; }
+    .zcodepro-pin-collapsed .zcodepro-pin-chevron svg { transform: rotate(-90deg); }
+    .zcodepro-pin-collapsed > ul { display: none !important; }
+    /* \u6298\u53E0\u540E\u53BB\u6389\u6807\u9898\u81EA\u5E26\u7684\u5E95\u90E8\u7559\u767D\uFF0C\u4E0E\u4E0B\u4E00\u5206\u533A\u7684\u95F4\u9694\u548C\u5176\u4ED6\u5206\u533A\u8282\u594F\u4E00\u81F4 */
+    .zcodepro-pin-collapsed .zcodepro-pin-head { padding-bottom: 0; }
   `));
   }
 
@@ -2063,10 +2192,10 @@
   function startImageMenu() {
     if (typeof window === "undefined") return;
     if (typeof navigator.clipboard?.write !== "function" || typeof window.ClipboardItem === "undefined") return;
-    let enabled3 = true;
+    let enabled5 = true;
     const refresh = () => {
       void getConfig().then((c) => {
-        enabled3 = !(c.features && c.features.imageCopy === false);
+        enabled5 = !(c.features && c.features.imageCopy === false);
       });
     };
     refresh();
@@ -2075,7 +2204,7 @@
       const img = copyTargetOf(e.target, e.clientX, e.clientY);
       if (!img) return;
       e.preventDefault();
-      if (enabled3) showMenu(e.clientX, e.clientY, img);
+      if (enabled5) showMenu(e.clientX, e.clientY, img);
       refresh();
     }, true);
   }
@@ -2094,8 +2223,12 @@
     // 回答行高（leading-[1.75]，挂在答案内容容器上）
     userLineHeight: 1.5,
     // 提问行高（用户消息文本容器，默认 normal=1.5）
-    contentWidth: null
+    contentWidth: null,
     // 内容宽度：默认 100%（跟随应用，不覆盖）
+    sidebarProjectSpacing: 20,
+    // 侧栏项目间距：项目行视觉间距（行内留白 12 + 边距 8）
+    sidebarTaskSpacing: 10
+    // 侧栏任务间距：行内留白加行间边距（py-1 + space-y-0.5）
   };
   var styleEl = null;
   var CONV = '[class*="@md/conversation"]';
@@ -2142,6 +2275,47 @@
     if (cw && (cw.unit === "px" || cw.unit === "%") && Number.isFinite(cw.value)) {
       parts.push(`[data-v4-timeline-content-column]{max-width:${cw.value}${cw.unit} !important;}`);
     }
+    const SCROLL = ".flex.flex-1.min-h-0.flex-col.gap-3.overflow-y-auto";
+    const sps = styles.sidebarProjectSpacing;
+    if (typeof sps === "number" && Number.isFinite(sps) && sps >= 0) {
+      const m = Math.min(sps, 8);
+      const pad = Math.max(0, Math.round((sps - m) / 2));
+      const LIST = '.space-y-2.pb-4:has(div [data-testid^="workspace-item-"])';
+      parts.push(
+        // 块间边距（应用的 space-y 落在非末尾子块的 margin-block-end 上，同方向覆盖不叠加）
+        `${LIST} > :not(:last-child){margin-block-end:${m}px !important;margin-bottom:${m}px !important;}`,
+        // 列表底部留白（pb-4）清零：分区间距由 gap 统一给，避免叠加出大空隙
+        `${LIST}{padding-bottom:0 !important;}`,
+        // 分区间距：外层滚动容器与项目/任务分区所在的 gap-3 容器。
+        // 注意不能用嵌套 :has()（:has 里再套 LIST 的 :has）——当前 Chromium 不支持，
+        // 整条选择器会被判非法而丢弃；这里用单层 :has 定位 pb-4 列表容器即可
+        `${SCROLL}:has(> div .space-y-2.pb-4),.flex.min-h-0.flex-col.gap-3.px-2:has(.space-y-2.pb-4){gap:${m}px !important;row-gap:${m}px !important;}`,
+        // 已置顶分区内层 gap-1（标题与列表间）与项目块内层 gap-1（项目行与任务列表间）
+        `${SCROLL} .flex.flex-col.gap-1{gap:${m}px !important;row-gap:${m}px !important;}`,
+        // 行高压缩：项目行（role=button 的 div，固定 h-8）、分区标题按钮及其 h-7 包装行。
+        // 行高随设置压缩，但要留不小于悬停内容的稳定下限（悬停会渲染约 25px 高的
+        // 操作按钮组，实际高约 26.2px 含小数，下限需留出余量，行高若随内容伸缩，
+        // 行间无空隙时邻居会被推得上下抖动）；
+        // box-sizing 为 border-box，min-height 已含上下留白。
+        // 文字容器占满行高：否则悬停按钮组（比文字高）入场时行内重新居中，
+        // 项目名称会被顶起约 2px
+        `${LIST} [data-testid^="workspace-item-"]{height:auto !important;min-height:${28 + 2 * pad}px !important;padding-block:${pad}px !important;padding-top:${pad}px !important;padding-bottom:${pad}px !important;}`,
+        `${LIST} [data-testid^="workspace-item-"] > div:first-child{align-self:stretch !important;}`,
+        `${SCROLL} [data-slot="collapsible-trigger"],${SCROLL} .flex.h-7{height:auto !important;}`,
+        `${SCROLL} [data-slot="collapsible-trigger"]{min-height:${28 + 2 * pad}px !important;padding-block:${pad}px !important;padding-top:${pad}px !important;padding-bottom:${pad}px !important;}`
+      );
+    }
+    const sts = styles.sidebarTaskSpacing;
+    if (typeof sts === "number" && Number.isFinite(sts) && sts >= 0) {
+      const m = Math.min(sts, 2);
+      const pad = Math.max(0, Math.round((sts - m) / 2));
+      parts.push(
+        `ul.space-y-0\\.5:has(> li[data-task-item-key]) > :not(:last-child){margin-block-end:${m}px !important;margin-bottom:${m}px !important;}`,
+        `ul.space-y-0\\.5:has(> li[data-task-item-key]) > li{padding-block:${pad}px !important;padding-top:${pad}px !important;padding-bottom:${pad}px !important;}`,
+        `${SCROLL} .flex.flex-col.gap-2{gap:${m}px !important;row-gap:${m}px !important;}`,
+        `${SCROLL} div.cursor-pointer[class*="pl-8"]{padding-block:${pad}px !important;padding-top:${pad}px !important;padding-bottom:${pad}px !important;}`
+      );
+    }
     return parts.join("");
   }
   function applyStyles(styles) {
@@ -2158,6 +2332,10 @@
       root.append(styleEl);
     }
     void getConfig().then((cfg) => applyStyles(cfg.styles)).catch(() => {
+    });
+    window.addEventListener("zcodepro:config-changed", () => {
+      void getConfig(true).then((cfg) => applyStyles(cfg.styles)).catch(() => {
+      });
     });
   }
 
@@ -2368,6 +2546,7 @@
         const setFeature = async (key, value) => {
           const res = await rpc("/config", { method: "POST", body: { features: { [key]: value } } });
           clearConfigCache();
+          window.dispatchEvent(new CustomEvent("zcodepro:config-changed"));
           if (!res.ok) {
             body.querySelector("[data-zcodepro-status]").replaceChildren(
               h("span", { class: "text-ui-sm text-destructive" }, L.failed + ": " + errText(res))
@@ -2408,6 +2587,11 @@
             settingRow(L.featureWsRunning, L.featureWsRunningDesc, f.wsRunningSpin !== false, async () => {
               const next = !(f.wsRunningSpin !== false);
               if (await setFeature("wsRunningSpin", next)) f.wsRunningSpin = next;
+              refreshRows();
+            }),
+            settingRow(L.featurePinnedCollapse, L.featurePinnedCollapseDesc, f.pinnedCollapse !== false, async () => {
+              const next = !(f.pinnedCollapse !== false);
+              if (await setFeature("pinnedCollapse", next)) f.pinnedCollapse = next;
               refreshRows();
             }),
             settingRow(L.featureFileActions, L.featureFileActionsDesc, f.fileActions !== false, async () => {
@@ -2623,6 +2807,8 @@
           )
         };
         const cells = [
+          styleCell(L.sidebarProjectSpacingName, L.sidebarProjectSpacingDesc, "sidebarProjectSpacing", { max: 24 }),
+          styleCell(L.sidebarTaskSpacingName, L.sidebarTaskSpacingDesc, "sidebarTaskSpacing", { max: 24 }),
           widthCell,
           styleCell(L.rowGapName, L.rowGapDesc, "rowGap"),
           styleCell(L.userLineHeightName, L.userLineHeightDesc, "userLineHeight", { min: 1, max: 3, step: 0.05, unit: "x" }),
@@ -2631,10 +2817,21 @@
           styleCell(L.listItemSpacingName, L.listItemSpacingDesc, "listItemSpacing"),
           styleCell(L.quoteCodeSpacingName, L.quoteCodeSpacingDesc, "quoteCodeSpacing")
         ];
+        const toolbarSwitchWrap = h("div");
+        const renderToolbarSwitch = () => {
+          const f = config.features || {};
+          toolbarSwitchWrap.replaceChildren(settingRow(L.featureToolbarIcons, L.featureToolbarIconsDesc, f.toolbarIcons !== false, async () => {
+            const next = !(f.toolbarIcons !== false);
+            if (await setFeature("toolbarIcons", next)) f.toolbarIcons = next;
+            renderToolbarSwitch();
+          }));
+        };
+        renderToolbarSwitch();
         paneStyles.append(
+          toolbarSwitchWrap,
           h(
             "div",
-            { class: "grid grid-cols-2 gap-2 rounded-xl border border-border p-1" },
+            { class: "mt-2 grid grid-cols-2 gap-2 rounded-xl border border-border p-1" },
             ...cells.map((c) => h("div", { class: "rounded-lg transition-colors hover:bg-surface-hover" }, c.el))
           ),
           h(
@@ -2642,7 +2839,7 @@
             { class: "mt-2 flex justify-end" },
             btnSmall(L.resetDefault, () => {
               for (const c of cells) c.field.reset();
-              persistStyles({ rowGap: null, listSpacing: null, listItemSpacing: null, quoteCodeSpacing: null, lineHeight: null, userLineHeight: null, contentWidth: null });
+              persistStyles({ rowGap: null, listSpacing: null, listItemSpacing: null, quoteCodeSpacing: null, lineHeight: null, userLineHeight: null, contentWidth: null, sidebarProjectSpacing: null, sidebarTaskSpacing: null });
             })
           )
         );
@@ -3761,22 +3958,14 @@
         if (k === "z") {
           if (e.repeat) return;
           closePopup(false);
-          if (mru.length < 2 || mru[0] !== current) {
-            const target = mru.find((mk) => mk !== current);
-            if (!target) {
-              showToast(t().switcherEmpty);
-              return;
-            }
-            void switchTo(target).then((ok) => {
-              if (!ok) showToast(t().switcherFailed, "error");
-            });
-            return;
-          }
-          if (!mru[1]) {
+          const live = findCurrent();
+          if (live) record(live.getAttribute("data-task-item-key"));
+          const target = live ? mru[0] === current ? mru[1] : mru.find((mk) => mk !== current) : mru[0];
+          if (!target) {
             showToast(t().switcherEmpty);
             return;
           }
-          void switchTo(mru[1]).then((ok) => {
+          void switchTo(target).then((ok) => {
             if (!ok) showToast(t().switcherFailed, "error");
           });
           return;
@@ -4252,6 +4441,331 @@
     }, true);
   }
 
+  // src/inject/features/toolbar-icons.js
+  var HIDE_CLASS = "zcodepro-tb-hidden";
+  var SYNC_DEBOUNCE_MS = 150;
+  var SCAN_FALLBACK_MS3 = 5e3;
+  var ROW_SEL = "[data-task-item-key]";
+  var MENU_SEL = '[data-testid="task-new-button"], [data-testid="automations-open"], [data-testid="plugin-store-sidebar-open"], [data-slot="command"], [data-testid="desktop-top-nav-back"]';
+  var enabled3 = true;
+  var rowEl = null;
+  var origs = null;
+  var syncTimer = 0;
+  var widthObserver = null;
+  var widthObserved = null;
+  function findMenu() {
+    const nt = document.querySelector('[data-testid="task-new-button"]');
+    const menu = nt?.parentElement;
+    return menu && menu.querySelector('[data-testid="automations-open"]') ? menu : null;
+  }
+  function originalsOf(menu) {
+    const newTask = menu.querySelector('[data-testid="task-new-button"]');
+    const search = newTask && menu.querySelector('button [class*="lucide-search"]')?.closest("button");
+    const auto = menu.querySelector('[data-testid="automations-open"]');
+    const plugin = menu.querySelector('[data-testid="plugin-store-sidebar-open"]');
+    return newTask && search && auto && plugin ? { menu, newTask, search, auto, plugin } : null;
+  }
+  function nameOf(orig, nameSel, fallback) {
+    let name = nameSel && (orig.querySelector(nameSel)?.textContent || "").trim();
+    if (!name) name = (orig.textContent || "").trim().split(/\s+/)[0]?.slice(0, 20) || "";
+    return name || fallback;
+  }
+  function tipOf(orig, nameSel, fallback) {
+    const name = nameOf(orig, nameSel, fallback);
+    const kbd = (orig.querySelector("span.ml-auto")?.textContent || "").trim();
+    return kbd ? `${name} \xB7 ${kbd}` : name;
+  }
+  function iconOf(orig) {
+    const svg = orig.querySelector("svg");
+    if (!svg) return null;
+    const clone = svg.cloneNode(true);
+    clone.setAttribute("class", "zcodepro-tb-icon");
+    return clone;
+  }
+  function setActive(kind, on) {
+    const btn = rowEl?.querySelector(`[data-kind="${kind}"]`);
+    if (!btn) return;
+    if (on) btn.setAttribute("data-active", "1");
+    else btn.removeAttribute("data-active");
+    if (kind === "auto" || kind === "plugin") btn.setAttribute("aria-pressed", on ? "true" : "false");
+  }
+  function syncActive() {
+    if (!origs || !rowEl) return;
+    const auto = origs.auto.getAttribute("aria-pressed") === "true";
+    const plugin = origs.plugin.getAttribute("aria-pressed") === "true";
+    const palette = !!document.querySelector('[data-slot="command"]');
+    let selected = false;
+    for (const el of document.querySelectorAll(ROW_SEL)) {
+      if ((el.className + "").includes("bg-selected")) {
+        selected = true;
+        break;
+      }
+    }
+    setActive("newTask", !selected && !auto && !plugin);
+    setActive("search", palette);
+    setActive("auto", auto);
+    setActive("plugin", plugin);
+  }
+  function rebuild() {
+    const menu = findMenu();
+    if (!menu) return false;
+    const next = originalsOf(menu);
+    const navRow = document.querySelector('[data-testid="desktop-top-nav-back"]')?.parentElement;
+    if (!next || !navRow) return false;
+    if (origs && origs.menu !== menu) origs.menu.classList.remove(HIDE_CLASS);
+    menu.classList.add(HIDE_CLASS);
+    origs = next;
+    rowEl?.remove();
+    const L = t();
+    const mk = (kind, orig, nameSel, fallback) => h("button", {
+      type: "button",
+      class: "zcodepro-tb-btn",
+      "data-kind": kind,
+      "aria-label": nameOf(orig, nameSel, fallback),
+      "data-zcodepro-tip": tipOf(orig, nameSel, fallback),
+      onClick: () => {
+        orig.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+        setTimeout(syncActive, 150);
+      }
+    });
+    const newBtn = mk("newTask", next.newTask, "span.truncate", L.tbNewTask);
+    const icon = iconOf(next.newTask);
+    if (icon) newBtn.append(icon);
+    const searchBtn = mk("search", next.search, "span.truncate", L.tbSearch);
+    const sIcon = iconOf(next.search);
+    if (sIcon) searchBtn.append(sIcon);
+    const autoBtn = mk("auto", next.auto, null, L.tbAutomations);
+    const aIcon = iconOf(next.auto);
+    if (aIcon) autoBtn.append(aIcon);
+    const pluginBtn = mk("plugin", next.plugin, null, L.tbPluginStore);
+    const pIcon = iconOf(next.plugin);
+    if (pIcon) pluginBtn.append(pIcon);
+    rowEl = h("div", { class: "zcodepro-tb-row" }, newBtn, searchBtn, autoBtn, pluginBtn);
+    navRow.append(rowEl);
+    return true;
+  }
+  function sidebarCollapsed() {
+    const navRow = document.querySelector('[data-testid="desktop-top-nav-back"]')?.parentElement;
+    const svg = navRow?.querySelector('button svg[class*="panel-left-"]');
+    return !!svg && (svg.getAttribute("class") || "").includes("panel-left-open");
+  }
+  var NARROW_SIDEBAR_PX = 260;
+  function sidebarTooNarrow() {
+    const scroll = document.querySelector(".flex.flex-1.min-h-0.flex-col.gap-3.overflow-y-auto");
+    if (!scroll) return false;
+    if (!widthObserver) widthObserver = new ResizeObserver(() => scheduleSync());
+    if (widthObserved !== scroll) {
+      if (widthObserved) widthObserver.unobserve(widthObserved);
+      widthObserved = scroll;
+      widthObserver.observe(scroll);
+    }
+    return scroll.getBoundingClientRect().width < NARROW_SIDEBAR_PX;
+  }
+  function sync() {
+    if (!enabled3) return;
+    const menu = findMenu();
+    if (!menu) {
+      if (rowEl) rowEl.style.display = "none";
+      return;
+    }
+    if (sidebarCollapsed() || sidebarTooNarrow()) {
+      if (rowEl) rowEl.style.display = "none";
+      menu.classList.remove(HIDE_CLASS);
+      return;
+    }
+    const alive = origs && origs.menu === menu && origs.newTask.isConnected && origs.search.isConnected && origs.auto.isConnected && origs.plugin.isConnected && rowEl && rowEl.isConnected;
+    if (!alive && !rebuild()) return;
+    menu.classList.add(HIDE_CLASS);
+    if (rowEl) rowEl.style.display = "";
+    syncActive();
+  }
+  function scheduleSync() {
+    if (syncTimer) return;
+    syncTimer = setTimeout(() => {
+      syncTimer = 0;
+      sync();
+    }, SYNC_DEBOUNCE_MS);
+  }
+  function relevantMutations(muts) {
+    for (const m of muts) {
+      if (m.type === "attributes") {
+        const target = m.target;
+        if (target instanceof Element && (target.matches(ROW_SEL) || target.matches('[data-testid="automations-open"], [data-testid="plugin-store-sidebar-open"]') || target.matches('svg[class*="panel-left-"]'))) {
+          return true;
+        }
+        continue;
+      }
+      for (const list of [m.addedNodes, m.removedNodes]) {
+        for (const n of list) {
+          if (!(n instanceof Element)) continue;
+          if (n.matches(MENU_SEL) || n.matches(ROW_SEL) || n.querySelector(MENU_SEL) || n.querySelector(ROW_SEL)) return true;
+          if (n.matches('svg[class*="panel-left-"]') || n.querySelector?.('svg[class*="panel-left-"]')) return true;
+        }
+      }
+    }
+    return false;
+  }
+  function teardown() {
+    rowEl?.remove();
+    rowEl = null;
+    if (origs) {
+      origs.menu.classList.remove(HIDE_CLASS);
+      origs = null;
+    }
+  }
+  async function refreshConfig3() {
+    const cfg = await getConfig(true).catch(() => null);
+    enabled3 = !cfg || !cfg.features || cfg.features.toolbarIcons !== false;
+    if (enabled3) sync();
+    else teardown();
+  }
+  function startToolbarIcons() {
+    ensureStyle();
+    window.addEventListener("zcodepro:config-changed", () => {
+      void refreshConfig3();
+    });
+    void refreshConfig3();
+    new MutationObserver((muts) => {
+      if (relevantMutations(muts)) scheduleSync();
+    }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "aria-pressed"] });
+    setInterval(() => {
+      if (!document.hidden) sync();
+    }, SCAN_FALLBACK_MS3);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) sync();
+    });
+  }
+
+  // src/inject/features/pinned-collapse.js
+  var COLLAPSED_CLASS = "zcodepro-pin-collapsed";
+  var HEAD_CLASS = "zcodepro-pin-head";
+  var STORE_KEY = "zcodepro:pinned-collapsed";
+  var SYNC_DEBOUNCE_MS2 = 300;
+  var SCAN_FALLBACK_MS4 = 5e3;
+  var enabled4 = true;
+  var syncTimer2 = 0;
+  function findPinnedHeader() {
+    for (const h3 of document.querySelectorAll("h3")) {
+      const ul = h3.nextElementSibling;
+      if (ul && ul.tagName === "UL" && ul.querySelector("li[data-task-item-key]")) return h3;
+    }
+    return null;
+  }
+  function chevronSvg() {
+    const proto = document.querySelector("svg[data-purpose-section-chevron]");
+    if (proto) {
+      const clone = proto.cloneNode(true);
+      clone.removeAttribute("class");
+      clone.removeAttribute("data-purpose-section-chevron");
+      return clone;
+    }
+    const ns = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor");
+    svg.setAttribute("stroke-width", "1.5");
+    svg.setAttribute("stroke-linecap", "round");
+    svg.setAttribute("stroke-linejoin", "round");
+    const path = document.createElementNS(ns, "path");
+    path.setAttribute("d", "m6 9 6 6 6-6");
+    svg.append(path);
+    return svg;
+  }
+  function isCollapsed() {
+    try {
+      return localStorage.getItem(STORE_KEY) === "1";
+    } catch {
+      return false;
+    }
+  }
+  function toggle() {
+    try {
+      localStorage.setItem(STORE_KEY, isCollapsed() ? "0" : "1");
+    } catch {
+    }
+    apply2();
+  }
+  function apply2() {
+    const h3 = findPinnedHeader();
+    if (!h3) return false;
+    const sect = h3.parentElement;
+    const collapsed = isCollapsed();
+    sect.classList.toggle(COLLAPSED_CLASS, collapsed);
+    const existing = h3.querySelector(".zcodepro-pin-chevron");
+    if (h3.classList.contains(HEAD_CLASS) && existing) {
+      existing.setAttribute("aria-expanded", collapsed ? "false" : "true");
+      return true;
+    }
+    h3.classList.add(HEAD_CLASS);
+    h3.addEventListener("click", () => {
+      if (enabled4) toggle();
+    });
+    const btn = h("button", {
+      type: "button",
+      class: "zcodepro-pin-chevron",
+      "aria-label": t().pinnedToggleAria,
+      "aria-expanded": collapsed ? "false" : "true",
+      onClick: (e) => {
+        e.stopPropagation();
+        if (enabled4) toggle();
+      }
+    });
+    btn.append(chevronSvg());
+    h3.append(btn);
+    return true;
+  }
+  function sync2() {
+    if (enabled4) apply2();
+  }
+  function scheduleSync2() {
+    if (syncTimer2) return;
+    syncTimer2 = setTimeout(() => {
+      syncTimer2 = 0;
+      sync2();
+    }, SYNC_DEBOUNCE_MS2);
+  }
+  function relevantMutations2(muts) {
+    for (const m of muts) {
+      for (const list of [m.addedNodes, m.removedNodes]) {
+        for (const n of list) {
+          if (!(n instanceof Element)) continue;
+          if (n.tagName === "H3" || n.matches("li[data-task-item-key]") || n.querySelector("h3, li[data-task-item-key]")) return true;
+        }
+      }
+    }
+    return false;
+  }
+  function teardown2() {
+    for (const h3 of document.querySelectorAll("." + HEAD_CLASS)) {
+      h3.classList.remove(HEAD_CLASS);
+      h3.querySelector(".zcodepro-pin-chevron")?.remove();
+      h3.parentElement?.classList.remove(COLLAPSED_CLASS);
+    }
+  }
+  async function refreshConfig4() {
+    const cfg = await getConfig(true).catch(() => null);
+    enabled4 = !cfg || !cfg.features || cfg.features.pinnedCollapse !== false;
+    if (enabled4) sync2();
+    else teardown2();
+  }
+  function startPinnedCollapse() {
+    ensureStyle();
+    window.addEventListener("zcodepro:config-changed", () => {
+      void refreshConfig4();
+    });
+    void refreshConfig4();
+    new MutationObserver((muts) => {
+      if (relevantMutations2(muts)) scheduleSync2();
+    }).observe(document.body, { childList: true, subtree: true });
+    setInterval(() => {
+      if (!document.hidden) sync2();
+    }, SCAN_FALLBACK_MS4);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) sync2();
+    });
+  }
+
   // src/inject/features/plugin-updates.js
   var NOTIFIED_KEY = "zcodepro-plugin-updates-notified";
   async function startPluginUpdateCheck() {
@@ -4319,6 +4833,14 @@
       }
       try {
         startWsRunningSpin();
+      } catch {
+      }
+      try {
+        startToolbarIcons();
+      } catch {
+      }
+      try {
+        startPinnedCollapse();
       } catch {
       }
       try {
