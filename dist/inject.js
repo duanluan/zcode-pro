@@ -1270,8 +1270,6 @@
       align-items: center;
       gap: 4px;
       margin-left: 6px;
-      padding-left: 8px;
-      border-left: 1px solid var(--color-border, rgba(127, 127, 127, 0.25));
       -webkit-app-region: no-drag;
     }
     .zcodepro-tb-btn {
