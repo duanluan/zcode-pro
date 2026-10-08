@@ -74,6 +74,8 @@
     featureTaskOrderDesc: "\u8BA9\u7F6E\u9876\u3001\u9879\u76EE\u4E0E\u5206\u7EC4\u4E2D\u7684\u4F1A\u8BDD\u62D6\u52A8\u540E\u8BB0\u4F4F\u987A\u5E8F\uFF0C\u5237\u65B0\u540E\u4FDD\u6301\u3002",
     featureSessionSwitch: "\u4F1A\u8BDD\u5FEB\u6377\u5207\u6362",
     featureSessionSwitchDesc: "alt+z \u5728\u5F53\u524D\u4E0E\u4E0A\u6B21\u4F1A\u8BDD\u95F4\u6765\u56DE\u5207\u6362\uFF1B\u6309\u4F4F alt \u518D\u6309 x/c \u5F39\u51FA\u6700\u8FD1\u4F1A\u8BDD\u5217\u8868\u524D\u540E\u9009\u62E9\uFF0C\u677E\u5F00 alt \u5207\u6362\uFF08\u7C7B alt+tab\uFF09\u3002",
+    featureTitleLock: "\u91CD\u547D\u540D\u4F1A\u8BDD\u540D\u9501\u5B9A",
+    featureTitleLockDesc: "\u624B\u52A8\u91CD\u547D\u540D\u8FC7\u7684\u4F1A\u8BDD\u4E0D\u518D\u88AB\u81EA\u52A8\u6807\u9898\u8986\u76D6\uFF1A\u4F1A\u8BDD\u6709\u65B0\u56DE\u7B54\u540E\u754C\u9762\u53EF\u80FD\u6539\u663E\u81EA\u52A8\u6807\u9898\uFF0C\u91CD\u542F\u540E\u53C8\u53D8\u56DE\uFF0C\u672C\u529F\u80FD\u8BA9\u4FA7\u680F\u59CB\u7EC8\u663E\u793A\u91CD\u547D\u540D\u540E\u7684\u540D\u5B57\u3002",
     featureWsRunning: "\u6298\u53E0\u9879\u76EE\u8FD0\u884C\u63D0\u793A",
     featureWsRunningDesc: "\u6298\u53E0\u7684\u9879\u76EE\u91CC\u4ECD\u6709\u4F1A\u8BDD\u5728\u8FD0\u884C\u65F6\uFF0C\u9879\u76EE\u56FE\u6807\u65CB\u8F6C\u63D0\u793A\uFF1B\u5168\u90E8\u7ED3\u675F\u6216\u5C55\u5F00\u9879\u76EE\u540E\u6062\u590D\u3002",
     featureToolbarIcons: "\u4FA7\u680F\u83DC\u5355\u5E76\u5165\u9876\u680F",
@@ -321,6 +323,8 @@
     featureTaskOrderDesc: "Makes session drags in Pinned, Projects and Groups persist across refreshes.",
     featureSessionSwitch: "Session quick switch",
     featureSessionSwitchDesc: "alt+z toggles between the current and the last session; hold alt and press x/c to move the highlight across recently used sessions, release alt to switch (like alt+tab).",
+    featureTitleLock: "Keep renamed session titles",
+    featureTitleLockDesc: "Sessions you renamed keep their custom title: after new replies the app may show an auto-generated title instead, which reverts after a restart; this keeps the renamed title in the sidebar.",
     featureWsRunning: "Running indicator on collapsed projects",
     featureWsRunningDesc: "Spins a collapsed project's icon while any of its sessions is still running; stops when they all finish or the project is expanded.",
     featureToolbarIcons: "Sidebar menu in the top bar",
@@ -2202,10 +2206,10 @@
   function startImageMenu() {
     if (typeof window === "undefined") return;
     if (typeof navigator.clipboard?.write !== "function" || typeof window.ClipboardItem === "undefined") return;
-    let enabled5 = true;
+    let enabled6 = true;
     const refresh = () => {
       void getConfig().then((c) => {
-        enabled5 = !(c.features && c.features.imageCopy === false);
+        enabled6 = !(c.features && c.features.imageCopy === false);
       });
     };
     refresh();
@@ -2214,7 +2218,7 @@
       const img = copyTargetOf(e.target, e.clientX, e.clientY);
       if (!img) return;
       e.preventDefault();
-      if (enabled5) showMenu(e.clientX, e.clientY, img);
+      if (enabled6) showMenu(e.clientX, e.clientY, img);
       refresh();
     }, true);
   }
@@ -2682,6 +2686,11 @@
             settingRow(L.featureSessionSwitch, L.featureSessionSwitchDesc, f.sessionSwitch !== false, async () => {
               const next = !(f.sessionSwitch !== false);
               if (await setFeature("sessionSwitch", next)) f.sessionSwitch = next;
+              refreshRows();
+            }),
+            settingRow(L.featureTitleLock, L.featureTitleLockDesc, f.titleLock !== false, async () => {
+              const next = !(f.titleLock !== false);
+              if (await setFeature("titleLock", next)) f.titleLock = next;
               refreshRows();
             }),
             settingRow(L.featureWsRunning, L.featureWsRunningDesc, f.wsRunningSpin !== false, async () => {
@@ -4130,8 +4139,201 @@
     window.addEventListener("blur", () => closePopup(false));
   }
 
-  // src/inject/features/pinned-expand.js
+  // src/inject/features/title-lock.js
+  var TASK_SEL = "[data-task-item-key]";
+  var SCAN_DEBOUNCE_MS2 = 150;
+  var SCAN_FALLBACK_MS2 = 5e3;
+  var BOOT_RETRY_MS = 5e3;
+  var RECHECK_DELAY_MS = 1e3;
+  var REVERIFY_MS = 3e3;
+  var MAP_REFRESH_MS = 6e4;
   var installed2 = false;
+  var enabled2 = true;
+  var pinned = null;
+  var resolved = false;
+  var fetching = null;
+  var pendingKeys = /* @__PURE__ */ new Set();
+  function sessIdOf(key) {
+    const i = key.indexOf(":sess_");
+    return i > 0 ? key.slice(i + 1) : key;
+  }
+  function titleElsOf(item) {
+    const copies = item.querySelectorAll("[data-task-title-copy]");
+    if (copies.length) return [...copies];
+    const t2 = item.querySelector('[class*="truncate"]');
+    return t2 ? [t2] : [];
+  }
+  function findRows(key) {
+    return [...document.querySelectorAll(`${TASK_SEL}[data-task-item-key="${CSS.escape(key)}"]`)];
+  }
+  async function fetchPinned() {
+    if (fetching) return fetching;
+    const p = (async () => {
+      const res = await rpc("/pinned-titles");
+      if (!res || !res.ok) return null;
+      resolved = true;
+      enabled2 = res.enabled !== false;
+      if (!enabled2) {
+        pinned = null;
+        return null;
+      }
+      pinned = new Map(Object.entries(res.titles || {}));
+      return pinned;
+    })();
+    fetching = p;
+    try {
+      return await p;
+    } finally {
+      if (fetching === p) fetching = null;
+    }
+  }
+  function isMismatch(item) {
+    if (!enabled2 || !pinned) return null;
+    const key = item.getAttribute("data-task-item-key") || "";
+    const want = pinned.get(sessIdOf(key));
+    if (want === void 0) return null;
+    const els = titleElsOf(item);
+    if (!els.length) return null;
+    if ((els[0].textContent || "").trim() === String(want).trim()) return null;
+    if (item.querySelector('input, textarea, [contenteditable="true"]')) return null;
+    return key;
+  }
+  function writeTitle(el, text) {
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    const first = walker.nextNode();
+    if (first && !walker.nextNode()) first.nodeValue = text;
+    else el.textContent = text;
+  }
+  function scheduleEnforce(key) {
+    if (pendingKeys.has(key)) return;
+    pendingKeys.add(key);
+    setTimeout(() => {
+      pendingKeys.delete(key);
+      void (async () => {
+        const map = await fetchPinned();
+        if (!map) return;
+        const want = map.get(sessIdOf(key));
+        if (want === void 0) return;
+        let wrote = false;
+        for (const item of findRows(key)) {
+          if (isMismatch(item) !== key) continue;
+          for (const el of titleElsOf(item)) writeTitle(el, want);
+          wrote = true;
+        }
+        if (wrote) setTimeout(() => {
+          void enforceKey(key);
+        }, REVERIFY_MS);
+      })();
+    }, RECHECK_DELAY_MS);
+  }
+  async function enforceKey(key) {
+    const map = await fetchPinned();
+    if (!map) return;
+    const want = map.get(sessIdOf(key));
+    if (want === void 0) return;
+    for (const item of findRows(key)) {
+      if (isMismatch(item) !== key) continue;
+      for (const el of titleElsOf(item)) writeTitle(el, want);
+    }
+  }
+  function scan2() {
+    if (!enabled2 || !pinned || pinned.size === 0) return;
+    for (const item of document.querySelectorAll(TASK_SEL)) {
+      const key = isMismatch(item);
+      if (key) scheduleEnforce(key);
+    }
+  }
+  var inTaskRow2 = (node) => !!(node instanceof Element && node.closest && node.closest(TASK_SEL));
+  function taskRowMutations2(muts) {
+    for (const m of muts) {
+      if (m.type === "attributes") {
+        if (inTaskRow2(m.target)) return true;
+      } else if (m.type === "characterData") {
+        if (m.target.parentElement && inTaskRow2(m.target.parentElement)) return true;
+      } else if (inTaskRow2(m.target)) {
+        return true;
+      } else {
+        for (const n of m.addedNodes) {
+          if (n instanceof Element && (n.matches(TASK_SEL) || !!n.querySelector(TASK_SEL))) return true;
+        }
+      }
+    }
+    return false;
+  }
+  var scanDebounce2 = 0;
+  function scheduleScan2() {
+    if (scanDebounce2) return;
+    scanDebounce2 = setTimeout(() => {
+      scanDebounce2 = 0;
+      scan2();
+    }, SCAN_DEBOUNCE_MS2);
+  }
+  var mapRefreshTimer = 0;
+  function refreshMapSoon() {
+    if (mapRefreshTimer) return;
+    const tick = () => {
+      if (document.hidden) {
+        mapRefreshTimer = setTimeout(tick, 1e4);
+        return;
+      }
+      mapRefreshTimer = 0;
+      if (enabled2 && resolved) void fetchPinned().then((m) => {
+        if (m) scan2();
+      });
+    };
+    mapRefreshTimer = setTimeout(tick, MAP_REFRESH_MS);
+  }
+  var editingKey = null;
+  var bootDelay = 0;
+  function scheduleBootRetry() {
+    bootDelay = bootDelay ? Math.min(bootDelay * 2, MAP_REFRESH_MS) : BOOT_RETRY_MS;
+    setTimeout(() => {
+      if (resolved) return;
+      if (!document.hidden) void bootstrap();
+      scheduleBootRetry();
+    }, bootDelay);
+  }
+  async function bootstrap() {
+    const map = await fetchPinned();
+    if (map) scan2();
+  }
+  function startTitleLock() {
+    if (installed2 || typeof document === "undefined") return;
+    installed2 = true;
+    void bootstrap();
+    new MutationObserver((muts) => {
+      if (!taskRowMutations2(muts)) return;
+      refreshMapSoon();
+      scheduleScan2();
+    }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"], characterData: true });
+    scheduleBootRetry();
+    setInterval(() => {
+      if (!document.hidden) scan2();
+    }, SCAN_FALLBACK_MS2);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) scan2();
+    });
+    window.addEventListener("zcodepro:config-changed", () => {
+      void bootstrap();
+    });
+    document.addEventListener("focusin", (e) => {
+      const el = e.target;
+      if (!(el instanceof Element)) return;
+      if (!el.matches('input, textarea, [contenteditable="true"]')) return;
+      const row = el.closest(TASK_SEL);
+      editingKey = row ? row.getAttribute("data-task-item-key") || "" : null;
+    });
+    document.addEventListener("focusout", () => {
+      if (editingKey === null) return;
+      editingKey = null;
+      void fetchPinned().then((m) => {
+        if (m) scan2();
+      });
+    });
+  }
+
+  // src/inject/features/pinned-expand.js
+  var installed3 = false;
   var keepCollapsed = false;
   var CONFIG_POLL_MIN_MS = 5e3;
   var CONFIG_POLL_MAX_MS = 6e4;
@@ -4158,8 +4360,8 @@
     }, pollMs);
   }
   function startPinnedExpandSuppression() {
-    if (installed2 || typeof document === "undefined") return;
-    installed2 = true;
+    if (installed3 || typeof document === "undefined") return;
+    installed3 = true;
     void refreshConfig();
     pollConfig();
     document.addEventListener("visibilitychange", () => {
@@ -4235,17 +4437,17 @@
   }
 
   // src/inject/features/ws-running.js
-  var installed3 = false;
-  var enabled2 = true;
-  var SCAN_DEBOUNCE_MS2 = 150;
-  var SCAN_FALLBACK_MS2 = 5e3;
+  var installed4 = false;
+  var enabled3 = true;
+  var SCAN_DEBOUNCE_MS3 = 150;
+  var SCAN_FALLBACK_MS3 = 5e3;
   var PEEK_FIRST_MS = 2e4;
   var PEEK_REPEAT_MS = 6e4;
   var PEEK_SETTLE_MS = 160;
   var PEEK_MAX_MS = 1500;
   var CONFIG_POLL_MIN_MS2 = 5e3;
   var CONFIG_POLL_MAX_MS2 = 6e4;
-  var TASK_SEL = "[data-task-item-key]";
+  var TASK_SEL2 = "[data-task-item-key]";
   var WS_SEL = '[data-testid^="workspace-item-"]';
   var runningByWs = /* @__PURE__ */ new Map();
   var peekTimers = /* @__PURE__ */ new Map();
@@ -4269,10 +4471,10 @@
     return [...holder.children].some((c) => c.tagName === "svg" && (c.getAttribute("class") || "").includes("lucide-loader"));
   }
   function domRowsOf(ws) {
-    return [...document.querySelectorAll(TASK_SEL)].filter((e) => workspaceOf2(e.getAttribute("data-task-item-key") || "") === ws);
+    return [...document.querySelectorAll(TASK_SEL2)].filter((e) => workspaceOf2(e.getAttribute("data-task-item-key") || "") === ws);
   }
   function currentTaskRow2() {
-    for (const el of document.querySelectorAll(TASK_SEL)) {
+    for (const el of document.querySelectorAll(TASK_SEL2)) {
       if ((el.className + "").includes("bg-selected")) return el;
     }
     return null;
@@ -4288,9 +4490,9 @@
     const cur = currentTaskRow2();
     if (cur) synthClick(cur);
   }
-  function scan2() {
+  function scan3() {
     wsWithRows = /* @__PURE__ */ new Set();
-    for (const el of document.querySelectorAll(TASK_SEL)) {
+    for (const el of document.querySelectorAll(TASK_SEL2)) {
       const key = el.getAttribute("data-task-item-key") || "";
       const ws = workspaceOf2(key);
       if (!ws) continue;
@@ -4316,8 +4518,8 @@
       if (m.type !== "childList") continue;
       for (const n of m.removedNodes) {
         if (!(n instanceof Element)) continue;
-        if (n.matches(TASK_SEL)) removed.push(n);
-        else for (const r of n.querySelectorAll(TASK_SEL)) removed.push(r);
+        if (n.matches(TASK_SEL2)) removed.push(n);
+        else for (const r of n.querySelectorAll(TASK_SEL2)) removed.push(r);
       }
     }
     if (!removed.length) return;
@@ -4354,7 +4556,7 @@
       seen.add(path);
       const head = wsHead(row);
       const collapsed = !head || head.getAttribute("aria-expanded") === "false";
-      const running = !!(enabled2 && collapsed && runningByWs.get(path) && runningByWs.get(path).size);
+      const running = !!(enabled3 && collapsed && runningByWs.get(path) && runningByWs.get(path).size);
       const icon = row.firstElementChild && row.firstElementChild.querySelector(":scope > span");
       if (icon) icon.classList.toggle("zcodepro-ws-running", running);
     }
@@ -4376,7 +4578,7 @@
   }
   function syncPeeks() {
     for (const [ws, set] of runningByWs) {
-      if (!enabled2 || !set.size) {
+      if (!enabled3 || !set.size) {
         clearPeek(ws);
         continue;
       }
@@ -4398,7 +4600,7 @@
     return p;
   }
   async function peekInner(ws) {
-    if (!enabled2 || document.hidden || activePeeks.has(ws)) return;
+    if (!enabled3 || document.hidden || activePeeks.has(ws)) return;
     const row = findWsRow(ws);
     const head = row && wsHead(row);
     if (!row || !head || head.getAttribute("aria-expanded") !== "false") return;
@@ -4433,7 +4635,7 @@
     }
     apply();
     const set = runningByWs.get(ws);
-    if (set && set.size && enabled2) schedulePeek(ws, PEEK_REPEAT_MS);
+    if (set && set.size && enabled3) schedulePeek(ws, PEEK_REPEAT_MS);
   }
   function settleAndRead(ws) {
     return new Promise((resolve) => {
@@ -4474,7 +4676,7 @@
       if (m.type !== "childList") continue;
       for (const n of m.addedNodes) {
         if (!(n instanceof Element)) continue;
-        const rows = n.matches(TASK_SEL) ? [n] : [...n.querySelectorAll(TASK_SEL)];
+        const rows = n.matches(TASK_SEL2) ? [n] : [...n.querySelectorAll(TASK_SEL2)];
         for (const r of rows) {
           const ws = workspaceOf2(r.getAttribute("data-task-item-key") || "");
           if (!activePeeks.has(ws)) continue;
@@ -4519,12 +4721,12 @@
   }
   function relevant(muts) {
     for (const m of muts) {
-      if (inSel(m.target, TASK_SEL) || inSel(m.target, WS_SEL)) return true;
+      if (inSel(m.target, TASK_SEL2) || inSel(m.target, WS_SEL)) return true;
       for (const n of m.addedNodes) {
-        if (n instanceof Element && (n.matches(TASK_SEL) || n.matches(WS_SEL) || n.querySelector(TASK_SEL) || n.querySelector(WS_SEL))) return true;
+        if (n instanceof Element && (n.matches(TASK_SEL2) || n.matches(WS_SEL) || n.querySelector(TASK_SEL2) || n.querySelector(WS_SEL))) return true;
       }
       for (const n of m.removedNodes) {
-        if (n instanceof Element && (n.matches(TASK_SEL) || n.matches(WS_SEL) || n.querySelector(TASK_SEL))) return true;
+        if (n instanceof Element && (n.matches(TASK_SEL2) || n.matches(WS_SEL) || n.querySelector(TASK_SEL2))) return true;
       }
     }
     return false;
@@ -4535,8 +4737,8 @@
       const res = await rpc("/config");
       if (res && res.ok && res.config && res.config.features) {
         const next = res.config.features.wsRunningSpin !== false;
-        if (next !== enabled2) {
-          enabled2 = next;
+        if (next !== enabled3) {
+          enabled3 = next;
           if (!next) {
             for (const ws of [...peekTimers.keys()]) clearPeek(ws);
             apply();
@@ -4555,30 +4757,30 @@
       pollConfig2();
     }, pollMs2);
   }
-  var scanDebounce2 = 0;
+  var scanDebounce3 = 0;
   function startWsRunningSpin() {
-    if (installed3 || typeof document === "undefined") return;
-    installed3 = true;
+    if (installed4 || typeof document === "undefined") return;
+    installed4 = true;
     void refreshConfig2();
     pollConfig2();
     const observer2 = new MutationObserver((muts) => {
       if (!relevant(muts)) return;
       handleRemovals(muts);
       hidePeekRows(muts);
-      if (!scanDebounce2) {
-        scanDebounce2 = setTimeout(() => {
-          scanDebounce2 = 0;
-          scan2();
-        }, SCAN_DEBOUNCE_MS2);
+      if (!scanDebounce3) {
+        scanDebounce3 = setTimeout(() => {
+          scanDebounce3 = 0;
+          scan3();
+        }, SCAN_DEBOUNCE_MS3);
       }
     });
     observer2.observe(document.body, { childList: true, subtree: true });
-    scan2();
+    scan3();
     setInterval(() => {
-      if (!document.hidden && enabled2) scan2();
-    }, SCAN_FALLBACK_MS2);
+      if (!document.hidden && enabled3) scan3();
+    }, SCAN_FALLBACK_MS3);
     document.addEventListener("visibilitychange", () => {
-      if (!document.hidden) scan2();
+      if (!document.hidden) scan3();
     });
     document.addEventListener("click", (e) => {
       if (!e.isTrusted) return;
@@ -4590,10 +4792,10 @@
   // src/inject/features/toolbar-icons.js
   var HIDE_CLASS = "zcodepro-tb-hidden";
   var SYNC_DEBOUNCE_MS = 150;
-  var SCAN_FALLBACK_MS3 = 5e3;
+  var SCAN_FALLBACK_MS4 = 5e3;
   var ROW_SEL = "[data-task-item-key]";
   var MENU_SEL = '[data-testid="task-new-button"], [data-testid="automations-open"], [data-testid="plugin-store-sidebar-open"], [data-slot="command"], [data-testid="desktop-top-nav-back"]';
-  var enabled3 = true;
+  var enabled4 = true;
   var rowEl = null;
   var origs = null;
   var syncTimer = 0;
@@ -4708,7 +4910,7 @@
     return scroll.getBoundingClientRect().width < NARROW_SIDEBAR_PX;
   }
   function sync() {
-    if (!enabled3) return;
+    if (!enabled4) return;
     const menu = findMenu();
     if (!menu) {
       if (rowEl) rowEl.style.display = "none";
@@ -4761,8 +4963,8 @@
   }
   async function refreshConfig3() {
     const cfg = await getConfig(true).catch(() => null);
-    enabled3 = !cfg || !cfg.features || cfg.features.toolbarIcons !== false;
-    if (enabled3) sync();
+    enabled4 = !cfg || !cfg.features || cfg.features.toolbarIcons !== false;
+    if (enabled4) sync();
     else teardown();
   }
   function startToolbarIcons() {
@@ -4776,7 +4978,7 @@
     }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "aria-pressed"] });
     setInterval(() => {
       if (!document.hidden) sync();
-    }, SCAN_FALLBACK_MS3);
+    }, SCAN_FALLBACK_MS4);
     document.addEventListener("visibilitychange", () => {
       if (!document.hidden) sync();
     });
@@ -4787,8 +4989,8 @@
   var HEAD_CLASS = "zcodepro-pin-head";
   var STORE_KEY = "zcodepro:pinned-collapsed";
   var SYNC_DEBOUNCE_MS2 = 300;
-  var SCAN_FALLBACK_MS4 = 5e3;
-  var enabled4 = true;
+  var SCAN_FALLBACK_MS5 = 5e3;
+  var enabled5 = true;
   var syncTimer2 = 0;
   function findPinnedHeader() {
     for (const h3 of document.querySelectorAll("h3")) {
@@ -4845,7 +5047,7 @@
     }
     h3.classList.add(HEAD_CLASS);
     h3.addEventListener("click", () => {
-      if (enabled4) toggle();
+      if (enabled5) toggle();
     });
     const btn = h("button", {
       type: "button",
@@ -4854,7 +5056,7 @@
       "aria-expanded": collapsed ? "false" : "true",
       onClick: (e) => {
         e.stopPropagation();
-        if (enabled4) toggle();
+        if (enabled5) toggle();
       }
     });
     btn.append(chevronSvg());
@@ -4862,7 +5064,7 @@
     return true;
   }
   function sync2() {
-    if (enabled4) apply2();
+    if (enabled5) apply2();
   }
   function scheduleSync2() {
     if (syncTimer2) return;
@@ -4891,8 +5093,8 @@
   }
   async function refreshConfig4() {
     const cfg = await getConfig(true).catch(() => null);
-    enabled4 = !cfg || !cfg.features || cfg.features.pinnedCollapse !== false;
-    if (enabled4) sync2();
+    enabled5 = !cfg || !cfg.features || cfg.features.pinnedCollapse !== false;
+    if (enabled5) sync2();
     else teardown2();
   }
   function startPinnedCollapse() {
@@ -4906,7 +5108,7 @@
     }).observe(document.body, { childList: true, subtree: true });
     setInterval(() => {
       if (!document.hidden) sync2();
-    }, SCAN_FALLBACK_MS4);
+    }, SCAN_FALLBACK_MS5);
     document.addEventListener("visibilitychange", () => {
       if (!document.hidden) sync2();
     });
@@ -4967,6 +5169,10 @@
       }
       try {
         startSessionSwitch();
+      } catch {
+      }
+      try {
+        startTitleLock();
       } catch {
       }
       try {

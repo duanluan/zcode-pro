@@ -10,7 +10,7 @@ import { basename, delimiter, dirname, isAbsolute, join, resolve, sep } from 'no
 import { homedir, tmpdir } from 'node:os';
 import { pathToFileURL } from 'node:url';
 import { readSettings, writeSettingsAtomic, remapSettingsPaths, isProjectOpenInTabs } from './settings.mjs';
-import { taskIndexPath, probeTaskIndexWritable, remapTaskIndexPaths, taskIndexDriverAvailable } from './taskIndex.mjs';
+import { taskIndexPath, probeTaskIndexWritable, remapTaskIndexPaths, taskIndexDriverAvailable, listOverriddenTitles } from './taskIndex.mjs';
 import { pickFolderSystem } from './pickFolder.mjs';
 import { reorderWorkspaceTasks, reorderGroupMembers } from './taskOrder.mjs';
 
@@ -54,6 +54,7 @@ export function defaultConfig() {
       pinnedKeepCollapsed: false, // 点击置顶会话保持项目折叠（实验性：会先展开再缩起，有闪烁）
       autoUpdatePlugins: false,  // 启动时自动更新已装的 zcode-plugins 插件（含安装市场里新增的）
       sessionSwitch: true,     // 会话快捷切换（alt+z 上次会话；按住 alt x/c 弹窗导航，类 alt+tab）
+      titleLock: true,        // 会话名锁定：手动重命名过的会话不被运行时推送的自动标题覆盖（侧栏钉回索引库中的名字）
       wsRunningSpin: true,     // 折叠项目运行提示：折叠后其中仍有会话运行时项目图标旋转
       toolbarIcons: true,      // 侧栏菜单并入顶栏：新建任务/搜索/自动化/插件市场收成顶栏图标按钮（原菜单隐藏，点击转发）
       pinnedCollapse: true,    // 已置顶分区可折叠：标题可点折叠/展开任务列表（状态记 localStorage）
@@ -311,6 +312,19 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
           return;
         }
         json(res, 200, { ok: true, reload: true, ...result });
+        return;
+      }
+      // 会话名锁定：读任务索引里重命名过的会话（title_overridden=1）标题表，
+      // 注入侧据此把被自动标题覆盖的侧栏行钉回重命名值；响应带开关，
+      // 注入侧按需拉取这一个端点即可（无轮询）
+      if (req.method === 'GET' && url.pathname === '/pinned-titles') {
+        const r = await listOverriddenTitles(dataRoot);
+        if (r.error) {
+          json(res, 500, { ok: false, code: r.code, error: r.error });
+          return;
+        }
+        const config = loadConfig(configFile);
+        json(res, 200, { ok: true, enabled: config.features.titleLock !== false, titles: r.titles });
         return;
       }
       // —— zcode-vision 插件（图片视觉代理）：设置弹窗「视觉代理」标签页读写 ————

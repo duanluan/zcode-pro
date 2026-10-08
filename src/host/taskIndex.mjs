@@ -15,6 +15,7 @@
 // 并发：ZCode 宿主进程持有该库（WAL 模式），所有写入走 BEGIN IMMEDIATE + busy_timeout。
 
 import { spawnSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
 const BUSY_TIMEOUT_MS = 5000;
@@ -169,6 +170,40 @@ export async function remapTaskIndexPaths(dataRoot, oldPath, newPath) {
     e.code = 'index-remap-failed';
     return e;
   }
+}
+
+// 已重命名会话的标题表：task_id → title（title_overridden = 1 且未删除）。
+// 只读单条 SELECT，不开事务；库不存在或没有 SQLite 支持时返回空表，
+// 调用方（会话名锁定）自然降级为不干预。
+export async function listOverriddenTitles(dataRoot) {
+  const dbFile = taskIndexPath(dataRoot);
+  if (!existsSync(dbFile)) return { titles: {} };
+  const driver = await loadDriver();
+  if (!driver) return { titles: {} };
+  const titles = {};
+  try {
+    if (driver.kind === 'node') {
+      const db = new driver.DatabaseSync(dbFile);
+      try {
+        db.exec(`PRAGMA busy_timeout = ${BUSY_TIMEOUT_MS}`);
+        for (const row of db.prepare(
+          'SELECT task_id, title FROM tasks WHERE title_overridden = 1 AND deleted = 0'
+        ).all()) {
+          titles[row.task_id] = row.title;
+        }
+      } finally { db.close(); }
+    } else {
+      // json_group_object：标题里的任意字符（含引号竖线）都被正确转义，整行即一个 JSON
+      const r = runCli(dbFile,
+        'SELECT coalesce(json_group_object(task_id, title), \'{}\') FROM tasks WHERE title_overridden = 1 AND deleted = 0;');
+      Object.assign(titles, JSON.parse(r.stdout.trim() || '{}'));
+    }
+  } catch (err) {
+    const e = new Error('读取任务索引失败: ' + (err?.message || err));
+    e.code = 'index-error';
+    return { error: e.message, code: e.code };
+  }
+  return { titles };
 }
 
 function isBusyError(err) {

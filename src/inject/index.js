@@ -8,6 +8,7 @@ import { startSettingsEntry } from './features/settings-entry.js';
 import { startAliasWatcher } from './features/alias.js';
 import { startTaskOrderWatcher } from './features/task-order.js';
 import { startSessionSwitch } from './features/session-switch.js';
+import { startTitleLock } from './features/title-lock.js';
 import { startPinnedExpandSuppression } from './features/pinned-expand.js';
 import { startWsRunningSpin } from './features/ws-running.js';
 import { startToolbarIcons } from './features/toolbar-icons.js';
@@ -32,6 +33,7 @@ import { ensureStyle } from './ui.js';
     try { void startAliasWatcher(); } catch { /* ignore */ }
     try { startTaskOrderWatcher(); } catch { /* ignore */ }
     try { startSessionSwitch(); } catch { /* ignore */ }
+    try { startTitleLock(); } catch { /* ignore */ }
     try { startImageMenu(); } catch { /* ignore */ }
     try { startPinnedExpandSuppression(); } catch { /* ignore */ }
     try { startWsRunningSpin(); } catch { /* ignore */ }
