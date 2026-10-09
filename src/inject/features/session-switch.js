@@ -40,7 +40,7 @@ function findCurrent() {
   return null;
 }
 
-// 记录一次「切到 key」；顺带刷新在场条目的标题缓存
+// 记录一次“切到 key”；顺带刷新在场条目的标题缓存
 function record(key) {
   if (key && key !== current) {
     current = key;
@@ -217,7 +217,7 @@ export function startSessionSwitch() {
       // 即时切换：关掉可能开着的弹窗，切到最近使用的会话（上次使用的会话）
       closePopup(false);
       // 先按侧栏选中标记实时识别当前会话：新建任务视图里没有选中行，
-      // 此时「当前」视为空，直接回最近使用的会话（新开应用点开过一个会话、
+      // 此时“当前”视为空，直接回最近使用的会话（新开应用点开过一个会话、
       // 进了新建任务再按 alt+z 也能切回去）
       const live = findCurrent();
       if (live) record(live.getAttribute('data-task-item-key'));

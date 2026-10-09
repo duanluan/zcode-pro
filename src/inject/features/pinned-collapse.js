@@ -1,5 +1,5 @@
-// 已置顶分区可折叠：原生侧栏「项目」「分组」的分区头是可折叠按钮（悬停显现
-// chevron），「已置顶」只是静态标题。本功能把该标题变成同样的折叠开关：
+// 已置顶分区可折叠：原生侧栏“项目”“分组”的分区头是可折叠按钮（悬停显现
+// chevron），“已置顶”只是静态标题。本功能把该标题变成同样的折叠开关：
 // 标题内追加自有 chevron 按钮、整行可点，折叠时藏起分区里的任务列表；
 // 状态记在 localStorage，界面重渲染后由观察器自动补回。不增删应用节点
 // 结构（往标题里插外来子节点与顶栏图标按钮同理，界面框架不排斥）。
@@ -25,7 +25,7 @@ function findPinnedHeader() {
 }
 
 function chevronSvg() {
-  // 优先克隆应用「项目」分区头的 chevron（应用改图标自动跟随），取不到再内建
+  // 优先克隆应用“项目”分区头的 chevron（应用改图标自动跟随），取不到再内建
   const proto = document.querySelector('svg[data-purpose-section-chevron]');
   if (proto) {
     const clone = proto.cloneNode(true);
@@ -68,7 +68,7 @@ function apply() {
     return true;
   }
   h3.classList.add(HEAD_CLASS);
-  // 整行可点（与「项目」分区头一致）；开关禁用后旧监听变空转，无需摘除
+  // 整行可点（与“项目”分区头一致）；开关禁用后旧监听变空转，无需摘除
   h3.addEventListener('click', () => { if (enabled) toggle(); });
   const btn = h('button', {
     type: 'button',

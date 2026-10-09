@@ -1,4 +1,4 @@
-// 「切换文件夹」：把项目记录（侧边栏条目/标签页/任务历史）重新指向另一个已存在的文件夹。
+// “切换文件夹”：把项目记录（侧边栏条目/标签页/任务历史）重新指向另一个已存在的文件夹。
 // 不移动、不修改任何目录；本地任务索引与 setting.json 的路径引用同步更新，会话不丢失。
 import { h, t, rpc, getConfig, closeRadixMenu, itemsOf, itemText, errText } from '../core.js';
 import { openDialog, dialogFooter, btnPrimary, btnSecondary, textInput, showToast, ensureStyle } from '../ui.js';

@@ -1,4 +1,4 @@
-// 「打开文件夹」：项目“更多”菜单中在系统文件管理器里打开项目目录。
+// “打开文件夹”：项目“更多”菜单中在系统文件管理器里打开项目目录。
 // 走 helper /open-folder：三平台行为一致（宿主桥 openInFileManager 在 macOS 是定位而非打开）。
 import { h, t, rpc, closeRadixMenu } from '../core.js';
 

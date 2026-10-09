@@ -67,7 +67,7 @@ export function defaultConfig() {
     // 启动一次性回收的延后分钟（0–1440）：应用启动会为每个恢复的项目预热进程，
     // 到点把当时符合条件的项目一次收掉；0 = 启动后尽快回收一次
     idleReclaimStartupMinutes: 5,
-    // 样式调整（设置弹窗「样式调整」标签页）。null = 不覆盖，跟随应用默认。
+    // 样式调整（设置弹窗“样式调整”标签页）。null = 不覆盖，跟随应用默认。
     styles: {
       rowGap: null,           // 段落间距：会话内各块之间的垂直间距（应用默认 20px）
       listSpacing: null,      // 列表上下留白（应用默认 12px）
@@ -91,7 +91,7 @@ export function defaultConfig() {
     // HTTP 代理（http(s)://host:port）：helper 发起的网络访问走它——插件市场更新/安装
     // （zcode CLI → git）、headroom 本体的检查更新与升级（pip）。空 = 不用代理。
     proxy: '',
-    // 设置同步（设置弹窗「同步」标签页，交互参考 Tampermonkey 的手动同步）：
+    // 设置同步（设置弹窗“同步”标签页，交互参考 Tampermonkey 的手动同步）：
     // 仅 WebDAV、仅在点击按钮时传输（type 字段预留多后端扩展，当前恒为 webdav）。
     // url 为 WebDAV 服务器地址；dir 为其下的上传目录（默认 zcode-pro，避免直接
     // 写进网盘根目录）；include 选择同步内容；凭据只存本机、不同步出去；
@@ -146,7 +146,7 @@ export function saveConfig(configFile, config) {
 
 // 一次性配置迁移：升级后对历史设置做纠偏，执行过的迁移记入 migrations 标记，
 // 之后不再重复（用户手动改回的设置不会被再次覆盖）。失败静默、下次启动再试。
-// - wsRunningSpinOff：「折叠项目运行提示」实验性功能会在后台周期性短暂展开
+// - wsRunningSpinOff：“折叠项目运行提示”实验性功能会在后台周期性短暂展开
 //   项目复核运行状态，新版本不再默认开启，历史开启过的用户升级后强制关闭一次
 function migrateConfigOnce(configFile) {
   try {
@@ -186,7 +186,7 @@ function readBody(req) {
   });
 }
 
-// 软件代理（设置弹窗「代理」标签页）：helper 发起的网络访问（zcode CLI→git、pip）
+// 软件代理（设置弹窗“代理”标签页）：helper 发起的网络访问（zcode CLI→git、pip）
 // 统一走这里；startHelper 启动时读配置，保存代理时即时更新
 let activeProxyUrl = '';
 
@@ -262,7 +262,7 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         return;
       }
       // 空闲项目内存回收（idle-reclaim.js）：判断各项目的会话进程（zcode-cli）是否
-      // 仍挂着「运行中的用户命令」。按平台走不同适配器（Linux /proc、macOS ps+lsof、
+      // 仍挂着“运行中的用户命令”。按平台走不同适配器（Linux /proc、macOS ps+lsof、
       // Windows PowerShell）；scan=false 表示当前环境不可用，注入层据此停用整个
       // 回收功能，不做盲回收
       if (req.method === 'POST' && url.pathname === '/idle-busy') {
@@ -273,7 +273,7 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         json(res, 200, await scanIdleBusy(paths, dataRoot));
         return;
       }
-      // 全局提示词（~/.zcode/AGENTS.md）：设置弹窗「全局提示词」标签页读写
+      // 全局提示词（~/.zcode/AGENTS.md）：设置弹窗“全局提示词”标签页读写
       if (req.method === 'GET' && url.pathname === '/agents') {
         json(res, ...readAgents(agentsFile));
         return;
@@ -284,14 +284,14 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         json(res, ...await revealInFileManager(body?.path));
         return;
       }
-      // 用系统默认应用打开文件（会话文件菜单的「默认应用打开」；
+      // 用系统默认应用打开文件（会话文件菜单的“默认应用打开”；
       // 新版 ZCode 桥已不再暴露 openExternalFile，改由 helper 代开）
       if (req.method === 'POST' && url.pathname === '/open-path') {
         const body = await readBody(req);
         json(res, ...await openWithDefaultApp(body?.path));
         return;
       }
-      // 在系统文件管理器中打开文件夹（项目「更多」菜单的「打开文件夹」）
+      // 在系统文件管理器中打开文件夹（项目“更多”菜单的“打开文件夹”）
       if (req.method === 'POST' && url.pathname === '/open-folder') {
         const body = await readBody(req);
         json(res, ...await openFolder(body?.path));
@@ -365,7 +365,7 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         json(res, 200, { ok: true, enabled: config.features.titleLock !== false, titles: r.titles });
         return;
       }
-      // —— zcode-vision 插件（图片视觉代理）：设置弹窗「视觉代理」标签页读写 ————
+      // —— zcode-vision 插件（图片视觉代理）：设置弹窗“视觉代理”标签页读写 ————
       if (req.method === 'GET' && url.pathname === '/vision') {
         const file = defaultVisionFile();
         const parsed = readJsonFile(file);
@@ -395,7 +395,7 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         json(res, 200, { ok: true, config: cfg });
         return;
       }
-      // 供应商下拉取数（视觉代理「供应商」组合框用）：合并两张供应商表，只回 id/名称/别名，不含密钥
+      // 供应商下拉取数（视觉代理“供应商”组合框用）：合并两张供应商表，只回 id/名称/别名，不含密钥
       if (req.method === 'GET' && url.pathname === '/vision/providers') {
         json(res, 200, { ok: true, providers: listVisionProviders() });
         return;
@@ -415,7 +415,7 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         json(res, r.ok ? 200 : 500, { ok: r.ok, output: r.output, error: r.error });
         return;
       }
-      // —— zcode-rtk 插件（命令输出压缩）：设置弹窗「rtk 压缩」标签页读写 ——
+      // —— zcode-rtk 插件（命令输出压缩）：设置弹窗“rtk 压缩”标签页读写 ——
       // 状态目录与文件格式由 rtk 插件钩子定义：mode（hint|off）、whitelist（每行 name 或 git:name）
       if (req.method === 'GET' && url.pathname === '/rtk') {
         const dir = defaultRtkDir();
@@ -485,7 +485,7 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         json(res, 200, { ok: true, ...next });
         return;
       }
-      // —— headroom 插件（本地压缩代理）：设置弹窗「Headroom 省流」标签页读写 ——
+      // —— headroom 插件（本地压缩代理）：设置弹窗“Headroom 省流”标签页读写 ——
       // 配置 ~/.zcode/headroom.json 三个键（kompressBackend/powerSaveCpu/powerWatchInterval）。
       // 后端/省电切换/生命周期动作经钩子 ensure-proxy.sh 执行（写配置并立即生效，
       // 兼容 systemd 托管）；间隔直写配置即可——监视器每轮巡检重读配置。
@@ -666,7 +666,7 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         json(res, 200, { ok: true, proxy, targets: results });
         return;
       }
-      // —— 设置同步（设置弹窗「同步」标签页）：配置读写 + 手动上传/下载 ——
+      // —— 设置同步（设置弹窗“同步”标签页）：配置读写 + 手动上传/下载 ——
       if (req.method === 'GET' && url.pathname === '/sync') {
         json(res, 200, { ok: true, sync: loadConfig(configFile).sync });
         return;
@@ -783,10 +783,10 @@ function clampInt(v, min, max, dflt) {
   return Math.min(max, Math.max(min, Math.round(n)));
 }
 
-// —— 设置同步（「同步」标签页）的实现 ——
+// —— 设置同步（“同步”标签页）的实现 ——
 
 // loadConfig 时把磁盘上的 sync 段按默认值归一（长度限幅、时间戳只收数字）。
-// 当前唯一后端是 WebDAV，type 一律归为 webdav（不做「禁用」态：同步本就仅手动触发）
+// 当前唯一后端是 WebDAV，type 一律归为 webdav（不做“禁用”态：同步本就仅手动触发）
 function mergeSyncConfig(saved) {
   const d = defaultConfig().sync;
   if (!saved || typeof saved !== 'object') return d;
@@ -1348,7 +1348,7 @@ export function validateVisionConfig(raw) {
     cfg.proxies.push(proxy);
   }
   for (const n of cfg.chain) {
-    if (!names.has(n)) return [null, `链中代理「${n}」未在 proxies 里定义`];
+    if (!names.has(n)) return [null, `链中代理“${n}”未在 proxies 里定义`];
   }
   return [cfg, null];
 }
@@ -1482,7 +1482,7 @@ async function rtkLatestInfo() {
       if (tag) return mkInfo(tag);
     } catch { /* 落到统一报错 */ }
   }
-  return { code: 'rtk-update', error: '查询 GitHub Releases 失败（可尝试在「代理」标签页设置代理）。重定向: ' + redirErr };
+  return { code: 'rtk-update', error: '查询 GitHub Releases 失败（可尝试在“代理”标签页设置代理）。重定向: ' + redirErr };
 }
 
 // 按平台/架构选资产文件名（与官方 Release 命名一致）
@@ -1761,7 +1761,7 @@ async function headroomPipChannel() {
 }
 
 // headroom 本体升级任务：pip install 后台执行，输出累积到任务对象供面板轮询。
-// 大包下载可持续数分钟——同步等待 HTTP 会把按钮卡在「升级中」且关弹窗即失联；
+// 大包下载可持续数分钟——同步等待 HTTP 会把按钮卡在“升级中”且关弹窗即失联；
 // 任务状态存在 helper 进程内，重开弹窗可恢复显示。
 let headroomUpgradeJob = null;
 

@@ -49,7 +49,7 @@ export function handleProjectMenu(content) {
     if (config.features && config.features.projectMenu === false) return;
     const project = await resolveProjectPath(removeItem);
     if (!project) return;
-    // 菜单顺序：自定义别名 → 切换文件夹 → 打开文件夹 → 复制路径 → 移除（均插在「移除」之前）
+    // 菜单顺序：自定义别名 → 切换文件夹 → 打开文件夹 → 复制路径 → 移除（均插在“移除”之前）
     appendAliasItem(content, removeItem, project);
     appendRelocateItem(content, removeItem, project);
     appendOpenFolderItem(content, removeItem, project);

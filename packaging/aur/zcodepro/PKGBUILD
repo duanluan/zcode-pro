@@ -26,7 +26,7 @@ package() {
   install -Dm644 LICENSE              "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
   install -d "${pkgdir}/usr/bin"
   ln -s "/usr/lib/${pkgname}/bin/zcode-pro" "${pkgdir}/usr/bin/zcode-pro"
-  # 应用菜单快捷方式：点「ZCode Pro」即带增强启动 ZCode（图标复用 zcode 包的 Icon=zcode）
+  # 应用菜单快捷方式：点“ZCode Pro”即带增强启动 ZCode（图标复用 zcode 包的 Icon=zcode）
   install -Dm644 packaging/zcode-pro.desktop "${pkgdir}/usr/share/applications/zcode-pro.desktop"
   sed -i 's|@bindir@|/usr/bin|' "${pkgdir}/usr/share/applications/zcode-pro.desktop"
   # Linux 下 zcode-pro 会自动探测 /opt/ZCode/zcode（AUR zcode 包安装位置）

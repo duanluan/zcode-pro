@@ -1,5 +1,5 @@
 // 读写 ZCode 的 setting.json（~/.zcode/v2/setting.json）。
-// 读用于 helper 的 /projects 端点；写仅用于「切换文件夹」后的路径引用同步，
+// 读用于 helper 的 /projects 端点；写仅用于“切换文件夹”后的路径引用同步，
 // 采用原子写并保留备份。
 
 import { copyFileSync, existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs';

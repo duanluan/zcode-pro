@@ -3,7 +3,7 @@ node_modules/
 .idea/
 scripts/gui-test/
 
-# ===== ↑ 以上同步自 .gitignore（「从 .gitignore 同步」只重写以上部分）=====
+# ===== ↑ 以上同步自 .gitignore（“从 .gitignore 同步”只重写以上部分）=====
 .git/
 .hg/
 .svn/

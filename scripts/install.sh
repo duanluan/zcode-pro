@@ -3,7 +3,7 @@
 # 从本仓库安装启动器与快捷方式：
 #   - 程序文件 → $PREFIX/share/zcode-pro（默认 $HOME/.local/share/zcode-pro）
 #   - 命令     → $PREFIX/bin/zcode-pro（symlink）
-#   - Linux    → 应用菜单快捷方式「ZCode Pro」（$XDG_DATA_HOME/applications）
+#   - Linux    → 应用菜单快捷方式“ZCode Pro”（$XDG_DATA_HOME/applications）
 # 用法：./scripts/install.sh [--uninstall]
 #   PREFIX=/opt/zcode-pro sudo -E ./scripts/install.sh   # 装到系统位置（可选）
 set -e
@@ -78,7 +78,7 @@ chmod +x "$SHARE/bin/zcode-pro"
 mkdir -p "$BIN"
 ln -sfn "$SHARE/bin/zcode-pro" "$BIN/zcode-pro"
 
-# 3. Linux 应用菜单快捷方式（点「ZCode Pro」= 带增强启动 ZCode）
+# 3. Linux 应用菜单快捷方式（点“ZCode Pro”= 带增强启动 ZCode）
 if [ "$OS" = "Linux" ]; then
   APP_DIR="$DESTDIR${XDG_DATA_HOME:-$HOME/.local/share}/applications"
   mkdir -p "$APP_DIR"
@@ -89,9 +89,9 @@ fi
 echo "[zcode-pro] 安装完成：$SHARE"
 echo "  命令: $BIN/zcode-pro"
 if [ "$OS" = "Linux" ]; then
-  echo "  应用菜单已新增「ZCode Pro」（图标复用已安装的 ZCode）。"
+  echo "  应用菜单已新增“ZCode Pro”（图标复用已安装的 ZCode）。"
 fi
-echo "  之后从菜单点「ZCode Pro」或终端运行 zcode-pro 即可带增强启动 ZCode；"
+echo "  之后从菜单点“ZCode Pro”或终端运行 zcode-pro 即可带增强启动 ZCode；"
 echo "  用原版 ZCode 图标启动则不带增强（检测到这种情况时 zcode-pro 会提示重启）。"
 case ":$PATH:" in
   *":$BIN:"*) ;;

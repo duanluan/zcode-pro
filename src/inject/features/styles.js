@@ -1,4 +1,4 @@
-// 样式调整（设置弹窗「样式调整」标签页）：
+// 样式调整（设置弹窗“样式调整”标签页）：
 // 把配置里的样式覆盖写入独立 <style>，改动即时生效、无需刷新页面；
 // 另提供聚焦预览高亮（showStyleHighlight）：设置弹窗聚焦某个样式输入框时，
 // 把会话/侧栏中受影响的区域描边标出，间距类项再把边距区域涂成淡黄条。
@@ -9,7 +9,7 @@
 // 只盖 margin-top 会在级联中输掉——必须逻辑/物理一起盖。
 import { getConfig } from '../core.js';
 
-// 各样式项的应用默认值（用于设置界面显示与「恢复默认」）
+// 各样式项的应用默认值（用于设置界面显示与“恢复默认”）
 export const STYLE_DEFAULTS = {
   rowGap: 20,           // 段落间距：会话内各块之间的垂直间距
   listSpacing: 12,      // 列表上下留白（my-3）
@@ -70,7 +70,7 @@ function buildCss(styles) {
       `${CONV} .space-y-4 > ${SPECIAL} + *:not(${SPECIAL}){margin-block-start:0 !important;margin-top:0 !important;}`,
       // 回合内部条目之间（思考触发条 ↔ 正文等）
       `.history-message.flex.flex-col > * + *:not([data-slot="collapsible-content"]){margin-block-start:${n}px !important;margin-top:${n}px !important;}`,
-      // 工具/状态卡片（「N 个文件已更改」等）上方间距下限 8px：
+      // 工具/状态卡片（“N 个文件已更改”等）上方间距下限 8px：
       // 段落间距调到 0 时也不至于贴死（gap 与 margin 在弹性布局里相加）
       `${CONV} .flex.flex-col.gap-5 > [data-slot="collapsible"]{margin-block-start:max(0px, calc(8px - ${n}px)) !important;margin-top:max(0px, calc(8px - ${n}px)) !important;}`,
     );
@@ -209,7 +209,7 @@ function buildCss(styles) {
   if (typeof sts === 'number' && Number.isFinite(sts) && sts >= 0) {
     // 任务行间距按视觉总量映射：应用默认 = 行内上下留白 4px + 行间边距 2px = 10px，
     // 一个数值同时落到两者（边距封顶 2px，余量均分行内），视觉间距与数值一致。
-    // 「显示更多」行与列表之间的 gap-2 也随任务间距（同属任务区）
+    // “显示更多”行与列表之间的 gap-2 也随任务间距（同属任务区）
     const m = Math.min(sts, 2);
     const pad = Math.max(0, Math.round((sts - m) / 2));
     parts.push(

@@ -18,7 +18,7 @@ const CURL_EXIT = {
   60: 'SSL 证书无效',
 };
 
-// HTTP 状态 → 同步场景的人话（404 不算失败，由调用方按「云端没有数据」处理）
+// HTTP 状态 → 同步场景的人话（404 不算失败，由调用方按“云端没有数据”处理）
 export function webdavHttpText(code) {
   if (code === 401 || code === 403) return `登录或密码被拒绝（HTTP ${code}；坚果云等网盘需使用应用密码，不是登录密码）`;
   if (code === 405) return '服务器不允许该操作（HTTP 405）';

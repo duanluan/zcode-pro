@@ -4,7 +4,7 @@
 //   重排 = 按新顺序重盖 updated_at（同步 meta_json.updatedAt，避免下次合并回跳）；
 // - 分组中的会话：按 task_group_members.sort_order 升序（compareGroupTasks），
 //   重排 = 重写该组成员的 sort_order。
-// 两种都采用「子序列拼接」策略：仅调整拖动子集的相对位置，
+// 两种都采用“子序列拼接”策略：仅调整拖动子集的相对位置，
 // 未出现在拖动结果里的任务保持原有相对次序。
 // 会话键格式与页面 data-task-item-key 一致：`<workspace_path>:<task_id>`（按最后一个 ':' 分割）。
 

@@ -7,7 +7,7 @@
 //   tasks（key 为联合主键）、automations、off_peak_tasks、task_group_members（key 为联合主键）；
 // - 另有 tasks.meta_json 内嵌 "workspacePath":"<路径>"；
 //   task_group_view_node_orders.node_key（node_type='task'）内嵌 JSON 数组 ["<workspace_key>","<task_id>"]；
-// - workspace_identity 格式未详，按「引号界定的精确串」替换（哈希值不会含路径，LIKE 只做免更新过滤）；
+// - workspace_identity 格式未详，按“引号界定的精确串”替换（哈希值不会含路径，LIKE 只做免更新过滤）；
 // - tasks.searchable_text 是会话内容文本（可能提及任何路径），不属于路径引用，不动。
 //
 // 驱动：优先 node:sqlite（Node ≥23.4 内置），退回 sqlite3 CLI；两者都没有则返回 null，
@@ -213,7 +213,7 @@ function isBusyError(err) {
 
 // 任务（会话）ID → 工作区路径（无尾分隔符）：空闲回收在 Windows 上的后台命令
 // 归属判定用（命令行里只带会话 ID，需经索引反查它属于哪个项目）。
-// 读取失败返回空表，调用方按「无法归属」保守处理
+// 读取失败返回空表，调用方按“无法归属”保守处理
 export async function listTaskWorkspaceMap(dataRoot) {
   const out = {};
   const dbFile = taskIndexPath(dataRoot);

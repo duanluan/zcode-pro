@@ -1,5 +1,5 @@
 ﻿# ZCode Pro 一键安装（Windows）
-# 默认：复制程序到 %LOCALAPPDATA%\ZCodePro，并在开始菜单创建「ZCode Pro」快捷方式
+# 默认：复制程序到 %LOCALAPPDATA%\ZCodePro，并在开始菜单创建“ZCode Pro”快捷方式
 #       （快捷方式经 wscript 静默启动，不常驻控制台窗口；图标复用已安装的 ZCode）。
 # 用法：powershell -ExecutionPolicy Bypass -File scripts\install.ps1 [-Desktop] [-Uninstall]
 #   -Desktop    额外在桌面创建快捷方式
@@ -52,5 +52,5 @@ New-ZcodeProShortcut $startMenu
 if ($Desktop) { New-ZcodeProShortcut $desktopLnk }
 
 Write-Host "[zcode-pro] 安装完成：$dest"
-Write-Host "  开始菜单已新增「ZCode Pro」；点它即带增强启动 ZCode。"
+Write-Host "  开始菜单已新增“ZCode Pro”；点它即带增强启动 ZCode。"
 Write-Host "  用原版 ZCode 图标启动则不带增强（此时 zcode-pro 会提示先关闭原版再经它启动）。"

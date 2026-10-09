@@ -1,8 +1,8 @@
-// 侧栏菜单并入顶栏：侧边栏顶部的「新建任务 / 搜索 / 自动化 / 插件市场」四项
+// 侧栏菜单并入顶栏：侧边栏顶部的“新建任务 / 搜索 / 自动化 / 插件市场”四项
 // 收成顶部导航栏（后退/前进旁）的四个图标按钮，原菜单区域整体隐藏。
 // 悬停显示名称（带快捷键的项照带快捷键），按钮点亮表示对应界面正打开：
 // 自动化/插件市场跟随原按钮的 aria-pressed，搜索跟随命令面板是否在场，
-// 新建任务跟随「当前无选中会话」（即处于新建任务视图）。状态都从应用现状推导，
+// 新建任务跟随“当前无选中会话”（即处于新建任务视图）。状态都从应用现状推导，
 // 键盘快捷键或其他入口触发同样能点亮。点击转发合成 click 给隐藏的原按钮
 //（display:none 不影响事件派发，已实测），原生行为全部保留。
 // 不移动应用的任何节点（避免与界面框架自身的增删冲突），自有按钮行追加在
@@ -79,7 +79,7 @@ function syncActive() {
   const auto = origs.auto.getAttribute('aria-pressed') === 'true';
   const plugin = origs.plugin.getAttribute('aria-pressed') === 'true';
   const palette = !!document.querySelector('[data-slot="command"]');
-  // 当前会话的识别方式与「会话快捷切换」一致（侧栏条目的 bg-selected 标记）
+  // 当前会话的识别方式与“会话快捷切换”一致（侧栏条目的 bg-selected 标记）
   let selected = false;
   for (const el of document.querySelectorAll(ROW_SEL)) {
     if ((el.className + '').includes('bg-selected')) { selected = true; break; }
@@ -133,7 +133,7 @@ function rebuild() {
   return true;
 }
 
-// 侧栏收起判定：收起后顶栏「切换侧边栏」按钮的图标换成 panel-left-open
+// 侧栏收起判定：收起后顶栏“切换侧边栏”按钮的图标换成 panel-left-open
 // （展开时是 panel-left-close）。图标类名不含本地化文案，比 aria-label 稳；
 // 识别不出时按展开处理。收起时应用会让自带的顶栏新建任务按钮展开顶上，
 // 我们的按钮行要藏起来避免出现两个相同入口

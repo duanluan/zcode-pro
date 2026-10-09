@@ -1,5 +1,5 @@
 // “ZCode Pro 增强设置”弹窗：功能开关 + 样式调整 + 运行状态。
-// 顶部标签页切换（视觉参考侧栏「分组/项目」切换）；配置写入 helper（~/.zcode/zcodepro.json）。
+// 顶部标签页切换（视觉参考侧栏“分组/项目”切换）；配置写入 helper（~/.zcode/zcodepro.json）。
 import { h, t, rpc, getConfig, clearConfigCache, errText, HELPER_URL, isZhLocale } from '../core.js';
 import { openDialog, dialogFooter, btnPrimary, btnSecondary, btnSmall, settingRow, ensureStyle, showToast, numberField, unitField } from '../ui.js';
 import { refreshAliases } from './alias.js';
@@ -24,7 +24,7 @@ function makeUpgradeControls({ endpoint, metaRefresh }) {
     state.className = 'min-w-0 flex-1 truncate text-left text-ui-xs/relaxed '
       + (kind === 'error' ? 'text-destructive' : 'text-foreground-subtle');
   };
-  let latest = null;   // 检查到新版本时记录最新版号，按钮随即转为「升级」
+  let latest = null;   // 检查到新版本时记录最新版号，按钮随即转为“升级”
   let busy = false;
   let timer = null;
   const stopPoll = () => { if (timer) { clearInterval(timer); timer = null; } };
@@ -43,7 +43,7 @@ function makeUpgradeControls({ endpoint, metaRefresh }) {
   const runCancel = async () => {
     const res = await rpc(endpoint, { method: 'POST', body: { cancelUpgrade: true } });
     if (!res.ok) showToast(L.failed + ': ' + errText(res), 'error');
-    // 收尾交给轮询：任务结束后 tick 会恢复按钮并提示「已停止升级」
+    // 收尾交给轮询：任务结束后 tick 会恢复按钮并提示“已停止升级”
   };
   const runUpgrade = async () => {
     if (busy) return;
@@ -59,7 +59,7 @@ function makeUpgradeControls({ endpoint, metaRefresh }) {
   };
   const runCheck = async () => {
     if (busy) return;
-    if (timer) { void runCancel(); return; } // 升级进行中：按钮此时是「停止升级」
+    if (timer) { void runCancel(); return; } // 升级进行中：按钮此时是“停止升级”
     if (latest) { void runUpgrade(); return; }
     busy = true;
     btn.disabled = true;
@@ -117,7 +117,7 @@ function makeUpgradeControls({ endpoint, metaRefresh }) {
   };
   const pollStart = () => {
     stopPoll();
-    // 升级中按钮转为「停止升级」，保持可点（点击即中止）
+    // 升级中按钮转为“停止升级”，保持可点（点击即中止）
     btn.disabled = false;
     btn.textContent = L.upgradeStop;
     setState(L.upgradeRunning);
@@ -152,7 +152,7 @@ export function openSettingsDialog() {
       if (rtkUpgradePollStop) rtkUpgradePollStop();
     },
     onMount: async ({ body, close, content }) => {
-      // 标题行：左侧「ZCode Pro」点击跳转 GitHub 仓库；右上角 X 关闭弹窗（替代底部按钮）。
+      // 标题行：左侧“ZCode Pro”点击跳转 GitHub 仓库；右上角 X 关闭弹窗（替代底部按钮）。
       // h2 仍是拖拽把手——X 上阻止 mousedown 冒泡，避免点关闭时误触发拖拽
       const titleEl = content && content.firstElementChild;
       if (titleEl && titleEl.tagName === 'H2') {
@@ -403,7 +403,7 @@ export function openSettingsDialog() {
       };
       renderTabs();
 
-      // 「样式调整」：一行两项、相关项同行；无描述文字，悬停名称显示 tip；
+      // “样式调整”：一行两项、相关项同行；无描述文字，悬停名称显示 tip；
       // 数字框滚轮/手输调节，改完即存即生效
       const savedStyles = config.styles || {};
       let saveTimer = null;
@@ -490,7 +490,7 @@ export function openSettingsDialog() {
         styleCell(L.tableSpacingName, L.tableSpacingDesc, 'tableSpacing'),
         cellPadCell,
       ];
-      // 「侧栏菜单并入顶栏」开关放在样式页（属界面布局调整，存仍是 features 配置）；
+      // “侧栏菜单并入顶栏”开关放在样式页（属界面布局调整，存仍是 features 配置）；
       // 切换后重渲本行让开关状态即时反映
       const toolbarSwitchWrap = h('div');
       const renderToolbarSwitch = () => {
@@ -502,7 +502,7 @@ export function openSettingsDialog() {
         }));
       };
       // 字体设置：界面/提问/回答三个下拉框（打开弹窗时异步拉系统字体列表，
-      // 拉不到回退常用清单）；选中即保存即生效，选「默认」恢复跟随应用。
+      // 拉不到回退常用清单）；选中即保存即生效，选“默认”恢复跟随应用。
       // 不接聚焦高亮：字体变化肉眼可辨，无需标出受影响区域
       const fontSelectCls = 'h-8 w-full min-w-0 flex-1 rounded-lg border border-border bg-input px-2.5 text-ui-sm text-foreground outline-none transition-shadow focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40';
       // queryLocalFonts 不可用/被拒时的回退清单（常用中西文字体）
@@ -565,7 +565,7 @@ export function openSettingsDialog() {
           })),
       );
 
-      // 「全局提示词」：编辑 ~/.zcode/AGENTS.md（helper /agents 端点读写）。
+      // “全局提示词”：编辑 ~/.zcode/AGENTS.md（helper /agents 端点读写）。
       // 大段文本不做即存即生效——显式保存；未修改时保存按钮禁用
       const agentsArea = h('textarea', {
         class: 'zcodepro-textarea',
@@ -606,9 +606,9 @@ export function openSettingsDialog() {
         h('div', { class: 'mt-3 flex justify-end' }, agentsSaveBtn),
       );
 
-      // 「代理」：为 helper 发起的网络访问（插件市场更新/安装、headroom 本体升级）设
+      // “代理”：为 helper 发起的网络访问（插件市场更新/安装、headroom 本体升级）设
       // HTTP 代理；保存即生效（helper 子进程环境变量注入），不影响 ZCode 应用与模型请求。
-      // 「检测」经 curl -x 走代理访问 GitHub / PyPI，测输入框当前的地址（可先测再存）
+      // “检测”经 curl -x 走代理访问 GitHub / PyPI，测输入框当前的地址（可先测再存）
       const savedProxy = typeof config.proxy === 'string' ? config.proxy : '';
       const proxyInputCls = 'h-8 w-full rounded-lg border border-border bg-input px-2.5 text-ui-sm text-foreground outline-none transition-shadow placeholder:text-foreground-subtle focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40';
       const proxyInput = h('input', { type: 'text', value: savedProxy, placeholder: L.proxyPlaceholder, spellcheck: 'false', class: proxyInputCls + ' min-w-0 flex-1' });
@@ -665,8 +665,8 @@ export function openSettingsDialog() {
         proxyTestState,
       );
 
-      // 「性能」：空闲项目内存回收（开关 + 两个时长）。idleReclaimStartupMinutes
-      // 允许 0（启动后立即回收一次），取值不能用「|| 默认值」的写法回退
+      // “性能”：空闲项目内存回收（开关 + 两个时长）。idleReclaimStartupMinutes
+      // 允许 0（启动后立即回收一次），取值不能用“|| 默认值”的写法回退
       const perfToggleWrap = h('div');
       const renderPerfToggle = () => {
         const f = config.features || {};
@@ -710,9 +710,9 @@ export function openSettingsDialog() {
           perfNumberRow(L.idleReclaimStartupLabel, L.idleReclaimStartupHint, 'idleReclaimStartupMinutes', 5, 0)),
       );
 
-      // 「同步」：把 ZCode Pro 设置与模型设置手动备份到 WebDAV / 从 WebDAV 恢复
+      // “同步”：把 ZCode Pro 设置与模型设置手动备份到 WebDAV / 从 WebDAV 恢复
       // （交互参考 Tampermonkey：URL/登录/密码 + 手动触发，无自动同步）。仅 WebDAV
-      // 一种后端且本就只在点击时传输，不设「类型/禁用」下拉。表单显式保存；
+      // 一种后端且本就只在点击时传输，不设“类型/禁用”下拉。表单显式保存；
       // 同步内容开关即时保存；下载会覆盖本机，先弹二次确认
       const savedSync = (config.sync && typeof config.sync === 'object') ? config.sync
         : { url: '', dir: 'zcode-pro', login: '', password: '', include: { zcodepro: true, model: true }, lastPushAt: null, lastPullAt: null };
@@ -873,7 +873,7 @@ export function openSettingsDialog() {
         h('p', { class: 'mt-2 text-ui-xs/relaxed text-foreground-subtle' }, L.syncHint),
       );
 
-      // 「视觉代理」：编辑 ~/.zcode/zcode-vision.json（zcode-vision 插件与 /vision-* 命令共用同一文件）。
+      // “视觉代理”：编辑 ~/.zcode/zcode-vision.json（zcode-vision 插件与 /vision-* 命令共用同一文件）。
       // 代理列表顺序即执行链；结构性改动（开关/模式/排序/删增）即时保存，文本输入防抖保存。
       // 注意：保存时链按全部代理重建——若用 /vision-chain 配过子集链，会被这里覆盖（两套入口语义如此，面板以列表为准）。
       // 默认两级链与 zcode-vision 插件 DEFAULT_CONFIG 保持一致：glm-session（跟随会话）→ glm-flash（GLM 订阅直连）。
@@ -1102,7 +1102,7 @@ export function openSettingsDialog() {
       };
       renderVision();
 
-      // 「rtk 压缩」：编辑 rtk 插件状态（~/.zcode-rtk 的 mode 与 whitelist，
+      // “rtk 压缩”：编辑 rtk 插件状态（~/.zcode-rtk 的 mode 与 whitelist，
       // /rtk-* 命令编辑同一文件）。开关与白名单增删即时保存，钩子每次执行都重读文件。
       let rtkCfg = rtkRes.ok
         ? {
@@ -1237,7 +1237,7 @@ export function openSettingsDialog() {
       };
       renderRtk();
 
-      // 「Headroom」：编辑 headroom 插件配置（~/.zcode/headroom.json，
+      // “Headroom”：编辑 headroom 插件配置（~/.zcode/headroom.json，
       // /hr-* 命令与钩子共用同一文件）。压缩设备/省电切换经 helper 调钩子动作改
       // （立即生效；切换设备会重启代理）；监视间隔直写配置，监视器下一轮巡检生效。
       // 可整面重渲染：未装插件时显示安装卡，安装成功后原地恢复完整面板。
@@ -1320,7 +1320,7 @@ export function openSettingsDialog() {
           }
           if (res.config) Object.assign(hrCfg, res.config);
           if (warn) showToast(warn);
-          // backend/power 动作会重启代理，稍等其就绪再刷状态，避免闪现「未运行」
+          // backend/power 动作会重启代理，稍等其就绪再刷状态，避免闪现“未运行”
           setTimeout(() => { void hrRefresh(); }, 1200);
           return true;
         };
@@ -1364,7 +1364,7 @@ export function openSettingsDialog() {
         const hrStartBtn = btnSmall(L.headroomStart, () => { void hrRun({ action: 'start' }); });
         const hrRestartBtn = btnSmall(L.headroomRestart, () => { void hrRun({ action: 'restart' }); });
         const hrStopBtn = btnSmall(L.headroomStopAction, () => {
-          // 停止会断开指向该代理的供应商连接，需二次确认（与「切换文件夹」同款确认弹窗）
+          // 停止会断开指向该代理的供应商连接，需二次确认（与“切换文件夹”同款确认弹窗）
           openDialog({
             title: L.headroomStopTitle,
             description: L.headroomStopDesc,
@@ -1404,7 +1404,7 @@ export function openSettingsDialog() {
           })();
         });
 
-        // 省电自动切换：三态胶囊（同「链模式」的标签按钮），与监视间隔同一行
+        // 省电自动切换：三态胶囊（同“链模式”的标签按钮），与监视间隔同一行
         const hrPowerDefs = [
           ['off', L.headroomPowerOff, L.headroomPowerOffDesc],
           ['battery', L.headroomPowerBattery, L.headroomPowerBatteryDesc],

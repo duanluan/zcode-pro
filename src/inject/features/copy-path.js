@@ -1,4 +1,4 @@
-// 「复制路径」：项目“更多”菜单中把项目绝对路径复制到剪贴板。
+// “复制路径”：项目“更多”菜单中把项目绝对路径复制到剪贴板。
 // navigator.clipboard 在渲染进程有焦点时可用；失败时回退 execCommand 写入隐藏输入框。
 import { h, t, closeRadixMenu } from '../core.js';
 import { showToast } from '../ui.js';

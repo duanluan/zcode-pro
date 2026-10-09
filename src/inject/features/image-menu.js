@@ -1,4 +1,4 @@
-// 图片右键「复制图片」：覆盖会话内容列（[data-v4-timeline-content-column]）里的图片与
+// 图片右键“复制图片”：覆盖会话内容列（[data-v4-timeline-content-column]）里的图片与
 // 点击放大的预览弹窗（role=dialog 内的大图），复制到系统剪贴板。
 // 按渲染尺寸过滤行内技术图标（material-icons 约 16px）；blob:/data:/file: 源经 fetch 取 blob，
 // 取不到回退 canvas，非 PNG 一律经 canvas 转 PNG（剪贴板只可靠支持 image/png）。
@@ -65,7 +65,7 @@ function showMenu(x, y, img) {
   const onPointerDown = (e) => {
     if (menuEl && menuEl.contains(e.target)) {
       // 菜单内的按下交给菜单项自身 click 处理；stopPropagation 防止预览弹窗
-      // （Radix「点击外部关闭」）连带关闭、图片被卸载导致复制落空
+      // （Radix“点击外部关闭”）连带关闭、图片被卸载导致复制落空
       e.stopPropagation();
       return;
     }

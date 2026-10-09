@@ -33,7 +33,7 @@ const contentClass = 'w-full sm:max-w-md rounded-2xl border-none bg-popover/98 p
 // dismissOnOutside: 点弹窗外部是否关闭（默认 true）。为 false 时遮罩不再拦截鼠标，
 // 可以直接操作弹窗后面的会话（滚动/选中），弹窗只通过关闭按钮或 Esc 关闭。
 // draggable: 允许按住标题栏拖动弹窗。posKey: 记住拖动位置（localStorage）。
-// 弹窗栈：同时打开多层弹窗（如「切换文件夹」上叠二次确认）时，
+// 弹窗栈：同时打开多层弹窗（如“切换文件夹”上叠二次确认）时，
 // Esc 只关最上层，避免一次 Esc 把两层一起关掉
 let dialogStack = [];
 
@@ -179,7 +179,7 @@ export function btnPrimary(text, onClick, extra = '') {
 // 紧凑小按钮（面板内与文本同行的操作按钮）：高度对齐 .zcodepro-tab（24px）。
 // 不能走 btnSecondary + 'h-7' 追加类——基类的 h-9 与 h-7 同属性冲突，
 // Tailwind 按样式表顺序决胜，h-7 永远盖不过 h-9，按钮会一直是 36px。
-// variant='primary' 用于需要强调的小按钮（如「保存」）。
+// variant='primary' 用于需要强调的小按钮（如“保存”）。
 export function btnSmall(text, onClick, extra = '', variant = '') {
   return h('button', {
     type: 'button',
@@ -264,7 +264,7 @@ export function numberField({ value = null, fallback = 0, min = 0, max = 48, ste
 }
 
 // 数值+单位同框的输入框（内容宽度等需要 px/% 切换的设置项，交互对齐 gemini-pro）：
-// 框内显示如「900px」「85%」；滚轮按单位各自步进（px 大步、% 小步）；
+// 框内显示如“900px”“85%”；滚轮按单位各自步进（px 大步、% 小步）；
 // 手输可带单位（缺省沿用当前单位），非法或越界回退。onCommit 回调 { value, unit }。
 export function unitField({ value = null, fallback = { value: 100, unit: '%' }, step = { px: 10, '%': 1 }, onCommit }) {
   const RANGES = { px: [320, 3840], '%': [20, 100] };
@@ -404,7 +404,7 @@ export function ensureStyle() {
       transition: transform 0.15s ease;
     }
     [data-zcodepro-switch][data-state="on"] .zcodepro-switch-knob { transform: translateX(14px); }
-    /* 标签页切换（设置弹窗）：胶囊容器 + 激活高亮，视觉参考侧栏「分组/项目」切换；
+    /* 标签页切换（设置弹窗）：胶囊容器 + 激活高亮，视觉参考侧栏“分组/项目”切换；
        与开关同理，几何/配色写入自有规则并取主题变量，不依赖应用 Tailwind 类 */
     .zcodepro-tablist {
       display: inline-flex;
@@ -556,7 +556,7 @@ export function ensureStyle() {
       flex-direction: column;
       gap: 2px;
     }
-    /* 两行布局（标题 + 项目名）全部居左；标题行的「当前」标签与文本垂直居中 */
+    /* 两行布局（标题 + 项目名）全部居左；标题行的“当前”标签与文本垂直居中 */
     .zcodepro-switcher-row {
       display: flex;
       flex-direction: column;
@@ -700,7 +700,7 @@ export function ensureStyle() {
     /* 原侧栏菜单整体隐藏（toolbar-icons 开启时） */
     .zcodepro-tb-hidden { display: none !important; }
     /* 已置顶分区可折叠（pinned-collapse.js）：标题整行可点，折叠时藏起任务列表，
-       chevron 旋向与「项目」分区一致（收起指向右侧） */
+       chevron 旋向与“项目”分区一致（收起指向右侧） */
     .zcodepro-pin-head {
       display: flex;
       align-items: center;

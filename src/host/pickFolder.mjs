@@ -8,7 +8,7 @@ import { dirname } from 'node:path';
 
 // kdialog（KDE 原生）：起始目录参数可靠生效。
 // xdg-desktop-portal-kde 不读 current_folder 选项（二进制中无该字符串），
-// KFileWidget 转而用「应用上次访问目录」记忆，导致起始目录失效；
+// KFileWidget 转而用“应用上次访问目录”记忆，导致起始目录失效；
 // GTK 后端支持 current_folder，无 kdialog 时回退门户。
 function kdialogPickFolder(startDir, title) {
   return new Promise((resolve) => {

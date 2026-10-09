@@ -1,8 +1,8 @@
-// 功能五：文件菜单增强——文件操作弹出菜单（含「复制绝对路径」项的菜单，右键文件链接 chip
-// 与预览卡片「打开 ▾」下拉均有）：
-// - 「打开」分组内、可用编辑器列表（无可用时为「未找到可用 App」禁用项）上方新增「默认应用打开」
+// 功能五：文件菜单增强——文件操作弹出菜单（含“复制绝对路径”项的菜单，右键文件链接 chip
+// 与预览卡片“打开 ▾”下拉均有）：
+// - “打开”分组内、可用编辑器列表（无可用时为“未找到可用 App”禁用项）上方新增“默认应用打开”
 //   （helper /open-path 用系统默认应用打开；旧版曾用宿主桥 window.zcode.openExternalFile，新版已移除该桥）；
-// - 「复制绝对路径」上方新增「打开所在目录」（helper /reveal-path 在文件管理器中定位文件；
+// - “复制绝对路径”上方新增“打开所在目录”（helper /reveal-path 在文件管理器中定位文件；
 //   不用宿主 openInFileManager——其在 Linux/Windows 的实现只是 shell.openPath，即用默认应用打开）。
 // 路径获取（按序尝试）：触发器 title（文件 chip 右键场景，message.tsx 写入绝对路径）→
 // 触发器/菜单的 React fiber props（OpenSplitButton 场景 target/fileLink/row.path）。
@@ -126,8 +126,8 @@ export function handleFileMenu(content) {
     const path = resolveTargetPath(content);
     if (!path) return;
     const L = t();
-    // 「默认应用打开」锚在编辑器列表末尾（无可用编辑器时即「未找到可用 App」禁用项）之上；
-    // 找不到该组时退而锚在「复制绝对路径」上，保持「打开方式在前、路径操作在后」的次序
+    // “默认应用打开”锚在编辑器列表末尾（无可用编辑器时即“未找到可用 App”禁用项）之上；
+    // 找不到该组时退而锚在“复制绝对路径”上，保持“打开方式在前、路径操作在后”的次序
     const noApps = items.find((el) => NO_APPS_TEXTS.some((x) => itemText(el) === x))
       || content.querySelector('[data-disabled][role="menuitem"]');
     const openAnchor = noApps && content.contains(noApps) ? noApps : copyAbs;

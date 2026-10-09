@@ -1,5 +1,5 @@
 // 启动时检查 duanluan-zcode-plugins 市场的插件更新：
-// 有新版本 → 开了「自动更新插件」直接更新，否则 toast 提醒一次（同一批更新只提醒一次）。
+// 有新版本 → 开了“自动更新插件”直接更新，否则 toast 提醒一次（同一批更新只提醒一次）。
 // 实际的 marketplace 同步与安装/更新都由 helper 的 /plugins/* 端点执行。
 import { rpc, getConfig, t } from '../core.js';
 import { showToast } from '../ui.js';

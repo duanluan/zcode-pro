@@ -85,7 +85,7 @@ export async function refreshAliases() {
   applyAliass();
 }
 
-// —— 「更多」菜单入口 ——
+// —— “更多”菜单入口 ——
 
 export function appendAliasItem(menu, anchorItem, project) {
   if (menu.querySelector('[data-zcodepro-item="alias"]')) return;
