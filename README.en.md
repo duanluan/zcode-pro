@@ -26,8 +26,10 @@ ZCode Pro enhances the ZCode desktop UI. No client files are modified; just laun
 | Copy image | Right-click an image in chat or the enlarged preview to copy it to the clipboard |
 | UI style adjustments | Fine-tune paragraph spacing, content width, line heights, list/quote/table spacing and cell padding; focusing an input highlights the affected areas; applies instantly |
 | Sidebar spacing | Fine-tune sidebar project spacing and task spacing; applies instantly |
+| Font adjustment | Custom UI font (all interface text except the terminal), question font and answer font; applies instantly |
 | Global prompt | Edit default instructions shared by all projects; applies to new sessions |
 | Software proxy | Set an HTTP proxy for plugin updates/installs and tool upgrades, with connectivity test |
+| Settings sync | Manually back up ZCode Pro settings and model settings to WebDAV, or restore them on a new computer; transfers only on click |
 | Vision proxy | Automatically hand images to vision models for recognition when the main model cannot see them, and feed the descriptions to the main model; visual chain editor (zcode-vision plugin) |
 | rtk compression | Manage rewrite hints and the command whitelist; check and upgrade the rtk program (rtk plugin) |
 | Headroom | Manage compression device, power-save switching and proxy status; check and upgrade the headroom program (headroom plugin) |

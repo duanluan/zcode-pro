@@ -46,6 +46,35 @@
     proxyTest: "\u68C0\u6D4B",
     proxyTesting: "\u68C0\u6D4B\u4E2D\u2026",
     proxyTestFailed: "\u68C0\u6D4B\u5931\u8D25",
+    tabSync: "\u540C\u6B65",
+    syncDesc: "\u624B\u52A8\u628A ZCode Pro \u8BBE\u7F6E\u4E0E\u6A21\u578B\u8BBE\u7F6E\u5907\u4EFD\u5230 WebDAV\uFF0C\u6216\u5728\u65B0\u7535\u8111\u4E0A\u6062\u590D\u3002\u4E24\u9879\u5404\u81EA\u72EC\u7ACB\u6210\u6587\u4EF6\uFF0C\u53EF\u53EA\u4E0A\u4F20\u6216\u53EA\u8986\u76D6\u5176\u4E2D\u4E00\u9879\uFF1B\u4EC5\u5728\u70B9\u51FB\u6309\u94AE\u65F6\u4F20\u8F93\uFF0C\u4E0D\u505A\u81EA\u52A8\u540C\u6B65\u3002",
+    syncUrlPlaceholder: "https://dav.jianguoyun.com/dav/",
+    syncDir: "\u4E0A\u4F20\u76EE\u5F55",
+    syncDirPlaceholder: "zcode-pro",
+    syncLogin: "\u767B\u5F55",
+    syncPassword: "\u5BC6\u7801",
+    syncSave: "\u4FDD\u5B58",
+    syncSaved: "\u540C\u6B65\u914D\u7F6E\u5DF2\u4FDD\u5B58",
+    syncFormHint: "\u540C\u6B65\u6587\u4EF6\u5B58\u5230\u300C\u4E0A\u4F20\u76EE\u5F55\u300D\uFF08\u9ED8\u8BA4 zcode-pro\uFF0C\u53EF\u591A\u7EA7\uFF0C\u81EA\u52A8\u521B\u5EFA\uFF09\u4E0B\u7684 zcodepro.json \u4E0E model.json\u3002",
+    syncRecLink: "\u575A\u679C\u4E91 WebDAV",
+    syncRecSuffix: "\uFF1A\u767B\u5F55\u4E0E\u5BC6\u7801\u586B\u300C\u5E94\u7528\u5BC6\u7801\u300D\uFF0C\u4E0D\u662F\u8D26\u53F7\u5BC6\u7801\u3002",
+    syncIncludeZcp: "ZCode Pro \u8BBE\u7F6E",
+    syncIncludeZcpDesc: "\u529F\u80FD\u5F00\u5173\u3001\u6837\u5F0F\u8C03\u6574\u3001\u9879\u76EE\u522B\u540D\u4E0E\u4EE3\u7406\u8BBE\u7F6E\uFF1B\u540C\u6B65\u914D\u7F6E\u4E0E\u51ED\u636E\u672C\u8EAB\u4E0D\u53C2\u4E0E\u540C\u6B65\u3002",
+    syncIncludeModel: "\u6A21\u578B\u8BBE\u7F6E",
+    syncIncludeModelDesc: "\u81EA\u5B9A\u4E49\u4F9B\u5E94\u5546\u4E0E\u6A21\u578B\u914D\u7F6E\uFF08config.json \u4E0E provider_config.json\uFF0C\u542B API Key\uFF09\u3002\u8D26\u53F7\u767B\u5F55\u7684\u51ED\u636E\uFF08\u5982 BigModel \u8BA2\u9605\uFF09\u4E0D\u53C2\u4E0E\u540C\u6B65\uFF0C\u5404\u673A\u5668\u7528\u5404\u81EA\u8D26\u53F7\u767B\u5F55\u3002",
+    syncUpload: "\u4E0A\u4F20\u5230\u4E91\u7AEF",
+    syncDownload: "\u4ECE\u4E91\u7AEF\u4E0B\u8F7D",
+    syncUploading: "\u4E0A\u4F20\u4E2D\u2026",
+    syncDownloading: "\u4E0B\u8F7D\u4E2D\u2026",
+    syncUploaded: "\u5DF2\u4E0A\u4F20\u5230\u4E91\u7AEF",
+    syncDownloaded: "\u5DF2\u4ECE\u4E91\u7AEF\u6062\u590D",
+    syncLastPush: "\u4E0A\u6B21\u4E0A\u4F20",
+    syncLastPull: "\u4E0A\u6B21\u4E0B\u8F7D",
+    syncNever: "\u65E0",
+    syncConfirmTitle: "\u4ECE\u4E91\u7AEF\u4E0B\u8F7D",
+    syncConfirmDesc: "\u5C06\u7528\u4E91\u7AEF\u6570\u636E\u8986\u76D6\u672C\u673A\u52FE\u9009\u7684\u540C\u6B65\u5185\u5BB9\uFF08\u8986\u76D6\u524D\u4F1A\u5728\u539F\u6587\u4EF6\u65C1\u7559\u4E0B .zcodepro-backup \u5907\u4EFD\uFF09\uFF1B\u672C\u673A\u7684\u540C\u6B65\u914D\u7F6E\u4E0E\u767B\u5F55\u51ED\u636E\u4E0D\u53D7\u5F71\u54CD\u3002\u6A21\u578B\u8BBE\u7F6E\u6062\u590D\u540E\u5EFA\u8BAE\u91CD\u542F ZCode \u751F\u6548\u3002\u786E\u8BA4\u4E0B\u8F7D\uFF1F",
+    syncConfirmGo: "\u786E\u8BA4\u4E0B\u8F7D",
+    syncHint: "\u540C\u6B65\u767B\u5F55\u51ED\u636E\u4EC5\u4FDD\u5B58\u5728\u672C\u673A zcodepro.json\uFF1B\u6A21\u578B\u8BBE\u7F6E\u5305\u542B\u81EA\u5B9A\u4E49\u4F9B\u5E94\u5546\u7684 API Key\uFF0C\u53EA\u4F1A\u4E0A\u4F20\u5230\u4F60\u81EA\u5DF1\u7684 WebDAV\u3002",
     rowGapName: "\u6BB5\u843D\u95F4\u8DDD",
     rowGapDesc: "\u4F1A\u8BDD\u4E2D\u6BB5\u843D\u7B49\u6587\u672C\u5757\u4E4B\u95F4\u7684\u5782\u76F4\u95F4\u8DDD\uFF08\u56DE\u5408\u4E4B\u95F4\u3001\u7B54\u6848\u5185\u90E8\uFF09\u3002",
     listSpacingName: "\u5217\u8868\u4E0A\u4E0B\u8FB9\u8DDD",
@@ -76,8 +105,16 @@
     featureSessionSwitchDesc: "alt+z \u5728\u5F53\u524D\u4E0E\u4E0A\u6B21\u4F1A\u8BDD\u95F4\u6765\u56DE\u5207\u6362\uFF1B\u6309\u4F4F alt \u518D\u6309 x/c \u5F39\u51FA\u6700\u8FD1\u4F1A\u8BDD\u5217\u8868\u524D\u540E\u9009\u62E9\uFF0C\u677E\u5F00 alt \u5207\u6362\uFF08\u7C7B alt+tab\uFF09\u3002",
     featureTitleLock: "\u91CD\u547D\u540D\u4F1A\u8BDD\u540D\u9501\u5B9A",
     featureTitleLockDesc: "\u624B\u52A8\u91CD\u547D\u540D\u8FC7\u7684\u4F1A\u8BDD\u4E0D\u518D\u88AB\u81EA\u52A8\u6807\u9898\u8986\u76D6\uFF1A\u4F1A\u8BDD\u6709\u65B0\u56DE\u7B54\u540E\u754C\u9762\u53EF\u80FD\u6539\u663E\u81EA\u52A8\u6807\u9898\uFF0C\u91CD\u542F\u540E\u53C8\u53D8\u56DE\uFF0C\u672C\u529F\u80FD\u8BA9\u4FA7\u680F\u59CB\u7EC8\u663E\u793A\u91CD\u547D\u540D\u540E\u7684\u540D\u5B57\u3002",
-    featureWsRunning: "\u6298\u53E0\u9879\u76EE\u8FD0\u884C\u63D0\u793A",
-    featureWsRunningDesc: "\u6298\u53E0\u7684\u9879\u76EE\u91CC\u4ECD\u6709\u4F1A\u8BDD\u5728\u8FD0\u884C\u65F6\uFF0C\u9879\u76EE\u56FE\u6807\u65CB\u8F6C\u63D0\u793A\uFF1B\u5168\u90E8\u7ED3\u675F\u6216\u5C55\u5F00\u9879\u76EE\u540E\u6062\u590D\u3002",
+    featureWsRunning: "\u6298\u53E0\u9879\u76EE\u8FD0\u884C\u63D0\u793A\uFF08\u5B9E\u9A8C\u6027\uFF09",
+    featureWsRunningDesc: "\u6298\u53E0\u7684\u9879\u76EE\u91CC\u4ECD\u6709\u4F1A\u8BDD\u5728\u8FD0\u884C\u65F6\uFF0C\u9879\u76EE\u56FE\u6807\u65CB\u8F6C\u63D0\u793A\uFF1B\u5168\u90E8\u7ED3\u675F\u6216\u5C55\u5F00\u9879\u76EE\u540E\u6062\u590D\u3002\u671F\u95F4\u6BCF 60 \u79D2\u5728\u540E\u53F0\u77ED\u6682\u5C55\u5F00\u8BE5\u9879\u76EE\u590D\u6838\u8FD0\u884C\u72B6\u6001\u518D\u6536\u8D77\uFF0C\u4F1A\u8BDD\u884C\u4E0D\u663E\u793A\uFF0C\u4EC5\u9879\u76EE\u4F4D\u7F6E\u53EF\u80FD\u6709\u7EA6\u56DB\u5206\u4E4B\u4E00\u79D2\u7684\u8F7B\u5FAE\u9AD8\u5EA6\u8D77\u4F0F\u3002",
+    tabPerformance: "\u6027\u80FD",
+    perfDesc: "ZCode \u4E3A\u6BCF\u4E2A\u6253\u5F00\u8FC7\u7684\u9879\u76EE\u5E38\u9A7B\u4E00\u4E2A\u4F1A\u8BDD\u8FDB\u7A0B\uFF0C\u5E94\u7528\u81EA\u8EAB\u4E0D\u4F1A\u56DE\u6536\uFF0C\u9879\u76EE\u591A\u4E86\u5185\u5B58\u5360\u7528\u5C31\u9AD8\u3002\u5F00\u542F\u540E\uFF0C\u957F\u65F6\u95F4\u672A\u4F7F\u7528\u4E14\u6CA1\u6709\u4EFB\u52A1\u5728\u8DD1\u7684\u9879\u76EE\u4F1A\u88AB\u81EA\u52A8\u91CA\u653E\uFF1A\u4F1A\u8BDD\u8BB0\u5F55\u4E0D\u53D7\u5F71\u54CD\uFF0C\u518D\u6B21\u6253\u5F00\u65F6\u81EA\u52A8\u6062\u590D\uFF0C\u4EC5\u9996\u6B21\u56DE\u590D\u6709\u51E0\u79D2\u7B49\u5F85\u3002\u6B63\u5728\u4F7F\u7528\u7684\u9879\u76EE\u3001\u8FD0\u884C\u4E2D\u7684\u4F1A\u8BDD\u4E0E\u540E\u53F0\u547D\u4EE4\u3001\u5B9A\u65F6\u4EFB\u52A1\u90FD\u4E0D\u4F1A\u88AB\u56DE\u6536\u3002\u540E\u53F0\u547D\u4EE4\u68C0\u6D4B\u4F9D\u8D56\u7CFB\u7EDF\u8FDB\u7A0B\u4FE1\u606F\uFF08Linux / macOS / Windows \u5404\u8D70\u7CFB\u7EDF\u81EA\u5E26\u5DE5\u5177\uFF09\uFF0C\u68C0\u6D4B\u4E0D\u53EF\u7528\u65F6\u529F\u80FD\u81EA\u52A8\u505C\u7528\u3002",
+    featureIdleReclaim: "\u7A7A\u95F2\u9879\u76EE\u5185\u5B58\u56DE\u6536",
+    featureIdleReclaimDesc: "\u6EE1\u8DB3\u6761\u4EF6\u7684\u9879\u76EE\u81EA\u52A8\u91CA\u653E\u5185\u5B58\uFF0C\u4F1A\u8BDD\u4E0D\u53D7\u5F71\u54CD\uFF0C\u518D\u6B21\u6253\u5F00\u81EA\u52A8\u6062\u590D\u3002",
+    idleReclaimMinutesLabel: "\u7A7A\u95F2\u591A\u4E45\u540E\u56DE\u6536\uFF08\u5206\u949F\uFF09",
+    idleReclaimStartupLabel: "\u542F\u52A8\u540E\u591A\u4E45\u56DE\u6536\u4E00\u6B21\uFF08\u5206\u949F\uFF09",
+    idleReclaimStartupHint: "\u5E94\u7528\u542F\u52A8\u4F1A\u4E3A\u6BCF\u4E2A\u6062\u590D\u7684\u9879\u76EE\u9884\u70ED\u8FDB\u7A0B\uFF0C\u5230\u70B9\u628A\u672A\u4F7F\u7528\u7684\u9879\u76EE\u4E00\u6B21\u6536\u6389\uFF1B0 = \u542F\u52A8\u540E\u7ACB\u5373\u56DE\u6536\uFF0C\u8BE5\u6B21\u4E0D\u53D7\u4E0A\u4E00\u9879\u7A7A\u95F2\u65F6\u957F\u9650\u5236",
+    idleReclaimUnit: "\u5206\u949F",
     featureToolbarIcons: "\u4FA7\u680F\u83DC\u5355\u5E76\u5165\u9876\u680F",
     featureToolbarIconsDesc: "\u628A\u4FA7\u8FB9\u680F\u9876\u90E8\u7684\u300C\u65B0\u5EFA\u4EFB\u52A1 / \u641C\u7D22 / \u81EA\u52A8\u5316 / \u63D2\u4EF6\u5E02\u573A\u300D\u6536\u6210\u9876\u90E8\u5BFC\u822A\u680F\uFF08\u540E\u9000/\u524D\u8FDB\u65C1\uFF09\u7684\u56FE\u6807\u6309\u94AE\uFF1A\u60AC\u505C\u663E\u793A\u540D\u79F0\uFF0C\u5BF9\u5E94\u754C\u9762\u6253\u5F00\u65F6\u9AD8\u4EAE\uFF0C\u5FEB\u6377\u952E\u7167\u5E38\u53EF\u7528\uFF1B\u4FA7\u8FB9\u680F\u539F\u83DC\u5355\u9690\u85CF\u3002",
     tbNewTask: "\u65B0\u5EFA\u4EFB\u52A1",
@@ -301,6 +338,35 @@
     proxyTest: "Test",
     proxyTesting: "Testing\u2026",
     proxyTestFailed: "Test failed",
+    tabSync: "Sync",
+    syncDesc: "Manually back up ZCode Pro settings and model settings to WebDAV, or restore them on a new computer. The two items are stored as separate files, so you can upload or overwrite either one alone; data moves only when you click, never automatically.",
+    syncUrlPlaceholder: "https://dav.example.com/dav/",
+    syncDir: "\u4E0A\u4F20\u76EE\u5F55",
+    syncDirPlaceholder: "zcode-pro",
+    syncLogin: "Login",
+    syncPassword: "Password",
+    syncSave: "Save",
+    syncSaved: "Sync settings saved.",
+    syncFormHint: "Sync files go to zcodepro.json and model.json inside the folder (default zcode-pro, multi-level allowed, created automatically).",
+    syncRecLink: "Jianguoyun WebDAV",
+    syncRecSuffix: " \u2014 use the app password, not your account password.",
+    syncIncludeZcp: "ZCode Pro settings",
+    syncIncludeZcpDesc: "Feature toggles, style adjustments, project aliases and the proxy setting; the sync config and credentials themselves are never synced.",
+    syncIncludeModel: "Model settings",
+    syncIncludeModelDesc: "Custom providers and model config (config.json and provider_config.json, API keys included). Account sign-in credentials (e.g. the BigModel subscription) are not synced; each computer signs in with its own account.",
+    syncUpload: "Upload",
+    syncDownload: "Download",
+    syncUploading: "Uploading\u2026",
+    syncDownloading: "Downloading\u2026",
+    syncUploaded: "Uploaded to the server.",
+    syncDownloaded: "Restored from the server.",
+    syncLastPush: "Last upload",
+    syncLastPull: "Last download",
+    syncNever: "never",
+    syncConfirmTitle: "Download from the server",
+    syncConfirmDesc: "Cloud data will overwrite the selected sections locally (a .zcodepro-backup copy is kept next to each file); your local sync config and credentials stay untouched. Restarting ZCode is recommended after restoring model settings. Download now?",
+    syncConfirmGo: "Download",
+    syncHint: "Sync credentials are stored locally in zcodepro.json only; model settings contain the API keys of custom providers and go to your own WebDAV only.",
     rowGapName: "Paragraph spacing",
     rowGapDesc: "Vertical spacing between text blocks (turns, paragraphs inside answers).",
     listSpacingName: "List spacing",
@@ -331,8 +397,16 @@
     featureSessionSwitchDesc: "alt+z toggles between the current and the last session; hold alt and press x/c to move the highlight across recently used sessions, release alt to switch (like alt+tab).",
     featureTitleLock: "Keep renamed session titles",
     featureTitleLockDesc: "Sessions you renamed keep their custom title: after new replies the app may show an auto-generated title instead, which reverts after a restart; this keeps the renamed title in the sidebar.",
-    featureWsRunning: "Running indicator on collapsed projects",
-    featureWsRunningDesc: "Spins a collapsed project's icon while any of its sessions is still running; stops when they all finish or the project is expanded.",
+    featureWsRunning: "Running indicator on collapsed projects (experimental)",
+    featureWsRunningDesc: "Spins a collapsed project's icon while any of its sessions is still running; stops when they all finish or the project is expanded. While spinning, the project is briefly re-expanded in the background every 60 s to re-check and then collapsed \u2014 rows stay hidden, with only a subtle quarter-second height ripple at the project.",
+    tabPerformance: "Performance",
+    perfDesc: "ZCode keeps a session process resident for every project you have opened and never reclaims it, so memory grows with projects. When enabled, projects unused for a while with nothing running release their memory automatically: sessions are untouched and reload when reopened, with a few seconds wait on the first reply. The project in use, running sessions, background commands and scheduled tasks are never reclaimed. Background-command detection reads system process info via built-in tools (Linux / macOS / Windows); when unavailable, the feature disables itself.",
+    featureIdleReclaim: "Idle project memory reclaim",
+    featureIdleReclaimDesc: "Qualifying projects release their memory; sessions are untouched and reload when reopened.",
+    idleReclaimMinutesLabel: "Idle minutes before reclaim",
+    idleReclaimStartupLabel: "Minutes after startup for a one-shot reclaim",
+    idleReclaimStartupHint: "Startup pre-spawns a process per restored project; this pass collects the unused ones once. 0 = reclaim right after startup, ignoring the idle minutes above",
+    idleReclaimUnit: "min",
     featureToolbarIcons: "Sidebar menu in the top bar",
     featureToolbarIconsDesc: "Turns the sidebar menu (New task / Search / Automations / Plugin store) into icon buttons next to the back/forward arrows in the top bar: hover shows the name, the button stays highlighted while its view is open, and shortcuts still work; the original sidebar menu is hidden.",
     tbNewTask: "New task",
@@ -585,7 +659,13 @@
     "headroom-status": "Failed to read the headroom status",
     "headroom-upgrade": "headroom upgrade failed",
     "plugins-status": "Failed to read the plugin list",
-    "plugins-update": "Failed to update plugins"
+    "plugins-update": "Failed to update plugins",
+    "sync-invalid": "Invalid sync settings",
+    "sync-not-configured": "Set the sync type to WebDAV and save the config first",
+    "sync-remote-missing": "No synced data on the server yet; upload from another computer first",
+    "sync-remote-invalid": "The URL already holds a different file; use another file path",
+    "sync-request": "The WebDAV request failed",
+    "sync-run": "Sync failed"
   };
   function errText(res) {
     if (!res) return "";
@@ -971,13 +1051,25 @@
       }
     };
   }
-  function settingRow(name, desc, checked, onToggle) {
+  function settingRow(name, desc, checked, onToggle, extra) {
     const knob = h("span", { class: "zcodepro-switch-knob" });
     const track = h("span", {
       class: "zcodepro-switch",
       "data-zcodepro-switch": "",
       "data-state": checked ? "on" : "off"
     }, knob);
+    const extraEl = extra ? h("div", {
+      class: "flex shrink-0 items-center pt-0.5",
+      onClick: (e) => {
+        e.stopPropagation();
+      },
+      onMousedown: (e) => {
+        e.stopPropagation();
+      },
+      onWheel: (e) => {
+        e.stopPropagation();
+      }
+    }, extra) : null;
     const row = h(
       "div",
       {
@@ -992,6 +1084,7 @@
         h("div", { class: "text-ui-sm font-medium text-foreground" }, name),
         ...desc ? [h("div", { class: "mt-0.5 text-ui-xs/relaxed text-foreground-subtle" }, desc)] : []
       ),
+      ...extraEl ? [extraEl] : [],
       h("button", {
         type: "button",
         role: "switch",
@@ -2321,8 +2414,7 @@
     }
     if (tsp !== null) {
       parts.push(
-        `${SEL_TABLE}{margin-block:${tsp}px !important;position:relative !important;}`,
-        `${SEL_TABLE} > .flex.items-center.justify-end{position:absolute !important;top:0;right:0;}`,
+        `${SEL_TABLE}{margin-block:${tsp}px !important;}`,
         `${SEL_TABLE} [class*="markdown-table-frame"] > .pointer-events-none.py-1{position:absolute !important;left:0;right:0;bottom:0;}`
       );
     }
@@ -2569,7 +2661,7 @@
       setState(L.upgradeFound.replaceAll("{v}", res.latest || ""));
       btn.textContent = L.upgradeNow;
     };
-    const tick = async () => {
+    const tick2 = async () => {
       const res = await rpc(endpoint + "/upgrade");
       if (!res.ok) {
         stopPoll();
@@ -2609,9 +2701,9 @@
       btn.textContent = L.upgradeStop;
       setState(L.upgradeRunning);
       timer = setInterval(() => {
-        void tick();
+        void tick2();
       }, 1500);
-      void tick();
+      void tick2();
     };
     void (async () => {
       const res = await rpc(endpoint + "/upgrade");
@@ -2738,11 +2830,6 @@
               if (await setFeature("titleLock", next)) f.titleLock = next;
               refreshRows();
             }),
-            settingRow(L.featureWsRunning, L.featureWsRunningDesc, f.wsRunningSpin !== false, async () => {
-              const next = !(f.wsRunningSpin !== false);
-              if (await setFeature("wsRunningSpin", next)) f.wsRunningSpin = next;
-              refreshRows();
-            }),
             settingRow(L.featurePinnedCollapse, L.featurePinnedCollapseDesc, f.pinnedCollapse !== false, async () => {
               const next = !(f.pinnedCollapse !== false);
               if (await setFeature("pinnedCollapse", next)) f.pinnedCollapse = next;
@@ -2756,6 +2843,11 @@
             settingRow(L.featureImageCopy, L.featureImageCopyDesc, f.imageCopy !== false, async () => {
               const next = !(f.imageCopy !== false);
               if (await setFeature("imageCopy", next)) f.imageCopy = next;
+              refreshRows();
+            }),
+            settingRow(L.featureWsRunning, L.featureWsRunningDesc, f.wsRunningSpin !== false, async () => {
+              const next = !(f.wsRunningSpin !== false);
+              if (await setFeature("wsRunningSpin", next)) f.wsRunningSpin = next;
               refreshRows();
             }),
             settingRow(L.featurePinnedExpand, L.featurePinnedExpandDesc, f.pinnedKeepCollapsed !== false, async () => {
@@ -2879,17 +2971,21 @@
           communityCards
         );
         const paneStyles = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
+        const panePerf = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
         const paneAgents = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
         const paneProxy = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
+        const paneSync = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
         const paneVision = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
         const paneRtk = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
         const paneHeadroom = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
-        const panes = { features: paneFeatures, styles: paneStyles, agents: paneAgents, proxy: paneProxy, vision: paneVision, headroom: paneHeadroom, rtk: paneRtk };
+        const panes = { features: paneFeatures, styles: paneStyles, perf: panePerf, agents: paneAgents, proxy: paneProxy, sync: paneSync, vision: paneVision, headroom: paneHeadroom, rtk: paneRtk };
         const tabDefs = [
           ["features", L.tabFeatures],
           ["styles", L.tabStyles],
+          ["perf", L.tabPerformance],
           ["agents", L.tabAgents],
           ["proxy", L.tabProxy],
+          ["sync", L.tabSync],
           ["vision", L.tabVision],
           ["headroom", L.tabHeadroom],
           ["rtk", L.tabRtk]
@@ -3199,6 +3295,235 @@
           ),
           h("p", { class: "mt-2 text-ui-xs/relaxed text-foreground-subtle" }, L.proxyHint),
           proxyTestState
+        );
+        const perfToggleWrap = h("div");
+        const renderPerfToggle = () => {
+          const f = config.features || {};
+          perfToggleWrap.replaceChildren(
+            settingRow(L.featureIdleReclaim, L.featureIdleReclaimDesc, f.idleReclaim !== false, async () => {
+              const next = !(f.idleReclaim !== false);
+              if (await setFeature("idleReclaim", next)) f.idleReclaim = next;
+              renderPerfToggle();
+            })
+          );
+        };
+        renderPerfToggle();
+        const perfNumberRow = (labelText, tip, key, fallback, min) => {
+          const v = Number(config[key]);
+          return h(
+            "div",
+            { class: "flex items-center justify-between gap-2 px-2 py-1.5" },
+            h(
+              "div",
+              { class: "min-w-0" },
+              h("div", { class: "text-ui-sm font-medium text-foreground" }, labelText),
+              ...tip ? [h("div", { class: "mt-0.5 text-ui-xs/relaxed text-foreground-subtle" }, tip)] : []
+            ),
+            h(
+              "div",
+              { class: "flex shrink-0 items-center gap-1" },
+              numberField({
+                value: Number.isFinite(v) ? v : fallback,
+                fallback,
+                min,
+                max: 1440,
+                step: 1,
+                onCommit: async (n) => {
+                  const res = await rpc("/config", { method: "POST", body: { [key]: n } });
+                  if (res.ok && res.config) {
+                    config[key] = res.config[key];
+                    clearConfigCache();
+                  }
+                }
+              }).el,
+              h("span", { class: "text-ui-xs text-foreground-subtle" }, L.idleReclaimUnit)
+            )
+          );
+        };
+        panePerf.append(
+          h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.perfDesc),
+          h(
+            "div",
+            { class: "mt-3 divide-y divide-border rounded-xl border border-border" },
+            perfToggleWrap,
+            perfNumberRow(L.idleReclaimMinutesLabel, null, "idleReclaimMinutes", 30, 1),
+            perfNumberRow(L.idleReclaimStartupLabel, L.idleReclaimStartupHint, "idleReclaimStartupMinutes", 5, 0)
+          )
+        );
+        const savedSync = config.sync && typeof config.sync === "object" ? config.sync : { url: "", dir: "zcode-pro", login: "", password: "", include: { zcodepro: true, model: true }, lastPushAt: null, lastPullAt: null };
+        const syncInputCls = "h-8 w-full rounded-lg border border-border bg-input px-2.5 text-ui-sm text-foreground outline-none transition-shadow placeholder:text-foreground-subtle focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40";
+        const syncFormRow = (labelText, node) => h(
+          "div",
+          { class: "flex items-center gap-3 px-2 py-1.5" },
+          h("span", { class: "w-20 shrink-0 text-ui-sm font-medium text-foreground" }, labelText),
+          node
+        );
+        const syncUrlInput = h("input", { type: "text", value: savedSync.url || "", placeholder: L.syncUrlPlaceholder, spellcheck: "false", autocomplete: "off", class: syncInputCls + " min-w-0 flex-1" });
+        const syncDirInput = h("input", { type: "text", value: savedSync.dir || "zcode-pro", placeholder: L.syncDirPlaceholder, spellcheck: "false", autocomplete: "off", class: syncInputCls + " min-w-0 flex-1" });
+        const syncLoginInput = h("input", { type: "text", value: savedSync.login || "", spellcheck: "false", autocomplete: "off", class: syncInputCls + " min-w-0 flex-1" });
+        const syncPasswordInput = h("input", { type: "password", value: savedSync.password || "", autocomplete: "new-password", class: syncInputCls + " min-w-0 flex-1" });
+        let syncFormOriginal = null;
+        const syncSaveBtn = btnSmall(L.syncSave, () => {
+          void saveSyncForm();
+        }, "shrink-0", "primary");
+        const syncFormValues = () => ({
+          url: syncUrlInput.value.trim(),
+          dir: syncDirInput.value.trim(),
+          login: syncLoginInput.value.trim(),
+          password: syncPasswordInput.value
+        });
+        const syncCheckDirty = () => {
+          const c = syncFormValues();
+          syncSaveBtn.disabled = c.url === syncFormOriginal.url && c.dir === syncFormOriginal.dir && c.login === syncFormOriginal.login && c.password === syncFormOriginal.password;
+        };
+        syncFormOriginal = syncFormValues();
+        syncSaveBtn.disabled = true;
+        for (const el of [syncUrlInput, syncDirInput, syncLoginInput, syncPasswordInput]) {
+          el.addEventListener("input", syncCheckDirty);
+        }
+        const saveSyncForm = async () => {
+          syncSaveBtn.disabled = true;
+          const res = await rpc("/sync", { method: "POST", body: { sync: syncFormValues() } });
+          if (res.ok) {
+            syncFormOriginal = {
+              url: res.sync.url,
+              dir: res.sync.dir,
+              login: res.sync.login,
+              password: res.sync.password
+            };
+            syncUrlInput.value = res.sync.url;
+            syncDirInput.value = res.sync.dir;
+            syncLoginInput.value = res.sync.login;
+            syncPasswordInput.value = res.sync.password;
+            showToast(L.syncSaved);
+          } else {
+            showToast(L.failed + ": " + errText(res), "error");
+            syncCheckDirty();
+          }
+        };
+        const JIANGUO_HELP = "https://help.jianguoyun.com/?p=2064";
+        const syncRecLine = h("p", { class: "mt-1 text-ui-xs/relaxed text-foreground-subtle" });
+        if (typeof window.zcode?.openExternal === "function") {
+          syncRecLine.append(
+            h("span", {
+              class: "cursor-pointer underline-offset-4 hover:underline",
+              title: JIANGUO_HELP,
+              onClick: () => openExternal(JIANGUO_HELP)
+            }, L.syncRecLink),
+            L.syncRecSuffix
+          );
+        } else {
+          syncRecLine.textContent = L.syncRecLink + L.syncRecSuffix;
+        }
+        const persistSyncInclude = async (partial) => {
+          const res = await rpc("/sync", { method: "POST", body: { include: partial } });
+          if (!res.ok) showToast(L.failed + ": " + errText(res), "error");
+          return res.ok;
+        };
+        const syncIncludeWrap = h("div");
+        const renderSyncInclude = () => {
+          const inc = savedSync.include || {};
+          syncIncludeWrap.replaceChildren(
+            settingRow(L.syncIncludeZcp, L.syncIncludeZcpDesc, inc.zcodepro !== false, async () => {
+              const next = !(inc.zcodepro !== false);
+              if (await persistSyncInclude({ zcodepro: next })) inc.zcodepro = next;
+              renderSyncInclude();
+            }),
+            settingRow(L.syncIncludeModel, L.syncIncludeModelDesc, inc.model !== false, async () => {
+              const next = !(inc.model !== false);
+              if (await persistSyncInclude({ model: next })) inc.model = next;
+              renderSyncInclude();
+            })
+          );
+        };
+        renderSyncInclude();
+        const fmtSyncTime = (ts) => ts ? new Date(ts).toLocaleString() : L.syncNever;
+        const syncStatusLine = h("div", { class: "text-ui-xs/relaxed text-foreground-subtle" });
+        const renderSyncStatus = (s) => {
+          syncStatusLine.textContent = `${L.syncLastPush} ${fmtSyncTime(s.lastPushAt)} \xB7 ${L.syncLastPull} ${fmtSyncTime(s.lastPullAt)}`;
+        };
+        renderSyncStatus(savedSync);
+        const syncUploadBtn = btnSmall(L.syncUpload, () => {
+          void runSyncDirection("push");
+        }, "shrink-0", "primary");
+        const syncDownloadBtn = btnSmall(L.syncDownload, () => {
+          confirmSyncDownload();
+        }, "shrink-0");
+        const confirmSyncDownload = () => {
+          openDialog({
+            title: L.syncConfirmTitle,
+            description: L.syncConfirmDesc,
+            width: "sm:max-w-md",
+            onMount: ({ body: confirmBody, close: closeConfirm }) => {
+              confirmBody.append(
+                dialogFooter(
+                  btnSecondary(L.cancel, () => closeConfirm()),
+                  btnPrimary(L.syncConfirmGo, () => {
+                    closeConfirm();
+                    void runSyncDirection("pull");
+                  }, "min-w-24")
+                )
+              );
+            }
+          });
+        };
+        const runSyncDirection = async (direction) => {
+          syncUploadBtn.disabled = true;
+          syncDownloadBtn.disabled = true;
+          const btn = direction === "push" ? syncUploadBtn : syncDownloadBtn;
+          const idleText = btn.textContent;
+          btn.textContent = direction === "push" ? L.syncUploading : L.syncDownloading;
+          const res = await rpc("/sync/run", { method: "POST", body: { direction } });
+          syncUploadBtn.disabled = false;
+          syncDownloadBtn.disabled = false;
+          btn.textContent = idleText;
+          if (!res.ok) {
+            showToast(L.failed + ": " + errText(res), "error");
+            return;
+          }
+          renderSyncStatus(res.sync || {});
+          if (direction === "pull") {
+            clearConfigCache();
+            window.dispatchEvent(new CustomEvent("zcodepro:config-changed"));
+            Object.assign(config, await getConfig(true));
+            refreshRows();
+            renderToolbarSwitch();
+          }
+          if (direction === "push") showToast(L.syncUploaded, "success");
+          else {
+            const names = (res.applied || []).map((k) => k === "model" ? L.syncIncludeModel : L.syncIncludeZcp).join(isZhLocale() ? "\u3001" : ", ");
+            showToast(names ? `${L.syncDownloaded}\uFF08${names}\uFF09` : L.syncDownloaded, "success");
+          }
+        };
+        paneSync.append(
+          h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.syncDesc),
+          h(
+            "div",
+            { class: "mt-3 rounded-xl border border-border p-1" },
+            syncFormRow("URL", syncUrlInput),
+            syncFormRow(L.syncDir, syncDirInput),
+            syncFormRow(L.syncLogin, syncLoginInput),
+            syncFormRow(L.syncPassword, syncPasswordInput),
+            h(
+              "div",
+              { class: "flex items-start justify-between gap-2 px-2 py-1.5" },
+              h(
+                "div",
+                { class: "min-w-0" },
+                h("p", { class: "text-ui-xs/relaxed text-foreground-subtle" }, L.syncFormHint),
+                syncRecLine
+              ),
+              syncSaveBtn
+            )
+          ),
+          h("div", { class: "mt-2 divide-y divide-border rounded-xl border border-border" }, syncIncludeWrap),
+          h(
+            "div",
+            { class: "mt-2 flex items-center justify-between gap-2 rounded-xl border border-border p-2" },
+            h("div", { class: "min-w-0" }, syncStatusLine),
+            h("div", { class: "flex shrink-0 items-center gap-1.5" }, syncUploadBtn, syncDownloadBtn)
+          ),
+          h("p", { class: "mt-2 text-ui-xs/relaxed text-foreground-subtle" }, L.syncHint)
         );
         const VISION_DEFAULT_PROMPT = "\u8BF7\u8BE6\u7EC6\u63CF\u8FF0\u8FD9\u5F20\u56FE\u7247\u7684\u5168\u90E8\u5185\u5BB9\u3002\u82E5\u662F\u754C\u9762\u6216\u56FE\u8868\u622A\u56FE\uFF0C\u8BF7\u5148\u628A\u6240\u6709\u9519\u8BEF\u3001\u8B66\u544A\u3001\u5F02\u5E38\u72B6\u6001\u9010\u5B57\u5F15\u7528\u51FA\u6765\uFF08\u542B\u5B8C\u6574\u539F\u6587\uFF09\uFF0C\u518D\u63CF\u8FF0\u6574\u4F53\u5E03\u5C40\u3001\u6587\u5B57\u4E0E\u5173\u952E\u6570\u636E\u3002";
         const VISION_DEFAULT_CFG = {
@@ -3929,8 +4254,10 @@
           tablist,
           paneFeatures,
           paneStyles,
+          panePerf,
           paneAgents,
           paneProxy,
+          paneSync,
           paneVision,
           paneHeadroom,
           paneRtk
@@ -4374,9 +4701,9 @@
   var mapRefreshTimer = 0;
   function refreshMapSoon() {
     if (mapRefreshTimer) return;
-    const tick = () => {
+    const tick2 = () => {
       if (document.hidden) {
-        mapRefreshTimer = setTimeout(tick, 1e4);
+        mapRefreshTimer = setTimeout(tick2, 1e4);
         return;
       }
       mapRefreshTimer = 0;
@@ -4384,7 +4711,7 @@
         if (m) scan2();
       });
     };
-    mapRefreshTimer = setTimeout(tick, MAP_REFRESH_MS);
+    mapRefreshTimer = setTimeout(tick2, MAP_REFRESH_MS);
   }
   var editingKey = null;
   var bootDelay = 0;
@@ -4496,9 +4823,12 @@
     return null;
   }
   function collapseNavSafe(head) {
-    head.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
     const cur = currentTaskRow();
-    if (cur) cur.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+    const backKey = cur ? cur.getAttribute("data-task-item-key") : "";
+    head.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+    if (!backKey) return;
+    const back = cur && cur.isConnected ? cur : document.querySelector(`[data-task-item-key="${cssEscape(backKey)}"]`);
+    if (back) back.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
   }
   function collapseAfterContentLoaded(wsRow) {
     const deadline = Date.now() + 25e3;
@@ -4510,7 +4840,7 @@
       return h2 || null;
     };
     const userTouched2 = () => wsRow.__zcodeproUserTouched && Date.now() - wsRow.__zcodeproUserTouched < 800;
-    const tick = () => {
+    const tick2 = () => {
       if (!keepCollapsed || Date.now() > deadline || !wsRow.isConnected) return done();
       const len = (document.querySelector("main") || document.body).innerText.length;
       if (len > lastLen) grewAt = Date.now();
@@ -4527,13 +4857,13 @@
         }
         return done();
       }
-      setTimeout(tick, 200);
+      setTimeout(tick2, 200);
     };
     const done = () => {
       wsRow.__zcodeproSuppending = false;
     };
     wsRow.__zcodeproSuppending = true;
-    setTimeout(tick, 400);
+    setTimeout(tick2, 400);
   }
   function cssEscape(s) {
     return String(s).replace(/(["\\\]])/g, "\\$1");
@@ -4548,6 +4878,7 @@
   var PEEK_REPEAT_MS = 6e4;
   var PEEK_SETTLE_MS = 160;
   var PEEK_MAX_MS = 1500;
+  var PEEK_UNMOUNT_WAIT_MS = 800;
   var CONFIG_POLL_MIN_MS2 = 5e3;
   var CONFIG_POLL_MAX_MS2 = 6e4;
   var TASK_SEL2 = "[data-task-item-key]";
@@ -4556,7 +4887,6 @@
   var peekTimers = /* @__PURE__ */ new Map();
   var activePeeks = /* @__PURE__ */ new Set();
   var peekedWs = /* @__PURE__ */ new Set();
-  var peekHidden = /* @__PURE__ */ new Map();
   var wsWithRows = /* @__PURE__ */ new Set();
   function workspaceOf2(key) {
     const i = key.indexOf(":sess_");
@@ -4589,9 +4919,12 @@
     }
   };
   function toggleNavSafe(head) {
-    synthClick(head);
     const cur = currentTaskRow2();
-    if (cur) synthClick(cur);
+    const backKey = cur ? cur.getAttribute("data-task-item-key") : "";
+    synthClick(head);
+    if (!backKey) return;
+    const back = cur && cur.isConnected ? cur : document.querySelector(`${TASK_SEL2}[data-task-item-key="${CSS.escape(backKey)}"]`);
+    if (back) synthClick(back);
   }
   function scan3() {
     wsWithRows = /* @__PURE__ */ new Set();
@@ -4695,21 +5028,21 @@
     }
   }
   var peekChain = Promise.resolve();
-  async function peek(ws) {
-    const run = () => peekInner(ws);
+  async function peek(ws, opts) {
+    const run = () => peekInner(ws, opts);
     const p = peekChain.then(run, run);
     peekChain = p.catch(() => {
     });
     return p;
   }
-  async function peekInner(ws) {
-    if (!enabled3 || document.hidden || activePeeks.has(ws)) return;
+  async function peekInner(ws, opts) {
+    if (!opts?.manual && !enabled3 || document.hidden || activePeeks.has(ws)) return false;
     const row = findWsRow(ws);
     const head = row && wsHead(row);
-    if (!row || !head || head.getAttribute("aria-expanded") !== "false") return;
-    if (!currentTaskRow2() && !document.querySelector('[data-testid^="conversation-new-task"]')) {
+    if (!row || !head || head.getAttribute("aria-expanded") !== "false") return false;
+    if (!currentTaskRow2()) {
       schedulePeek(ws, PEEK_REPEAT_MS);
-      return;
+      return false;
     }
     activePeeks.add(ws);
     peekedWs.add(ws);
@@ -4722,6 +5055,7 @@
     frozen.style.height = rect.height + "px";
     document.body.append(frozen);
     row.style.visibility = "hidden";
+    const hider = installPeekHider(ws);
     try {
       toggleNavSafe(head);
       await settleAndRead(ws);
@@ -4729,9 +5063,10 @@
       const headNow = wsHead(rowNow);
       if (headNow && headNow.getAttribute("aria-expanded") === "true" && !userTouched(rowNow)) {
         toggleNavSafe(headNow);
+        await waitForRowsGone(ws);
       }
     } finally {
-      cleanupPeekHidden(ws);
+      removePeekHider(hider);
       row.style.visibility = "";
       frozen.remove();
       activePeeks.delete(ws);
@@ -4739,6 +5074,33 @@
     apply();
     const set = runningByWs.get(ws);
     if (set && set.size && enabled3) schedulePeek(ws, PEEK_REPEAT_MS);
+    return true;
+  }
+  function wsRunningSnapshot() {
+    const curKey = currentTaskRow2()?.getAttribute("data-task-item-key") || "";
+    return {
+      running: [...runningByWs.entries()].filter(([, set]) => set.size > 0).map(([ws]) => ws),
+      current: curKey ? workspaceOf2(curKey) || null : null
+    };
+  }
+  async function verifyWorkspaceNotRunning(ws) {
+    if (!ws || document.hidden) return false;
+    const row = findWsRow(ws);
+    const head = row && wsHead(row);
+    if (!row || !head) return false;
+    if (head.getAttribute("aria-expanded") !== "false") {
+      let run = false;
+      for (const el of domRowsOf(ws)) if (isRunningRow(el)) run = true;
+      return !run;
+    }
+    let verified = false;
+    try {
+      verified = await peek(ws, { manual: true }) === true;
+    } catch {
+    }
+    if (!verified) return false;
+    const set = runningByWs.get(ws);
+    return !(set && set.size);
   }
   function settleAndRead(ws) {
     return new Promise((resolve) => {
@@ -4773,45 +5135,31 @@
       }, 80);
     });
   }
-  function hidePeekRows(muts) {
-    if (!activePeeks.size) return;
-    for (const m of muts) {
-      if (m.type !== "childList") continue;
-      for (const n of m.addedNodes) {
-        if (!(n instanceof Element)) continue;
-        const rows = n.matches(TASK_SEL2) ? [n] : [...n.querySelectorAll(TASK_SEL2)];
-        for (const r of rows) {
-          const ws = workspaceOf2(r.getAttribute("data-task-item-key") || "");
-          if (!activePeeks.has(ws)) continue;
-          r.style.display = "none";
-          pushHidden(ws, r);
-          const ul = r.closest("ul");
-          if (ul && !ul.__zcodeproPeekHidden) {
-            ul.__zcodeproPeekHidden = true;
-            ul.style.display = "none";
-            pushHidden(ws, ul);
-            const holder = ul.parentElement;
-            if (holder && [...holder.classList].includes("empty:hidden") && !holder.__zcodeproPeekHidden) {
-              holder.__zcodeproPeekHidden = true;
-              holder.style.display = "none";
-              pushHidden(ws, holder);
-            }
-          }
+  var PEEK_EXEMPT_CLASS = "zcodepro-peek-exempt";
+  var cssAttr = (v) => String(v).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+  function installPeekHider(ws) {
+    const rowSel3 = `${TASK_SEL2}[data-task-item-key^="${cssAttr(ws + ":")}"]`;
+    for (const r of document.querySelectorAll(rowSel3)) r.classList.add(PEEK_EXEMPT_CLASS);
+    const style = document.createElement("style");
+    style.textContent = `${rowSel3}:not(.${PEEK_EXEMPT_CLASS}){display:none!important}`;
+    document.head.append(style);
+    return { style, sel: rowSel3 };
+  }
+  function removePeekHider(hider) {
+    hider.style.remove();
+    for (const r of document.querySelectorAll("." + PEEK_EXEMPT_CLASS)) r.classList.remove(PEEK_EXEMPT_CLASS);
+  }
+  function waitForRowsGone(ws) {
+    const sel = `${TASK_SEL2}[data-task-item-key^="${cssAttr(ws + ":")}"]:not(.${PEEK_EXEMPT_CLASS})`;
+    return new Promise((resolve) => {
+      const t0 = Date.now();
+      const timer = setInterval(() => {
+        if (!document.querySelector(sel) || Date.now() - t0 >= PEEK_UNMOUNT_WAIT_MS) {
+          clearInterval(timer);
+          resolve();
         }
-      }
-    }
-  }
-  function pushHidden(ws, el) {
-    if (!peekHidden.has(ws)) peekHidden.set(ws, []);
-    peekHidden.get(ws).push(el);
-  }
-  function cleanupPeekHidden(ws) {
-    const els = peekHidden.get(ws) || [];
-    for (const el of els) {
-      el.style.display = "";
-      delete el.__zcodeproPeekHidden;
-    }
-    peekHidden.delete(ws);
+      }, 40);
+    });
   }
   var TOUCH_WINDOW_MS = 800;
   var wsTouchAt = /* @__PURE__ */ new WeakMap();
@@ -4869,7 +5217,6 @@
     const observer2 = new MutationObserver((muts) => {
       if (!relevant(muts)) return;
       handleRemovals(muts);
-      hidePeekRows(muts);
       if (!scanDebounce3) {
         scanDebounce3 = setTimeout(() => {
           scanDebounce3 = 0;
@@ -4890,6 +5237,156 @@
       const row = e.target instanceof Element && e.target.closest(WS_SEL);
       if (row) wsTouchAt.set(row, Date.now());
     }, true);
+  }
+
+  // src/inject/features/idle-reclaim.js
+  var CHECK_MS = 3e4;
+  var WS_SEL2 = '[data-testid^="workspace-item-"]';
+  var MIN_MINUTES = 1;
+  var MAX_MINUTES = 1440;
+  var idleSince = /* @__PURE__ */ new Map();
+  var blockUntil = /* @__PURE__ */ new Map();
+  var scanDisabledLogged = false;
+  var bootAt = Date.now();
+  var startupSweepDone = false;
+  var servicesRef = null;
+  function findServices() {
+    if (servicesRef) return servicesRef;
+    try {
+      const rootEl = document.getElementById("root");
+      const containerKey = rootEl && Object.keys(rootEl).find((k) => k.startsWith("__reactContainer$"));
+      if (!containerKey) return null;
+      const seen = /* @__PURE__ */ new Set();
+      let found = null;
+      const scanObj = (o) => {
+        if (!o || typeof o !== "object" || seen.has(o) || found) return;
+        seen.add(o);
+        const ts = o.zcodeTaskService;
+        if (ts && typeof ts === "object" && typeof ts.releaseWorkspacePreparation === "function") found = o;
+      };
+      let visited = 0;
+      const visit = (f) => {
+        if (!f || found || visited > 6e4) return;
+        visited++;
+        for (const holder of [f.memoizedProps, f.memoizedState]) {
+          if (!holder || typeof holder !== "object") continue;
+          scanObj(holder);
+          for (const v of Object.values(holder)) {
+            if (v && typeof v === "object") scanObj(v);
+          }
+        }
+        visit(f.child);
+        visit(f.sibling);
+      };
+      visit(rootEl[containerKey]);
+      if (found) servicesRef = found;
+      return found;
+    } catch {
+      return null;
+    }
+  }
+  function sidebarWorkspaces() {
+    const out = /* @__PURE__ */ new Set();
+    for (const el of document.querySelectorAll(WS_SEL2)) {
+      out.add(el.getAttribute("data-testid").slice("workspace-item-".length));
+    }
+    return out;
+  }
+  async function reclaim(ws) {
+    const services = findServices();
+    if (!services) return false;
+    try {
+      await services.zcodeTaskService.releaseWorkspacePreparation({
+        workspacePath: ws.endsWith("/") ? ws : ws + "/"
+      });
+      console.info("[zcodepro] idle-reclaim: \u5DF2\u91CA\u653E\u7A7A\u95F2\u9879\u76EE\u8FDB\u7A0B " + ws);
+      return true;
+    } catch (err) {
+      console.warn("[zcodepro] idle-reclaim: \u91CA\u653E\u5931\u8D25 " + ws, err);
+      return false;
+    }
+  }
+  async function tryReclaim(ws, cooldownMs) {
+    const verifiedIdle = await verifyWorkspaceNotRunning(ws);
+    if (!verifiedIdle) {
+      blockUntil.set(ws, Date.now() + cooldownMs);
+      return;
+    }
+    const currentNow = wsRunningSnapshot().current;
+    if (!currentNow || currentNow === ws) {
+      blockUntil.set(ws, Date.now() + cooldownMs);
+      return;
+    }
+    await reclaim(ws);
+    blockUntil.set(ws, Date.now() + cooldownMs);
+  }
+  async function tick() {
+    const cfg = await getConfig();
+    if ((cfg.features || {}).idleReclaim === false) {
+      idleSince.clear();
+      return;
+    }
+    const minutes = Math.min(MAX_MINUTES, Math.max(MIN_MINUTES, Number(cfg.idleReclaimMinutes) || 30));
+    const threshold = minutes * 6e4;
+    let startupMinutes = Number(cfg.idleReclaimStartupMinutes);
+    if (!Number.isFinite(startupMinutes)) startupMinutes = 5;
+    startupMinutes = Math.min(MAX_MINUTES, Math.max(0, startupMinutes));
+    const snap = wsRunningSnapshot();
+    if (!snap.current) {
+      idleSince.clear();
+      return;
+    }
+    const busy = new Set(snap.running);
+    busy.add(snap.current);
+    const workspaces = sidebarWorkspaces();
+    for (const ws of [...idleSince.keys(), ...blockUntil.keys()]) {
+      if (!workspaces.has(ws)) {
+        idleSince.delete(ws);
+        blockUntil.delete(ws);
+      }
+    }
+    const candidates = [...workspaces].filter((ws) => !busy.has(ws));
+    const res = candidates.length ? await rpc("/idle-busy", { method: "POST", body: { paths: candidates } }) : { ok: true, scan: true, busy: [] };
+    if (!res.ok || res.scan === false) {
+      if (!scanDisabledLogged) {
+        scanDisabledLogged = true;
+        console.info("[zcodepro] idle-reclaim: \u540E\u53F0\u547D\u4EE4\u626B\u63CF\u4E0D\u53EF\u7528\uFF0C\u7A7A\u95F2\u56DE\u6536\u505C\u7528");
+      }
+      idleSince.clear();
+      return;
+    }
+    const procBusy = new Set(res.busy || []);
+    const idleCandidates = candidates.filter((ws) => !procBusy.has(ws));
+    const now = Date.now();
+    if (!startupSweepDone && now - bootAt >= startupMinutes * 6e4) {
+      startupSweepDone = true;
+      for (const ws of idleCandidates) {
+        if ((blockUntil.get(ws) || 0) > now) continue;
+        await tryReclaim(ws, threshold);
+      }
+    }
+    for (const ws of workspaces) {
+      if (busy.has(ws) || procBusy.has(ws)) {
+        idleSince.delete(ws);
+        continue;
+      }
+      if (!idleSince.has(ws)) {
+        idleSince.set(ws, now);
+        continue;
+      }
+      if (now - idleSince.get(ws) < threshold) continue;
+      if ((blockUntil.get(ws) || 0) > now) continue;
+      idleSince.delete(ws);
+      await tryReclaim(ws, threshold);
+    }
+  }
+  function startIdleReclaim() {
+    const loop = () => {
+      tick().catch(() => {
+      });
+    };
+    loop();
+    setInterval(loop, CHECK_MS);
   }
 
   // src/inject/features/toolbar-icons.js
@@ -5288,6 +5785,10 @@
       }
       try {
         startWsRunningSpin();
+      } catch {
+      }
+      try {
+        startIdleReclaim();
       } catch {
       }
       try {

@@ -91,14 +91,15 @@ function buildCss(styles) {
     parts.push(`${CONV} .space-y-4 > :not(${SPECIAL}){margin-block-end:0 !important;margin-bottom:0 !important;}`);
   }
   if (tsp !== null) {
-    // 表格包在 div.my-0.flex 里（space-y-4 的直接子块），边距落在包裹层上。
-    // 包裹层里还有一条 28px 的悬浮工具条（复制/缩放，悬停才显现）+ 8px 内隙，
-    // 占着布局会让文字到表格卡片的间距远大于设置值、调了看不出变化——
-    // 改为浮动到表格卡片右上角，不占布局；表格框架底部另有一条隐藏的
-    // 宽度调节把手（悬停显现，常占 26px），同样浮动到卡片底边
+    // 表格包在 div.my-0.flex 里（space-y-4 的直接子块），边距落在包裹层上：
+    // 包裹层 = 工具条（复制/下载/预览，常显）+ 8px 内隙 + 表格卡片，应用把
+    // 包裹层边距清零（my-0），这里按设置值给上下边距。工具条必须留在文档流里：
+    // 表格卡片容器自带 position:relative 且渲染顺序在后，一旦把工具条浮动到
+    // 卡片右上角，会被卡片盖住——按钮看得见但点击全被表格截走，还挡住最后一
+    // 列列名。表格框架底部隐藏的宽度调节把手（悬停显现，常占 26px）始终不可
+    // 见且 pointer-events:none 不挡点击，浮动到卡片底边不占布局
     parts.push(
-      `${SEL_TABLE}{margin-block:${tsp}px !important;position:relative !important;}`,
-      `${SEL_TABLE} > .flex.items-center.justify-end{position:absolute !important;top:0;right:0;}`,
+      `${SEL_TABLE}{margin-block:${tsp}px !important;}`,
       `${SEL_TABLE} [class*="markdown-table-frame"] > .pointer-events-none.py-1{position:absolute !important;left:0;right:0;bottom:0;}`,
     );
   }

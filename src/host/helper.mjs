@@ -13,6 +13,7 @@ import { readSettings, writeSettingsAtomic, remapSettingsPaths, isProjectOpenInT
 import { taskIndexPath, probeTaskIndexWritable, remapTaskIndexPaths, taskIndexDriverAvailable, listOverriddenTitles, listTaskWorkspaceMap } from './taskIndex.mjs';
 import { pickFolderSystem } from './pickFolder.mjs';
 import { reorderWorkspaceTasks, reorderGroupMembers } from './taskOrder.mjs';
+import { webdavRequest, webdavPutWithMkcol, webdavHttpText } from './webdav.mjs';
 
 const VERSION = '0.15.0';
 
@@ -90,6 +91,21 @@ export function defaultConfig() {
     // HTTP 代理（http(s)://host:port）：helper 发起的网络访问走它——插件市场更新/安装
     // （zcode CLI → git）、headroom 本体的检查更新与升级（pip）。空 = 不用代理。
     proxy: '',
+    // 设置同步（设置弹窗「同步」标签页，交互参考 Tampermonkey 的手动同步）：
+    // 仅 WebDAV、仅在点击按钮时传输（type 字段预留多后端扩展，当前恒为 webdav）。
+    // url 为 WebDAV 服务器地址；dir 为其下的上传目录（默认 zcode-pro，避免直接
+    // 写进网盘根目录）；include 选择同步内容；凭据只存本机、不同步出去；
+    // lastPushAt/lastPullAt 只记录本机操作时间。
+    sync: {
+      type: 'webdav',
+      url: '',
+      dir: 'zcode-pro',
+      login: '',
+      password: '',
+      include: { zcodepro: true, model: true },
+      lastPushAt: null,
+      lastPullAt: null,
+    },
     // 一次性迁移标记：migrateConfigOnce 执行过哪些纠偏（见 startHelper），
     // 有标记的迁移不再重复，用户此后手动改回的设置不再被覆盖
     migrations: {},
@@ -110,6 +126,7 @@ export function loadConfig(configFile) {
       features: { ...defaultConfig().features, ...(saved.features || {}) },
       styles: { ...defaultConfig().styles, ...(saved.styles && typeof saved.styles === 'object' ? saved.styles : {}) },
       aliases: { ...((saved.aliases && typeof saved.aliases === 'object') ? saved.aliases : {}) },
+      sync: mergeSyncConfig(saved.sync),
     };
   } catch {
     return defaultConfig();
@@ -125,18 +142,6 @@ export function saveConfig(configFile, config) {
   const tmp = configFile + '.tmp';
   writeFileSync(tmp, JSON.stringify(config, null, 2), 'utf8');
   renameSync(tmp, configFile);
-}
-
-// 字体栈清洗：去控制字符、限 200 字符；拒绝能破坏 CSS 声明的字符（{};<>\）
-// 与引号不配对的值（返回 undefined = 忽略该次更新）。空串/null = 恢复默认（null）
-function sanitizeFontStack(v) {
-  if (v === null || v === '') return null;
-  if (typeof v !== 'string') return undefined;
-  const s = v.replace(/[\x00-\x1f\x7f]/g, '').trim().slice(0, 200);
-  if (!s) return null;
-  if (/[{};<>\\]/.test(s)) return undefined;
-  if (((s.match(/"/g) || []).length) % 2 !== 0 || ((s.match(/'/g) || []).length) % 2 !== 0) return undefined;
-  return s;
 }
 
 // 一次性配置迁移：升级后对历史设置做纠偏，执行过的迁移记入 migrations 标记，
@@ -241,9 +246,7 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
           activeProxyUrl = current.proxy;
         }
         if (body && typeof body === 'object' && body.features && typeof body.features === 'object') {
-          for (const key of Object.keys(defaultConfig().features)) {
-            if (typeof body.features[key] === 'boolean') current.features[key] = body.features[key];
-          }
+          applyFeaturesPartial(current.features, body.features);
         }
         if (body && typeof body === 'object' && typeof body.idleReclaimMinutes === 'number' && Number.isFinite(body.idleReclaimMinutes)) {
           current.idleReclaimMinutes = Math.min(1440, Math.max(1, Math.round(body.idleReclaimMinutes)));
@@ -252,40 +255,7 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
           current.idleReclaimStartupMinutes = Math.min(1440, Math.max(0, Math.round(body.idleReclaimStartupMinutes)));
         }
         if (body && typeof body === 'object' && body.styles && typeof body.styles === 'object') {
-          if (!current.styles || typeof current.styles !== 'object') current.styles = {};
-          // 各样式键：null 恢复默认；px 类 0–96 取整；行距 0.8–4 保留两位小数
-          for (const key of ['rowGap', 'listSpacing', 'listItemSpacing', 'quoteCodeSpacing', 'tableSpacing', 'tableCellPaddingV', 'tableCellPaddingH', 'sidebarProjectSpacing', 'sidebarTaskSpacing']) {
-            if (key in body.styles) {
-              const v = body.styles[key];
-              if (v === null) current.styles[key] = null;
-              else if (typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 96) current.styles[key] = Math.round(v);
-            }
-          }
-          for (const key of ['lineHeight', 'codeLineHeight']) {
-            if (key in body.styles) {
-              const v = body.styles[key];
-              if (v === null) current.styles[key] = null;
-              else if (typeof v === 'number' && Number.isFinite(v) && v >= 0.8 && v <= 4) current.styles[key] = Math.round(v * 100) / 100;
-            }
-          }
-          if ('userLineHeight' in body.styles) {
-            const v = body.styles.userLineHeight;
-            if (v === null) current.styles.userLineHeight = null;
-            else if (typeof v === 'number' && Number.isFinite(v) && v >= 0.8 && v <= 4) current.styles.userLineHeight = Math.round(v * 100) / 100;
-          }
-          if ('contentWidth' in body.styles) {
-            const v = body.styles.contentWidth;
-            const ok = v && (v.unit === 'px' || v.unit === '%') && typeof v.value === 'number' && Number.isFinite(v.value)
-              && v.value >= (v.unit === 'px' ? 320 : 20) && v.value <= (v.unit === 'px' ? 3840 : 100);
-            if (v === null) current.styles.contentWidth = null;
-            else if (ok) current.styles.contentWidth = { value: v.unit === 'px' ? Math.round(v.value) : Math.round(v.value * 10) / 10, unit: v.unit };
-          }
-          // 字体键：经 sanitizeFontStack 清洗（空 = 恢复默认，非法值忽略）
-          for (const key of ['uiFont', 'userFont', 'assistantFont']) {
-            if (!(key in body.styles)) continue;
-            const s = sanitizeFontStack(body.styles[key]);
-            if (s !== undefined) current.styles[key] = s;
-          }
+          current.styles = applyStylesPartial(current.styles, body.styles);
         }
         saveConfig(configFile, current);
         json(res, 200, { ok: true, config: current });
@@ -303,7 +273,6 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         json(res, 200, await scanIdleBusy(paths, dataRoot));
         return;
       }
-
       // 全局提示词（~/.zcode/AGENTS.md）：设置弹窗「全局提示词」标签页读写
       if (req.method === 'GET' && url.pathname === '/agents') {
         json(res, ...readAgents(agentsFile));
@@ -697,6 +666,47 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         json(res, 200, { ok: true, proxy, targets: results });
         return;
       }
+      // —— 设置同步（设置弹窗「同步」标签页）：配置读写 + 手动上传/下载 ——
+      if (req.method === 'GET' && url.pathname === '/sync') {
+        json(res, 200, { ok: true, sync: loadConfig(configFile).sync });
+        return;
+      }
+      if (req.method === 'POST' && url.pathname === '/sync') {
+        const body = await readBody(req);
+        const current = loadConfig(configFile);
+        // 表单（类型/URL/登录/密码）与同步内容开关分开提交：表单全量替换，开关只改单项
+        if (body && typeof body === 'object' && body.sync && typeof body.sync === 'object') {
+          const v = validateSyncForm(body.sync);
+          if (v.error) {
+            json(res, 400, { ok: false, code: 'sync-invalid', error: v.error });
+            return;
+          }
+          Object.assign(current.sync, v.sync);
+        }
+        if (body && typeof body === 'object' && body.include && typeof body.include === 'object') {
+          if (typeof body.include.zcodepro === 'boolean') current.sync.include.zcodepro = body.include.zcodepro;
+          if (typeof body.include.model === 'boolean') current.sync.include.model = body.include.model;
+        }
+        saveConfig(configFile, current);
+        json(res, 200, { ok: true, sync: current.sync });
+        return;
+      }
+      if (req.method === 'POST' && url.pathname === '/sync/run') {
+        const body = await readBody(req);
+        const direction = body?.direction === 'pull' ? 'pull' : body?.direction === 'push' ? 'push' : '';
+        if (!direction) {
+          json(res, 400, { ok: false, code: 'invalid-request', error: 'direction 只能是 push 或 pull' });
+          return;
+        }
+        const config = loadConfig(configFile);
+        const r = await runSettingsSync({ direction, dataRoot, configFile, config, proxyUrl: activeProxyUrl });
+        if (r.error) {
+          json(res, r.status || 500, { ok: false, code: r.code || 'sync-run', error: r.error });
+          return;
+        }
+        json(res, 200, { ok: true, direction, applied: r.applied, sync: loadConfig(configFile).sync });
+        return;
+      }
       // —— zcode-plugins 市场更新：读状态（带 30 分钟节流的市场同步）与执行更新 ————
       if (req.method === 'GET' && url.pathname === '/plugins/status') {
         if (Date.now() - lastMarketplaceSync > 30 * 60 * 1000) {
@@ -771,6 +781,239 @@ function clampInt(v, min, max, dflt) {
   const n = typeof v === 'number' ? v : Number(v);
   if (!Number.isFinite(n)) return dflt;
   return Math.min(max, Math.max(min, Math.round(n)));
+}
+
+// —— 设置同步（「同步」标签页）的实现 ——
+
+// loadConfig 时把磁盘上的 sync 段按默认值归一（长度限幅、时间戳只收数字）。
+// 当前唯一后端是 WebDAV，type 一律归为 webdav（不做「禁用」态：同步本就仅手动触发）
+function mergeSyncConfig(saved) {
+  const d = defaultConfig().sync;
+  if (!saved || typeof saved !== 'object') return d;
+  const inc = (saved.include && typeof saved.include === 'object') ? saved.include : {};
+  return {
+    type: 'webdav',
+    url: typeof saved.url === 'string' ? saved.url.slice(0, 500) : '',
+    dir: typeof saved.dir === 'string' ? saved.dir.trim().replace(/^\/+|\/+$/g, '').slice(0, 200) : defaultConfig().sync.dir,
+    login: typeof saved.login === 'string' ? saved.login.slice(0, 300) : '',
+    password: typeof saved.password === 'string' ? saved.password.slice(0, 300) : '',
+    include: { zcodepro: inc.zcodepro !== false, model: inc.model !== false },
+    lastPushAt: Number.isFinite(saved.lastPushAt) ? saved.lastPushAt : null,
+    lastPullAt: Number.isFinite(saved.lastPullAt) ? saved.lastPullAt : null,
+  };
+}
+
+// POST /sync 表单校验：url/login/password/dir 全量替换（dir 缺省时不动已有值）。
+// URL 必填，指向 WebDAV 服务器（可含路径前缀）；dir 为其下的上传目录，可多级
+function validateSyncForm(raw) {
+  const url = typeof raw.url === 'string' ? raw.url.trim() : '';
+  const login = typeof raw.login === 'string' ? raw.login.trim() : '';
+  const password = typeof raw.password === 'string' ? raw.password : '';
+  if (!url) return { error: '请先填写 URL（如 https://dav.jianguoyun.com/dav/）' };
+  if (!/^https?:\/\/\S+$/.test(url)) return { error: 'URL 需为 WebDAV 服务器地址，如 https://dav.example.com/dav/' };
+  if (url.length > 500) return { error: 'URL 过长（最多 500 字符）' };
+  if (login.length > 300 || password.length > 300) return { error: '登录名或密码过长（最多 300 字符）' };
+  const out = { type: 'webdav', url, login, password };
+  if (typeof raw.dir === 'string') {
+    // 留空 = 不用子目录，直接存到 URL 路径下（用户显式清空时允许）
+    const dir = raw.dir.trim().replace(/^\/+|\/+$/g, '');
+    if (dir.length > 200) return { error: '上传目录过长（最多 200 字符）' };
+    for (const seg of dir ? dir.split('/') : []) {
+      if (!seg || seg === '.' || seg === '..' || /[\r\n\0]/.test(seg)) {
+        return { error: '上传目录需为文件夹名（可多级，如 backup/zcode-pro），不能包含 . / .. 或特殊字符' };
+      }
+    }
+    out.dir = dir;
+  }
+  return { sync: out };
+}
+
+// —— 同步内容在云端目录里的文件名：ZCode Pro 设置与模型设置各一个文件，
+// 上传/下载按勾选逐文件进行，可单独覆盖其中一项 ——
+const SYNC_FILES = { zcodepro: 'zcodepro.json', model: 'model.json' };
+
+// 云端目录 = URL（服务器地址，容忍尾斜杠）+ 上传目录（默认 zcode-pro，可多级）。
+// 目录段逐段编码，中文/空格等文件夹名也能正确落到地址里
+function syncBaseDir(sync) {
+  const base = sync.url.replace(/\/+$/, '');
+  const segs = String(sync.dir || '').split('/').map((s) => s.trim()).filter((s) => s && s !== '.' && s !== '..');
+  if (!segs.length) return base;
+  return base + '/' + segs.map(encodeURIComponent).join('/');
+}
+
+// 拼出各组同步文件（zcodepro.json / model.json）的完整地址
+function syncFileUrl(sync, kind) {
+  return syncBaseDir(sync) + '/' + SYNC_FILES[kind];
+}
+
+// 读云端某个同步文件：{ doc } 成功 | { missing } 云端没有该组数据 | { error, code, status } 失败。
+// 文件里已是其他内容（或组别不符）时拒绝覆盖；4MB 上限挡住异常大文件。
+async function fetchSyncDoc(sync, proxyUrl, kind) {
+  const r = await webdavRequest({ method: 'GET', url: syncFileUrl(sync, kind), login: sync.login, password: sync.password, proxyUrl });
+  if (!r.ok) return { error: r.error, code: 'sync-request', status: 502 };
+  // 404 之外，坚果云对父目录不存在的路径返回 409（AncestorsNotFound）——都视为云端没有数据，
+  // 让上传继续走 PUT（自动建目录）而不是误报失败
+  if (r.httpCode === 404 || r.httpCode === 409) return { missing: true };
+  if (r.httpCode < 200 || r.httpCode >= 300) return { error: webdavHttpText(r.httpCode), code: 'sync-request', status: 502 };
+  if (!r.body.trim()) return { missing: true }; // 个别网盘对不存在的文件返回 200 空内容
+  if (r.body.length > 4 * 1024 * 1024) {
+    return { error: `云端 ${SYNC_FILES[kind]} 超过 4MB，已拒绝应用`, code: 'sync-remote-invalid', status: 400 };
+  }
+  let doc = null;
+  try { doc = JSON.parse(r.body); } catch { /* 落到统一报错 */ }
+  if (!doc || typeof doc !== 'object' || doc.app !== 'zcode-pro' || doc.kind !== kind || !doc.data || typeof doc.data !== 'object') {
+    return { error: `云端已存在其他内容的 ${SYNC_FILES[kind]}，请换一个目录`, code: 'sync-remote-invalid', status: 409 };
+  }
+  return { doc };
+}
+
+async function runSettingsSync({ direction, dataRoot, configFile, config, proxyUrl }) {
+  const sync = config.sync;
+  if (!sync.url || !/^https?:\/\/\S+$/.test(sync.url)) {
+    return { code: 'sync-not-configured', status: 400, error: '请先填写 WebDAV URL 并保存' };
+  }
+  if (!sync.include.zcodepro && !sync.include.model) {
+    return { code: 'sync-not-configured', status: 400, error: '请至少选择一项同步内容' };
+  }
+  return direction === 'push'
+    ? runSyncPush({ dataRoot, configFile, config, sync, proxyUrl })
+    : runSyncPull({ dataRoot, configFile, config, sync, proxyUrl });
+}
+
+// 上传：每组独立一个云端文件（zcodepro.json / model.json），勾选几组写几个；
+// 写前预读只为确认没顶到别人的文件，自己的文件直接整份覆盖
+async function runSyncPush({ dataRoot, configFile, config, sync, proxyUrl }) {
+  const docs = {};
+  if (sync.include.zcodepro) {
+    // sync（本机的同步配置与凭据）与 version（本机 helper 版本）不外发
+    const { sync: _s, version: _v, ...rest } = config;
+    docs.zcodepro = rest;
+  }
+  if (sync.include.model) {
+    const v2conf = readJsonFile(join(dataRoot, 'v2', 'config.json'));
+    if (v2conf && typeof v2conf.provider === 'object' && v2conf.provider) {
+      docs.model = { provider: v2conf.provider };
+      const pc = readJsonFile(join(dataRoot, 'v2', 'provider_config.json'));
+      if (pc && typeof pc === 'object') docs.model.providerConfig = pc;
+      // 注意：v2/credentials.json 不参与同步——里面是账号登录态（BigModel OAuth、
+      // JWT、Coding Plan 账号 key）与应用自身数据，各机器用各自账号登录；
+      // 自定义模型的 API Key 存在 config.json 的 provider.options.apiKey，随 provider 同步
+    }
+  }
+  if (!Object.keys(docs).length) {
+    return { code: 'sync-run', status: 400, error: '本机没有可同步的内容' };
+  }
+  const pushed = [];
+  const dir = await mkdtemp(join(tmpdir(), 'zcodepro-sync-'));
+  try {
+    for (const kind of Object.keys(docs)) {
+      const remote = await fetchSyncDoc(sync, proxyUrl, kind);
+      if (remote.error) return remote;
+      const doc = { app: 'zcode-pro', kind, format: 1, savedAt: new Date().toISOString(), data: docs[kind] };
+      const docPath = join(dir, SYNC_FILES[kind]);
+      writeFileSync(docPath, JSON.stringify(doc, null, 2), 'utf8');
+      const put = await webdavPutWithMkcol({
+        url: syncFileUrl(sync, kind), login: sync.login, password: sync.password,
+        uploadFile: docPath, proxyUrl, timeoutMs: 60000,
+      });
+      if (!put.ok) return { code: 'sync-request', status: 502, error: put.error };
+      if (put.httpCode < 200 || put.httpCode >= 300) {
+        return { code: 'sync-request', status: 502, error: webdavHttpText(put.httpCode) };
+      }
+      pushed.push(kind);
+    }
+  } finally {
+    try { rmSync(dir, { recursive: true, force: true }); } catch { /* ignore */ }
+  }
+  sync.lastPushAt = Date.now();
+  saveConfig(configFile, config);
+  return { applied: pushed };
+}
+
+// 下载：把云端所选组应用到本机（各组独立文件，勾选几组读几组，可只覆盖模型设置）。
+// 覆盖前留 .zcodepro-backup 备份；zcodepro 组只覆盖功能/样式/别名/代理，
+// sync 配置与凭据始终保留本机的
+async function runSyncPull({ dataRoot, configFile, config, sync, proxyUrl }) {
+  // 先把勾选组的云端数据全部读到（任何一组读取失败都不动本机文件），再逐组应用
+  const docs = {};
+  for (const kind of ['zcodepro', 'model']) {
+    if (!sync.include[kind]) continue;
+    const remote = await fetchSyncDoc(sync, proxyUrl, kind);
+    if (remote.error) return remote;
+    if (remote.doc) docs[kind] = remote.doc.data;
+  }
+  if (!Object.keys(docs).length) {
+    return { code: 'sync-remote-missing', status: 404, error: '云端没有同步数据，请先在其他电脑上传' };
+  }
+  const applied = [];
+  const backupFile = (p) => {
+    try { if (existsSync(p)) copyFileSync(p, p + '.zcodepro-backup'); } catch { /* 备份失败不阻塞 */ }
+  };
+  const atomicWrite = (p, obj) => {
+    const tmp = p + '.zcodepro-tmp';
+    writeFileSync(tmp, JSON.stringify(obj, null, 2) + '\n', 'utf8');
+    renameSync(tmp, p);
+  };
+  sync.lastPullAt = Date.now();
+
+  if (docs.zcodepro) {
+    const rz = docs.zcodepro;
+    const next = loadConfig(configFile);
+    applyFeaturesPartial(next.features, rz.features);
+    next.styles = applyStylesPartial(next.styles, rz.styles);
+    const aliases = sanitizeAliases(rz.aliases);
+    if (aliases) next.aliases = aliases;
+    if (typeof rz.proxy === 'string') {
+      const v = rz.proxy.trim();
+      if (v === '' || /^https?:\/\/\S+:\d+$/.test(v)) next.proxy = v;
+    }
+    next.sync = sync;
+    backupFile(configFile);
+    saveConfig(configFile, next);
+    applied.push('zcodepro');
+  }
+  if (docs.model) {
+    const provider = docs.model.provider;
+    if (provider && typeof provider === 'object' && !Array.isArray(provider)) {
+      const v2confFile = join(dataRoot, 'v2', 'config.json');
+      const localDoc = readJsonFile(v2confFile) || {};
+      backupFile(v2confFile);
+      atomicWrite(v2confFile, { ...localDoc, provider });
+    }
+    const pc = docs.model.providerConfig;
+    if (pc && typeof pc === 'object' && !Array.isArray(pc)) {
+      const pcFile = join(dataRoot, 'v2', 'provider_config.json');
+      backupFile(pcFile);
+      atomicWrite(pcFile, pc);
+    }
+    applied.push('model');
+  }
+  if (!applied.includes('zcodepro')) saveConfig(configFile, config);
+  return { applied };
+}
+
+// 别名表清洗（同步下载用）：只收 路径字符串 → 短字符串 的条目，数量限幅
+function sanitizeAliases(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const out = {};
+  let n = 0;
+  for (const [k, v] of Object.entries(raw)) {
+    if (typeof k !== 'string' || k.length > 500 || k.includes('\0')) continue;
+    if (typeof v !== 'string' || v.length > 200 || /[\r\n\0]/.test(v)) continue;
+    out[k] = v;
+    if (++n >= 2000) break;
+  }
+  return out;
+}
+
+// features 部分更新（POST /config 与同步下载共用）：只收已知开关的布尔值
+function applyFeaturesPartial(base, partial) {
+  const out = (base && typeof base === 'object') ? base : {};
+  if (!partial || typeof partial !== 'object') return out;
+  for (const key of Object.keys(defaultConfig().features)) {
+    if (typeof partial[key] === 'boolean') out[key] = partial[key];
+  }
+  return out;
 }
 
 // 空闲回收的后台命令判定：项目会话进程（zcode-cli）的子进程里，插件/MCP 与应用
@@ -975,6 +1218,52 @@ export async function classifyIdleBusyWindows(procs, paths, lookupTaskWs) {
   }
   if (unattributed) return { ok: true, scan: true, busy: paths }; // 有归属不明的活动进程：全部判忙
   return { ok: true, scan: true, busy: [...busy] };
+}
+
+// styles 部分更新的清洗（POST /config 与同步下载共用）：只收已知键；
+// null 恢复默认；px 类 0–96 取整，行距 0.8–4 保留两位小数，宽度按单位限幅，字体栈经 sanitizeFontStack
+function applyStylesPartial(base, partial) {
+  const out = (base && typeof base === 'object') ? base : {};
+  if (!partial || typeof partial !== 'object') return out;
+  for (const key of ['rowGap', 'listSpacing', 'listItemSpacing', 'quoteCodeSpacing', 'tableSpacing', 'tableCellPaddingV', 'tableCellPaddingH', 'sidebarProjectSpacing', 'sidebarTaskSpacing']) {
+    if (key in partial) {
+      const v = partial[key];
+      if (v === null) out[key] = null;
+      else if (typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 96) out[key] = Math.round(v);
+    }
+  }
+  for (const key of ['lineHeight', 'codeLineHeight', 'userLineHeight']) {
+    if (key in partial) {
+      const v = partial[key];
+      if (v === null) out[key] = null;
+      else if (typeof v === 'number' && Number.isFinite(v) && v >= 0.8 && v <= 4) out[key] = Math.round(v * 100) / 100;
+    }
+  }
+  if ('contentWidth' in partial) {
+    const v = partial.contentWidth;
+    const ok = v && (v.unit === 'px' || v.unit === '%') && typeof v.value === 'number' && Number.isFinite(v.value)
+      && v.value >= (v.unit === 'px' ? 320 : 20) && v.value <= (v.unit === 'px' ? 3840 : 100);
+    if (v === null) out.contentWidth = null;
+    else if (ok) out.contentWidth = { value: v.unit === 'px' ? Math.round(v.value) : Math.round(v.value * 10) / 10, unit: v.unit };
+  }
+  for (const key of ['uiFont', 'userFont', 'assistantFont']) {
+    if (!(key in partial)) continue;
+    const s = sanitizeFontStack(partial[key]);
+    if (s !== undefined) out[key] = s;
+  }
+  return out;
+}
+
+// 字体栈清洗：去控制字符、限 200 字符；拒绝能破坏 CSS 声明的字符（{};<>\）
+// 与引号不配对的值（返回 undefined = 忽略该次更新）。空串/null = 恢复默认（null）
+function sanitizeFontStack(v) {
+  if (v === null || v === '') return null;
+  if (typeof v !== 'string') return undefined;
+  const s = v.replace(/[\x00-\x1f\x7f]/g, '').trim().slice(0, 200);
+  if (!s) return null;
+  if (/[{};<>\\]/.test(s)) return undefined;
+  if (((s.match(/"/g) || []).length) % 2 !== 0 || ((s.match(/'/g) || []).length) % 2 !== 0) return undefined;
+  return s;
 }
 
 // 跟随供应商下拉取数：合并 ~/.zcode/v2/config.json 的 provider（优先）与

@@ -1,4 +1,4 @@
-# ZCode Pro 一键安装（Windows）
+﻿# ZCode Pro 一键安装（Windows）
 # 默认：复制程序到 %LOCALAPPDATA%\ZCodePro，并在开始菜单创建「ZCode Pro」快捷方式
 #       （快捷方式经 wscript 静默启动，不常驻控制台窗口；图标复用已安装的 ZCode）。
 # 用法：powershell -ExecutionPolicy Bypass -File scripts\install.ps1 [-Desktop] [-Uninstall]

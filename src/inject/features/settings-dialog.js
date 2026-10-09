@@ -1,6 +1,6 @@
 // “ZCode Pro 增强设置”弹窗：功能开关 + 样式调整 + 运行状态。
 // 顶部标签页切换（视觉参考侧栏「分组/项目」切换）；配置写入 helper（~/.zcode/zcodepro.json）。
-import { h, t, rpc, getConfig, clearConfigCache, errText, HELPER_URL } from '../core.js';
+import { h, t, rpc, getConfig, clearConfigCache, errText, HELPER_URL, isZhLocale } from '../core.js';
 import { openDialog, dialogFooter, btnPrimary, btnSecondary, btnSmall, settingRow, ensureStyle, showToast, numberField, unitField } from '../ui.js';
 import { refreshAliases } from './alias.js';
 import { applyStyles, STYLE_DEFAULTS, showStyleHighlight, hideStyleHighlight } from './styles.js';
@@ -372,16 +372,18 @@ export function openSettingsDialog() {
       const panePerf = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
       const paneAgents = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
       const paneProxy = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
+      const paneSync = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
       const paneVision = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
       const paneRtk = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
       const paneHeadroom = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
-      const panes = { features: paneFeatures, styles: paneStyles, perf: panePerf, agents: paneAgents, proxy: paneProxy, vision: paneVision, headroom: paneHeadroom, rtk: paneRtk };
+      const panes = { features: paneFeatures, styles: paneStyles, perf: panePerf, agents: paneAgents, proxy: paneProxy, sync: paneSync, vision: paneVision, headroom: paneHeadroom, rtk: paneRtk };
       const tabDefs = [
         ['features', L.tabFeatures],
         ['styles', L.tabStyles],
         ['perf', L.tabPerformance],
         ['agents', L.tabAgents],
         ['proxy', L.tabProxy],
+        ['sync', L.tabSync],
         ['vision', L.tabVision],
         ['headroom', L.tabHeadroom],
         ['rtk', L.tabRtk],
@@ -706,6 +708,169 @@ export function openSettingsDialog() {
           perfToggleWrap,
           perfNumberRow(L.idleReclaimMinutesLabel, null, 'idleReclaimMinutes', 30, 1),
           perfNumberRow(L.idleReclaimStartupLabel, L.idleReclaimStartupHint, 'idleReclaimStartupMinutes', 5, 0)),
+      );
+
+      // 「同步」：把 ZCode Pro 设置与模型设置手动备份到 WebDAV / 从 WebDAV 恢复
+      // （交互参考 Tampermonkey：URL/登录/密码 + 手动触发，无自动同步）。仅 WebDAV
+      // 一种后端且本就只在点击时传输，不设「类型/禁用」下拉。表单显式保存；
+      // 同步内容开关即时保存；下载会覆盖本机，先弹二次确认
+      const savedSync = (config.sync && typeof config.sync === 'object') ? config.sync
+        : { url: '', dir: 'zcode-pro', login: '', password: '', include: { zcodepro: true, model: true }, lastPushAt: null, lastPullAt: null };
+      const syncInputCls = 'h-8 w-full rounded-lg border border-border bg-input px-2.5 text-ui-sm text-foreground outline-none transition-shadow placeholder:text-foreground-subtle focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40';
+      const syncFormRow = (labelText, node) => h('div', { class: 'flex items-center gap-3 px-2 py-1.5' },
+        h('span', { class: 'w-20 shrink-0 text-ui-sm font-medium text-foreground' }, labelText), node);
+      const syncUrlInput = h('input', { type: 'text', value: savedSync.url || '', placeholder: L.syncUrlPlaceholder, spellcheck: 'false', autocomplete: 'off', class: syncInputCls + ' min-w-0 flex-1' });
+      // 上传目录：拼在 URL 之后的文件夹（默认 zcode-pro，避免直接写进网盘根目录），可多级
+      const syncDirInput = h('input', { type: 'text', value: savedSync.dir || 'zcode-pro', placeholder: L.syncDirPlaceholder, spellcheck: 'false', autocomplete: 'off', class: syncInputCls + ' min-w-0 flex-1' });
+      const syncLoginInput = h('input', { type: 'text', value: savedSync.login || '', spellcheck: 'false', autocomplete: 'off', class: syncInputCls + ' min-w-0 flex-1' });
+      const syncPasswordInput = h('input', { type: 'password', value: savedSync.password || '', autocomplete: 'new-password', class: syncInputCls + ' min-w-0 flex-1' });
+      let syncFormOriginal = null;
+      const syncSaveBtn = btnSmall(L.syncSave, () => { void saveSyncForm(); }, 'shrink-0', 'primary');
+      const syncFormValues = () => ({
+        url: syncUrlInput.value.trim(),
+        dir: syncDirInput.value.trim(),
+        login: syncLoginInput.value.trim(),
+        password: syncPasswordInput.value,
+      });
+      const syncCheckDirty = () => {
+        const c = syncFormValues();
+        syncSaveBtn.disabled = c.url === syncFormOriginal.url && c.dir === syncFormOriginal.dir
+          && c.login === syncFormOriginal.login && c.password === syncFormOriginal.password;
+      };
+      syncFormOriginal = syncFormValues();
+      syncSaveBtn.disabled = true;
+      for (const el of [syncUrlInput, syncDirInput, syncLoginInput, syncPasswordInput]) {
+        el.addEventListener('input', syncCheckDirty);
+      }
+      const saveSyncForm = async () => {
+        syncSaveBtn.disabled = true;
+        const res = await rpc('/sync', { method: 'POST', body: { sync: syncFormValues() } });
+        if (res.ok) {
+          syncFormOriginal = {
+            url: res.sync.url,
+            dir: res.sync.dir,
+            login: res.sync.login, password: res.sync.password,
+          };
+          syncUrlInput.value = res.sync.url;
+          syncDirInput.value = res.sync.dir;
+          syncLoginInput.value = res.sync.login;
+          syncPasswordInput.value = res.sync.password;
+          showToast(L.syncSaved);
+        } else {
+          showToast(L.failed + ': ' + errText(res), 'error');
+          syncCheckDirty();
+        }
+      };
+      // 坚果云推荐行：外链经宿主 openExternal 打开系统浏览器（无该能力时只出纯文字）
+      const JIANGUO_HELP = 'https://help.jianguoyun.com/?p=2064';
+      const syncRecLine = h('p', { class: 'mt-1 text-ui-xs/relaxed text-foreground-subtle' });
+      if (typeof window.zcode?.openExternal === 'function') {
+        syncRecLine.append(
+          h('span', {
+            class: 'cursor-pointer underline-offset-4 hover:underline',
+            title: JIANGUO_HELP,
+            onClick: () => openExternal(JIANGUO_HELP),
+          }, L.syncRecLink),
+          L.syncRecSuffix);
+      } else {
+        syncRecLine.textContent = L.syncRecLink + L.syncRecSuffix;
+      }
+      // 同步内容开关（即时保存，上传/下载都按这里的勾选执行）
+      const persistSyncInclude = async (partial) => {
+        const res = await rpc('/sync', { method: 'POST', body: { include: partial } });
+        if (!res.ok) showToast(L.failed + ': ' + errText(res), 'error');
+        return res.ok;
+      };
+      const syncIncludeWrap = h('div');
+      const renderSyncInclude = () => {
+        const inc = savedSync.include || {};
+        syncIncludeWrap.replaceChildren(
+          settingRow(L.syncIncludeZcp, L.syncIncludeZcpDesc, inc.zcodepro !== false, async () => {
+            const next = !(inc.zcodepro !== false);
+            if (await persistSyncInclude({ zcodepro: next })) inc.zcodepro = next;
+            renderSyncInclude();
+          }),
+          settingRow(L.syncIncludeModel, L.syncIncludeModelDesc, inc.model !== false, async () => {
+            const next = !(inc.model !== false);
+            if (await persistSyncInclude({ model: next })) inc.model = next;
+            renderSyncInclude();
+          }),
+        );
+      };
+      renderSyncInclude();
+      // 上次操作时间 + 上传/下载按钮；下载覆盖本机，需二次确认
+      const fmtSyncTime = (ts) => (ts ? new Date(ts).toLocaleString() : L.syncNever);
+      const syncStatusLine = h('div', { class: 'text-ui-xs/relaxed text-foreground-subtle' });
+      const renderSyncStatus = (s) => {
+        syncStatusLine.textContent = `${L.syncLastPush} ${fmtSyncTime(s.lastPushAt)} · ${L.syncLastPull} ${fmtSyncTime(s.lastPullAt)}`;
+      };
+      renderSyncStatus(savedSync);
+      const syncUploadBtn = btnSmall(L.syncUpload, () => { void runSyncDirection('push'); }, 'shrink-0', 'primary');
+      const syncDownloadBtn = btnSmall(L.syncDownload, () => { confirmSyncDownload(); }, 'shrink-0');
+      const confirmSyncDownload = () => {
+        openDialog({
+          title: L.syncConfirmTitle,
+          description: L.syncConfirmDesc,
+          width: 'sm:max-w-md',
+          onMount: ({ body: confirmBody, close: closeConfirm }) => {
+            confirmBody.append(
+              dialogFooter(
+                btnSecondary(L.cancel, () => closeConfirm()),
+                btnPrimary(L.syncConfirmGo, () => { closeConfirm(); void runSyncDirection('pull'); }, 'min-w-24'),
+              ),
+            );
+          },
+        });
+      };
+      const runSyncDirection = async (direction) => {
+        syncUploadBtn.disabled = true;
+        syncDownloadBtn.disabled = true;
+        const btn = direction === 'push' ? syncUploadBtn : syncDownloadBtn;
+        const idleText = btn.textContent;
+        btn.textContent = direction === 'push' ? L.syncUploading : L.syncDownloading;
+        const res = await rpc('/sync/run', { method: 'POST', body: { direction } });
+        syncUploadBtn.disabled = false;
+        syncDownloadBtn.disabled = false;
+        btn.textContent = idleText;
+        if (!res.ok) {
+          showToast(L.failed + ': ' + errText(res), 'error');
+          return;
+        }
+        renderSyncStatus(res.sync || {});
+        if (direction === 'pull') {
+          // 云端配置已落到本机：刷新弹窗内开关显示，并让常驻功能立即按新配置生效
+          clearConfigCache();
+          window.dispatchEvent(new CustomEvent('zcodepro:config-changed'));
+          Object.assign(config, await getConfig(true));
+          refreshRows();
+          renderToolbarSwitch();
+        }
+        // 下载 toast 标明本次覆盖了哪几项（两项独立成文件，可能只覆盖了一项）
+        if (direction === 'push') showToast(L.syncUploaded, 'success');
+        else {
+          const names = (res.applied || [])
+            .map((k) => (k === 'model' ? L.syncIncludeModel : L.syncIncludeZcp))
+            .join(isZhLocale() ? '、' : ', ');
+          showToast(names ? `${L.syncDownloaded}（${names}）` : L.syncDownloaded, 'success');
+        }
+      };
+      paneSync.append(
+        h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.syncDesc),
+        h('div', { class: 'mt-3 rounded-xl border border-border p-1' },
+          syncFormRow('URL', syncUrlInput),
+          syncFormRow(L.syncDir, syncDirInput),
+          syncFormRow(L.syncLogin, syncLoginInput),
+          syncFormRow(L.syncPassword, syncPasswordInput),
+          h('div', { class: 'flex items-start justify-between gap-2 px-2 py-1.5' },
+            h('div', { class: 'min-w-0' },
+              h('p', { class: 'text-ui-xs/relaxed text-foreground-subtle' }, L.syncFormHint),
+              syncRecLine),
+            syncSaveBtn)),
+        h('div', { class: 'mt-2 divide-y divide-border rounded-xl border border-border' }, syncIncludeWrap),
+        h('div', { class: 'mt-2 flex items-center justify-between gap-2 rounded-xl border border-border p-2' },
+          h('div', { class: 'min-w-0' }, syncStatusLine),
+          h('div', { class: 'flex shrink-0 items-center gap-1.5' }, syncUploadBtn, syncDownloadBtn)),
+        h('p', { class: 'mt-2 text-ui-xs/relaxed text-foreground-subtle' }, L.syncHint),
       );
 
       // 「视觉代理」：编辑 ~/.zcode/zcode-vision.json（zcode-vision 插件与 /vision-* 命令共用同一文件）。
@@ -1328,6 +1493,7 @@ export function openSettingsDialog() {
         panePerf,
         paneAgents,
         paneProxy,
+        paneSync,
         paneVision,
         paneHeadroom,
         paneRtk,
