@@ -74,6 +74,9 @@ export function defaultConfig() {
       contentWidth: null,     // 内容宽度：{ value, unit }，unit 为 'px'（320–3840）或 '%'（20–100）
       sidebarProjectSpacing: null, // 侧栏项目间距：视觉总量（行内留白+边距，应用默认 20px）
       sidebarTaskSpacing: null,    // 侧栏任务间距：行内留白+行间边距的视觉总量（应用默认 10px）
+      uiFont: null,           // 界面字体：除终端外所有界面文字的字体栈（终端字体走官方设置）
+      userFont: null,         // 提问字体：会话中提问内容的字体栈
+      assistantFont: null,    // 回答字体：会话中回答正文的字体栈（代码块仍用等宽字体）
     },
     // 项目路径（规范化，无尾分隔符）→ 自定义别名。只影响界面渲染，不改动任何真实数据。
     aliases: {},
@@ -108,6 +111,18 @@ export function saveConfig(configFile, config) {
   const tmp = configFile + '.tmp';
   writeFileSync(tmp, JSON.stringify(config, null, 2), 'utf8');
   renameSync(tmp, configFile);
+}
+
+// 字体栈清洗：去控制字符、限 200 字符；拒绝能破坏 CSS 声明的字符（{};<>\）
+// 与引号不配对的值（返回 undefined = 忽略该次更新）。空串/null = 恢复默认（null）
+function sanitizeFontStack(v) {
+  if (v === null || v === '') return null;
+  if (typeof v !== 'string') return undefined;
+  const s = v.replace(/[\x00-\x1f\x7f]/g, '').trim().slice(0, 200);
+  if (!s) return null;
+  if (/[{};<>\\]/.test(s)) return undefined;
+  if (((s.match(/"/g) || []).length) % 2 !== 0 || ((s.match(/'/g) || []).length) % 2 !== 0) return undefined;
+  return s;
 }
 
 function json(res, status, obj) {
@@ -229,6 +244,12 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
               && v.value >= (v.unit === 'px' ? 320 : 20) && v.value <= (v.unit === 'px' ? 3840 : 100);
             if (v === null) current.styles.contentWidth = null;
             else if (ok) current.styles.contentWidth = { value: v.unit === 'px' ? Math.round(v.value) : Math.round(v.value * 10) / 10, unit: v.unit };
+          }
+          // 字体键：经 sanitizeFontStack 清洗（空 = 恢复默认，非法值忽略）
+          for (const key of ['uiFont', 'userFont', 'assistantFont']) {
+            if (!(key in body.styles)) continue;
+            const s = sanitizeFontStack(body.styles[key]);
+            if (s !== undefined) current.styles[key] = s;
           }
         }
         saveConfig(configFile, current);

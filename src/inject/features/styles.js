@@ -24,9 +24,26 @@ export const STYLE_DEFAULTS = {
   contentWidth: null,   // 内容宽度：默认 100%（跟随应用，不覆盖）
   sidebarProjectSpacing: 20,  // 侧栏项目间距：项目行视觉间距（行内留白 12 + 边距 8）
   sidebarTaskSpacing: 10,    // 侧栏任务间距：行内留白加行间边距（py-1 + space-y-0.5）
+  uiFont: null,              // 界面字体：除终端外所有界面文字（null = 跟随应用默认）
+  userFont: null,            // 提问字体：会话中提问内容
+  assistantFont: null,       // 回答字体：会话中回答正文（代码块仍用等宽字体）
 };
 
 let styleEl = null;
+
+// 应用原生的字体变量值：首次应用覆盖前抓取，用于界面字体开启时的终端保护
+let origFontSans = '';
+let origFontMono = '';
+function captureFontVars() {
+  try {
+    const cs = getComputedStyle(document.documentElement);
+    origFontSans = cs.getPropertyValue('--font-sans').trim();
+    origFontMono = cs.getPropertyValue('--font-mono').trim();
+  } catch { /* ignore */ }
+}
+
+// 字体设置项的取值：非空字符串才算设置（helper 已清洗，这里只做空值防御）
+const fontStack = (v) => (typeof v === 'string' && v.trim() && !/[{};<>\\]/.test(v) ? v.trim() : null);
 
 const CONV = '[class*="@md/conversation"]';
 // 答案内容容器里的“特殊块”：段落间距规则跳过它们，由各自的间距项独立控制
@@ -131,6 +148,27 @@ function buildCss(styles) {
     // % 相对会话区域可用宽度，且沿用应用自带的居中与过渡。
     parts.push(`[data-v4-timeline-content-column]{max-width:${cw.value}${cw.unit} !important;}`);
   }
+  // —— 字体 ——
+  const uif = fontStack(styles.uiFont);
+  if (uif) {
+    // 界面字体覆盖根变量：--font-sans 是全界面文字的来源，--font-mono 管
+    // 代码块/路径等等宽区域（同属界面字体范围）；终端不受影响——xterm 用
+    // 自生成样式表写字面量字体栈，不引用这些变量。为防应用把变量传给
+    // xterm 的情形，再在终端子树内恢复注入前抓到的原值
+    parts.push(`:root{--font-sans:${uif} !important;--font-mono:${uif} !important;}`);
+    if (origFontSans && origFontMono) {
+      parts.push(`.terminal,.terminal *{--font-sans:${origFontSans};--font-mono:${origFontMono};}`);
+    }
+  }
+  const usf = fontStack(styles.userFont);
+  if (usf) {
+    parts.push(`${CONV} [class*="user-row"] .whitespace-pre-wrap{font-family:${usf} !important;}`);
+  }
+  const asf = fontStack(styles.assistantFont);
+  if (asf) {
+    // 挂在答案内容容器上由段落继承；代码块等自带等宽字体的元素不受影响
+    parts.push(`${CONV} .space-y-4{font-family:${asf} !important;}`);
+  }
   // —— 侧栏间距（选择器不依赖分区文案，跟随界面语言）——
   const SCROLL = '.flex.flex-1.min-h-0.flex-col.gap-3.overflow-y-auto';
   const sps = styles.sidebarProjectSpacing;
@@ -197,6 +235,8 @@ export function startStyleAdjustments() {
     styleEl.id = '__zcodepro_styles__';
     root.append(styleEl);
   }
+  // 先抓应用原生字体变量再应用覆盖（配置里已有界面字体时，抓到的才是原值）
+  captureFontVars();
   void getConfig().then((cfg) => applyStyles(cfg.styles)).catch(() => { /* 配置读取失败时保持应用默认 */ });
   // 配置变更（设置弹窗保存等）后即时重应用
   window.addEventListener('zcodepro:config-changed', () => {

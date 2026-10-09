@@ -91,6 +91,12 @@
     sidebarProjectSpacingDesc: "\u4FA7\u8FB9\u680F\u4E2D\u76F8\u90BB\u9879\u76EE\u884C\u4E4B\u95F4\u7684\u89C6\u89C9\u95F4\u8DDD\uFF08\u542B\u884C\u5185\u7559\u767D\uFF09\uFF1B\u8BBE\u7F6E\u540E\u5404\u5206\u533A\uFF08\u5DF2\u7F6E\u9876/\u9879\u76EE/\u4EFB\u52A1\uFF09\u4E4B\u95F4\u7684\u95F4\u8DDD\u4E5F\u7EDF\u4E00\u4E3A\u8BE5\u503C\u3002",
     sidebarTaskSpacingName: "\u4EFB\u52A1\u95F4\u8DDD",
     sidebarTaskSpacingDesc: "\u4FA7\u8FB9\u680F\u4E2D\u76F8\u90BB\u4EFB\u52A1\u884C\u4E4B\u95F4\u7684\u5782\u76F4\u95F4\u8DDD\uFF08\u542B\u884C\u5185\u4E0A\u4E0B\u7559\u767D\uFF09\u3002",
+    uiFontName: "\u754C\u9762\u5B57\u4F53",
+    uiFontDesc: "\u9664\u7EC8\u7AEF\u5916\u6240\u6709\u754C\u9762\u6587\u5B57\u7684\u5B57\u4F53\uFF08\u7EC8\u7AEF\u5B57\u4F53\u5728\u5B98\u65B9\u8BBE\u7F6E\u4E2D\u8C03\u6574\uFF09\u3002",
+    userFontName: "\u63D0\u95EE\u5B57\u4F53",
+    userFontDesc: "\u4F1A\u8BDD\u4E2D\u63D0\u95EE\u5185\u5BB9\u7684\u5B57\u4F53\uFF1B\u9009\u300C\u9ED8\u8BA4\u300D\u65F6\u8DDF\u968F\u754C\u9762\u5B57\u4F53\u3002",
+    assistantFontName: "\u56DE\u7B54\u5B57\u4F53",
+    assistantFontDesc: "\u4F1A\u8BDD\u4E2D\u56DE\u7B54\u6B63\u6587\u7684\u5B57\u4F53\uFF08\u4EE3\u7801\u5757\u4ECD\u7528\u7B49\u5BBD\u5B57\u4F53\uFF09\uFF1B\u9009\u300C\u9ED8\u8BA4\u300D\u65F6\u8DDF\u968F\u754C\u9762\u5B57\u4F53\u3002",
     switcherHint: "x / c \u9009\u62E9\uFF0C\u677E\u5F00 alt \u5207\u6362\uFF0CEsc \u53D6\u6D88",
     switcherCurrent: "\u5F53\u524D",
     switcherEmpty: "\u6682\u65E0\u4E0A\u6B21\u4F1A\u8BDD\uFF08\u5207\u6362\u8FC7\u4F1A\u8BDD\u540E\u53EF\u7528\uFF09",
@@ -340,6 +346,12 @@
     sidebarProjectSpacingDesc: "Visual spacing between adjacent project rows in the sidebar (row padding included); when set, section gaps (Pinned/Projects/Tasks) follow the same value.",
     sidebarTaskSpacingName: "Task spacing",
     sidebarTaskSpacingDesc: "Vertical spacing between adjacent task rows in the sidebar (row padding included).",
+    uiFontName: "UI font",
+    uiFontDesc: "Font for all interface text except the terminal (its font is set in the official settings).",
+    userFontName: "Question font",
+    userFontDesc: 'Font of question text in conversations; "default" follows the UI font.',
+    assistantFontName: "Answer font",
+    assistantFontDesc: 'Font of answer text in conversations (code blocks stay monospaced); "default" follows the UI font.',
     switcherHint: "x / c to choose, release alt to switch, Esc to cancel",
     switcherCurrent: "current",
     switcherEmpty: "No previous session yet (available after you switch sessions)",
@@ -2249,10 +2261,27 @@
     // 内容宽度：默认 100%（跟随应用，不覆盖）
     sidebarProjectSpacing: 20,
     // 侧栏项目间距：项目行视觉间距（行内留白 12 + 边距 8）
-    sidebarTaskSpacing: 10
+    sidebarTaskSpacing: 10,
     // 侧栏任务间距：行内留白加行间边距（py-1 + space-y-0.5）
+    uiFont: null,
+    // 界面字体：除终端外所有界面文字（null = 跟随应用默认）
+    userFont: null,
+    // 提问字体：会话中提问内容
+    assistantFont: null
+    // 回答字体：会话中回答正文（代码块仍用等宽字体）
   };
   var styleEl = null;
+  var origFontSans = "";
+  var origFontMono = "";
+  function captureFontVars() {
+    try {
+      const cs = getComputedStyle(document.documentElement);
+      origFontSans = cs.getPropertyValue("--font-sans").trim();
+      origFontMono = cs.getPropertyValue("--font-mono").trim();
+    } catch {
+    }
+  }
+  var fontStack = (v) => typeof v === "string" && v.trim() && !/[{};<>\\]/.test(v) ? v.trim() : null;
   var CONV = '[class*="@md/conversation"]';
   var SPECIAL = ':is(ul, ol, blockquote, pre, table, div:has(table), div:has(pre), [class*="code-block"])';
   var SEL_LIST = `${CONV} .space-y-4 > :is(ul, ol)`;
@@ -2331,6 +2360,21 @@
     if (cw && (cw.unit === "px" || cw.unit === "%") && Number.isFinite(cw.value)) {
       parts.push(`[data-v4-timeline-content-column]{max-width:${cw.value}${cw.unit} !important;}`);
     }
+    const uif = fontStack(styles.uiFont);
+    if (uif) {
+      parts.push(`:root{--font-sans:${uif} !important;--font-mono:${uif} !important;}`);
+      if (origFontSans && origFontMono) {
+        parts.push(`.terminal,.terminal *{--font-sans:${origFontSans};--font-mono:${origFontMono};}`);
+      }
+    }
+    const usf = fontStack(styles.userFont);
+    if (usf) {
+      parts.push(`${CONV} [class*="user-row"] .whitespace-pre-wrap{font-family:${usf} !important;}`);
+    }
+    const asf = fontStack(styles.assistantFont);
+    if (asf) {
+      parts.push(`${CONV} .space-y-4{font-family:${asf} !important;}`);
+    }
     const SCROLL = ".flex.flex-1.min-h-0.flex-col.gap-3.overflow-y-auto";
     const sps = styles.sidebarProjectSpacing;
     if (typeof sps === "number" && Number.isFinite(sps) && sps >= 0) {
@@ -2387,6 +2431,7 @@
       styleEl.id = "__zcodepro_styles__";
       root.append(styleEl);
     }
+    captureFontVars();
     void getConfig().then((cfg) => applyStyles(cfg.styles)).catch(() => {
     });
     window.addEventListener("zcodepro:config-changed", () => {
@@ -2981,9 +3026,67 @@
             renderToolbarSwitch();
           }));
         };
+        const fontSelectCls = "h-8 w-full min-w-0 flex-1 rounded-lg border border-border bg-input px-2.5 text-ui-sm text-foreground outline-none transition-shadow focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40";
+        const FONT_FALLBACK = ["\u971E\u9E5C\u6587\u6977 \u5C4F\u5E55\u9605\u8BFB\u7248", "\u971E\u9E5C\u65B0\u6670\u9ED1 \u5C4F\u5E55\u9605\u8BFB\u7248", "Noto Sans CJK SC", "Noto Serif CJK SC", "Noto Sans Mono CJK SC", "\u6587\u6CC9\u9A7F\u5FAE\u7C73\u9ED1", "\u6587\u6CC9\u9A7F\u7B49\u5BBD\u5FAE\u7C73\u9ED1", "JetBrains Mono", "Fira Code", "Cascadia Mono", "DejaVu Sans", "DejaVu Serif", "DejaVu Sans Mono", "Liberation Mono", "Consolas", "Menlo", "SF Mono", "PingFang SC", "Microsoft YaHei", "SimSun", "KaiTi", "FangSong"];
+        const fontCell = (name, tip, key) => {
+          const saved = typeof savedStyles[key] === "string" ? savedStyles[key].trim() : "";
+          const sel = h(
+            "select",
+            { class: fontSelectCls, title: tip },
+            h("option", { value: "" }, L.defaultValue)
+          );
+          if (saved) sel.append(h("option", { value: saved }, saved));
+          sel.value = saved;
+          sel.addEventListener("change", () => persistStyles({ [key]: sel.value || null }));
+          return {
+            field: { reset() {
+              sel.value = "";
+            } },
+            el: h(
+              "div",
+              { class: "flex items-center justify-between gap-2 p-2" },
+              h("span", { class: "w-24 shrink-0 truncate text-ui-sm font-medium text-foreground", title: tip }, name),
+              sel
+            ),
+            setOptions(families) {
+              const cur = sel.value;
+              const opts = [h("option", { value: "" }, L.defaultValue)];
+              if (cur && !families.includes(cur)) opts.push(h("option", { value: cur }, cur));
+              for (const fam of families) {
+                const opt = h("option", { value: fam }, fam);
+                opt.style.fontFamily = fam;
+                opts.push(opt);
+              }
+              sel.replaceChildren(...opts);
+              sel.value = cur;
+            }
+          };
+        };
+        const fontCells = [
+          fontCell(L.uiFontName, L.uiFontDesc, "uiFont"),
+          fontCell(L.userFontName, L.userFontDesc, "userFont"),
+          fontCell(L.assistantFontName, L.assistantFontDesc, "assistantFont")
+        ];
+        void (async () => {
+          let families = null;
+          try {
+            if (typeof window.queryLocalFonts === "function") {
+              const fonts = await window.queryLocalFonts();
+              families = [...new Set(fonts.map((f) => f.family))].sort((a, b) => a.localeCompare(b, "zh"));
+            }
+          } catch {
+          }
+          const list = ["sans-serif", "serif", "monospace", ...families || FONT_FALLBACK];
+          for (const c of fontCells) c.setOptions(list);
+        })();
         renderToolbarSwitch();
         paneStyles.append(
           toolbarSwitchWrap,
+          h(
+            "div",
+            { class: "mt-2 flex flex-col gap-0.5 rounded-xl border border-border p-1" },
+            ...fontCells.map((c) => h("div", { class: "rounded-lg transition-colors hover:bg-surface-hover" }, c.el))
+          ),
           h(
             "div",
             { class: "mt-2 grid grid-cols-2 gap-2 rounded-xl border border-border p-1" },
@@ -2993,7 +3096,7 @@
             "div",
             { class: "mt-2 flex justify-end" },
             btnSmall(L.resetDefault, () => {
-              for (const c of cells) c.field.reset();
+              for (const c of [...cells, ...fontCells]) c.field.reset();
               persistStyles(Object.fromEntries(Object.keys(STYLE_DEFAULTS).map((k) => [k, null])));
             })
           )

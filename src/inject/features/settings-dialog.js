@@ -497,14 +497,66 @@ export function openSettingsDialog() {
           renderToolbarSwitch();
         }));
       };
+      // 字体设置：界面/提问/回答三个下拉框（打开弹窗时异步拉系统字体列表，
+      // 拉不到回退常用清单）；选中即保存即生效，选「默认」恢复跟随应用。
+      // 不接聚焦高亮：字体变化肉眼可辨，无需标出受影响区域
+      const fontSelectCls = 'h-8 w-full min-w-0 flex-1 rounded-lg border border-border bg-input px-2.5 text-ui-sm text-foreground outline-none transition-shadow focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40';
+      // queryLocalFonts 不可用/被拒时的回退清单（常用中西文字体）
+      const FONT_FALLBACK = ['霞鹜文楷 屏幕阅读版', '霞鹜新晰黑 屏幕阅读版', 'Noto Sans CJK SC', 'Noto Serif CJK SC', 'Noto Sans Mono CJK SC', '文泉驿微米黑', '文泉驿等宽微米黑', 'JetBrains Mono', 'Fira Code', 'Cascadia Mono', 'DejaVu Sans', 'DejaVu Serif', 'DejaVu Sans Mono', 'Liberation Mono', 'Consolas', 'Menlo', 'SF Mono', 'PingFang SC', 'Microsoft YaHei', 'SimSun', 'KaiTi', 'FangSong'];
+      const fontCell = (name, tip, key) => {
+        const saved = typeof savedStyles[key] === 'string' ? savedStyles[key].trim() : '';
+        const sel = h('select', { class: fontSelectCls, title: tip },
+          h('option', { value: '' }, L.defaultValue));
+        // 配置里存过的值（旧版手输的多字体栈等不在列表中的）单列一项，保证回显与生效一致
+        if (saved) sel.append(h('option', { value: saved }, saved));
+        sel.value = saved;
+        sel.addEventListener('change', () => persistStyles({ [key]: sel.value || null }));
+        return {
+          field: { reset() { sel.value = ''; } },
+          el: h('div', { class: 'flex items-center justify-between gap-2 p-2' },
+            h('span', { class: 'w-24 shrink-0 truncate text-ui-sm font-medium text-foreground', title: tip }, name),
+            sel),
+          setOptions(families) {
+            const cur = sel.value;
+            const opts = [h('option', { value: '' }, L.defaultValue)];
+            if (cur && !families.includes(cur)) opts.push(h('option', { value: cur }, cur));
+            for (const fam of families) {
+              const opt = h('option', { value: fam }, fam);
+              // 选项文字用自身字体渲染，选中前即可预览字形
+              opt.style.fontFamily = fam;
+              opts.push(opt);
+            }
+            sel.replaceChildren(...opts);
+            sel.value = cur;
+          },
+        };
+      };
+      const fontCells = [
+        fontCell(L.uiFontName, L.uiFontDesc, 'uiFont'),
+        fontCell(L.userFontName, L.userFontDesc, 'userFont'),
+        fontCell(L.assistantFontName, L.assistantFontDesc, 'assistantFont'),
+      ];
+      void (async () => {
+        let families = null;
+        try {
+          if (typeof window.queryLocalFonts === 'function') {
+            const fonts = await window.queryLocalFonts();
+            families = [...new Set(fonts.map((f) => f.family))].sort((a, b) => a.localeCompare(b, 'zh'));
+          }
+        } catch { /* 权限被拒等：走回退清单 */ }
+        const list = ['sans-serif', 'serif', 'monospace', ...(families || FONT_FALLBACK)];
+        for (const c of fontCells) c.setOptions(list);
+      })();
       renderToolbarSwitch();
       paneStyles.append(
         toolbarSwitchWrap,
+        h('div', { class: 'mt-2 flex flex-col gap-0.5 rounded-xl border border-border p-1' },
+          ...fontCells.map((c) => h('div', { class: 'rounded-lg transition-colors hover:bg-surface-hover' }, c.el))),
         h('div', { class: 'mt-2 grid grid-cols-2 gap-2 rounded-xl border border-border p-1' },
           ...cells.map((c) => h('div', { class: 'rounded-lg transition-colors hover:bg-surface-hover' }, c.el))),
         h('div', { class: 'mt-2 flex justify-end' },
           btnSmall(L.resetDefault, () => {
-            for (const c of cells) c.field.reset();
+            for (const c of [...cells, ...fontCells]) c.field.reset();
             persistStyles(Object.fromEntries(Object.keys(STYLE_DEFAULTS).map((k) => [k, null])));
           })),
       );
