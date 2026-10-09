@@ -19,6 +19,7 @@ ZCode Pro enhances the ZCode desktop UI. No client files are modified; just laun
 | Session quick switch | `alt+z` toggles between the current and the last session; hold `alt` and press `x` / `c` to pick from recent sessions, release `alt` to switch (like `alt+tab`) |
 | Keep renamed session titles | Sessions you renamed keep their custom title; auto-generated titles no longer overwrite it in the sidebar |
 | Running indicator on collapsed projects | Spins a collapsed project's icon while any of its sessions is still running; stops when they all finish |
+| Idle project memory reclaim | Projects unused for a while with no running tasks release their memory automatically, and unused ones are reclaimed once after startup; sessions are untouched and reload when reopened (durations adjustable) |
 | Sidebar menu in the top bar | Turns the sidebar menu (New task / Search / Automations / Plugin store) into icon buttons next to the top-bar arrows: hover shows the name, highlighted while its view is open, shortcuts still work |
 | Collapsible Pinned section | The sidebar "Pinned" header collapses/expands its task list; the state is remembered |
 | File menu actions | Adds "Open with default app" and "Reveal in file manager" to file links in chat |

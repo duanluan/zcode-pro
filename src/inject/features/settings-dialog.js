@@ -369,15 +369,17 @@ export function openSettingsDialog() {
         communityCards,
       );
       const paneStyles = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
+      const panePerf = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
       const paneAgents = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
       const paneProxy = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
       const paneVision = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
       const paneRtk = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
       const paneHeadroom = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
-      const panes = { features: paneFeatures, styles: paneStyles, agents: paneAgents, proxy: paneProxy, vision: paneVision, headroom: paneHeadroom, rtk: paneRtk };
+      const panes = { features: paneFeatures, styles: paneStyles, perf: panePerf, agents: paneAgents, proxy: paneProxy, vision: paneVision, headroom: paneHeadroom, rtk: paneRtk };
       const tabDefs = [
         ['features', L.tabFeatures],
         ['styles', L.tabStyles],
+        ['perf', L.tabPerformance],
         ['agents', L.tabAgents],
         ['proxy', L.tabProxy],
         ['vision', L.tabVision],
@@ -659,6 +661,51 @@ export function openSettingsDialog() {
           proxyTestBtn),
         h('p', { class: 'mt-2 text-ui-xs/relaxed text-foreground-subtle' }, L.proxyHint),
         proxyTestState,
+      );
+
+      // 「性能」：空闲项目内存回收（开关 + 两个时长）。idleReclaimStartupMinutes
+      // 允许 0（启动后立即回收一次），取值不能用「|| 默认值」的写法回退
+      const perfToggleWrap = h('div');
+      const renderPerfToggle = () => {
+        const f = config.features || {};
+        perfToggleWrap.replaceChildren(
+          settingRow(L.featureIdleReclaim, L.featureIdleReclaimDesc, f.idleReclaim !== false, async () => {
+            const next = !(f.idleReclaim !== false);
+            if (await setFeature('idleReclaim', next)) f.idleReclaim = next;
+            renderPerfToggle();
+          }),
+        );
+      };
+      renderPerfToggle();
+      const perfNumberRow = (labelText, tip, key, fallback, min) => {
+        const v = Number(config[key]);
+        return h('div', { class: 'flex items-center justify-between gap-2 px-2 py-1.5' },
+          h('div', { class: 'min-w-0' },
+            h('div', { class: 'text-ui-sm font-medium text-foreground' }, labelText),
+            ...(tip ? [h('div', { class: 'mt-0.5 text-ui-xs/relaxed text-foreground-subtle' }, tip)] : [])),
+          h('div', { class: 'flex shrink-0 items-center gap-1' },
+            numberField({
+              value: Number.isFinite(v) ? v : fallback,
+              fallback,
+              min,
+              max: 1440,
+              step: 1,
+              onCommit: async (n) => {
+                const res = await rpc('/config', { method: 'POST', body: { [key]: n } });
+                if (res.ok && res.config) {
+                  config[key] = res.config[key];
+                  clearConfigCache();
+                }
+              },
+            }).el,
+            h('span', { class: 'text-ui-xs text-foreground-subtle' }, L.idleReclaimUnit)));
+      };
+      panePerf.append(
+        h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.perfDesc),
+        h('div', { class: 'mt-3 divide-y divide-border rounded-xl border border-border' },
+          perfToggleWrap,
+          perfNumberRow(L.idleReclaimMinutesLabel, null, 'idleReclaimMinutes', 30, 1),
+          perfNumberRow(L.idleReclaimStartupLabel, L.idleReclaimStartupHint, 'idleReclaimStartupMinutes', 5, 0)),
       );
 
       // 「视觉代理」：编辑 ~/.zcode/zcode-vision.json（zcode-vision 插件与 /vision-* 命令共用同一文件）。
@@ -1278,6 +1325,7 @@ export function openSettingsDialog() {
         tablist,
         paneFeatures,
         paneStyles,
+        panePerf,
         paneAgents,
         paneProxy,
         paneVision,

@@ -211,8 +211,40 @@ function isBusyError(err) {
   return /SQLITE_BUSY|database is locked/i.test(s);
 }
 
+// 任务（会话）ID → 工作区路径（无尾分隔符）：空闲回收在 Windows 上的后台命令
+// 归属判定用（命令行里只带会话 ID，需经索引反查它属于哪个项目）。
+// 读取失败返回空表，调用方按「无法归属」保守处理
+export async function listTaskWorkspaceMap(dataRoot) {
+  const out = {};
+  const dbFile = taskIndexPath(dataRoot);
+  if (!existsSync(dbFile)) return out;
+  const driver = await loadDriver();
+  if (!driver) return out;
+  try {
+    let rows = [];
+    if (driver.kind === 'node') {
+      const db = new driver.DatabaseSync(dbFile);
+      try {
+        db.exec(`PRAGMA busy_timeout = ${BUSY_TIMEOUT_MS}`);
+        rows = db.prepare('SELECT task_id, workspace_path, workspace_key FROM tasks').all();
+      } finally { db.close(); }
+    } else {
+      const r = runCli(dbFile,
+        "SELECT coalesce(json_group_array(json_object('id', task_id, 'path', workspace_path, 'key', workspace_key)), '[]') FROM tasks;");
+      rows = JSON.parse(r.stdout.trim() || '[]');
+    }
+    for (const row of rows) {
+      const id = row.task_id ?? row.id;
+      const ws = String(row.workspace_path ?? row.path ?? row.workspace_key ?? row.key ?? '').replace(/[\\/]+$/, '');
+      if (id && ws) out[id] = ws;
+    }
+  } catch { /* 读取失败按空表处理 */ }
+  return out;
+}
+
 function runCli(dbFile, script) {
   const r = spawnSync('sqlite3', ['-bail', '-batch', dbFile], {
+    windowsHide: true,
     input: `.timeout ${BUSY_TIMEOUT_MS}\n` + script,
     encoding: 'utf8',
     maxBuffer: 1 << 20,

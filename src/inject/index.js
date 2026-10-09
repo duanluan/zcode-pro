@@ -11,6 +11,7 @@ import { startSessionSwitch } from './features/session-switch.js';
 import { startTitleLock } from './features/title-lock.js';
 import { startPinnedExpandSuppression } from './features/pinned-expand.js';
 import { startWsRunningSpin } from './features/ws-running.js';
+import { startIdleReclaim } from './features/idle-reclaim.js';
 import { startToolbarIcons } from './features/toolbar-icons.js';
 import { startPinnedCollapse } from './features/pinned-collapse.js';
 import { startStyleAdjustments } from './features/styles.js';
@@ -37,6 +38,7 @@ import { ensureStyle } from './ui.js';
     try { startImageMenu(); } catch { /* ignore */ }
     try { startPinnedExpandSuppression(); } catch { /* ignore */ }
     try { startWsRunningSpin(); } catch { /* ignore */ }
+    try { startIdleReclaim(); } catch { /* ignore */ }
     try { startToolbarIcons(); } catch { /* ignore */ }
     try { startPinnedCollapse(); } catch { /* ignore */ }
     try { startStyleAdjustments(); } catch { /* ignore */ }

@@ -4,13 +4,13 @@
 
 import { createServer } from 'node:http';
 import { execFile, spawn } from 'node:child_process';
-import { chmodSync, copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
+import { chmodSync, copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, readlinkSync, realpathSync, renameSync, rmSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { mkdtemp } from 'node:fs/promises'; // 注意：fs 的 mkdtemp 是回调版，await 它会把 undefined 当回调
 import { basename, delimiter, dirname, isAbsolute, join, resolve, sep } from 'node:path';
 import { homedir, tmpdir } from 'node:os';
 import { pathToFileURL } from 'node:url';
 import { readSettings, writeSettingsAtomic, remapSettingsPaths, isProjectOpenInTabs } from './settings.mjs';
-import { taskIndexPath, probeTaskIndexWritable, remapTaskIndexPaths, taskIndexDriverAvailable, listOverriddenTitles } from './taskIndex.mjs';
+import { taskIndexPath, probeTaskIndexWritable, remapTaskIndexPaths, taskIndexDriverAvailable, listOverriddenTitles, listTaskWorkspaceMap } from './taskIndex.mjs';
 import { pickFolderSystem } from './pickFolder.mjs';
 import { reorderWorkspaceTasks, reorderGroupMembers } from './taskOrder.mjs';
 
@@ -56,9 +56,16 @@ export function defaultConfig() {
       sessionSwitch: true,     // 会话快捷切换（alt+z 上次会话；按住 alt x/c 弹窗导航，类 alt+tab）
       titleLock: true,        // 会话名锁定：手动重命名过的会话不被运行时推送的自动标题覆盖（侧栏钉回索引库中的名字）
       wsRunningSpin: true,     // 折叠项目运行提示：折叠后其中仍有会话运行时项目图标旋转
+      idleReclaim: true,       // 空闲项目内存回收：长时间无活动的项目释放其会话进程（时长 idleReclaimMinutes）
       toolbarIcons: true,      // 侧栏菜单并入顶栏：新建任务/搜索/自动化/插件市场收成顶栏图标按钮（原菜单隐藏，点击转发）
       pinnedCollapse: true,    // 已置顶分区可折叠：标题可点折叠/展开任务列表（状态记 localStorage）
     },
+    // 空闲项目内存回收的判定时长（分钟，1–1440）：项目无运行中会话、无后台命令
+    // 且非当前选中，持续满该时长后释放其会话进程
+    idleReclaimMinutes: 30,
+    // 启动一次性回收的延后分钟（0–1440）：应用启动会为每个恢复的项目预热进程，
+    // 到点把当时符合条件的项目一次收掉；0 = 启动后尽快回收一次
+    idleReclaimStartupMinutes: 5,
     // 样式调整（设置弹窗「样式调整」标签页）。null = 不覆盖，跟随应用默认。
     styles: {
       rowGap: null,           // 段落间距：会话内各块之间的垂直间距（应用默认 20px）
@@ -93,9 +100,13 @@ export function loadConfig(configFile) {
   try {
     if (!existsSync(configFile)) return defaultConfig();
     const saved = JSON.parse(readFileSyncText(configFile));
+    const minutes = Number(saved.idleReclaimMinutes);
+    const startupMinutes = Number(saved.idleReclaimStartupMinutes);
     return {
       ...defaultConfig(),
       ...saved,
+      idleReclaimMinutes: Number.isFinite(minutes) && minutes >= 1 ? Math.min(1440, Math.round(minutes)) : 30,
+      idleReclaimStartupMinutes: Number.isFinite(startupMinutes) && startupMinutes >= 0 ? Math.min(1440, Math.round(startupMinutes)) : 5,
       features: { ...defaultConfig().features, ...(saved.features || {}) },
       styles: { ...defaultConfig().styles, ...(saved.styles && typeof saved.styles === 'object' ? saved.styles : {}) },
       aliases: { ...((saved.aliases && typeof saved.aliases === 'object') ? saved.aliases : {}) },
@@ -234,6 +245,12 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
             if (typeof body.features[key] === 'boolean') current.features[key] = body.features[key];
           }
         }
+        if (body && typeof body === 'object' && typeof body.idleReclaimMinutes === 'number' && Number.isFinite(body.idleReclaimMinutes)) {
+          current.idleReclaimMinutes = Math.min(1440, Math.max(1, Math.round(body.idleReclaimMinutes)));
+        }
+        if (body && typeof body === 'object' && typeof body.idleReclaimStartupMinutes === 'number' && Number.isFinite(body.idleReclaimStartupMinutes)) {
+          current.idleReclaimStartupMinutes = Math.min(1440, Math.max(0, Math.round(body.idleReclaimStartupMinutes)));
+        }
         if (body && typeof body === 'object' && body.styles && typeof body.styles === 'object') {
           if (!current.styles || typeof current.styles !== 'object') current.styles = {};
           // 各样式键：null 恢复默认；px 类 0–96 取整；行距 0.8–4 保留两位小数
@@ -274,6 +291,19 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         json(res, 200, { ok: true, config: current });
         return;
       }
+      // 空闲项目内存回收（idle-reclaim.js）：判断各项目的会话进程（zcode-cli）是否
+      // 仍挂着「运行中的用户命令」。按平台走不同适配器（Linux /proc、macOS ps+lsof、
+      // Windows PowerShell）；scan=false 表示当前环境不可用，注入层据此停用整个
+      // 回收功能，不做盲回收
+      if (req.method === 'POST' && url.pathname === '/idle-busy') {
+        const body = await readBody(req);
+        const paths = Array.isArray(body?.paths)
+          ? body.paths.filter((p) => typeof p === 'string' && p.length > 0 && p.length < 4096).slice(0, 500)
+          : [];
+        json(res, 200, await scanIdleBusy(paths, dataRoot));
+        return;
+      }
+
       // 全局提示词（~/.zcode/AGENTS.md）：设置弹窗「全局提示词」标签页读写
       if (req.method === 'GET' && url.pathname === '/agents') {
         json(res, ...readAgents(agentsFile));
@@ -645,7 +675,7 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
           results.push(await new Promise((resolveT) => {
             const started = Date.now();
             execFile('curl', ['-s', '-o', '/dev/null', '-w', '%{http_code}', '--max-time', '8', '-x', proxy, targetUrl],
-              { timeout: 10000 }, (err, stdout) => {
+              { timeout: 10000, windowsHide: true }, (err, stdout) => {
                 if (err && err.code === 'ENOENT') {
                   resolveT({ name, httpCode: null, ms: null, ok: false, error: '未找到 curl' });
                   return;
@@ -741,6 +771,210 @@ function clampInt(v, min, max, dflt) {
   const n = typeof v === 'number' ? v : Number(v);
   if (!Number.isFinite(n)) return dflt;
   return Math.min(max, Math.max(min, Math.round(n)));
+}
+
+// 空闲回收的后台命令判定：项目会话进程（zcode-cli）的子进程里，插件/MCP 与应用
+// 自身的基础设施不算活动；其余（应用的 shell 包装 exec/、用户直接启动的进程）
+// 一律视为仍在运行的后台命令。
+// 匹配前把命令行的反斜杠统一为正斜杠，一份模式通吃三平台。
+const IDLE_INFRA_CMDLINE = [
+  '/.zcode/cli/plugins/',    // 插件市场安装的 MCP/hooks（vision、headroom、rtk 等）
+  '/.zcode/cli/image-cache', // 会话图片缓存的本地 http 服务
+  'node-repl',               // 内置 node-repl MCP（进程改过名，命令行只剩标题）
+  '/opt/ZCode/',             // 应用自带组件（Linux）
+  '/Applications/ZCode.app', // 应用自带组件（macOS）
+  'Programs/ZCode',          // 应用自带组件（Windows）
+  'crashpad',                // 崩溃收集
+  'conhost',                 // Windows 控制台宿主：每个控制台进程标配的子进程（实测捕获）
+];
+
+const SCAN_OFF = { ok: true, scan: false, busy: [] };
+
+function normCmdline(s) {
+  return String(s || '').replace(/\\/g, '/');
+}
+
+function isInfraCmdline(cmdline) {
+  return IDLE_INFRA_CMDLINE.some((pat) => cmdline.includes(pat));
+}
+
+// 执行外部命令（macOS/Windows 适配器用）：失败返回 err，不抛
+function runCmd(cmd, args, timeoutMs = 15000) {
+  return new Promise((resolve) => {
+    execFile(cmd, args, { timeout: timeoutMs, maxBuffer: 16 * 1024 * 1024, encoding: 'utf8', windowsHide: true },
+      (err, stdout, stderr) => {
+        resolve({ err: err ? String(err.message || err) : null, stdout: String(stdout || ''), stderr: String(stderr || '') });
+      });
+  });
+}
+
+// 请求路径 → 进程 cwd 的匹配表：cwd → 命中的请求路径列表。
+// 符号链接打开的项目 cwd 是解析后的真实路径，两种形态都登记，命中任一即算该项目；
+// 多个请求路径落到同一 cwd 时全部标记（宁可多判忙，不漏保护）
+function buildWantedByCwd(paths) {
+  const map = new Map();
+  const add = (cwd, req) => {
+    const arr = map.get(cwd);
+    if (arr) { if (!arr.includes(req)) arr.push(req); }
+    else map.set(cwd, [req]);
+  };
+  for (const p of paths) {
+    const plain = p.replace(/[\\/]+$/, '');
+    add(plain, plain);
+    try {
+      const real = realpathSync(plain);
+      if (real !== plain) add(real, plain);
+    } catch { /* 目录不存在：也不会有对应进程 */ }
+  }
+  return map;
+}
+
+export async function scanIdleBusy(paths, dataRoot) {
+  if (process.platform === 'linux') return scanIdleBusyLinux(paths);
+  if (process.platform === 'darwin') return scanIdleBusyDarwin(paths);
+  if (process.platform === 'win32') return scanIdleBusyWindows(paths, dataRoot);
+  return SCAN_OFF;
+}
+
+// Linux：/proc 直读（comm 定位 CLI、cwd 定位项目、task/<pid>/children 拿子进程）
+function scanIdleBusyLinux(paths) {
+  let pids;
+  try { pids = readdirSync('/proc').filter((d) => /^\d+$/.test(d)); }
+  catch { return SCAN_OFF; }
+  const wantedByCwd = buildWantedByCwd(paths);
+  const cliPidByCwd = new Map();
+  for (const pid of pids) {
+    try {
+      if (readFileSync(`/proc/${pid}/comm`, 'utf8').trim() !== 'zcode-cli') continue;
+      cliPidByCwd.set(readlinkSync(`/proc/${pid}/cwd`), pid);
+    } catch { /* 进程退出/权限：跳过 */ }
+  }
+  const busy = new Set();
+  for (const [cwd, pid] of cliPidByCwd) {
+    const wantedPaths = wantedByCwd.get(cwd);
+    if (!wantedPaths) continue;
+    let children = '';
+    try { children = readFileSync(`/proc/${pid}/task/${pid}/children`, 'utf8'); }
+    catch { continue; }
+    for (const childPidStr of children.split(/\s+/)) {
+      const childPid = Number(childPidStr);
+      if (!Number.isFinite(childPid)) continue;
+      let cmdline = '';
+      let zombie = false;
+      try {
+        cmdline = normCmdline(readFileSync(`/proc/${childPid}/cmdline`, 'utf8').replace(/\0/g, ' ').trim());
+        const stat = readFileSync(`/proc/${childPid}/stat`, 'utf8');
+        zombie = /\) Z /.test(stat);
+      } catch { continue; }
+      if (zombie) continue;
+      if (!cmdline || !isInfraCmdline(cmdline)) {
+        for (const wp of wantedPaths) busy.add(wp); // 认不出的进程宁可误判为忙，也不回收可能在跑命令的项目
+        break;
+      }
+    }
+  }
+  return { ok: true, scan: true, busy: [...busy] };
+}
+
+// macOS：ps 拿进程表（pid/父 pid/状态/名称/命令行），lsof 拿 CLI 进程的工作目录。
+// 都是系统自带工具、本用户进程无需提权。任何一个 CLI 的工作目录取不到就本轮放弃
+// （scan=false），宁可不动也不猜
+async function scanIdleBusyDarwin(paths) {
+  const psInfo = await runCmd('ps', ['-axo', 'pid=,ppid=,stat=,comm=']);
+  if (psInfo.err) return SCAN_OFF;
+  const procs = [];
+  for (const line of psInfo.stdout.split('\n')) {
+    const m = line.trim().match(/^(\d+)\s+(\d+)\s+(\S+)\s+(.+)$/);
+    if (m) procs.push({ pid: Number(m[1]), ppid: Number(m[2]), stat: m[3], comm: m[4].trim() });
+  }
+  const clis = procs.filter((p) => /(^|\/)zcode-cli$/.test(p.comm));
+  if (!clis.length) return SCAN_OFF; // 定位不到会话进程：可能名称对不上，不猜
+  const psArgs = await runCmd('ps', ['-axo', 'pid=,command=']);
+  if (psArgs.err) return SCAN_OFF;
+  const cmdByPid = new Map();
+  for (const line of psArgs.stdout.split('\n')) {
+    const m = line.trim().match(/^(\d+)\s+(.+)$/);
+    if (m) cmdByPid.set(Number(m[1]), m[2]);
+  }
+  const wantedByCwd = buildWantedByCwd(paths);
+  const busy = new Set();
+  for (const cli of clis) {
+    const lsof = await runCmd('lsof', ['-a', '-p', String(cli.pid), '-d', 'cwd', '-Fn', '-w']);
+    const cwd = (lsof.stdout.match(/^n(.+)$/m) || [])[1];
+    if (!cwd) continue; // 进程多半刚退出：跳过即可，它已不可能挂着命令
+    const wantedPaths = wantedByCwd.get(cwd);
+    if (!wantedPaths) continue;
+    for (const child of procs) {
+      if (child.ppid !== cli.pid || child.stat.includes('Z')) continue;
+      const cmdline = normCmdline(cmdByPid.get(child.pid) || '');
+      if (!cmdline || !isInfraCmdline(cmdline)) {
+        for (const wp of wantedPaths) busy.add(wp);
+        break;
+      }
+    }
+  }
+  return { ok: true, scan: true, busy: [...busy] };
+}
+
+// Windows：PowerShell 的 Win32_Process 拿 pid/父 pid/命令行（系统自带，无需提权）。
+// 拿不到其他进程的工作目录，改用两级归属：命令行带会话 ID（应用的 exec/ 包装）→
+// 查任务索引反查工作区；认不出且无会话 ID 的活动子进程无法归属 → 全部请求判忙（保守）。
+// 路径比较忽略大小写与分隔符差异
+async function scanIdleBusyWindows(paths, dataRoot) {
+  const ps = await runCmd('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command',
+    'Get-CimInstance Win32_Process | Select-Object ProcessId,ParentProcessId,Name,CommandLine | ConvertTo-Json -Compress'], 30000);
+  if (ps.err || !ps.stdout.trim()) return SCAN_OFF;
+  let list;
+  try {
+    list = JSON.parse(ps.stdout);
+    if (!Array.isArray(list)) list = [list];
+  } catch { return SCAN_OFF; }
+  const procs = list
+    .filter((p) => p && Number.isFinite(Number(p.ProcessId)))
+    .map((p) => ({
+      pid: Number(p.ProcessId),
+      ppid: Number(p.ParentProcessId) || 0,
+      name: String(p.Name || ''),
+      cmdline: normCmdline(p.CommandLine || ''),
+    }));
+  let wsMap = null; // 懒加载：任务 ID → 规范化工作区
+  const lookupTaskWs = async (taskId) => {
+    if (wsMap === null) {
+      const raw = await listTaskWorkspaceMap(dataRoot);
+      wsMap = {};
+      for (const [k, v] of Object.entries(raw)) wsMap[k] = normCmdline(v).replace(/\/+$/, '').toLowerCase();
+    }
+    return wsMap[taskId];
+  };
+  return classifyIdleBusyWindows(procs, paths, lookupTaskWs);
+}
+
+// Windows 判定逻辑（与进程表获取解耦，可直接喂真实 CIM 数据测试）
+export async function classifyIdleBusyWindows(procs, paths, lookupTaskWs) {
+  const clis = procs.filter((p) => /^zcode-cli(\.exe)?$/i.test(p.name));
+  if (!clis.length) return SCAN_OFF; // 定位不到会话进程：可能名称对不上，不猜
+  const reqByNorm = new Map();
+  for (const p of paths) reqByNorm.set(normCmdline(p).replace(/\/+$/, '').toLowerCase(), p);
+  let unattributed = false;
+  const busy = new Set();
+  const markByTask = async (taskId) => {
+    const normWs = await lookupTaskWs(taskId);
+    const req = normWs ? reqByNorm.get(normWs) : undefined;
+    if (req) busy.add(req);
+    else unattributed = true; // 索引里查不到该会话：归属不明，保守处理
+  };
+  for (const cli of clis) {
+    for (const child of procs) {
+      if (child.ppid !== cli.pid) continue;
+      if (isInfraCmdline(child.cmdline)) continue;
+      if (!child.cmdline) { unattributed = true; continue; }
+      const sess = child.cmdline.match(/sess_[A-Za-z0-9-]+/);
+      if (sess) await markByTask(sess[0]);
+      else unattributed = true; // 用户进程但无会话线索：归属不到具体项目
+    }
+  }
+  if (unattributed) return { ok: true, scan: true, busy: paths }; // 有归属不明的活动进程：全部判忙
+  return { ok: true, scan: true, busy: [...busy] };
 }
 
 // 跟随供应商下拉取数：合并 ~/.zcode/v2/config.json 的 provider（优先）与
@@ -889,7 +1123,7 @@ function writeRtkState(dir, { mode, whitelist }) {
 // 再常见安装位置（与 rtk 插件钩子的查找清单一致）。
 async function rtkBinaryInfo() {
   const attempt = (cmd) => new Promise((resolveV) => {
-    execFile(cmd, ['--version'], { timeout: 5000 }, (err, stdout) => {
+    execFile(cmd, ['--version'], { timeout: 5000, windowsHide: true }, (err, stdout) => {
       resolveV(err ? null : { binPath: cmd, version: String(stdout || '').trim().split('\n')[0] });
     });
   });
@@ -1156,7 +1390,7 @@ function cancelUpgradeJob(job) {
 function jobRun(j, cmd, args, timeoutMs) {
   return new Promise((resolveRun, rejectRun) => {
     if (j.canceled) { rejectRun(new Error('canceled')); return; }
-    const child = spawn(cmd, args, { env: { ...process.env, ...proxyEnv() } });
+    const child = spawn(cmd, args, { env: { ...process.env, ...proxyEnv() }, windowsHide: true });
     j.kill = () => { try { child.kill('SIGKILL'); } catch { /* ignore */ } };
     const feed = (d) => { j.output = (j.output + d.toString()).slice(-65536); };
     child.stdout.on('data', feed);
@@ -1192,7 +1426,7 @@ async function headroomBinaryInfo() {
 // 通用命令执行（headroom 本体的 pip 检查/升级用），输出合并 stdout+stderr
 function execCapture(cmd, args, timeoutMs = 30000) {
   return new Promise((resolveRun) => {
-    execFile(cmd, args, { timeout: timeoutMs, env: { ...process.env, ...proxyEnv() } }, (err, stdout, stderr) => {
+    execFile(cmd, args, { timeout: timeoutMs, env: { ...process.env, ...proxyEnv() }, windowsHide: true }, (err, stdout, stderr) => {
       resolveRun({
         ok: !err,
         code: err ? (err.code ?? 'error') : 0,
@@ -1276,7 +1510,7 @@ function runHeadroomHook(args, timeoutMs = 20000) {
     return Promise.resolve({ ok: false, code: 'headroom-plugin', error: '未找到 headroom 插件（先在插件市场安装）' });
   }
   return new Promise((resolveRun) => {
-    execFile('sh', [hook, ...args], { timeout: timeoutMs }, (err, stdout, stderr) => {
+    execFile('sh', [hook, ...args], { timeout: timeoutMs, windowsHide: true }, (err, stdout, stderr) => {
       if (err && err.code === 'ENOENT') {
         resolveRun({ ok: false, code: 'headroom-sh', error: '未找到 sh，无法运行 headroom 插件脚本' });
         return;
@@ -1321,7 +1555,7 @@ export function parseHeadroomStatus(text) {
 // （zcode-pro 本就跑在 ELECTRON_RUN_AS_NODE=1 的 ZCode 二进制上）。导出以便测试。
 export function runNodeScript(scriptArgs, timeoutMs = 120000) {
   const attempt = (cmd, extraEnv) => new Promise((resolveRun) => {
-    execFile(cmd, scriptArgs, { timeout: timeoutMs, env: { ...process.env, ...proxyEnv(), ...extraEnv } }, (err, stdout, stderr) => {
+    execFile(cmd, scriptArgs, { timeout: timeoutMs, env: { ...process.env, ...proxyEnv(), ...extraEnv }, windowsHide: true }, (err, stdout, stderr) => {
       if (err && err.code === 'ENOENT') { resolveRun(null); return; }
       resolveRun({
         ok: !err,
