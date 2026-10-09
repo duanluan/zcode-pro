@@ -7,8 +7,11 @@
 //    仍可查询），把最后状态并入表：折叠保留、展开着的移除视为任务被删；
 // 3) 对标记运行中的折叠项目做「无感探查」复核：点项目行展开（应用的该点击会
 //    把主视图切到该项目，故点完立刻同帧点回当前会话行，两次提交都在绘制前
-//    完成、视图与选中不受影响），新增行在本观察器回调里 display:none 冻结布局，
-//    原项目行用 position:fixed 冻结克隆盖住，读完后收起、清理。单次约 0.3 秒。
+//    完成、视图与选中不受影响），新增的会话行由 style 元素按会话键前缀
+//    display:none（挂载当帧即生效，不依赖观察器时序与列表容器结构——应用
+//    3.14.4 已无旧代码依赖的 empty:hidden 容器），原项目行用 position:fixed
+//    冻结克隆盖住，读完后收起、等行真正卸载再撤隐藏（收起后行有数百毫秒的
+//    卸载延迟，提前撤隐藏会让行在收起瞬间闪现）。单次约 0.3 秒。
 // 探查调度：只在「捕获到运行中」后复核（20 秒首查、其后每 60 秒）。不做启动
 // 普查：应用重启后所有会话本就处于停止状态，无运行可发现；且启动期界面还在
 // 恢复，探查会打扰（实测首启会出现项目逐个展开又收起的干扰）。
@@ -24,6 +27,7 @@ const PEEK_FIRST_MS = 20000;    // 折叠捕获到运行后的首次复核
 const PEEK_REPEAT_MS = 60000;   // 仍运行中的复核间隔
 const PEEK_SETTLE_MS = 160;     // 行数连续两次采样相同视为渲染完成
 const PEEK_MAX_MS = 1500;       // 单次探查兜底（行始终没出现 = 项目无会话）
+const PEEK_UNMOUNT_WAIT_MS = 800; // 收起后等行真正卸载的最长时间（实测约 0.4 秒）
 
 const CONFIG_POLL_MIN_MS = 5000;   // 配置未变化时逐次拉长轮询间隔，减轻常驻开销
 const CONFIG_POLL_MAX_MS = 60000;
@@ -36,7 +40,6 @@ const peekTimers = new Map();  // 工作区 → 复核定时器
 const activePeeks = new Set(); // 正在探查的工作区
 const peekedWs = new Set();    // 已探查过的项目：之后统一按复查节奏（探查自身的收起动作
                                // 也会触发一次折叠捕获，避免把节奏重置回首查间隔）
-let peekHidden = new Map();     // 探查期间被 display:none 的元素（行/列表/容器），按工作区分组
 let wsWithRows = new Set();    // 最近一次扫描时仍有会话行在 DOM 的工作区
 
 // —— 工具 ——
@@ -84,11 +87,18 @@ const synthClick = (el) => {
 // 无副作用的展开/收起：应用把项目行点击当作「切换到该项目」（实测当前会话会被
 // 取消选中、主视图跳进该项目的新建任务）。点完项目行后立刻点回当前会话行，
 // 两次提交都在浏览器绘制前完成——折叠照常生效，视图与选中状态不被带走。
-// 还原行每次现找：React 重挂载会换元素，用户中途换会话也跟着新的走。
+// 还原行必须在点项目行之前就记住：点击会把当前行取消选中，事后再按选中标记
+// 找就找不到了（3.14.4 实测，回点落空会把用户留在该项目的新会话页）；
+// 元素被 React 重挂载时按记住的会话键重找
 function toggleNavSafe(head) {
-  synthClick(head);
   const cur = currentTaskRow();
-  if (cur) synthClick(cur);
+  const backKey = cur ? cur.getAttribute('data-task-item-key') : '';
+  synthClick(head);
+  if (!backKey) return;
+  const back = (cur && cur.isConnected)
+    ? cur
+    : document.querySelector(`${TASK_SEL}[data-task-item-key="${CSS.escape(backKey)}"]`);
+  if (back) synthClick(back);
 }
 
 // —— 状态维护 ——
@@ -204,23 +214,26 @@ function syncPeeks() {
 // 探查串行链：同一时间最多一个探查在跑（多项复核同时到期时，重叠会互相干扰）
 let peekChain = Promise.resolve();
 
-async function peek(ws) {
-  const run = () => peekInner(ws);
+async function peek(ws, opts) {
+  const run = () => peekInner(ws, opts);
   const p = peekChain.then(run, run);
   peekChain = p.catch(() => {});
   return p;
 }
 
-async function peekInner(ws) {
-  if (!enabled || document.hidden || activePeeks.has(ws)) return;
+async function peekInner(ws, opts) {
+  // manual：idle-reclaim 的复核调用，不受本功能开关限制（调度侧已按 enabled 过滤）。
+  // 返回 true = 完成了一次真实读取（结果已并入 runningByWs）；false/undefined = 未验证
+  if ((!opts?.manual && !enabled) || document.hidden || activePeeks.has(ws)) return false;
   const row = findWsRow(ws);
   const head = row && wsHead(row);
-  if (!row || !head || head.getAttribute('aria-expanded') !== 'false') return;
-  // 无可还原的当前会话（正处新建任务态且找不到还原入口）时放弃本次探查，
-  // 60 秒后再试——探查绝不能把用户的当前会话带走
-  if (!currentTaskRow() && !document.querySelector('[data-testid^="conversation-new-task"]')) {
+  if (!row || !head || head.getAttribute('aria-expanded') !== 'false') return false;
+  // 无可还原的当前会话时放弃本次探查（点了项目行会把主视图切到该项目的新会话
+  // 页，没有可回点的行就还原不回来——新建任务视图同样不放行），60 秒后再试——
+  // 探查绝不能把用户的当前视图带走
+  if (!currentTaskRow()) {
     schedulePeek(ws, PEEK_REPEAT_MS);
-    return;
+    return false;
   }
 
   activePeeks.add(ws);
@@ -236,6 +249,9 @@ async function peekInner(ws) {
   frozen.style.height = rect.height + 'px';
   document.body.append(frozen);
   row.style.visibility = 'hidden';
+  // 会话行隐藏改走 style 元素（见 installPeekHider）：挂载当帧即 display:none，
+  // 与观察器回调时序、列表容器结构均无关
+  const hider = installPeekHider(ws);
   try {
     toggleNavSafe(head);
     await settleAndRead(ws);
@@ -244,9 +260,12 @@ async function peekInner(ws) {
     const headNow = wsHead(rowNow);
     if (headNow && headNow.getAttribute('aria-expanded') === 'true' && !userTouched(rowNow)) {
       toggleNavSafe(headNow);
+      // 收起后行并非立刻卸载（有数百毫秒延迟），期间保持隐藏再撤，
+      // 否则行会在收起瞬间闪现——即「项目先展开再缩起」被看见的原因
+      await waitForRowsGone(ws);
     }
   } finally {
-    cleanupPeekHidden(ws);
+    removePeekHider(hider);
     row.style.visibility = '';
     frozen.remove();
     activePeeks.delete(ws);
@@ -254,6 +273,38 @@ async function peekInner(ws) {
   apply();
   const set = runningByWs.get(ws);
   if (set && set.size && enabled) schedulePeek(ws, PEEK_REPEAT_MS);
+  return true;
+}
+
+// —— 供 idle-reclaim 复用 ——
+
+// 当前运行状态快照：running 为仍有运行中会话的工作区列表，current 为当前选中会话的工作区
+export function wsRunningSnapshot() {
+  const curKey = currentTaskRow()?.getAttribute('data-task-item-key') || '';
+  return {
+    running: [...runningByWs.entries()].filter(([, set]) => set.size > 0).map(([ws]) => ws),
+    current: curKey ? (workspaceOf(curKey) || null) : null,
+  };
+}
+
+// 无感复核指定工作区当前是否仍有运行中会话（展开读行后原样收起）。
+// 返回 true = 确认无运行；false = 有运行、窗口隐藏或行不可达（一律视为忙，调用方不得回收）
+export async function verifyWorkspaceNotRunning(ws) {
+  if (!ws || document.hidden) return false;
+  const row = findWsRow(ws);
+  const head = row && wsHead(row);
+  if (!row || !head) return false;
+  if (head.getAttribute('aria-expanded') !== 'false') {
+    // 已展开：行在场，直接读
+    let run = false;
+    for (const el of domRowsOf(ws)) if (isRunningRow(el)) run = true;
+    return !run;
+  }
+  let verified = false;
+  try { verified = (await peek(ws, { manual: true })) === true; } catch { /* 未验证成 */ }
+  if (!verified) return false;
+  const set = runningByWs.get(ws);
+  return !(set && set.size);
 }
 
 // 等该项目的会话行渲染稳定后读取运行状态；行始终没出现视为项目无会话，清除记录
@@ -285,50 +336,43 @@ function settleAndRead(ws) {
   });
 }
 
-// 观察器回调（绘制前）把探查展开新增的会话行连同列表容器 display:none，
-// 不占布局、不产生一帧可见内容
-function hidePeekRows(muts) {
-  if (!activePeeks.size) return;
-  for (const m of muts) {
-    if (m.type !== 'childList') continue;
-    for (const n of m.addedNodes) {
-      if (!(n instanceof Element)) continue;
-      const rows = n.matches(TASK_SEL) ? [n] : [...n.querySelectorAll(TASK_SEL)];
-      for (const r of rows) {
-        const ws = workspaceOf(r.getAttribute('data-task-item-key') || '');
-        if (!activePeeks.has(ws)) continue;
-        r.style.display = 'none';
-        pushHidden(ws, r);
-        const ul = r.closest('ul');
-        if (ul && !ul.__zcodeproPeekHidden) {
-          ul.__zcodeproPeekHidden = true;
-          ul.style.display = 'none';
-          pushHidden(ws, ul);
-          const holder = ul.parentElement;
-          // 会话列表容器带 empty:hidden（空时整体隐藏）：一并冻结，避免占位/间距
-          if (holder && [...holder.classList].includes('empty:hidden') && !holder.__zcodeproPeekHidden) {
-            holder.__zcodeproPeekHidden = true;
-            holder.style.display = 'none';
-            pushHidden(ws, holder);
-          }
-        }
+// —— 探查期间的会话行隐藏 ——
+// style 元素按会话键前缀隐藏：CSS 在节点挂载当帧即生效，不依赖观察器回调
+// 时序，也与列表容器结构无关（旧代码依赖的 empty:hidden 容器在应用 3.14.4
+// 已不存在；现列表容器仅 space-y 间距，行全隐时无高度，无需藏容器）。
+// 探查开始前已在场的同键行（如置顶区）打豁免类，不受影响。
+
+const PEEK_EXEMPT_CLASS = 'zcodepro-peek-exempt';
+const cssAttr = (v) => String(v).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+
+function installPeekHider(ws) {
+  const rowSel = `${TASK_SEL}[data-task-item-key^="${cssAttr(ws + ':')}"]`;
+  for (const r of document.querySelectorAll(rowSel)) r.classList.add(PEEK_EXEMPT_CLASS);
+  const style = document.createElement('style');
+  // 只隐藏会话行本身：容器（ul/列表外壳/折叠动画层）不能藏——应用的展开动画
+  // 会测量内容高度，藏容器会导致收起后行不卸载反而重新挂载（实测）
+  style.textContent = `${rowSel}:not(.${PEEK_EXEMPT_CLASS}){display:none!important}`;
+  document.head.append(style);
+  return { style, sel: rowSel };
+}
+
+function removePeekHider(hider) {
+  hider.style.remove();
+  for (const r of document.querySelectorAll('.' + PEEK_EXEMPT_CLASS)) r.classList.remove(PEEK_EXEMPT_CLASS);
+}
+
+// 收起后等该项目的会话行全部离开 DOM（卸载有数百毫秒延迟），超时兜底放行
+function waitForRowsGone(ws) {
+  const sel = `${TASK_SEL}[data-task-item-key^="${cssAttr(ws + ':')}"]:not(.${PEEK_EXEMPT_CLASS})`;
+  return new Promise((resolve) => {
+    const t0 = Date.now();
+    const timer = setInterval(() => {
+      if (!document.querySelector(sel) || Date.now() - t0 >= PEEK_UNMOUNT_WAIT_MS) {
+        clearInterval(timer);
+        resolve();
       }
-    }
-  }
-}
-
-function pushHidden(ws, el) {
-  if (!peekHidden.has(ws)) peekHidden.set(ws, []);
-  peekHidden.get(ws).push(el);
-}
-
-function cleanupPeekHidden(ws) {
-  const els = peekHidden.get(ws) || [];
-  for (const el of els) {
-    el.style.display = '';
-    delete el.__zcodeproPeekHidden;
-  }
-  peekHidden.delete(ws);
+    }, 40);
+  });
 }
 
 // —— 用户主动操作项目行的标记（探查收起前 800 毫秒内用户点过就不干预） ——
@@ -408,7 +452,6 @@ export function startWsRunningSpin() {
   const observer = new MutationObserver((muts) => {
     if (!relevant(muts)) return;
     handleRemovals(muts);
-    hidePeekRows(muts);
     if (!scanDebounce) {
       scanDebounce = setTimeout(() => { scanDebounce = 0; scan(); }, SCAN_DEBOUNCE_MS);
     }

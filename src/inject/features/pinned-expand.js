@@ -74,8 +74,9 @@ export function startPinnedExpandSuppression() {
 }
 
 // 收起用的点击必须点回当前会话：应用把项目行点击当作「切换到该项目」，只点项目行
-// 会把当前会话取消选中、主视图跳进新建任务。点完立刻点回当前会话行，两次提交都在
-// 浏览器绘制前完成，收起生效而视图不被带走。还原行每次现找（React 重挂载会换元素）。
+// 会把当前会话取消选中、主视图跳进新建任务。还原行必须在点项目行之前就记住——
+// 点击会立刻取消选中（3.14.4 实测），事后再按选中标记找就找不到了，回点落空
+// 会把视图留在该项目的新会话页；元素被 React 重挂载时按记住的会话键重找。
 function currentTaskRow() {
   for (const el of document.querySelectorAll('[data-task-item-key]')) {
     if ((el.className + '').includes('bg-selected')) return el;
@@ -83,9 +84,14 @@ function currentTaskRow() {
   return null;
 }
 function collapseNavSafe(head) {
-  head.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
   const cur = currentTaskRow();
-  if (cur) cur.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+  const backKey = cur ? cur.getAttribute('data-task-item-key') : '';
+  head.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+  if (!backKey) return;
+  const back = (cur && cur.isConnected)
+    ? cur
+    : document.querySelector(`[data-task-item-key="${cssEscape(backKey)}"]`);
+  if (back) back.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
 }
 
 // 实测时序（探针 v2）：点击后 ~6s 出现第一次自动展开并被收起；

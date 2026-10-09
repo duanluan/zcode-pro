@@ -83,6 +83,9 @@ export function defaultConfig() {
     // HTTP 代理（http(s)://host:port）：helper 发起的网络访问走它——插件市场更新/安装
     // （zcode CLI → git）、headroom 本体的检查更新与升级（pip）。空 = 不用代理。
     proxy: '',
+    // 一次性迁移标记：migrateConfigOnce 执行过哪些纠偏（见 startHelper），
+    // 有标记的迁移不再重复，用户此后手动改回的设置不再被覆盖
+    migrations: {},
   };
 }
 
@@ -123,6 +126,20 @@ function sanitizeFontStack(v) {
   if (/[{};<>\\]/.test(s)) return undefined;
   if (((s.match(/"/g) || []).length) % 2 !== 0 || ((s.match(/'/g) || []).length) % 2 !== 0) return undefined;
   return s;
+}
+
+// 一次性配置迁移：升级后对历史设置做纠偏，执行过的迁移记入 migrations 标记，
+// 之后不再重复（用户手动改回的设置不会被再次覆盖）。失败静默、下次启动再试。
+// - wsRunningSpinOff：「折叠项目运行提示」实验性功能会在后台周期性短暂展开
+//   项目复核运行状态，新版本不再默认开启，历史开启过的用户升级后强制关闭一次
+function migrateConfigOnce(configFile) {
+  try {
+    const config = loadConfig(configFile);
+    if (config.migrations && config.migrations.wsRunningSpinOff) return;
+    config.features = { ...config.features, wsRunningSpin: false };
+    config.migrations = { ...(config.migrations || {}), wsRunningSpinOff: true };
+    saveConfig(configFile, config);
+  } catch { /* 配置不可读/不可写时跳过，下次启动再试 */ }
 }
 
 function json(res, status, obj) {
@@ -169,6 +186,7 @@ function proxyEnv(extra = {}) {
 export function startHelper({ port, token, dataRoot, state, agentsFile = defaultAgentsFile() }) {
   const configFile = join(dataRoot, 'zcodepro.json');
   const settingsFile = join(dataRoot, 'v2', 'setting.json');
+  migrateConfigOnce(configFile);
   activeProxyUrl = String(loadConfig(configFile).proxy || '').trim();
 
   const server = createServer(async (req, res) => {

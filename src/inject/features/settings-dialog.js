@@ -246,11 +246,6 @@ export function openSettingsDialog() {
             if (await setFeature('titleLock', next)) f.titleLock = next;
             refreshRows();
           }),
-          settingRow(L.featureWsRunning, L.featureWsRunningDesc, f.wsRunningSpin !== false, async () => {
-            const next = !(f.wsRunningSpin !== false);
-            if (await setFeature('wsRunningSpin', next)) f.wsRunningSpin = next;
-            refreshRows();
-          }),
           settingRow(L.featurePinnedCollapse, L.featurePinnedCollapseDesc, f.pinnedCollapse !== false, async () => {
             const next = !(f.pinnedCollapse !== false);
             if (await setFeature('pinnedCollapse', next)) f.pinnedCollapse = next;
@@ -264,6 +259,11 @@ export function openSettingsDialog() {
           settingRow(L.featureImageCopy, L.featureImageCopyDesc, f.imageCopy !== false, async () => {
             const next = !(f.imageCopy !== false);
             if (await setFeature('imageCopy', next)) f.imageCopy = next;
+            refreshRows();
+          }),
+          settingRow(L.featureWsRunning, L.featureWsRunningDesc, f.wsRunningSpin !== false, async () => {
+            const next = !(f.wsRunningSpin !== false);
+            if (await setFeature('wsRunningSpin', next)) f.wsRunningSpin = next;
             refreshRows();
           }),
           settingRow(L.featurePinnedExpand, L.featurePinnedExpandDesc, f.pinnedKeepCollapsed !== false, async () => {
