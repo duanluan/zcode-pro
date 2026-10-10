@@ -232,6 +232,14 @@ function desktopEntry(execCmd) {
   ].join('\n');
 }
 
+// 写入同时设执行位：KDE 等桌面环境要求用户目录（非 root 属主）下的 .desktop 启动器
+// 带执行位才允许启动，缺了双击即被拒（plasmashell/Dolphin 报 executable flag not
+// set），系统级目录（AUR 的 /usr/share/applications）无此要求
+function writeDesktopEntry(target, execCmd) {
+  writeFileSync(target, desktopEntry(execCmd));
+  chmodSync(target, 0o755);
+}
+
 function applicationsDir() {
   return join(process.env.XDG_DATA_HOME || join(homedir(), '.local', 'share'), 'applications');
 }
@@ -302,16 +310,18 @@ const shortcutItem = {
       if (!cur.includes(SETUP_MARK)) {
         return { skipped: `${target} 已存在且非 setup 创建（如 install.sh），未覆盖` };
       }
+      // 早期版本写过 0644 的条目：即使内容无需重写也补上执行位（原因见 writeDesktopEntry）
+      chmodSync(target, 0o755);
       const exec = (cur.match(/^Exec=(.+)$/m) || [])[1] || '';
       if (exec.includes(cmd)) {
         parts.push('应用菜单条目已存在且指向当前命令，无需重复创建');
       } else {
-        writeFileSync(target, desktopEntry(cmd));
+        writeDesktopEntry(target, cmd);
         parts.push(`已更新 ${target}（Exec=${cmd}）`);
       }
     } else {
       mkdirSync(appsDir, { recursive: true });
-      writeFileSync(target, desktopEntry(cmd));
+      writeDesktopEntry(target, cmd);
       parts.push(`已写入 ${target}（Exec=${cmd}）`);
     }
     try { execFileSync('update-desktop-database', [appsDir], { stdio: 'ignore' }); } catch { /* 无该命令时忽略 */ }
@@ -320,7 +330,11 @@ const shortcutItem = {
       const dDir = desktopDir();
       const dTarget = join(dDir, DESKTOP_FILE);
       if (!existsSync(dTarget) || readFileSync(dTarget, 'utf-8').includes(SETUP_MARK)) {
-        writeFileSync(dTarget, desktopEntry(cmd));
+        mkdirSync(dDir, { recursive: true });
+        writeDesktopEntry(dTarget, cmd);
+        // GNOME 的桌面（Nautilus）额外要求 trusted 元数据才显示“允许启动”；
+        // 其他环境无 gio / 写不进元数据时忽略
+        try { execFileSync('gio', ['set', dTarget, 'metadata::trusted', 'true'], { stdio: 'ignore' }); } catch { /* 非 GNOME 忽略 */ }
         parts.push(`桌面 ${dTarget}`);
       } else {
         parts.push('桌面已存在非 setup 创建的条目，未覆盖');

@@ -15,7 +15,7 @@ import { pickFolderSystem } from './pickFolder.mjs';
 import { reorderWorkspaceTasks, reorderGroupMembers } from './taskOrder.mjs';
 import { webdavRequest, webdavPutWithMkcol, webdavHttpText } from './webdav.mjs';
 
-const VERSION = '0.17.0';
+const VERSION = '0.17.1';
 
 // 全局提示词固定在用户主目录：官方加载器按 HOME/USERPROFILE 拼 .zcode/AGENTS.md，
 // 不读 ZCODE_DATA_BASE_DIR（数据根迁走时全局指令仍在原位）。

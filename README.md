@@ -48,9 +48,11 @@ ZCode 桌面版界面增强工具。不修改客户端文件，通过 ZCode Pro 
 ```bash
 # 方式一：npm 安装/卸载
 npm install -g zcode-pro
+zcode-pro setup --uninstall  # 卸载前先撤销快捷方式（如创建过）
 npm uninstall -g zcode-pro
 # 方式二：pip 安装/卸载
 pip install zcode-pro
+zcode-pro setup --uninstall  # 卸载前先撤销快捷方式（如创建过）
 pip uninstall zcode-pro
 
 # 通过命令启动

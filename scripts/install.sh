@@ -83,6 +83,8 @@ if [ "$OS" = "Linux" ]; then
   APP_DIR="$DESTDIR${XDG_DATA_HOME:-$HOME/.local/share}/applications"
   mkdir -p "$APP_DIR"
   sed "s|@bindir@|$BIN|" "$REPO_DIR/packaging/zcode-pro.desktop" > "$APP_DIR/zcode-pro.desktop"
+  # KDE 等环境要求用户目录下 .desktop 带执行位才允许启动
+  chmod 755 "$APP_DIR/zcode-pro.desktop"
   update-desktop-database "$APP_DIR" 2>/dev/null || true
 fi
 
