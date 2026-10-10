@@ -12,6 +12,7 @@ import { randomBytes } from 'node:crypto';
 import { resolveZcodeExecutable, resolveDataRootDir } from './paths.mjs';
 import { CdpConnection, fetchBrowserWsUrl } from './cdp.mjs';
 import { startHelper } from './helper.mjs';
+import { runSetup } from './setup.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const INJECT_BUNDLE = resolve(here, '..', '..', 'dist', 'inject.js');
@@ -28,6 +29,11 @@ function usage() {
   --inject-only          只注入已运行的实例（要求其带调试端口），不启动新实例
   --verbose              输出详细日志
   -h, --help             显示帮助
+
+子命令:
+  setup                  安装本机集成（快捷方式：Linux 应用菜单 / Windows 开始菜单 / macOS 应用）
+  setup --desktop        同时在桌面创建快捷方式
+  setup --uninstall      移除由 setup 安装的集成（含桌面）
 
 环境变量:
   ZCODEPRO_ZCODE_PATH     ZCode 可执行文件路径（同 --zcode-path）
@@ -47,6 +53,9 @@ function parseArgs(argv) {
     else if (a === '--inject-only' || a === '--no-launch') out.injectOnly = true;
     else if (a === '--verbose' || a === '-v') out.verbose = true;
     else if (a === '-h' || a === '--help') out.help = true;
+    else if (a === 'setup') out.setup = true;
+    else if (a === '--uninstall') out.setupUninstall = true;
+    else if (a === '--desktop') out.setupDesktop = true;
     else { console.error('未知参数: ' + a); out.help = true; }
   }
   out.cdpPort = out.cdpPort || Number(process.env.ZCODEPRO_CDP_PORT) || 9333;
@@ -122,6 +131,16 @@ async function buildInjectSource(token, helperPort, features) {
 export async function run(argv) {
   const args = parseArgs(argv);
   if (args.help) { console.log(usage()); return; }
+  // setup 不依赖 ZCode 运行（装快捷方式等本机集成），先于 ZCode 定位处理
+  if (args.setup || args.setupUninstall || args.setupDesktop) {
+    if (!args.setup && (args.setupUninstall || args.setupDesktop)) {
+      console.error('未知用法: --uninstall / --desktop 仅可与 setup 连用');
+      console.log(usage());
+      return;
+    }
+    await runSetup({ uninstall: args.setupUninstall, desktop: args.setupDesktop });
+    return;
+  }
   const log = (...a) => { if (args.verbose) console.log('[zcodepro]', ...a); };
 
   let exe;

@@ -1,0 +1,60 @@
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "zcode-pro"
+dynamic = ["version"]
+description = "ZCode Pro — ZCode 桌面版界面增强启动器（不修改客户端文件），核心功能：项目自定义别名"
+readme = "README_PYPI.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+keywords = ["zcode", "zcode-pro", "launcher", "enhancement"]
+classifiers = [
+  "Environment :: Console",
+  "Intended Audience :: End Users/Desktop",
+  "Operating System :: MacOS",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+]
+
+[project.urls]
+Homepage = "https://github.com/duanluan/zcode-pro"
+Repository = "https://github.com/duanluan/zcode-pro"
+Issues = "https://github.com/duanluan/zcode-pro/issues"
+
+[project.scripts]
+zcode-pro = "zcode_pro.cli:main"
+
+[tool.hatch.version]
+path = "zcode_pro/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["zcode_pro"]
+
+# dist/ 里的 inject.js 是 esbuild 构建产物（发布前先 npm run build），
+# 与 cli.mjs、src/ 一起作为应用文件放进包内
+[tool.hatch.build.targets.wheel.force-include]
+"cli.mjs" = "zcode_pro/app/cli.mjs"
+"src" = "zcode_pro/app/src"
+"dist" = "zcode_pro/app/dist"
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "zcode_pro",
+  "cli.mjs",
+  "src",
+  "bin",
+  "README.md",
+  "README.en.md",
+  "README_PYPI.md",
+  "LICENSE",
+  "package.json",
+  "pyproject.toml",
+]
+
+# hatchling 默认把 dist 视为构建产物目录排除，这里强制打入（从 sdist 构建 wheel 时也需要）
+[tool.hatch.build.targets.sdist.force-include]
+"dist/inject.js" = "dist/inject.js"

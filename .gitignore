@@ -2,3 +2,6 @@ node_modules/
 *.log
 .idea/
 scripts/gui-test/
+dist-py/
+__pycache__/
+*.egg-info/

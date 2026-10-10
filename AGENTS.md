@@ -2,7 +2,7 @@
 
 ## 版本号策略（重要）
 
-- 版本号三处保持一致：`package.json`、`src/host/helper.mjs` 的 `VERSION`、`packaging/aur/zcodepro/PKGBUILD` 的 `pkgver`。
+- 版本号四处保持一致：`package.json`、`src/host/helper.mjs` 的 `VERSION`、`zcode_pro/__init__.py` 的 `__version__`、`packaging/aur/zcodepro/PKGBUILD` 的 `pkgver`。
 - **未推送的改动不要动版本号**；决定推送（发布）时，在推送前一次性升级，同一批改动只升一次。
 - **修复刚发布版本自身的问题（回归/样式补丁）时，覆盖当前版本**：同版本号重打 tag、覆盖 Release 资产、AUR 升 pkgrel，而不是新开版本号；只有面向用户的新功能/独立修复才升版本。
 - 小改（修复/优化）升 patch，新功能升 minor；以用户可感知的变化为准。
@@ -15,6 +15,13 @@
 4. `../aur-packages` 仓库：更新 `packages/zcode-pro/PKGBUILD`（pkgver + 新 sha256sums；如有变更需同步 `packaging/aur/zcodepro/` 下的 `zcode-pro.install` 等附带文件）与 `.SRCINFO`（`makepkg --printsrcinfo`），commit + push
 5. `../aur-packages/scripts/sync-aur-packages.sh zcode-pro` 推送 AUR（完成后用 AUR key `ls-remote` 确认 ref 前进；后台执行时注意核对，曾出现静默未推的情况，前台重跑即可）
 6. 验证：Release 资产 URL 返回 200
+
+## 发布 npm / PyPI（tag 推送后自动执行）
+
+- 推送 `vX.Y.Z` tag 会触发 `.github/workflows/publish.yml`：npm 与 PyPI 两个 job 各自校验版本号一致、已发布则自动跳过；也可在 Actions 页面手动 `workflow_dispatch` 补发当前版本（用于密钥配好后补发存量版本）。
+- 依赖仓库密钥 `NPM_TOKEN`（Granular 令牌，需勾选 Bypass 2FA，包范围先给 All packages，包名存在后可收敛为仅 zcode-pro）与 `PYPI_API_TOKEN`（PyPI API token），缺任一则对应 job 失败，配好后手动触发即可。
+- npm 发布过程中 registry 会短暂出现 `0.0.0-stage` 占位版本，属正常暂存现象，稍后自动变为真实版本，无需人工确认。
+- 本地验证打包：`npm pack`（应含 dist/inject.js 等）；`python -m build --outdir dist-py` 后将 wheel 装入虚拟环境跑 `zcode-pro --help`。
 
 ## 其他约定
 

@@ -2,9 +2,9 @@
 
 [简体中文](README.md) | English
 
-ZCode Pro enhances the ZCode desktop UI. No client files are modified; just launch via the ZCode Pro shortcut.
+ZCode Pro enhances the ZCode desktop UI. No client files are modified; just launch via the ZCode Pro shortcut or the `zcode-pro` terminal command.
 
-![AUR](https://img.shields.io/aur/version/zcode-pro) ![Platform](https://img.shields.io/badge/platform-win%20%7C%20mac%20%7C%20linux%20%7C%20AUR-blue)
+![npm](https://img.shields.io/npm/v/zcode-pro) ![PyPI](https://img.shields.io/pypi/v/zcode-pro) ![AUR](https://img.shields.io/aur/version/zcode-pro) ![Platform](https://img.shields.io/badge/platform-win%20%7C%20mac%20%7C%20linux%20%7C%20AUR-blue)
 
 > **Opening settings: after launching ZCode Pro, right-click the settings button (gear) at the bottom of the ZCode sidebar to open the ZCode Pro settings window.**
 
@@ -41,6 +41,28 @@ All features can be toggled or adjusted in the settings window.
 
 Once installed, launch ZCode via the "ZCode Pro" shortcut in your app menu / Start menu, or the `zcode-pro` command in a terminal — the enhancements are enabled automatically in this mode; launching ZCode through its original entry does not load them. After launching, right-click the settings button at the bottom of the ZCode sidebar to open the ZCode Pro settings window.
 
+### 📦 npm / PyPI
+
+At runtime the Node runtime bundled with ZCode is preferred; if ZCode cannot be found, system Node.js (≥ 22) is used.
+
+```bash
+# Option 1: install/uninstall via npm
+npm install -g zcode-pro
+npm uninstall -g zcode-pro
+# Option 2: install/uninstall via pip
+pip install zcode-pro
+pip uninstall zcode-pro
+
+# Launch via the command
+zcode-pro
+# Add a Start-menu shortcut
+zcode-pro setup
+# Add a Start-menu shortcut + a desktop shortcut
+zcode-pro setup --desktop
+# Undo the shortcuts
+zcode-pro setup --uninstall
+```
+
 ### 🐧 Linux / macOS
 
 ```bash
@@ -60,9 +82,9 @@ Run with **PowerShell (Admin)**:
 git clone https://github.com/duanluan/zcode-pro.git
 cd zcode-pro
 
-# Start menu shortcut only
+# Add a Start-menu shortcut
 powershell -ExecutionPolicy Bypass -File scripts\install.ps1
-# Plus a desktop shortcut
+# Add a Start-menu shortcut + a desktop shortcut
 powershell -ExecutionPolicy Bypass -File scripts\install.ps1 -Desktop
 
 # Uninstall
@@ -84,12 +106,19 @@ If you previously installed via `install.sh`, run `./scripts/install.sh --uninst
 
 ### 🚀 Run without installing
 
-No standalone Node.js required: when a system Node is missing, the runtime bundled with ZCode is used.
+No standalone Node.js required: the runtime bundled with ZCode is preferred and used even without a system Node; works whether ZCode is installed in the default or a custom directory (auto-detected, falling back to the registry).
 
 ```bash
 git clone https://github.com/duanluan/zcode-pro.git && cd zcode-pro
-./bin/zcode-pro            # Linux / macOS (auto-detects /opt/ZCode, /Applications/ZCode.app)
-bin\zcode-pro.cmd          # Windows (auto-detects %LOCALAPPDATA%\Programs\ZCode\ZCode.exe)
+
+# Linux / macOS (auto-detects /opt/ZCode, /Applications/ZCode.app)
+./bin/zcode-pro
+# Windows (auto-detects default locations, falls back to the registry)
+bin\zcode-pro.cmd
+
+# Manually add a Start-menu shortcut (--desktop also adds a desktop shortcut, --uninstall undoes)
+./bin/zcode-pro setup
+bin\zcode-pro.cmd setup
 ```
 
 ## 📖 Reference
@@ -103,6 +132,7 @@ Command-line options (see `zcode-pro --help` for all):
 | `--zcode-path` | Explicit path to the ZCode executable |
 | `--inject-only` | Attach to a running instance only; do not launch a new one |
 | `--verbose` | Verbose logging |
+| `setup [--desktop] [--uninstall]` | Install/undo local shortcuts (`--desktop` also adds a desktop one) |
 
 Each option can also be overridden with a `ZCODEPRO_*` environment variable.
 

@@ -2,9 +2,9 @@
 
 [English](README.en.md) | 简体中文
 
-ZCode 桌面版界面增强工具。不修改客户端文件，通过 ZCode Pro 快捷方式启动即可。
+ZCode 桌面版界面增强工具。不修改客户端文件，通过 ZCode Pro 快捷方式或终端命令 `zcode-pro` 启动即可。
 
-![AUR 版本](https://img.shields.io/aur/version/zcode-pro) ![平台](https://img.shields.io/badge/platform-win%20%7C%20mac%20%7C%20linux%20%7C%20AUR-blue)
+![npm](https://img.shields.io/npm/v/zcode-pro) ![PyPI](https://img.shields.io/pypi/v/zcode-pro) ![AUR 版本](https://img.shields.io/aur/version/zcode-pro) ![平台](https://img.shields.io/badge/platform-win%20%7C%20mac%20%7C%20linux%20%7C%20AUR-blue)
 
 > ⚙️ **打开设置：启动 ZCode Pro 后，右键点击 ZCode 侧边栏底部的设置按钮（齿轮）即可打开 ZCode Pro 设置窗口。**
 
@@ -41,6 +41,28 @@ ZCode 桌面版界面增强工具。不修改客户端文件，通过 ZCode Pro 
 
 安装后，通过应用菜单 / 开始菜单中的“ZCode Pro”快捷方式或终端命令 `zcode-pro` 启动 ZCode，增强在该方式下自动生效；使用原有 ZCode 入口启动时不加载增强。
 
+### 📦 npm / PyPI
+
+运行时优先复用 ZCode 自带的运行时；未找到 ZCode 时回退系统 Node.js（≥ 22）。
+
+```bash
+# 方式一：npm 安装/卸载
+npm install -g zcode-pro
+npm uninstall -g zcode-pro
+# 方式二：pip 安装/卸载
+pip install zcode-pro
+pip uninstall zcode-pro
+
+# 通过命令启动
+zcode-pro
+# 添加开始菜单快捷方式
+zcode-pro setup
+# 添加开始菜单快捷方式 + 桌面快捷方式
+zcode-pro setup --desktop
+# 撤销添加快捷方式
+zcode-pro setup --uninstall
+```
+
 ### 🐧 Linux / macOS
 
 - 安装至 `~/.local`，可通过 `PREFIX=` 指定其他位置；
@@ -60,9 +82,9 @@ cd zcode-pro && ./scripts/install.sh
 git clone https://github.com/duanluan/zcode-pro.git
 cd zcode-pro
 
-# 只加开始菜单快捷方式
+# 添加开始菜单快捷方式
 powershell -ExecutionPolicy Bypass -File scripts\install.ps1
-# 还加桌面快捷方式
+# 添加开始菜单快捷方式 + 桌面快捷方式
 powershell -ExecutionPolicy Bypass -File scripts\install.ps1 -Desktop
 
 # 卸载
@@ -84,12 +106,19 @@ git clone https://aur.archlinux.org/zcode-pro.git && cd zcode-pro && makepkg -si
 
 ### 🚀 手动运行（不安装）
 
-无需单独安装 Node.js：缺少系统 Node 时自动使用 ZCode 内置运行时。
+无需单独安装 Node.js：优先使用 ZCode 内置运行时，缺少系统 Node 时亦能运行；ZCode 安装在默认或自定义目录均可（自动探测，必要时查注册表）。
 
 ```bash
 git clone https://github.com/duanluan/zcode-pro.git && cd zcode-pro
-./bin/zcode-pro            # Linux / macOS（自动探测 /opt/ZCode、/Applications/ZCode.app）
-bin\zcode-pro.cmd          # Windows（自动探测 %LOCALAPPDATA%\Programs\ZCode\ZCode.exe）
+
+# Linux / macOS（自动探测 /opt/ZCode、/Applications/ZCode.app）
+./bin/zcode-pro
+# Windows（自动探测默认安装位置，找不到时查注册表）
+bin\zcode-pro.cmd
+
+# 手动添加开始菜单快捷方式（--desktop 同时添加桌面快捷方式，--uninstall 撤销添加快捷方式）
+./bin/zcode-pro setup
+bin\zcode-pro.cmd setup
 ```
 
 ## 📖 参考
@@ -103,6 +132,7 @@ bin\zcode-pro.cmd          # Windows（自动探测 %LOCALAPPDATA%\Programs\ZCod
 | `--zcode-path` | 显式指定 ZCode 可执行文件 |
 | `--inject-only` | 只接管已在运行的实例，不启动新实例 |
 | `--verbose` | 详细日志 |
+| `setup [--desktop] [--uninstall]` | 安装/撤销本机快捷方式（`--desktop` 同时加桌面） |
 
 各选项也可用环境变量 `ZCODEPRO_*` 覆盖。
 
