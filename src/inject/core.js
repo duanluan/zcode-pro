@@ -617,11 +617,32 @@ const en = {
 };
 
 // 界面语言：与官方 IntlProvider 的解析一致——先读应用的 localStorage 偏好
-// （zcode-locale-preference：zh-CN/en-US/system），'system' 或读取失败时回退 navigator.language
+// （zcode-locale-preference：zh-CN/en-US/system），显式偏好直接生效；'system' 或未设置时
+// 官方在主进程用系统首选语言解析（macOS 上可能与渲染进程的 navigator.language 不一致：
+// 系统是中文而 Chromium 报 en-US，导致注入界面误判成英文）。这里通过 preload 暴露的
+// window.zcode.getSystemLocale()（IPC，异步）取主进程结果并缓存；取回前先按
+// navigator.language 兜底，避免阻塞首次渲染。
+let cachedSystemLocale = null; // 'zh-CN' | 'en-US' | null（尚未取回）
+
+export function startLocaleResolver() {
+  if (cachedSystemLocale !== null) return; // 已取回则跳过，避免重复 IPC（index.js 会调用两次）
+  const get = typeof window !== 'undefined' ? window.zcode?.getSystemLocale : null;
+  if (typeof get !== 'function') return;
+  Promise.resolve(get())
+    .then((locale) => {
+      if (typeof locale === 'string' && locale) {
+        // 与主进程解析一致：zh 开头视为中文，其余视为英文（兼容 'zh-Hans-CN' 等原始格式）
+        cachedSystemLocale = locale.toLowerCase().startsWith('zh') ? 'zh-CN' : 'en-US';
+      }
+    })
+    .catch(() => { /* 取回失败：沿用 navigator.language 兜底 */ });
+}
+
 export function isZhLocale() {
   let pref = null;
   try { pref = window.localStorage.getItem('zcode-locale-preference'); } catch { /* ignore */ }
   if (pref === 'zh-CN' || pref === 'en-US') return pref === 'zh-CN';
+  if (cachedSystemLocale) return cachedSystemLocale === 'zh-CN';
   return /^zh/i.test(navigator.language || 'zh-CN');
 }
 

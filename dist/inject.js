@@ -611,6 +611,18 @@
     failed: "Operation failed",
     retryHint: "Please retry"
   };
+  var cachedSystemLocale = null;
+  function startLocaleResolver() {
+    if (cachedSystemLocale !== null) return;
+    const get = typeof window !== "undefined" ? window.zcode?.getSystemLocale : null;
+    if (typeof get !== "function") return;
+    Promise.resolve(get()).then((locale) => {
+      if (typeof locale === "string" && locale) {
+        cachedSystemLocale = locale.toLowerCase().startsWith("zh") ? "zh-CN" : "en-US";
+      }
+    }).catch(() => {
+    });
+  }
   function isZhLocale() {
     let pref = null;
     try {
@@ -618,6 +630,7 @@
     } catch {
     }
     if (pref === "zh-CN" || pref === "en-US") return pref === "zh-CN";
+    if (cachedSystemLocale) return cachedSystemLocale === "zh-CN";
     return /^zh/i.test(navigator.language || "zh-CN");
   }
   function t() {
@@ -5747,8 +5760,16 @@
     if (typeof window === "undefined") return;
     if (window.__zcodeproInjected) return;
     window.__zcodeproInjected = true;
+    try {
+      startLocaleResolver();
+    } catch {
+    }
     const start = () => {
       ensureStyle();
+      try {
+        startLocaleResolver();
+      } catch {
+      }
       observeRadixPopups((content) => {
         try {
           handleProjectMenu(content);

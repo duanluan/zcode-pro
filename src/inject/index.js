@@ -1,6 +1,6 @@
 // ZCode Pro 注入脚本入口（由 esbuild 打包为 dist/inject.js，launcher 拼上启动参数后注入页面）。
 // 幂等守卫：页面刷新/重复注入时只初始化一次。
-import { observeRadixPopups } from './core.js';
+import { observeRadixPopups, startLocaleResolver } from './core.js';
 import { handleProjectMenu } from './features/project-menu.js';
 import { handleFileMenu } from './features/file-menu.js';
 import { startImageMenu } from './features/image-menu.js';
@@ -23,10 +23,15 @@ import { ensureStyle } from './ui.js';
   if (window.__zcodeproInjected) return;
   window.__zcodeproInjected = true;
 
+  // 尽早取回系统语言（异步 IPC）：system 偏好下 macOS 的 navigator.language 可能与
+  // 实际不符；start() 里会再调一次，覆盖 preload 桥未就绪的情况
+  try { startLocaleResolver(); } catch { /* ignore */ }
+
   // 注意：本脚本可能在 document start 阶段执行（head 尚未就绪），
   // 因此所有 DOM 操作都推迟到 DOMContentLoaded 之后。
   const start = () => {
     ensureStyle();
+    try { startLocaleResolver(); } catch { /* ignore */ }
     observeRadixPopups((content) => {
       try { handleProjectMenu(content); } catch { /* 单个功能失败不影响其他 */ }
       try { handleFileMenu(content); } catch { /* ignore */ }
