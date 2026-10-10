@@ -35,12 +35,34 @@ Copy-Item -Force "$repo\cli.mjs", "$repo\package.json", "$repo\LICENSE" $dest
 Copy-Item -Force "$repo\dist\inject.js" "$dest\dist\"
 
 # 2. 快捷方式
-$wsh = New-Object -ComObject WScript.Shell
+# 优先经 wscript+vbs 静默启动；部分机器（精简系统/安全软件/组件禁用）WSH 的
+# WScript.Shell.Run 报 0x800A01AD，检测到即降级为 cmd 最小化启动（不依赖 WSH，
+# 代价是启动瞬间任务栏短暂闪一个最小化控制台）
+$wsh = $null
+$wshOk = $false
+try {
+  $wsh = New-Object -ComObject WScript.Shell
+  $wsh.Run("cmd /c exit 0", 0, $true) | Out-Null
+  $wshOk = $true
+} catch {
+  if (-not $wsh) {
+    Write-Host "[zcode-pro] 本机无法创建快捷方式（WScript.Shell 不可用）。"
+    Write-Host "  可直接运行 $dest\bin\zcode-pro.cmd 启动，或先修复 Windows Script Host 后重装。"
+    throw
+  }
+  Write-Host "[zcode-pro] 注意：本机 Windows Script Host 异常，快捷方式将改用 cmd 方式启动（启动时会短暂显示最小化控制台窗口）。"
+}
 function New-ZcodeProShortcut([string]$path) {
   $lnk = $wsh.CreateShortcut($path)
-  # 经 wscript 静默启动 vbs → cmd → node，避免常驻控制台窗口
-  $lnk.TargetPath = "$env:SystemRoot\System32\wscript.exe"
-  $lnk.Arguments = "`"$dest\bin\zcode-pro.vbs`""
+  if ($wshOk) {
+    # 经 wscript 静默启动 vbs → cmd → node，避免常驻控制台窗口
+    $lnk.TargetPath = "$env:SystemRoot\System32\wscript.exe"
+    $lnk.Arguments = "`"$dest\bin\zcode-pro.vbs`""
+  } else {
+    $lnk.TargetPath = "$env:SystemRoot\System32\cmd.exe"
+    $lnk.Arguments = "/c start `"ZCodePro`" /min `"$dest\bin\zcode-pro.cmd`""
+    $lnk.WindowStyle = 7
+  }
   $lnk.WorkingDirectory = "$dest"
   $lnk.Description = "ZCode 桌面版增强启动器（自定义别名等，不修改客户端文件）"
   foreach ($c in @("$env:LOCALAPPDATA\Programs\ZCode\ZCode.exe", "$env:ProgramFiles\ZCode\ZCode.exe")) {
@@ -48,8 +70,10 @@ function New-ZcodeProShortcut([string]$path) {
   }
   $lnk.Save()
 }
-New-ZcodeProShortcut $startMenu
-if ($Desktop) { New-ZcodeProShortcut $desktopLnk }
+if ($wsh) {
+  New-ZcodeProShortcut $startMenu
+  if ($Desktop) { New-ZcodeProShortcut $desktopLnk }
+}
 
 Write-Host "[zcode-pro] 安装完成：$dest"
 Write-Host "  开始菜单已新增“ZCode Pro”；点它即带增强启动 ZCode。"
