@@ -15,6 +15,11 @@ if %errorlevel%==0 (
 set "ZCODE_BIN=%ZCODEPRO_ZCODE_PATH%"
 if not exist "%ZCODE_BIN%" set "ZCODE_BIN=%LOCALAPPDATA%\Programs\ZCode\ZCode.exe"
 if not exist "%ZCODE_BIN%" set "ZCODE_BIN=%PROGRAMFILES%\ZCode\ZCode.exe"
+rem Custom install dir: look up App Paths in registry (per-machine then per-user).
+if not exist "%ZCODE_BIN%" for /f "tokens=2*" %%A in (
+  'reg query "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\zcode.exe" /ve 2^>nul ^|^|
+   reg query "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\zcode.exe" /ve 2^>nul'
+) do if not exist "%ZCODE_BIN%" if exist "%%B" set "ZCODE_BIN=%%B"
 if not exist "%ZCODE_BIN%" (
   echo [zcodepro] 未找到 node，也未找到 ZCode 可执行文件。请安装 Node.js ^>= 22 或设置 ZCODEPRO_ZCODE_PATH。 1>&2
   exit /b 1

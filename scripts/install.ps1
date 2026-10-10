@@ -65,8 +65,39 @@ function New-ZcodeProShortcut([string]$path) {
   }
   $lnk.WorkingDirectory = "$dest"
   $lnk.Description = "ZCode 桌面版增强启动器（自定义别名等，不修改客户端文件）"
+  # 图标来源用独立变量跟踪：$lnk.IconLocation 读回的是旧 .lnk 的值（非空），
+  # 不能作为“本次未设置”的判断依据
+  $iconSet = $false
   foreach ($c in @("$env:LOCALAPPDATA\Programs\ZCode\ZCode.exe", "$env:ProgramFiles\ZCode\ZCode.exe")) {
-    if (Test-Path $c) { $lnk.IconLocation = $c; break }
+    if (Test-Path $c) { $lnk.IconLocation = $c; $iconSet = $true; break }
+  }
+  # Custom install dir: fall back to registry (App Paths per-machine/per-user,
+  # then uninstall-table DisplayIcon) so the shortcut still gets ZCode's icon.
+  if (-not $iconSet) {
+    foreach ($key in @('HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\zcode.exe',
+                       'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\zcode.exe')) {
+      $ap = Get-ItemProperty -Path $key -Name '(default)' -ErrorAction SilentlyContinue
+      if ($ap) {
+        $exe = [string]$ap.'(default)'
+        $exe = $exe.Trim('"').Trim()
+        if ($exe -and (Test-Path $exe)) { $lnk.IconLocation = $exe; break }
+      }
+    }
+  }
+  if (-not $iconSet) {
+    foreach ($hive in @('HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall',
+                       'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall',
+                       'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall')) {
+      $hit = Get-ChildItem $hive -ErrorAction SilentlyContinue |
+        ForEach-Object { Get-ItemProperty $_.PSPath } |
+        Where-Object { $_.DisplayName -eq 'ZCode' -and $_.DisplayIcon } |
+        Select-Object -First 1
+      if ($hit) {
+        $exe = ([string]$hit.DisplayIcon).Trim() -replace ',\d+$', ''
+        $exe = $exe.Trim('"')
+        if (Test-Path $exe) { $lnk.IconLocation = $exe; break }
+      }
+    }
   }
   $lnk.Save()
 }
