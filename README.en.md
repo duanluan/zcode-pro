@@ -55,15 +55,19 @@ cd zcode-pro && ./scripts/install.sh
 
 ### 🪟 Windows
 
+Run with **PowerShell (Admin)**:
 ```powershell
 git clone https://github.com/duanluan/zcode-pro.git
 cd zcode-pro
-powershell -ExecutionPolicy Bypass -File scripts\install.ps1          # Start menu shortcut
-powershell -ExecutionPolicy Bypass -File scripts\install.ps1 -Desktop # plus a desktop shortcut
-```
 
-- Installs to `%LOCALAPPDATA%\ZCodePro`; shortcuts launch silently without a console window;
-- Uninstall: `powershell -ExecutionPolicy Bypass -File scripts\install.ps1 -Uninstall`.
+# Start menu shortcut only
+powershell -ExecutionPolicy Bypass -File scripts\install.ps1
+# Plus a desktop shortcut
+powershell -ExecutionPolicy Bypass -File scripts\install.ps1 -Desktop
+
+# Uninstall
+powershell -ExecutionPolicy Bypass -File scripts\install.ps1 -Uninstall
+```
 
 ### 📦 AUR (Arch / Manjaro)
 

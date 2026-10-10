@@ -55,14 +55,18 @@ cd zcode-pro && ./scripts/install.sh
 
 ### 🪟 Windows
 
-- 程序安装至 `%LOCALAPPDATA%\ZCodePro`，快捷方式静默启动，不显示控制台窗口；
-- 卸载：`powershell -ExecutionPolicy Bypass -File scripts\install.ps1 -Uninstall`。
-
+使用 **PowerShell (管理员)** 运行：
 ```powershell
 git clone https://github.com/duanluan/zcode-pro.git
 cd zcode-pro
-powershell -ExecutionPolicy Bypass -File scripts\install.ps1          # 开始菜单快捷方式
-powershell -ExecutionPolicy Bypass -File scripts\install.ps1 -Desktop # 加桌面快捷方式
+
+# 只加开始菜单快捷方式
+powershell -ExecutionPolicy Bypass -File scripts\install.ps1
+# 还加桌面快捷方式
+powershell -ExecutionPolicy Bypass -File scripts\install.ps1 -Desktop
+
+# 卸载
+powershell -ExecutionPolicy Bypass -File scripts\install.ps1 -Uninstall
 ```
 
 ### 📦 AUR
