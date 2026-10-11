@@ -5,8 +5,8 @@
 // 3. 连接 CDP，向所有页面注入增强脚本（新文档自动注入 + 已加载页面立即注入）
 // 4. 启动本地辅助 HTTP 服务并常驻，CDP 断开时自动重连
 import { spawn, execSync, spawnSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, statSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomBytes } from 'node:crypto';
 import { resolveZcodeExecutable, resolveDataRootDir } from './paths.mjs';
@@ -71,6 +71,26 @@ function guiNotify(title, body) {
   if (process.platform !== 'linux' || process.stderr.isTTY) return;
   try {
     spawnSync('notify-send', ['-a', 'ZCode Pro', '-i', 'zcode', title, body], { stdio: 'ignore', timeout: 4000 });
+  } catch { /* ignore */ }
+}
+
+// Windows 快捷方式静默启动时控制台与桌面通知都不可见（guiNotify 仅 linux 有渠道），
+// 关键启动阶段与致命错误落盘 ~/.zcode/zcodepro.log，便于排查“双击没反应”（issue #1）。
+// 日志超 512KB 时轮转为 .old（zcode-pro.cmd 失败分支有同款轮转，需同步维护）。
+let winLogRotated = false;
+function winLog(line) {
+  if (process.platform !== 'win32') return;
+  try {
+    const dir = resolveDataRootDir();
+    mkdirSync(dir, { recursive: true });
+    const file = join(dir, 'zcodepro.log');
+    if (!winLogRotated) {
+      winLogRotated = true;
+      try {
+        if (existsSync(file) && statSync(file).size > 512 * 1024) renameSync(file, `${file}.old`);
+      } catch { /* ignore */ }
+    }
+    appendFileSync(file, `[${new Date().toISOString()}] ${line}\n`);
   } catch { /* ignore */ }
 }
 
@@ -147,9 +167,13 @@ export async function run(argv) {
   try {
     exe = resolveZcodeExecutable(args.zcodePath);
   } catch (err) {
-    if (err.code === 'ZCODE_NOT_FOUND') guiNotify('ZCode Pro 启动失败', '未找到 ZCode 可执行文件，详见终端输出。');
+    if (err.code === 'ZCODE_NOT_FOUND') {
+      winLog('未找到 ZCode 可执行文件: ' + err.message);
+      guiNotify('ZCode Pro 启动失败', '未找到 ZCode 可执行文件，详见终端输出。');
+    }
     throw err;
   }
+  winLog(`启动: ZCode=${exe}, CDP 端口 ${args.cdpPort}`);
   const dataRoot = resolveDataRootDir();
   const token = randomBytes(16).toString('hex');
   const state = { injectedPages: 0 };
@@ -166,10 +190,12 @@ export async function run(argv) {
     if (!ok) {
       console.error(`[zcodepro] 等待 ZCode 调试端口 ${args.cdpPort} 超时。`);
       if (zcodeAppProcessExists()) {
+        winLog(`等待 CDP 端口 ${args.cdpPort} 超时：ZCode 已在运行但未开调试端口，需先退出原实例`);
         console.error('[zcodepro] 检测到 ZCode 已在运行，但未开启调试端口，无法注入。');
         console.error('[zcodepro] 请手动退出当前 ZCode（zcodepro 不会替你关闭正在运行的实例），然后重新运行 zcodepro。');
         guiNotify('ZCode Pro 暂无法注入', 'ZCode 已在运行但未开启调试端口，请退出 ZCode 后重新打开 ZCode Pro。');
       } else {
+        winLog(`等待 CDP 端口 ${args.cdpPort} 超时（未见 ZCode 进程）`);
         guiNotify('ZCode Pro 启动失败', `等待 ZCode 调试端口 ${args.cdpPort} 超时。`);
       }
       process.exit(1);
@@ -191,6 +217,7 @@ export async function run(argv) {
     healthRes = await fetch(`http://127.0.0.1:${args.helperPort}/health`, { headers: { 'X-ZCodePro-Token': token } }).then((r) => r.json());
   } catch (err) {
     console.error(`[zcodepro] 辅助服务健康检查失败: ${err.message}`);
+    winLog('辅助服务健康检查失败: ' + err.message);
     server.close();
     process.exit(1);
   }
@@ -253,10 +280,12 @@ export async function run(argv) {
   }
   if (!conn) {
     console.error('[zcodepro] 无法连接 CDP，退出。');
+    winLog('无法连接 CDP，退出');
     server.close();
     process.exit(1);
   }
   console.log('[zcodepro] 已连接 CDP 并开始注入。保持本进程运行以维持增强；Ctrl+C 退出（不影响 ZCode）。');
+  winLog('已连接 CDP 并开始注入');
 
   process.on('SIGINT', () => { stopping = true; try { conn.close(); } catch {} server.close(); process.exit(0); });
   process.on('SIGTERM', () => { stopping = true; try { conn.close(); } catch {} server.close(); process.exit(0); });
@@ -268,6 +297,7 @@ export async function run(argv) {
     // 连接断开：ZCode 退出则一并退出，否则重连
     if (!(await cdpAlive(args.cdpPort))) {
       console.log('[zcodepro] ZCode 已退出，zcodepro 一并退出。');
+      winLog('ZCode 已退出，zcodepro 一并退出');
       server.close();
       process.exit(0);
     }

@@ -13,4 +13,5 @@ If WScript.Arguments.Count > 0 Then
   Next
   cmd = cmd & " " & Join(parts, " ")
 End If
-sh.Run cmd, 0, False
+' 经 cmd.exe 调用批处理，避免 wscript 直接运行 .cmd 在部分机器上启动异常（issue #1）
+sh.Run "cmd.exe /d /c " & cmd, 0, False

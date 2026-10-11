@@ -88,6 +88,8 @@ cd zcode-pro
 powershell -ExecutionPolicy Bypass -File scripts\install.ps1
 # 添加开始菜单快捷方式 + 桌面快捷方式
 powershell -ExecutionPolicy Bypass -File scripts\install.ps1 -Desktop
+# ZCode 装在非默认目录且自动定位不到时，显式指定其路径（持久保存，卸载时清除）
+powershell -ExecutionPolicy Bypass -File scripts\install.ps1 -Desktop -ZCodePath "D:\ProgramFiles\Zcode\ZCode.exe"
 
 # 卸载
 powershell -ExecutionPolicy Bypass -File scripts\install.ps1 -Uninstall
@@ -143,6 +145,7 @@ bin\zcode-pro.cmd setup
 | 内容 | 位置 |
 | --- | --- |
 | 功能开关、项目别名、软件代理 | `~/.zcode/zcodepro.json` |
+| 启动诊断日志（Windows 快捷方式静默启动排查） | `~/.zcode/zcodepro.log` |
 | 全局提示词 | `~/.zcode/AGENTS.md` |
 | 视觉代理（zcode-vision 插件） | `~/.zcode/zcode-vision.json` |
 | rtk 压缩（rtk 插件） | `~/.zcode-rtk/` |

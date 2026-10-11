@@ -1,13 +1,29 @@
 // 跨平台定位 ZCode 桌面版可执行文件。
-// 优先级：--zcode-path 参数 > ZCODEPRO_ZCODE_PATH 环境变量 > 平台默认候选路径 > 注册表（Windows） > PATH 上的 zcode。
+// 优先级：--zcode-path 参数 > ZCODEPRO_ZCODE_PATH 环境变量（进程 > 用户注册表） >
+// 平台默认候选路径 > 注册表 App Paths/卸载表（Windows） > PATH 上的 zcode。
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { arch, homedir, platform } from 'node:os';
 import { execFileSync } from 'node:child_process';
 
+// reg 输出按行取 REG_SZ 后的值，容忍引号与 ",0" 图标序号后缀。
+const reg = (args) => {
+  try {
+    return execFileSync('reg', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+  } catch { return ''; }
+};
+const valueAfter = (out) => (out.split(/REG_SZ\s+/)[1] || '').trim();
+
+// 安装脚本 -ZCodePath 持久化的用户级环境变量（HKCU\Environment）：写入后不会传播
+// 到已运行的资源管理器，进程环境变量读不到时从这里兜底，免注销/重启（issue #1）。
+function windowsUserEnvZcodePath() {
+  const value = valueAfter(reg(['query', 'HKCU\\Environment', '/v', 'ZCODEPRO_ZCODE_PATH']));
+  return value ? [value] : [];
+}
+
 // Windows 注册表探测（结果缓存）：自定义安装目录的安装器会在 App Paths（可执行
 // 文件全路径）或卸载表 DisplayIcon（控制面板-卸载软件里可见）留有登记，固定
-// 候选找不到时兜底。reg 输出按行取 REG_SZ 后的值，容忍引号与 ",0" 图标序号后缀。
+// 候选找不到时兜底。
 let winRegistryCandidates;
 
 function windowsRegistryCandidates() {
@@ -21,18 +37,16 @@ function windowsRegistryCandidates() {
       winRegistryCandidates.push(p);
     }
   };
-  const reg = (args) => {
-    try {
-      return execFileSync('reg', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
-    } catch { return ''; }
-  };
-  const valueAfter = (out) => (out.split(/REG_SZ\s+/)[1] || '').trim();
   // App Paths：安装器注册的可执行文件全路径（ShellExecute 同款查找）
   for (const root of ['HKLM', 'HKCU']) {
     const out = reg(['query', `${root}\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\zcode.exe`, '/ve']);
     if (out) push(valueAfter(out));
   }
-  // 卸载表 DisplayIcon：安装目录自定义时通常只有这里能找到
+  // 卸载表 DisplayIcon：安装目录自定义时通常只有这里能找到。
+  // ZCode 的 NSIS 安装器不写 App Paths、DisplayIcon 常指向 uninstallerIcon.ico，
+  // 从其所在目录推导 ZCode.exe（win11 虚拟机实测，issue #1）。逐条验证取第一个
+  // 有效命中。zcode-pro.cmd 与 install.ps1 也各自实现卸载表定位（匹配方式不完全
+  // 相同），改推导规则需三处同步。
   for (const key of [
     'HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall',
     'HKLM\\SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall',
@@ -41,7 +55,14 @@ function windowsRegistryCandidates() {
     const out = reg(['query', key, '/s', '/v', 'DisplayIcon']);
     for (const line of out.split(/\r?\n/)) {
       const seg = (line.split(/REG_SZ\s+/)[1] || '').trim();
-      if (seg && /zcode/i.test(seg)) push(seg);
+      if (seg && /zcode/i.test(seg)) {
+        push(seg);
+        const dir = seg.replace(/[^\\\/]+$/, '');
+        if (dir) {
+          push(join(dir, 'ZCode.exe'));
+          push(join(dir, 'zcode.exe'));
+        }
+      }
     }
   }
   return winRegistryCandidates;
@@ -53,6 +74,7 @@ function candidates() {
     const localAppData = process.env.LOCALAPPDATA || join(home, 'AppData', 'Local');
     const programFiles = process.env.PROGRAMFILES || 'C:\\Program Files';
     return [
+      ...windowsUserEnvZcodePath(),
       join(localAppData, 'Programs', 'ZCode', 'ZCode.exe'),
       join(localAppData, 'Programs', 'zcode', 'zcode.exe'),
       join(programFiles, 'ZCode', 'ZCode.exe'),

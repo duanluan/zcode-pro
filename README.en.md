@@ -86,6 +86,8 @@ cd zcode-pro
 powershell -ExecutionPolicy Bypass -File scripts\install.ps1
 # Add a Start-menu shortcut + a desktop shortcut
 powershell -ExecutionPolicy Bypass -File scripts\install.ps1 -Desktop
+# ZCode in a non-default directory that auto-detection misses? Pass its path (persisted, removed on uninstall)
+powershell -ExecutionPolicy Bypass -File scripts\install.ps1 -Desktop -ZCodePath "D:\ProgramFiles\Zcode\ZCode.exe"
 
 # Uninstall
 powershell -ExecutionPolicy Bypass -File scripts\install.ps1 -Uninstall
@@ -141,6 +143,7 @@ Configuration and data locations:
 | Content | Location |
 | --- | --- |
 | Feature switches, aliases, software proxy | `~/.zcode/zcodepro.json` |
+| Startup diagnostics log (silent shortcut launches, Windows) | `~/.zcode/zcodepro.log` |
 | Global prompt | `~/.zcode/AGENTS.md` |
 | Vision proxy (zcode-vision plugin) | `~/.zcode/zcode-vision.json` |
 | rtk compression (rtk plugin) | `~/.zcode-rtk/` |

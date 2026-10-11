@@ -163,7 +163,7 @@ export function windowsShortcutPlan(cmd, desktop = false, wshOk = true) {
     '  Next',
     '  cmd = cmd & " " & Join(parts, " ")',
     'End If',
-    'sh.Run cmd, 0, False',
+    'sh.Run "cmd.exe /d /c " & cmd, 0, False',
     '',
   ].join('\r\n');
   // 图标复用已安装的 ZCode：探测走 paths.mjs 同一条优先级（含注册表，覆盖自定义
