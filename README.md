@@ -4,7 +4,7 @@
 
 ZCode 桌面版界面增强工具。不修改客户端文件，通过 ZCode Pro 快捷方式或终端命令 `zcode-pro` 启动即可。
 
-![npm](https://img.shields.io/npm/v/zcode-pro) ![PyPI](https://img.shields.io/pypi/v/zcode-pro) ![AUR 版本](https://img.shields.io/aur/version/zcode-pro) ![平台](https://img.shields.io/badge/platform-win%20%7C%20mac%20%7C%20linux%20%7C%20AUR-blue)
+[![npm](https://img.shields.io/npm/v/zcode-pro?logo=npm&logoColor=white)](https://www.npmjs.com/package/zcode-pro) [![PyPI](https://img.shields.io/pypi/v/zcode-pro?logo=pypi&logoColor=white)](https://pypi.org/project/zcode-pro/) [![AUR 版本](https://img.shields.io/aur/version/zcode-pro?logo=archlinux&logoColor=white)](https://aur.archlinux.org/packages/zcode-pro) [![Windows](https://img.shields.io/badge/-Windows-0078D6?logo=data:image/svg%2Bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI2ZmZmZmZiIgZD0iTTAsMEgxMS4zNzdWMTEuMzcySDBaTTEyLjYyMywwSDI0VjExLjM3MkgxMi42MjNaTTAsMTIuNjIzSDExLjM3N1YyNEgwWm0xMi42MjMsMEgyNFYyNEgxMi42MjMiLz48L3N2Zz4%3D)](https://github.com/duanluan/zcode-pro#-windows) [![macOS](https://img.shields.io/badge/-macOS-000000?logo=apple&logoColor=white)](https://github.com/duanluan/zcode-pro#-linux--macos) [![Linux](https://img.shields.io/badge/-Linux-FCC624?logo=linux&logoColor=black)](https://github.com/duanluan/zcode-pro#-linux--macos) [![QQ 群](https://img.shields.io/badge/QQ-428403354-12B7F5?logo=qq&logoColor=white)](https://github.com/duanluan/zcode-pro#-交流与反馈) [![微信](https://img.shields.io/badge/%E5%BE%AE%E4%BF%A1-ai4only-07C160?logo=wechat&logoColor=white)](https://github.com/duanluan/zcode-pro#-交流与反馈)
 
 > ⚙️ **打开设置：启动 ZCode Pro 后，右键点击 ZCode 侧边栏底部的设置按钮（齿轮）即可打开 ZCode Pro 设置窗口。**
 
@@ -160,7 +160,7 @@ bin\zcode-pro.cmd setup
 - 微信群：添加微信 **ai4only** 邀请进群
 
 <p>
-  <img src="assets/qq-group.png" width="200" alt="QQ 群二维码" />
+  <img src="https://raw.githubusercontent.com/duanluan/zcode-pro/main/assets/qq-group.png" width="200" alt="QQ 群二维码" />
   &nbsp;&nbsp;
-  <img src="assets/wechat-ai4only.png" width="200" alt="微信二维码（ai4only）" />
+  <img src="https://raw.githubusercontent.com/duanluan/zcode-pro/main/assets/wechat-ai4only.png" width="200" alt="微信二维码（ai4only）" />
 </p>

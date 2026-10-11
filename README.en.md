@@ -4,7 +4,7 @@
 
 ZCode Pro enhances the ZCode desktop UI. No client files are modified; just launch via the ZCode Pro shortcut or the `zcode-pro` terminal command.
 
-![npm](https://img.shields.io/npm/v/zcode-pro) ![PyPI](https://img.shields.io/pypi/v/zcode-pro) ![AUR](https://img.shields.io/aur/version/zcode-pro) ![Platform](https://img.shields.io/badge/platform-win%20%7C%20mac%20%7C%20linux%20%7C%20AUR-blue)
+[![npm](https://img.shields.io/npm/v/zcode-pro?logo=npm&logoColor=white)](https://www.npmjs.com/package/zcode-pro) [![PyPI](https://img.shields.io/pypi/v/zcode-pro?logo=pypi&logoColor=white)](https://pypi.org/project/zcode-pro/) [![AUR](https://img.shields.io/aur/version/zcode-pro?logo=archlinux&logoColor=white)](https://aur.archlinux.org/packages/zcode-pro) [![Windows](https://img.shields.io/badge/-Windows-0078D6?logo=data:image/svg%2Bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI2ZmZmZmZiIgZD0iTTAsMEgxMS4zNzdWMTEuMzcySDBaTTEyLjYyMywwSDI0VjExLjM3MkgxMi42MjNaTTAsMTIuNjIzSDExLjM3N1YyNEgwWm0xMi42MjMsMEgyNFYyNEgxMi42MjMiLz48L3N2Zz4%3D)](https://github.com/duanluan/zcode-pro#-windows) [![macOS](https://img.shields.io/badge/-macOS-000000?logo=apple&logoColor=white)](https://github.com/duanluan/zcode-pro#-linux--macos) [![Linux](https://img.shields.io/badge/-Linux-FCC624?logo=linux&logoColor=black)](https://github.com/duanluan/zcode-pro#-linux--macos) [![QQ](https://img.shields.io/badge/QQ-428403354-12B7F5?logo=qq&logoColor=white)](https://github.com/duanluan/zcode-pro#-community) [![WeChat](https://img.shields.io/badge/WeChat-ai4only-07C160?logo=wechat&logoColor=white)](https://github.com/duanluan/zcode-pro#-community)
 
 > **Opening settings: after launching ZCode Pro, right-click the settings button (gear) at the bottom of the ZCode sidebar to open the ZCode Pro settings window.**
 
@@ -158,7 +158,7 @@ After uninstalling, just start ZCode from the official entry; no system cleanup 
 - WeChat group: add **ai4only** on WeChat to be invited
 
 <p>
-  <img src="assets/qq-group.png" width="200" alt="QQ group QR code" />
+  <img src="https://raw.githubusercontent.com/duanluan/zcode-pro/main/assets/qq-group.png" width="200" alt="QQ group QR code" />
   &nbsp;&nbsp;
-  <img src="assets/wechat-ai4only.png" width="200" alt="WeChat QR code (ai4only)" />
+  <img src="https://raw.githubusercontent.com/duanluan/zcode-pro/main/assets/wechat-ai4only.png" width="200" alt="WeChat QR code (ai4only)" />
 </p>

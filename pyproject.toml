@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "zcode-pro"
 dynamic = ["version"]
 description = "ZCode Pro — ZCode 桌面版界面增强启动器（不修改客户端文件），核心功能：项目自定义别名"
-readme = "README_PYPI.md"
+readme = "README.md"
 requires-python = ">=3.10"
 license = "Apache-2.0"
 keywords = ["zcode", "zcode-pro", "launcher", "enhancement"]
@@ -49,7 +49,6 @@ include = [
   "bin",
   "README.md",
   "README.en.md",
-  "README_PYPI.md",
   "LICENSE",
   "package.json",
   "pyproject.toml",
