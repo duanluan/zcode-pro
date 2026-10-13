@@ -39,8 +39,10 @@ function defaultHeadroomFile() {
   return join(homedir(), '.zcode', 'headroom.json');
 }
 
-// 本插件市场（zcode-plugins 仓库）在 ZCode CLI 数据目录里的落点
+// 本插件市场（zcode-plugins 仓库）在 ZCode CLI 数据目录里的落点。
+// 市场未添加时（新机器）从这里自动补装，免得“安装”按钮因市场缺失永远失败。
 const ZCODE_PLUGINS_MARKETPLACE = 'duanluan-zcode-plugins';
+const ZCODE_PLUGINS_MARKETPLACE_SOURCE = 'duanluan/zcode-plugins';
 
 function cliPluginsDir() {
   return join(homedir(), '.zcode', 'cli', 'plugins');
@@ -412,7 +414,7 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
           json(res, 500, { ok: false, code: 'vision-read', error: 'zcode-vision.json 不是合法 JSON' });
           return;
         }
-        json(res, 200, { ok: true, config: parsed, file });
+        json(res, 200, { ok: true, config: parsed, file, hook: findVisionHook(), pluginVersion: installedPluginVersion('zcode-vision') });
         return;
       }
       if (req.method === 'POST' && url.pathname === '/vision') {
@@ -899,6 +901,8 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         // name 指定时只处理该插件：已装且有更新则更新，未装则安装（各插件面板的单插件操作）
         const only = typeof body?.name === 'string' && body.name.trim() ? body.name.trim() : null;
         const steps = [];
+        const added = await ensureZcodePluginsMarketplace();
+        if (added) steps.push({ step: 'marketplace add', ok: added.ok, output: added.output || added.error });
         const sync = await runZcodeCli(['plugins', 'marketplace', 'update', ZCODE_PLUGINS_MARKETPLACE], 60000);
         lastMarketplaceSync = Date.now();
         steps.push({ step: 'marketplace update', ok: sync.ok, output: sync.output });
@@ -915,7 +919,10 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
               const r = await runZcodeCli(['plugins', 'update', `${p.name}@${ZCODE_PLUGINS_MARKETPLACE}`], 120000);
               steps.push({ step: `update ${p.name}`, ok: r.ok, output: r.output });
               if (r.ok) updated += 1;
-            } else if (!p.installed && (body?.installMissing || only)) {
+            } else if (!p.installed && only) {
+              // 安装只走单插件入口（name 指定＝各面板的安装卡）：
+              // 全量「检查并更新」/启动自动更新只升级已装插件——卸载必须被尊重，
+              // 未装插件一律由用户在各 tab 显式点安装
               const r = await runZcodeCli(['plugins', 'install', `${p.name}@${ZCODE_PLUGINS_MARKETPLACE}`], 120000);
               steps.push({ step: `install ${p.name}`, ok: r.ok, output: r.output });
               if (r.ok) updated += 1;
@@ -1909,31 +1916,51 @@ function startRtkUpgrade() {
   return rtkUpgradeSnapshot();
 }
 
-// 在插件缓存里找市场插件的钩子脚本（取版本号最大的目录，按数值比较，0.10.0 > 0.9.0）。
-// 只认纯数字版本目录：手动安装/升级的残留（如 1.0.2.bak-1.0.2）内容不全，不能选中。
+// 把目录追加进用户级 PATH（HKCU\Environment，Windows）：保持原值类型不展开（REG_EXPAND_SZ
+// 里的 %VAR% 引用原样保留），已含该目录则不动。不广播环境变更——运行中的进程读不到，
+// 重启 ZCode 后新会话生效（rtk 钩子按固定清单找 rtk，不受 PATH 影响）。
+async function ensureUserPathEntry(dir) {
+  const q = await execCapture('reg', ['query', 'HKCU\\Environment', '/v', 'PATH'], 15000);
+  if (!q.ok) {
+    const add = await execCapture('reg', ['add', 'HKCU\\Environment', '/v', 'PATH', '/t', 'REG_EXPAND_SZ', '/d', `%USERPROFILE%\\.local\\bin`, '/f'], 15000);
+    return add.ok;
+  }
+  const m = /PATH\s+(REG_SZ|REG_EXPAND_SZ)\s+(.*)/i.exec(q.output.replace(/\r?\n/g, ' ').trim());
+  if (!m) return false;
+  const cur = m[2].trim();
+  const norm = (s) => s.replace(/[/\\]+/g, '\\').replace(/\\+$/, '').toLowerCase();
+  const expanded = cur.replaceAll('%USERPROFILE%', homedir());
+  if (expanded.split(';').some((p) => p && norm(p) === norm(dir))) return true;
+  const next = cur ? `${cur};${dir}` : dir;
+  const r = await execCapture('reg', ['add', 'HKCU\\Environment', '/v', 'PATH', '/t', m[1], '/d', next, '/f'], 15000);
+  return r.ok;
+}
+
+// 在插件缓存里找市场插件的钩子脚本：只认 installed_plugins.json 登记的 installPath。
+// 不能按目录扫描：卸载只删「当前指向」的版本目录，缓存里的历史版本目录会残留
+// （升级留旧版、GitHub/本地源先后装过等），扫目录会把已卸载的插件误判为已装，
+// 面板就不显示安装卡了。本地开发流（install-plugin-local.sh）同样会更新安装记录，兼容。
 // 注意只认正式市场 duanluan-zcode-plugins：本地临时市场（如 duanluan-local）装的副本不在查找范围，
 // 属预期限制——正式发布从 duanluan-zcode-plugins 安装后即可用。
 function findMarketplaceHook(pluginName, hookRelPath) {
-  const base = join(cliPluginsDir(), 'cache', ZCODE_PLUGINS_MARKETPLACE, pluginName);
-  try {
-    const versions = readdirSync(base)
-      .filter((d) => /^\d+(\.\d+){0,3}$/.test(d))
-      .sort((a, b) => {
-        const pa = a.split('.').map(Number);
-        const pb = b.split('.').map(Number);
-        for (let i = 0; i < 3; i++) if ((pa[i] || 0) !== (pb[i] || 0)) return (pa[i] || 0) - (pb[i] || 0);
-        return 0;
-      });
-    for (let i = versions.length - 1; i >= 0; i--) {
-      const hook = join(base, versions[i], hookRelPath);
-      if (existsSync(hook)) return hook;
-    }
-  } catch { /* ignore */ }
+  const installedRaw = readJsonFile(join(cliPluginsDir(), 'installed_plugins.json'));
+  for (const rec of (installedRaw?.plugins || [])) {
+    if (rec?.name !== pluginName || rec?.marketplace !== ZCODE_PLUGINS_MARKETPLACE || !rec.installPath) continue;
+    const hook = join(rec.installPath, hookRelPath);
+    if (existsSync(hook)) return hook;
+  }
   return null;
 }
 
 function findVisionHook() {
   return findMarketplaceHook('zcode-vision', join('hooks', 'vision-hook.mjs'));
+}
+
+// 读市场插件在 installed_plugins.json 里登记的版本（面板信息卡显示「插件 x.y.z」用）
+function installedPluginVersion(pluginName) {
+  const installedRaw = readJsonFile(join(cliPluginsDir(), 'installed_plugins.json'));
+  const rec = (installedRaw?.plugins || []).find((p) => p?.name === pluginName && p?.marketplace === ZCODE_PLUGINS_MARKETPLACE);
+  return rec?.version || null;
 }
 
 // —— headroom 配置读写与状态解析（与 headroom-lib.sh 共用 ~/.zcode/headroom.json）——
@@ -2236,6 +2263,21 @@ export function pluginUpdateStatus() {
     hasUpdate: mine.has(e.name) && mine.get(e.name) !== (e.version || ''),
   }));
   return { plugins, updates: plugins.filter((e) => e.hasUpdate) };
+}
+
+// 市场未添加时自动补装（新机器上设置面板的“安装/更新”按钮一键可用）：
+// 读 known_marketplaces.json 判断，缺失则跑 plugins marketplace add。
+// 失败 30 分钟内不重试（add 是 git clone，GitHub 不通时每次面板请求都会白等
+// 最长 120 秒）；返回 null = 已存在无需处理，{ ok, cached } = 执行或跳过了 add。
+let lastMarketplaceAddFail = 0;
+async function ensureZcodePluginsMarketplace() {
+  const known = readJsonFile(join(cliPluginsDir(), 'known_marketplaces.json'));
+  const ids = new Set((known?.marketplaces || []).map((m) => m?.id).filter(Boolean));
+  if (ids.has(ZCODE_PLUGINS_MARKETPLACE)) return null;
+  if (Date.now() - lastMarketplaceAddFail < 30 * 60 * 1000) return { ok: false, cached: true, error: '上次添加市场失败，30 分钟内不再自动重试' };
+  const r = await runZcodeCli(['plugins', 'marketplace', 'add', ZCODE_PLUGINS_MARKETPLACE_SOURCE], 120000);
+  if (!r.ok) lastMarketplaceAddFail = Date.now();
+  return { ok: r.ok, output: r.output, error: r.error };
 }
 
 // 读全局提示词（~/.zcode/AGENTS.md）；文件不存在视为空内容。

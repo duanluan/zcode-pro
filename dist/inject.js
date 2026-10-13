@@ -190,7 +190,7 @@
     featurePinnedExpand: "\u7F6E\u9876\u4F1A\u8BDD\u4FDD\u6301\u9879\u76EE\u6298\u53E0\uFF08\u5B9E\u9A8C\u6027\uFF09",
     featurePinnedExpandDesc: "\u70B9\u51FB\u6298\u53E0\u9879\u76EE\u7684\u7F6E\u9876\u4F1A\u8BDD\u540E\u5C06\u5176\u4FDD\u6301\u6298\u53E0\u3002\u53D7\u9650\u4E8E\u5E94\u7528\u673A\u5236\uFF0C\u9879\u76EE\u4F1A\u5148\u77ED\u6682\u5C55\u5F00\u518D\u7F29\u8D77\u3002",
     featureAutoUpdatePlugins: "\u81EA\u52A8\u66F4\u65B0 zcode-plugins \u63D2\u4EF6",
-    featureAutoUpdatePluginsDesc: "\u542F\u52A8\u65F6\u81EA\u52A8\u68C0\u67E5\u5E76\u66F4\u65B0\u5DF2\u88C5\u7684 zcode-plugins \u63D2\u4EF6\uFF08\u542B\u5B89\u88C5\u5E02\u573A\u91CC\u65B0\u589E\u7684\u63D2\u4EF6\uFF09\uFF0C\u66F4\u65B0\u5728\u65B0\u4F1A\u8BDD\u751F\u6548\u3002",
+    featureAutoUpdatePluginsDesc: "\u542F\u52A8\u65F6\u81EA\u52A8\u68C0\u67E5\u5E76\u66F4\u65B0\u5DF2\u5B89\u88C5\u7684 zcode-plugins \u63D2\u4EF6\uFF08\u53EA\u5347\u7EA7\u4E0D\u5B89\u88C5\uFF0C\u5378\u8F7D\u4E0D\u4F1A\u88AB\u64A4\u9500\uFF09\uFF0C\u66F4\u65B0\u5728\u65B0\u4F1A\u8BDD\u751F\u6548\u3002",
     pluginsUpdateTitle: "\u63D2\u4EF6\u66F4\u65B0 \xB7 zcode-plugins",
     pluginsCheckNow: "\u68C0\u67E5\u5E76\u66F4\u65B0",
     pluginsUpdating: "\u6B63\u5728\u66F4\u65B0\u63D2\u4EF6\u2026",
@@ -202,7 +202,7 @@
     pluginsAutoUpdated: "zcode-plugins \u63D2\u4EF6\u5DF2\u66F4\u65B0",
     tabVision: "Vision",
     visionDesc: "\u4E3B\u6A21\u578B\u4E0D\u652F\u6301\u56FE\u7247\u8F93\u5165\u65F6\uFF08\u5982 glm-5.3\uFF09\uFF0C\u81EA\u52A8\u628A\u6D88\u606F\u91CC\u7684\u56FE\u7247\u4EA4\u7ED9\u4E0B\u9762\u7684\u89C6\u89C9\u6A21\u578B\u8BC6\u522B\uFF0C\u628A\u63CF\u8FF0\u5E26\u7ED9\u4E3B\u6A21\u578B\uFF08zcode-vision \u63D2\u4EF6\uFF1B/vision-* \u547D\u4EE4\u7F16\u8F91\u540C\u4E00\u914D\u7F6E\uFF09\u3002\u6539\u52A8\u81EA\u52A8\u4FDD\u5B58\u3002",
-    visionEnabled: "\u542F\u7528\u56FE\u7247\u8BC6\u522B",
+    visionEnabled: "\u542F\u7528",
     visionForceIntercept: "\u4E3B\u6A21\u578B\u80FD\u770B\u56FE\u4E5F\u62E6\u622A",
     visionMode: "\u94FE\u6A21\u5F0F",
     visionModeFallback: "\u4F9D\u6B21\u5C1D\u8BD5",
@@ -227,21 +227,21 @@
     visionResetChainConfirm: "\u5C06\u94FE\u6A21\u5F0F\u4E0E\u4EE3\u7406\u5217\u8868\u6062\u590D\u4E3A\u9ED8\u8BA4\u4E24\u7EA7\uFF08glm-session \u2192 glm-flash\uFF09\uFF0C\u5F53\u524D\u5BF9\u4EE3\u7406\u7684\u4FEE\u6539\u4F1A\u4E22\u5931\u3002\u7EE7\u7EED\uFF1F",
     visionBaseUrl: "\u63A5\u53E3\u5730\u5740 baseUrl",
     visionModel: "\u6A21\u578B",
-    visionFormat: "\u683C\u5F0F",
     visionApiKey: "API Key",
     visionApiKeyHint: "\u7559\u7A7A\u81EA\u52A8\u53D6 GLM \u8BA2\u9605 key",
     visionPrompt: "\u8BC6\u522B\u63D0\u793A\u8BCD\uFF08pipeline \u540E\u7EED\u6B65\u53EF\u7528 {prev} \u5F15\u7528\u4E0A\u4E00\u6B65\uFF09",
     visionTest: "\u6D4B\u8BD5",
     visionTesting: "\u6D4B\u8BD5\u4E2D\u2026",
     visionTestFailed: "\u89C6\u89C9\u4EE3\u7406\u6D4B\u8BD5\u5931\u8D25",
-    visionTestOutput: "\u6D4B\u8BD5\u8F93\u51FA",
     visionCompressKB: "\u538B\u7F29\u9608\u503C KB",
     visionCompressKBHint: "\u8D85\u8FC7\u8BE5\u5927\u5C0F\u7684\u56FE\u5148\u538B\u7F29\u518D\u8BC6\u522B\uFF08\u6700\u957F\u8FB9 2000\u3001JPEG\uFF09\uFF1B0 = \u4E0D\u538B\u7F29",
     visionLoadFailed: "\u8BFB\u53D6\u89C6\u89C9\u4EE3\u7406\u914D\u7F6E\u5931\u8D25",
     tabRtk: "rtk",
     rtkDesc: "rtk \u63D2\u4EF6\uFF1A\u628A\u5E38\u89C1\u5F00\u53D1\u547D\u4EE4\u7684\u8F93\u51FA\u538B\u7F29 60-90% \u518D\u8FDB\u5165\u4E0A\u4E0B\u6587\uFF08/rtk-* \u547D\u4EE4\u7F16\u8F91\u540C\u4E00\u914D\u7F6E\uFF09\u3002\u6539\u52A8\u81EA\u52A8\u4FDD\u5B58\u5E76\u7ACB\u5373\u751F\u6548\u3002",
-    rtkEnabled: "\u542F\u7528 rtk \u538B\u7F29",
-    rtkNotInstalled: "\u672A\u5B89\u88C5 rtk\uFF0C\u4EE5\u4E0B\u914D\u7F6E\u5C06\u5728\u5B89\u88C5\u540E\u751F\u6548\uFF08\u4F1A\u8BDD\u91CC\u53EF\u7528 /rtk-setup \u5B89\u88C5\uFF09",
+    rtkEnabled: "\u542F\u7528",
+    rtkNotInstalled: "\u672A\u5B89\u88C5 rtk \u672C\u4F53\uFF1B\u5B89\u88C5\u540E\u4EE5\u4E0B\u8BBE\u7F6E\u751F\u6548\uFF08\u4F1A\u8BDD\u91CC\u6267\u884C /rtk-setup \u4E5F\u53EF\u4EE5\uFF09",
+    rtkInstallBin: "\u5B89\u88C5 rtk \u672C\u4F53",
+    rtkBinInstalled: "rtk \u672C\u4F53\u5DF2\u5B89\u88C5\uFF1BPATH \u9700\u6CE8\u9500\u91CD\u767B\u540E\u5BF9\u4F1A\u8BDD\u751F\u6548\uFF0C\u63D2\u4EF6\u94A9\u5B50\u5373\u65F6\u751F\u6548",
     rtkWhitelistTitle: "\u767D\u540D\u5355\uFF08\u4E0D\u538B\u7F29\u76F4\u63A5\u653E\u884C\uFF09",
     rtkBuiltinLabel: "\u5185\u7F6E\u653E\u884C\uFF08\u53EA\u8BFB\uFF0C\u968F\u63D2\u4EF6\u66F4\u65B0\uFF09\uFF1A",
     rtkWhitelistDesc: "\u6BCF\u6761 name\uFF08\u5982 docker\uFF09\u6216 git:name\uFF08\u5982 git:clone\uFF09\u3002\u8F93\u51FA\u6781\u5C0F\u6216\u7EAF\u526F\u4F5C\u7528\u7684\u547D\u4EE4\u65E0\u9700\u538B\u7F29\uFF0C\u52A0\u5165\u540E\u4E0D\u518D\u538B\u7F29\uFF1B\u5185\u7F6E\u7684 git add/commit/push\u3001mkdir/cp \u7B49\u4E0D\u53EF\u79FB\u9664\u3002\u5220\u9664\u672C\u6587\u4EF6\u5373\u6062\u590D\u9ED8\u8BA4\u3002",
@@ -254,12 +254,25 @@
     tabHeadroom: "Headroom",
     headroomDesc: "Headroom \u63D2\u4EF6\uFF1A\u672C\u5730\u538B\u7F29\u4EE3\u7406\u9A7B\u7559 127.0.0.1\uFF08\u9ED8\u8BA4 8787 \u7AEF\u53E3\uFF09\uFF0C\u538B\u7F29\u53D1\u5F80\u6A21\u578B\u7684\u4E0A\u4E0B\u6587\u4EE5\u7701 token\uFF08/hr-* \u547D\u4EE4\u7F16\u8F91\u540C\u4E00\u914D\u7F6E\uFF09\u3002\u538B\u7F29\u8BBE\u5907\u4E0E\u7701\u7535\u5207\u6362\u4FDD\u5B58\u540E\u7ACB\u5373\u751F\u6548\uFF1B\u5207\u6362\u8BBE\u5907\u4F1A\u91CD\u542F\u4EE3\u7406\uFF0C\u6B63\u5728\u5904\u7406\u7684\u8BF7\u6C42\u53EF\u80FD\u4E2D\u65AD\u4E00\u6B21\u3002",
     headroomBinMissing: "\u672A\u627E\u5230 headroom \u7A0B\u5E8F\uFF0C\u4EE3\u7406\u65E0\u6CD5\u542F\u52A8\uFF1B\u5B89\u88C5 headroom \u540E\u4EE5\u4E0B\u8BBE\u7F6E\u81EA\u52A8\u751F\u6548",
+    hrInstallBin: "\u5B89\u88C5 headroom \u672C\u4F53",
+    hrBinInstalled: "headroom \u672C\u4F53\u5DF2\u5B89\u88C5\uFF1B\u91CD\u65B0\u6253\u5F00\u4F1A\u8BDD\u540E\u4EE3\u7406\u53EF\u7528\uFF08SessionStart \u94A9\u5B50\u81EA\u52A8\u62C9\u8D77\uFF09",
     headroomInstallTitle: "\u672A\u5B89\u88C5 headroom \u63D2\u4EF6",
     headroomInstallDesc: "\u4ECE zcode-plugins \u5E02\u573A\u5B89\u88C5\u540E\u5373\u53EF\u5728\u6B64\u7BA1\u7406\u538B\u7F29\u4EE3\u7406\uFF1B\u5EFA\u8BAE\u5B89\u88C5\u540E\u91CD\u542F\u4F1A\u8BDD\u751F\u6548\u3002",
     headroomInstall: "\u5B89\u88C5",
     headroomInstalling: "\u5B89\u88C5\u4E2D\u2026",
     headroomInstalled: "\u5DF2\u5B89\u88C5 headroom \u63D2\u4EF6",
     headroomInstallRetry: "\u5B89\u88C5\u672A\u751F\u6548\uFF0C\u8BF7\u91CD\u8BD5\u6216\u624B\u52A8\u5728\u63D2\u4EF6\u5E02\u573A\u5B89\u88C5",
+    pluginInstallCardTitle: "\u672A\u5B89\u88C5 {name} \u63D2\u4EF6",
+    pluginInstallCardDesc: "\u4ECE zcode-plugins \u5E02\u573A\u5B89\u88C5\u540E\u5373\u53EF\u5728\u6B64\u7BA1\u7406\uFF1B\u5EFA\u8BAE\u5B89\u88C5\u540E\u91CD\u542F\u4F1A\u8BDD\u751F\u6548\u3002",
+    pluginInstallDone: "\u5DF2\u5B89\u88C5 {name} \u63D2\u4EF6",
+    pluginEnable: "\u542F\u7528",
+    hrStarting: "\u6B63\u5728\u542F\u52A8\u538B\u7F29\u4EE3\u7406\u2026",
+    hrStarted: "\u538B\u7F29\u4EE3\u7406\u5DF2\u542F\u52A8",
+    hrStartTimeout: "\u4EE3\u7406\u542F\u52A8\u8D85\u65F6\uFF0890 \u79D2\uFF09\uFF0C\u8BF7\u68C0\u67E5 ~/.zcode-headroom-proxy.log",
+    hrStopping: "\u6B63\u5728\u505C\u6B62\u538B\u7F29\u4EE3\u7406\u2026",
+    hrRestarting: "\u6B63\u5728\u91CD\u542F\u538B\u7F29\u4EE3\u7406\u2026",
+    hrStopped: "\u538B\u7F29\u4EE3\u7406\u5DF2\u505C\u6B62",
+    hrUsageNone: "\u5F53\u524D\u6CA1\u6709\u8D70 headroom \u7684\u4F9B\u5E94\u5546\uFF0C\u672A\u5207\u6362",
     headroomLoadFailed: "\u8BFB\u53D6 Headroom \u914D\u7F6E\u5931\u8D25",
     headroomStatusTitle: "\u8FD0\u884C\u72B6\u6001",
     headroomStatusLoadFailed: "\u8BFB\u53D6\u8FD0\u884C\u72B6\u6001\u5931\u8D25",
@@ -518,7 +531,7 @@
     featurePinnedExpand: "Keep projects collapsed for pinned sessions (experimental)",
     featurePinnedExpandDesc: "Keeps the project collapsed after clicking a pinned session. Note: it briefly expands first, then collapses.",
     featureAutoUpdatePlugins: "Auto-update zcode-plugins plugins",
-    featureAutoUpdatePluginsDesc: "Checks and updates installed zcode-plugins plugins on startup (including newly added ones). Updates apply to new sessions.",
+    featureAutoUpdatePluginsDesc: "Checks and updates installed zcode-plugins plugins on startup (updates only \u2014 never installs; uninstalled plugins stay uninstalled). Updates apply to new sessions.",
     pluginsUpdateTitle: "Plugin updates \xB7 zcode-plugins",
     pluginsCheckNow: "Check & update",
     pluginsUpdating: "Updating plugins\u2026",
@@ -530,7 +543,7 @@
     pluginsAutoUpdated: "zcode-plugins updated",
     tabVision: "Vision",
     visionDesc: "When the main model cannot see images (e.g. glm-5.3), images in messages are recognized by the vision models below and passed to the main model as text (zcode-vision plugin; /vision-* commands edit the same file). Changes save automatically.",
-    visionEnabled: "Enable image recognition",
+    visionEnabled: "Enable",
     visionForceIntercept: "Intercept even if the main model sees images",
     visionMode: "Chain mode",
     visionModeFallback: "Fallback",
@@ -555,21 +568,21 @@
     visionResetChainConfirm: "Reset chain mode and the proxy list to the default 2-level chain (glm-session \u2192 glm-flash)? Current proxy edits will be lost. Continue?",
     visionBaseUrl: "Base URL",
     visionModel: "Model",
-    visionFormat: "Format",
     visionApiKey: "API Key",
     visionApiKeyHint: "Leave empty to reuse the GLM subscription key",
     visionPrompt: "Recognition prompt ({prev} = previous step in pipeline)",
     visionTest: "Test",
     visionTesting: "Testing\u2026",
     visionTestFailed: "Vision proxy test failed",
-    visionTestOutput: "Test output",
     visionCompressKB: "Compress threshold KB",
     visionCompressKBHint: "Images above this size are compressed first (max edge 2000, JPEG); 0 = never",
     visionLoadFailed: "Failed to load the vision config",
     tabRtk: "rtk",
     rtkDesc: "rtk plugin: compresses common dev command output by 60-90% before it reaches the context (/rtk-* commands edit the same files). Changes save automatically and apply immediately.",
-    rtkEnabled: "Enable rtk compression",
+    rtkEnabled: "Enable",
     rtkNotInstalled: "rtk is not installed. The settings below take effect after installation (/rtk-setup in a session).",
+    rtkInstallBin: "Install rtk binary",
+    rtkBinInstalled: "rtk installed; PATH takes effect for sessions after signing out and back in \u2014 the plugin hook works immediately",
     rtkWhitelistTitle: "Whitelist (pass through without compression)",
     rtkBuiltinLabel: "Built-in exemptions (read-only, follow plugin updates):",
     rtkWhitelistDesc: "Each entry is name (e.g. docker) or git:name (e.g. git:clone). Commands with tiny or no output need no compression; adding them skips compression. Built-ins (git add/commit/push, mkdir/cp, \u2026) cannot be removed. Delete the file to reset.",
@@ -582,12 +595,25 @@
     tabHeadroom: "Headroom",
     headroomDesc: "Headroom plugin: a local compression proxy on 127.0.0.1 (port 8787 by default) that compresses context sent to the model to save tokens (/hr-* commands edit the same file). Device and power-save changes apply immediately; switching the device restarts the proxy, so requests in progress may be interrupted once.",
     headroomBinMissing: "The headroom program was not found, so the proxy cannot start. The settings below take effect once it is installed.",
+    hrInstallBin: "Install headroom binary",
+    hrBinInstalled: "headroom installed; reopen a session and the hook will start the proxy automatically",
     headroomInstallTitle: "headroom plugin not installed",
     headroomInstallDesc: "Install it from the zcode-plugins marketplace to manage the compression proxy here; restarting the session afterwards is recommended.",
     headroomInstall: "Install",
     headroomInstalling: "Installing\u2026",
     headroomInstalled: "headroom plugin installed",
     headroomInstallRetry: "Installation did not take effect; retry or install it from the marketplace manually",
+    pluginInstallCardTitle: "{name} plugin not installed",
+    pluginInstallCardDesc: "Install it from the zcode-plugins marketplace to manage it here; restarting the session afterwards is recommended.",
+    pluginInstallDone: "{name} plugin installed",
+    pluginEnable: "Enable",
+    hrStarting: "Starting compression proxy\u2026",
+    hrStarted: "Compression proxy started",
+    hrStartTimeout: "Proxy start timed out (90s); check ~/.zcode-headroom-proxy.log",
+    hrStopping: "Stopping compression proxy\u2026",
+    hrRestarting: "Restarting compression proxy\u2026",
+    hrStopped: "Compression proxy stopped",
+    hrUsageNone: "No providers route through headroom; nothing changed",
     headroomLoadFailed: "Failed to load the Headroom config",
     headroomStatusTitle: "Status",
     headroomStatusLoadFailed: "Failed to load the status",
@@ -3004,7 +3030,7 @@
         const runPluginsUpdate = async () => {
           pluginsBtn.disabled = true;
           pluginsStatusLine.textContent = L.pluginsUpdating;
-          const res = await rpc("/plugins/update", { method: "POST", body: { installMissing: true } });
+          const res = await rpc("/plugins/update", { method: "POST", body: {} });
           pluginsBtn.disabled = false;
           if (!res.ok) {
             pluginsStatusLine.textContent = "";
@@ -3884,7 +3910,57 @@
           style: "display:none"
         });
         const visionInputCls = "h-8 w-full rounded-lg border border-border bg-input px-2.5 text-ui-sm text-foreground outline-none transition-shadow placeholder:text-foreground-subtle focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40";
+        const pluginInstallCard = (pluginName, onInstalled) => {
+          const installBtn = btnSmall(L.headroomInstall, () => {
+            void runInstall();
+          }, "shrink-0");
+          const installState = h("div", { class: "mt-0.5 truncate text-ui-xs/relaxed text-foreground-subtle" });
+          const runInstall = async () => {
+            installBtn.disabled = true;
+            installBtn.textContent = L.headroomInstalling;
+            installState.textContent = "";
+            const res = await rpc("/plugins/update", { method: "POST", body: { name: pluginName } });
+            if (!res.ok) {
+              installBtn.disabled = false;
+              installBtn.textContent = L.headroomInstall;
+              showToast(L.pluginsUpdateFailed + ": " + errText(res), "error");
+              return;
+            }
+            if (onInstalled) await onInstalled();
+            showToast(L.pluginInstallDone.replaceAll("{name}", pluginName), "success");
+          };
+          return h(
+            "div",
+            { class: "mt-3 flex items-center justify-between gap-2 rounded-xl border border-border p-2" },
+            h(
+              "div",
+              { class: "min-w-0" },
+              h("div", { class: "text-ui-sm font-medium text-foreground" }, L.pluginInstallCardTitle.replaceAll("{name}", pluginName)),
+              h("div", { class: "mt-0.5 text-ui-xs/relaxed text-foreground-subtle" }, L.pluginInstallCardDesc),
+              installState
+            ),
+            installBtn
+          );
+        };
         const renderVision = () => {
+          if (!visionRes.ok) {
+            paneVision.replaceChildren(
+              h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.visionDesc),
+              h("p", { class: "mt-2 text-ui-sm text-destructive" }, L.visionLoadFailed + ": " + errText(visionRes))
+            );
+            return;
+          }
+          if (!visionRes.hook) {
+            paneVision.replaceChildren(
+              h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.visionDesc),
+              pluginInstallCard("zcode-vision", async () => {
+                const meta = await rpc("/vision");
+                if (meta.ok) Object.assign(visionRes, meta);
+                renderVision();
+              })
+            );
+            return;
+          }
           if (!visionCfg) {
             const initBtn = btnSmall(L.visionAddProxy, async () => {
               const res = await rpc("/vision", { method: "POST", body: { config: VISION_DEFAULT_CFG } });
@@ -3896,6 +3972,16 @@
             paneVision.replaceChildren(
               h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.visionDesc),
               ...visionRes.ok ? [] : [h("p", { class: "mt-2 text-ui-sm text-destructive" }, L.visionLoadFailed + ": " + errText(visionRes))],
+              // 信息卡（仅版本行；配置未建，启用开关随配置出现）
+              h(
+                "div",
+                { class: "mt-3 rounded-xl border border-border p-2" },
+                h(
+                  "div",
+                  { class: "flex flex-wrap items-center gap-2" },
+                  h("span", { class: "shrink-0 whitespace-nowrap text-ui-xs/relaxed text-foreground-subtle" }, `\u63D2\u4EF6 ${visionRes.pluginVersion || "\u2014"}`)
+                )
+              ),
               h("div", { class: "mt-3 flex justify-end" }, initBtn)
             );
             return;
@@ -4068,7 +4154,26 @@
           });
           paneVision.replaceChildren(
             h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.visionDesc),
-            // 链模式 + 两个开关合到一行（顶部已有简介，开关不再单占一块、不带描述）
+            // 信息卡：插件版本 + 启用图片识别开关（与 rtk/headroom 面板同款式）
+            h(
+              "div",
+              { class: "mt-3 rounded-xl border border-border p-2" },
+              h(
+                "div",
+                { class: "flex flex-wrap items-center gap-2" },
+                h("span", { class: "shrink-0 whitespace-nowrap text-ui-xs/relaxed text-foreground-subtle" }, `\u63D2\u4EF6 ${visionRes.pluginVersion || "\u2014"}`),
+                h(
+                  "div",
+                  { class: "ml-auto" },
+                  settingRow(L.visionEnabled, "", visionCfg.enabled !== false, async () => {
+                    visionCfg.enabled = !(visionCfg.enabled !== false);
+                    await persistVision();
+                    renderVision();
+                  })
+                )
+              )
+            ),
+            // 链模式 + 强制拦截开关合到一行（启用开关已上移信息卡）
             h(
               "div",
               { class: "mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-xl border border-border p-1" },
@@ -4078,11 +4183,6 @@
               h(
                 "div",
                 { class: "ml-auto flex items-center gap-4" },
-                settingRow(L.visionEnabled, "", visionCfg.enabled !== false, async () => {
-                  visionCfg.enabled = !(visionCfg.enabled !== false);
-                  await persistVision();
-                  renderVision();
-                }),
                 settingRow(L.visionForceIntercept, "", visionCfg.forceIntercept !== false, async () => {
                   visionCfg.forceIntercept = !(visionCfg.forceIntercept !== false);
                   await persistVision();
@@ -4334,7 +4434,7 @@
               installBtn.disabled = true;
               installBtn.textContent = L.headroomInstalling;
               installState.textContent = "";
-              const res = await rpc("/plugins/update", { method: "POST", body: { name: "headroom", installMissing: true } });
+              const res = await rpc("/plugins/update", { method: "POST", body: { name: "headroom" } });
               if (!res.ok) {
                 installBtn.disabled = false;
                 installBtn.textContent = L.headroomInstall;
@@ -6045,7 +6145,7 @@
     if (status.updates.length === 0) return;
     const config = await getConfig();
     if ((config.features || {}).autoUpdatePlugins === true) {
-      const res = await rpc("/plugins/update", { method: "POST", body: { installMissing: true } });
+      const res = await rpc("/plugins/update", { method: "POST", body: {} });
       if (res.ok) showToast(L.pluginsAutoUpdated, "success");
       else showToast(L.pluginsUpdateFailed + ": " + (res.error || ""), "error");
       return;

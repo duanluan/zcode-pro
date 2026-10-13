@@ -14,7 +14,7 @@ export async function startPluginUpdateCheck() {
 
   const config = await getConfig();
   if ((config.features || {}).autoUpdatePlugins === true) {
-    const res = await rpc('/plugins/update', { method: 'POST', body: { installMissing: true } });
+    const res = await rpc('/plugins/update', { method: 'POST', body: {} });
     if (res.ok) showToast(L.pluginsAutoUpdated, 'success');
     else showToast(L.pluginsUpdateFailed + ': ' + (res.error || ''), 'error');
     return;

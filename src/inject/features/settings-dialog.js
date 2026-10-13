@@ -323,7 +323,7 @@ export function openSettingsDialog() {
       const runPluginsUpdate = async () => {
         pluginsBtn.disabled = true;
         pluginsStatusLine.textContent = L.pluginsUpdating;
-        const res = await rpc('/plugins/update', { method: 'POST', body: { installMissing: true } });
+        const res = await rpc('/plugins/update', { method: 'POST', body: {} });
         pluginsBtn.disabled = false;
         if (!res.ok) {
           pluginsStatusLine.textContent = '';
@@ -1134,7 +1134,55 @@ export function openSettingsDialog() {
         style: 'display:none',
       });
       const visionInputCls = 'h-8 w-full rounded-lg border border-border bg-input px-2.5 text-ui-sm text-foreground outline-none transition-shadow placeholder:text-foreground-subtle focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40';
+      // 未装插件时的一键安装卡（与 Headroom 面板同款交互）：helper 单插件安装，
+      // 装完 onInstalled 原地恢复面板。rtk/vision 面板共用。
+      const pluginInstallCard = (pluginName, onInstalled) => {
+        const installBtn = btnSmall(L.headroomInstall, () => { void runInstall(); }, 'shrink-0');
+        const installState = h('div', { class: 'mt-0.5 truncate text-ui-xs/relaxed text-foreground-subtle' });
+        const runInstall = async () => {
+          installBtn.disabled = true;
+          installBtn.textContent = L.headroomInstalling;
+          installState.textContent = '';
+          const res = await rpc('/plugins/update', { method: 'POST', body: { name: pluginName } });
+          if (!res.ok) {
+            installBtn.disabled = false;
+            installBtn.textContent = L.headroomInstall;
+            showToast(L.pluginsUpdateFailed + ': ' + errText(res), 'error');
+            return;
+          }
+          if (onInstalled) await onInstalled();
+          showToast(L.pluginInstallDone.replaceAll('{name}', pluginName), 'success');
+        };
+        return h('div', { class: 'mt-3 flex items-center justify-between gap-2 rounded-xl border border-border p-2' },
+          h('div', { class: 'min-w-0' },
+            h('div', { class: 'text-ui-sm font-medium text-foreground' }, L.pluginInstallCardTitle.replaceAll('{name}', pluginName)),
+            h('div', { class: 'mt-0.5 text-ui-xs/relaxed text-foreground-subtle' }, L.pluginInstallCardDesc),
+            installState),
+          installBtn);
+      };
+
       const renderVision = () => {
+        if (!visionRes.ok) {
+          paneVision.replaceChildren(
+            h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.visionDesc),
+            h('p', { class: 'mt-2 text-ui-sm text-destructive' }, L.visionLoadFailed + ': ' + errText(visionRes)),
+          );
+          return;
+        }
+        // 插件未装优先显示安装卡——判断只看钩子（visionRes.hook），与配置文件是否存在无关：
+        // 配置是钩子消费的，没钩子就没功能；老用户卸载插件后 ~/.zcode/zcode-vision.json 仍在，
+        // 若按配置存在与否分流会误入完整配置界面而毫无「未安装」提示
+        if (!visionRes.hook) {
+          paneVision.replaceChildren(
+            h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.visionDesc),
+            pluginInstallCard('zcode-vision', async () => {
+              const meta = await rpc('/vision');
+              if (meta.ok) Object.assign(visionRes, meta);
+              renderVision();
+            }),
+          );
+          return;
+        }
         if (!visionCfg) {
           const initBtn = btnSmall(L.visionAddProxy, async () => {
             const res = await rpc('/vision', { method: 'POST', body: { config: VISION_DEFAULT_CFG } });
@@ -1144,6 +1192,10 @@ export function openSettingsDialog() {
           paneVision.replaceChildren(
             h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.visionDesc),
             ...(visionRes.ok ? [] : [h('p', { class: 'mt-2 text-ui-sm text-destructive' }, L.visionLoadFailed + ': ' + errText(visionRes))]),
+            // 信息卡（仅版本行；配置未建，启用开关随配置出现）
+            h('div', { class: 'mt-3 rounded-xl border border-border p-2' },
+              h('div', { class: 'flex flex-wrap items-center gap-2' },
+                h('span', { class: 'shrink-0 whitespace-nowrap text-ui-xs/relaxed text-foreground-subtle' }, `插件 ${visionRes.pluginVersion || '—'}`))),
             h('div', { class: 'mt-3 flex justify-end' }, initBtn),
           );
           return;
@@ -1265,17 +1317,22 @@ export function openSettingsDialog() {
         });
         paneVision.replaceChildren(
           h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.visionDesc),
-          // 链模式 + 两个开关合到一行（顶部已有简介，开关不再单占一块、不带描述）
+          // 信息卡：插件版本 + 启用图片识别开关（与 rtk/headroom 面板同款式）
+          h('div', { class: 'mt-3 rounded-xl border border-border p-2' },
+            h('div', { class: 'flex flex-wrap items-center gap-2' },
+              h('span', { class: 'shrink-0 whitespace-nowrap text-ui-xs/relaxed text-foreground-subtle' }, `插件 ${visionRes.pluginVersion || '—'}`),
+              h('div', { class: 'ml-auto' },
+                settingRow(L.visionEnabled, '', visionCfg.enabled !== false, async () => {
+                  visionCfg.enabled = !(visionCfg.enabled !== false);
+                  await persistVision();
+                  renderVision();
+                })))),
+          // 链模式 + 强制拦截开关合到一行（启用开关已上移信息卡）
           h('div', { class: 'mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-xl border border-border p-1' },
             h('span', { class: 'ml-1.5 shrink-0 text-ui-sm font-medium text-foreground' }, L.visionMode),
             modeBtn('fallback', L.visionModeFallback, L.visionModeFallbackDesc),
             modeBtn('pipeline', L.visionModePipeline, L.visionModePipelineDesc),
             h('div', { class: 'ml-auto flex items-center gap-4' },
-              settingRow(L.visionEnabled, '', visionCfg.enabled !== false, async () => {
-                visionCfg.enabled = !(visionCfg.enabled !== false);
-                await persistVision();
-                renderVision();
-              }),
               settingRow(L.visionForceIntercept, '', visionCfg.forceIntercept !== false, async () => {
                 visionCfg.forceIntercept = !(visionCfg.forceIntercept !== false);
                 await persistVision();
@@ -1497,7 +1554,7 @@ export function openSettingsDialog() {
             installBtn.disabled = true;
             installBtn.textContent = L.headroomInstalling;
             installState.textContent = '';
-            const res = await rpc('/plugins/update', { method: 'POST', body: { name: 'headroom', installMissing: true } });
+            const res = await rpc('/plugins/update', { method: 'POST', body: { name: 'headroom' } });
             if (!res.ok) {
               installBtn.disabled = false;
               installBtn.textContent = L.headroomInstall;
