@@ -38,16 +38,24 @@
     agentsSave: "\u4FDD\u5B58",
     agentsSaved: "\u5168\u5C40\u63D0\u793A\u8BCD\u5DF2\u4FDD\u5B58",
     agentsLoadFailed: "\u8BFB\u53D6\u5168\u5C40\u63D0\u793A\u8BCD\u5931\u8D25",
-    proxyDesc: "\u4E3A ZCode Pro \u672C\u5730\u52A9\u624B\u53D1\u8D77\u7684\u7F51\u7EDC\u8BBF\u95EE\u8BBE\u7F6E HTTP \u4EE3\u7406\uFF1A\u63D2\u4EF6\u5E02\u573A\u7684\u66F4\u65B0\u4E0E\u5B89\u88C5\u3001Headroom \u672C\u4F53\u7684\u68C0\u67E5\u66F4\u65B0\u4E0E\u5347\u7EA7\u90FD\u4F1A\u8D70\u8BE5\u4EE3\u7406\u3002\u4E0D\u5F71\u54CD ZCode \u5E94\u7528\u672C\u8EAB\u4E0E\u6A21\u578B\u8BF7\u6C42\uFF0C\u4FDD\u5B58\u540E\u7ACB\u5373\u751F\u6548\u3002",
+    proxyDesc: "\u4E3A ZCode Pro \u672C\u5730\u52A9\u624B\u53D1\u8D77\u7684\u7F51\u7EDC\u8BBF\u95EE\u8BBE\u7F6E HTTP \u4EE3\u7406\uFF1A\u63D2\u4EF6\u5E02\u573A\u7684\u66F4\u65B0\u4E0E\u5B89\u88C5\u3001\u63D2\u4EF6\u4F9D\u8D56\u8F6F\u4EF6\u7684\u5B89\u88C5\u4E0E\u5347\u7EA7\u3001WebDAV \u540C\u6B65\u90FD\u53EF\u8D70\u8BE5\u4EE3\u7406\uFF0C\u7528\u4E0B\u65B9\u5F00\u5173\u9009\u62E9\u751F\u6548\u8303\u56F4\u3002\u4E0D\u5F71\u54CD ZCode \u5E94\u7528\u672C\u8EAB\u4E0E\u6A21\u578B\u8BF7\u6C42\uFF0C\u4FDD\u5B58\u540E\u7ACB\u5373\u751F\u6548\u3002",
     proxyPlaceholder: "http://127.0.0.1:7890",
     proxySave: "\u4FDD\u5B58",
     proxySaved: "\u4EE3\u7406\u8BBE\u7F6E\u5DF2\u4FDD\u5B58",
     proxyHint: "\u7559\u7A7A\u4FDD\u5B58\u5373\u6E05\u9664\u4EE3\u7406\u3002",
     proxyTest: "\u68C0\u6D4B",
     proxyTesting: "\u68C0\u6D4B\u4E2D\u2026",
+    proxyTestEmpty: "\u8BF7\u5148\u8F93\u5165\u4EE3\u7406\u5730\u5740",
     proxyTestFailed: "\u68C0\u6D4B\u5931\u8D25",
+    proxyScopePlugins: "\u63D2\u4EF6\u5E02\u573A\u66F4\u65B0",
+    proxyScopePluginsDesc: "\u63D2\u4EF6\u5E02\u573A\u7684\u68C0\u67E5\u66F4\u65B0\u3001\u5B89\u88C5\u4E0E\u5378\u8F7D\uFF08zcode CLI \u7684 git \u64CD\u4F5C\uFF09\u8D70\u4EE3\u7406\u3002",
+    proxyScopeDeps: "\u63D2\u4EF6\u4F9D\u8D56\u8F6F\u4EF6",
+    proxyScopeDepsDesc: "headroom \u4E0E rtk \u7684\u5B89\u88C5\u3001\u68C0\u67E5\u66F4\u65B0\u4E0E\u5347\u7EA7\uFF08pip \u4E0E GitHub \u4E0B\u8F7D\uFF09\u8D70\u4EE3\u7406\u3002",
+    proxyScopeSync: "\u540C\u6B65",
+    proxyScopeSyncDesc: "WebDAV \u4E0A\u4F20\u4E0E\u4E0B\u8F7D\u8D70\u4EE3\u7406\u3002\u9ED8\u8BA4\u5173\u95ED\uFF1A\u575A\u679C\u4E91\u7B49\u56FD\u5185\u7F51\u76D8\u76F4\u8FDE\u5373\u53EF\uFF0C\u4EE3\u7406\u505C\u4E86\u540C\u6B65\u4F1A\u8DDF\u7740\u5931\u8D25\u3002",
     tabSync: "\u540C\u6B65",
-    syncDesc: "\u624B\u52A8\u628A ZCode Pro \u8BBE\u7F6E\u4E0E\u6A21\u578B\u8BBE\u7F6E\u5907\u4EFD\u5230 WebDAV\uFF0C\u6216\u5728\u65B0\u7535\u8111\u4E0A\u6062\u590D\u3002\u4E24\u9879\u5404\u81EA\u72EC\u7ACB\u6210\u6587\u4EF6\uFF0C\u53EF\u53EA\u4E0A\u4F20\u6216\u53EA\u8986\u76D6\u5176\u4E2D\u4E00\u9879\uFF1B\u4EC5\u5728\u70B9\u51FB\u6309\u94AE\u65F6\u4F20\u8F93\uFF0C\u4E0D\u505A\u81EA\u52A8\u540C\u6B65\u3002",
+    tabDebug: "\u8C03\u8BD5",
+    syncDesc: "\u624B\u52A8\u628A ZCode Pro \u8BBE\u7F6E\u4E0E\u6A21\u578B\u8BBE\u7F6E\u5907\u4EFD\u5230 WebDAV\uFF0C\u6216\u5728\u65B0\u7535\u8111\u4E0A\u6062\u590D\u3002\u4E24\u9879\u5404\u81EA\u72EC\u7ACB\u6210\u6587\u4EF6\uFF0C\u53EF\u53EA\u4E0A\u4F20\u6216\u53EA\u8986\u76D6\u5176\u4E2D\u4E00\u9879\uFF1B\u6BCF\u6B21\u4E0A\u4F20\u4F1A\u989D\u5916\u4FDD\u7559\u4E00\u4EFD\u5E26\u65F6\u95F4\u6233\u7684\u5386\u53F2\u7248\u672C\uFF0C\u4E0B\u8F7D\u65F6\u4EFB\u9009\u4E00\u4E2A\u7248\u672C\u6062\u590D\uFF1B\u4EC5\u5728\u70B9\u51FB\u6309\u94AE\u65F6\u4F20\u8F93\uFF0C\u4E0D\u505A\u81EA\u52A8\u540C\u6B65\u3002",
     syncUrlPlaceholder: "https://dav.jianguoyun.com/dav/",
     syncDir: "\u4E0A\u4F20\u76EE\u5F55",
     syncDirPlaceholder: "zcode-pro",
@@ -330,16 +338,24 @@
     agentsSave: "Save",
     agentsSaved: "Global prompt saved.",
     agentsLoadFailed: "Failed to load the global prompt",
-    proxyDesc: "Set an HTTP proxy for network access made by the local helper: plugin marketplace updates and installs, headroom update checks and upgrades. Does not affect the ZCode app itself or model requests. Applies immediately.",
+    proxyDesc: "Set an HTTP proxy for network access made by the local helper: plugin marketplace updates and installs, plugin dependency installs and upgrades, and WebDAV sync can all use it \u2014 pick the scopes with the toggles below. Does not affect the ZCode app itself or model requests. Applies immediately.",
     proxyPlaceholder: "http://127.0.0.1:7890",
     proxySave: "Save",
     proxySaved: "Proxy settings saved.",
     proxyHint: "Save empty to clear the proxy.",
     proxyTest: "Test",
     proxyTesting: "Testing\u2026",
+    proxyTestEmpty: "Enter a proxy address first",
     proxyTestFailed: "Test failed",
+    proxyScopePlugins: "Plugin marketplace",
+    proxyScopePluginsDesc: "Marketplace checks, installs and uninstalls (zcode CLI git operations) go through the proxy.",
+    proxyScopeDeps: "Plugin dependencies",
+    proxyScopeDepsDesc: "headroom and rtk installs, update checks and upgrades (pip and GitHub downloads) go through the proxy.",
+    proxyScopeSync: "Sync",
+    proxyScopeSyncDesc: "WebDAV upload and download go through the proxy. Off by default: domestic WebDAV providers work fine direct, and a stopped proxy breaks sync.",
     tabSync: "Sync",
-    syncDesc: "Manually back up ZCode Pro settings and model settings to WebDAV, or restore them on a new computer. The two items are stored as separate files, so you can upload or overwrite either one alone; data moves only when you click, never automatically.",
+    tabDebug: "Debug",
+    syncDesc: "Manually back up ZCode Pro settings and model settings to WebDAV, or restore them on a new computer. The two items are stored as separate files, so you can upload or overwrite either one alone; every upload also keeps a timestamped history version and download lets you pick any of them. Data moves only when you click, never automatically.",
     syncUrlPlaceholder: "https://dav.example.com/dav/",
     syncDir: "\u4E0A\u4F20\u76EE\u5F55",
     syncDirPlaceholder: "zcode-pro",
@@ -3278,6 +3294,11 @@
         }, "shrink-0");
         const runProxyTest = async () => {
           if (proxyTesting) return;
+          if (!proxyInput.value.trim()) {
+            proxyTestState.className = "mt-2 text-ui-xs/relaxed text-amber-500";
+            proxyTestState.textContent = L.proxyTestEmpty;
+            return;
+          }
           proxyTesting = true;
           proxyTestBtn.disabled = true;
           proxyTestBtn.textContent = L.proxyTesting;
@@ -3297,6 +3318,37 @@
           proxyTestState.className = "mt-2 text-ui-xs/relaxed " + (allOk ? "text-foreground-subtle" : "text-amber-500");
           proxyTestState.textContent = `${res.proxy}\uFF1A${parts.join(" \xB7 ")}`;
         };
+        const persistProxyScope = async (partial) => {
+          const res = await rpc("/config", { method: "POST", body: { proxyScopes: partial } });
+          if (!res.ok) {
+            showToast(L.failed + ": " + errText(res), "error");
+            return false;
+          }
+          if (res.config && res.config.proxyScopes) config.proxyScopes = res.config.proxyScopes;
+          return true;
+        };
+        const proxyScopeWrap = h("div");
+        const renderProxyScopes = () => {
+          const sc = config.proxyScopes || {};
+          proxyScopeWrap.replaceChildren(
+            settingRow(L.proxyScopePlugins, L.proxyScopePluginsDesc, sc.plugins !== false, async () => {
+              const next = !(sc.plugins !== false);
+              if (await persistProxyScope({ plugins: next })) sc.plugins = next;
+              renderProxyScopes();
+            }),
+            settingRow(L.proxyScopeDeps, L.proxyScopeDepsDesc, sc.deps !== false, async () => {
+              const next = !(sc.deps !== false);
+              if (await persistProxyScope({ deps: next })) sc.deps = next;
+              renderProxyScopes();
+            }),
+            settingRow(L.proxyScopeSync, L.proxyScopeSyncDesc, sc.sync === true, async () => {
+              const next = !(sc.sync === true);
+              if (await persistProxyScope({ sync: next })) sc.sync = next;
+              renderProxyScopes();
+            })
+          );
+        };
+        renderProxyScopes();
         paneProxy.append(
           h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.proxyDesc),
           h(
@@ -3307,7 +3359,8 @@
             proxyTestBtn
           ),
           h("p", { class: "mt-2 text-ui-xs/relaxed text-foreground-subtle" }, L.proxyHint),
-          proxyTestState
+          proxyTestState,
+          h("div", { class: "mt-3 divide-y divide-border rounded-xl border border-border" }, proxyScopeWrap)
         );
         const perfToggleWrap = h("div");
         const renderPerfToggle = () => {

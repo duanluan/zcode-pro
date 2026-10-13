@@ -88,9 +88,19 @@ export function defaultConfig() {
     },
     // 项目路径（规范化，无尾分隔符）→ 自定义别名。只影响界面渲染，不改动任何真实数据。
     aliases: {},
+    // headroom 启用开关的记忆（供应商 id → { proxy, direct }）：关闭时把走 headroom 的
+    // 供应商地址切回直连并记录下来，再次开启时按记录把地址切回代理
+    headroomRoutes: {},
     // HTTP 代理（http(s)://host:port）：helper 发起的网络访问走它——插件市场更新/安装
-    // （zcode CLI → git）、headroom 本体的检查更新与升级（pip）。空 = 不用代理。
+    // （zcode CLI → git）、headroom/rtk 的安装与升级（pip/GitHub）。空 = 不用代理。
     proxy: '',
+    // 代理生效范围（按用途开关）：plugins = 插件市场更新/安装/卸载；deps = 插件依赖
+    // 软件（headroom 与 rtk）的安装、检查更新与升级；sync = WebDAV 同步。同步默认
+    // 关闭——坚果云等国内网盘通常直连即可，代理停了同步会跟着失败
+    proxyScopes: { plugins: true, deps: true, sync: false },
+    // 开发模式（设置弹窗“调试”标签页）：开启后出现「重载」按钮，可在不重启
+    // ZCode 的情况下加载新代码（构建 → 换新启动器进程 → 各窗口自动刷新重注入）
+    devMode: false,
     // 设置同步（设置弹窗“同步”标签页，交互参考 Tampermonkey 的手动同步）：
     // 仅 WebDAV、仅在点击按钮时传输（type 字段预留多后端扩展，当前恒为 webdav）。
     // url 为 WebDAV 服务器地址；dir 为其下的上传目录（默认 zcode-pro，避免直接
@@ -126,6 +136,12 @@ export function loadConfig(configFile) {
       features: { ...defaultConfig().features, ...(saved.features || {}) },
       styles: { ...defaultConfig().styles, ...(saved.styles && typeof saved.styles === 'object' ? saved.styles : {}) },
       aliases: { ...((saved.aliases && typeof saved.aliases === 'object') ? saved.aliases : {}) },
+      headroomRoutes: { ...((saved.headroomRoutes && typeof saved.headroomRoutes === 'object' && !Array.isArray(saved.headroomRoutes)) ? saved.headroomRoutes : {}) },
+      proxyScopes: mergeProxyScopes(saved.proxyScopes),
+      devMode: saved.devMode === true,
+      // devActive 每次读取时重算（保存时会随配置一起写入文件，但读取方不用保存的值）：
+      // 开发模式生效 = 配置开关或启动器带 ZCODEPRO_DEV=1，设置弹窗据此决定是否显示“调试”标签页（普通用户不可见）
+      devActive: saved.devMode === true || process.env.ZCODEPRO_DEV === '1',
       sync: mergeSyncConfig(saved.sync),
     };
   } catch {
@@ -186,12 +202,16 @@ function readBody(req) {
   });
 }
 
-// 软件代理（设置弹窗“代理”标签页）：helper 发起的网络访问（zcode CLI→git、pip）
-// 统一走这里；startHelper 启动时读配置，保存代理时即时更新
+// 软件代理（设置弹窗“代理”标签页）：helper 发起的网络访问（zcode CLI→git、pip、
+// WebDAV 同步）按用途（proxyScopes）走这里；startHelper 启动时读配置，
+// 保存代理地址或范围开关时即时更新
 let activeProxyUrl = '';
+let activeProxyScopes = { plugins: true, deps: true, sync: false };
 
-function proxyEnv(extra = {}) {
-  if (!activeProxyUrl) return extra;
+// scope：'plugins'（插件市场）/ 'deps'（headroom、rtk）/ 'sync'（WebDAV 同步）；
+// 'none' 表示这次调用与下载无关（headroom 生命周期钩子等），永不注入下载代理
+function proxyEnv(extra = {}, scope = 'deps') {
+  if (scope === 'none' || !activeProxyUrl || !activeProxyScopes[scope]) return extra;
   return {
     HTTP_PROXY: activeProxyUrl, HTTPS_PROXY: activeProxyUrl,
     http_proxy: activeProxyUrl, https_proxy: activeProxyUrl,
@@ -199,11 +219,19 @@ function proxyEnv(extra = {}) {
   };
 }
 
+// 该用途当前是否走代理：同步按 proxyUrl 参数传给 webdav（curl 路径用，
+// fetch 兜底路径不认代理环境变量）
+function proxyUrlFor(scope) {
+  return activeProxyScopes[scope] ? activeProxyUrl : '';
+}
+
 export function startHelper({ port, token, dataRoot, state, agentsFile = defaultAgentsFile() }) {
   const configFile = join(dataRoot, 'zcodepro.json');
   const settingsFile = join(dataRoot, 'v2', 'setting.json');
   migrateConfigOnce(configFile);
-  activeProxyUrl = String(loadConfig(configFile).proxy || '').trim();
+  const bootConfig = loadConfig(configFile);
+  activeProxyUrl = String(bootConfig.proxy || '').trim();
+  activeProxyScopes = { ...bootConfig.proxyScopes };
 
   const server = createServer(async (req, res) => {
     const url = new URL(req.url, `http://127.0.0.1:${port}`);
@@ -244,6 +272,16 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
             return;
           }
           activeProxyUrl = current.proxy;
+        }
+        if (body && typeof body === 'object' && body.proxyScopes && typeof body.proxyScopes === 'object') {
+          // 代理生效范围按单项提交（每个开关只改自己那项），即时生效
+          for (const k of ['plugins', 'deps', 'sync']) {
+            if (typeof body.proxyScopes[k] === 'boolean') current.proxyScopes[k] = body.proxyScopes[k];
+          }
+          activeProxyScopes = { ...current.proxyScopes };
+        }
+        if (body && typeof body === 'object' && typeof body.devMode === 'boolean') {
+          current.devMode = body.devMode;
         }
         if (body && typeof body === 'object' && body.features && typeof body.features === 'object') {
           applyFeaturesPartial(current.features, body.features);
@@ -699,7 +737,7 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
           return;
         }
         const config = loadConfig(configFile);
-        const r = await runSettingsSync({ direction, dataRoot, configFile, config, proxyUrl: activeProxyUrl });
+        const r = await runSettingsSync({ direction, dataRoot, configFile, config, proxyUrl: proxyUrlFor('sync') });
         if (r.error) {
           json(res, r.status || 500, { ok: false, code: r.code || 'sync-run', error: r.error });
           return;
@@ -784,6 +822,18 @@ function clampInt(v, min, max, dflt) {
 }
 
 // —— 设置同步（“同步”标签页）的实现 ——
+
+// loadConfig 时把磁盘上的 proxyScopes 按默认值归一（只收布尔，缺的补默认：
+// 插件市场/依赖软件开、同步关）
+function mergeProxyScopes(saved) {
+  const d = defaultConfig().proxyScopes;
+  const s = (saved && typeof saved === 'object') ? saved : {};
+  return {
+    plugins: typeof s.plugins === 'boolean' ? s.plugins : d.plugins,
+    deps: typeof s.deps === 'boolean' ? s.deps : d.deps,
+    sync: typeof s.sync === 'boolean' ? s.sync : d.sync,
+  };
+}
 
 // loadConfig 时把磁盘上的 sync 段按默认值归一（长度限幅、时间戳只收数字）。
 // 当前唯一后端是 WebDAV，type 一律归为 webdav（不做“禁用”态：同步本就仅手动触发）
@@ -1675,11 +1725,11 @@ function cancelUpgradeJob(job) {
   return upgradeJobSnapshot(job);
 }
 
-// 升级任务的可取消子进程执行：输出喂给任务对象供面板轮询，环境注入代理
-function jobRun(j, cmd, args, timeoutMs) {
+// 升级任务的可取消子进程执行：输出喂给任务对象供面板轮询，环境按用途注入代理
+function jobRun(j, cmd, args, timeoutMs, scope = 'deps') {
   return new Promise((resolveRun, rejectRun) => {
     if (j.canceled) { rejectRun(new Error('canceled')); return; }
-    const child = spawn(cmd, args, { env: { ...process.env, ...proxyEnv() }, windowsHide: true });
+    const child = spawn(cmd, args, { env: { ...process.env, ...proxyEnv({}, scope) }, windowsHide: true });
     j.kill = () => { try { child.kill('SIGKILL'); } catch { /* ignore */ } };
     const feed = (d) => { j.output = (j.output + d.toString()).slice(-65536); };
     child.stdout.on('data', feed);
@@ -1712,10 +1762,11 @@ async function headroomBinaryInfo() {
   return { installed: true, binPath, version: await binVersionOf(binPath) };
 }
 
-// 通用命令执行（headroom 本体的 pip 检查/升级用），输出合并 stdout+stderr
-function execCapture(cmd, args, timeoutMs = 30000) {
+// 通用命令执行（headroom 本体的 pip 检查/升级等），输出合并 stdout+stderr，
+// 环境按用途注入代理（默认 deps：headroom/rtk；市场路径不走这里）
+function execCapture(cmd, args, timeoutMs = 30000, scope = 'deps') {
   return new Promise((resolveRun) => {
-    execFile(cmd, args, { timeout: timeoutMs, env: { ...process.env, ...proxyEnv() }, windowsHide: true }, (err, stdout, stderr) => {
+    execFile(cmd, args, { timeout: timeoutMs, env: { ...process.env, ...proxyEnv({}, scope) }, windowsHide: true }, (err, stdout, stderr) => {
       resolveRun({
         ok: !err,
         code: err ? (err.code ?? 'error') : 0,

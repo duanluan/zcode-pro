@@ -635,6 +635,12 @@ export function openSettingsDialog() {
       const proxyTestBtn = btnSmall(L.proxyTest, () => { void runProxyTest(); }, 'shrink-0');
       const runProxyTest = async () => {
         if (proxyTesting) return;
+        // 空地址不发请求（等网络超时才报「检测失败」的体验太差），立即提示
+        if (!proxyInput.value.trim()) {
+          proxyTestState.className = 'mt-2 text-ui-xs/relaxed text-amber-500';
+          proxyTestState.textContent = L.proxyTestEmpty;
+          return;
+        }
         proxyTesting = true;
         proxyTestBtn.disabled = true;
         proxyTestBtn.textContent = L.proxyTesting;
@@ -655,6 +661,39 @@ export function openSettingsDialog() {
         proxyTestState.className = 'mt-2 text-ui-xs/relaxed ' + (allOk ? 'text-foreground-subtle' : 'text-amber-500');
         proxyTestState.textContent = `${res.proxy}：${parts.join(' · ')}`;
       };
+      // 代理生效范围（即时保存，每个开关只改自己那项）：插件市场更新与插件依赖
+      // 软件默认开，同步默认关——国内网盘直连即可，代理停了同步会跟着失败
+      const persistProxyScope = async (partial) => {
+        const res = await rpc('/config', { method: 'POST', body: { proxyScopes: partial } });
+        if (!res.ok) {
+          showToast(L.failed + ': ' + errText(res), 'error');
+          return false;
+        }
+        if (res.config && res.config.proxyScopes) config.proxyScopes = res.config.proxyScopes;
+        return true;
+      };
+      const proxyScopeWrap = h('div');
+      const renderProxyScopes = () => {
+        const sc = config.proxyScopes || {};
+        proxyScopeWrap.replaceChildren(
+          settingRow(L.proxyScopePlugins, L.proxyScopePluginsDesc, sc.plugins !== false, async () => {
+            const next = !(sc.plugins !== false);
+            if (await persistProxyScope({ plugins: next })) sc.plugins = next;
+            renderProxyScopes();
+          }),
+          settingRow(L.proxyScopeDeps, L.proxyScopeDepsDesc, sc.deps !== false, async () => {
+            const next = !(sc.deps !== false);
+            if (await persistProxyScope({ deps: next })) sc.deps = next;
+            renderProxyScopes();
+          }),
+          settingRow(L.proxyScopeSync, L.proxyScopeSyncDesc, sc.sync === true, async () => {
+            const next = !(sc.sync === true);
+            if (await persistProxyScope({ sync: next })) sc.sync = next;
+            renderProxyScopes();
+          }),
+        );
+      };
+      renderProxyScopes();
       paneProxy.append(
         h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.proxyDesc),
         h('div', { class: 'mt-3 flex items-center gap-2' },
@@ -663,6 +702,7 @@ export function openSettingsDialog() {
           proxyTestBtn),
         h('p', { class: 'mt-2 text-ui-xs/relaxed text-foreground-subtle' }, L.proxyHint),
         proxyTestState,
+        h('div', { class: 'mt-3 divide-y divide-border rounded-xl border border-border' }, proxyScopeWrap),
       );
 
       // “性能”：空闲项目内存回收（开关 + 两个时长）。idleReclaimStartupMinutes
