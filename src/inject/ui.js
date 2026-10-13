@@ -9,9 +9,10 @@ export function showToast(text, kind = 'info') {
   document.getElementById('__zcodepro_toast__')?.remove();
   const el = h('div', {
     id: '__zcodepro_toast__',
-    class: 'fixed bottom-6 right-6 z-[100] flex max-w-md items-center gap-2 rounded-lg border px-4 py-3 text-ui-sm shadow-lg ' +
+    class: 'fixed bottom-6 z-[100] flex max-w-md items-center gap-2 rounded-lg border px-4 py-3 text-ui-sm shadow-lg ' +
       (kind === 'error' ? 'border-destructive/40 bg-menu text-foreground' : 'border-border bg-menu text-foreground'),
-    style: 'animation:zcodepro-fade-in .18s ease',
+    // left 用内联样式：ZCode 的 Tailwind 未编译 left-6/right-6 工具类（bottom-6 有）
+    style: 'animation:zcodepro-fade-in .18s ease; left: 1.5rem;',
   },
     h('span', { class: 'truncate' }, text));
   document.body.append(el);
