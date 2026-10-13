@@ -298,7 +298,7 @@
     headroomRestart: "\u91CD\u542F",
     headroomStopAction: "\u505C\u6B62",
     headroomStopTitle: "\u505C\u6B62 Headroom \u4EE3\u7406",
-    headroomStopDesc: "\u505C\u6B62\u540E\uFF0CZCode \u4E2D\u6307\u5411\u8BE5\u4EE3\u7406\uFF08127.0.0.1\uFF09\u7684\u4F9B\u5E94\u5546\u5C06\u65E0\u6CD5\u8FDE\u63A5\uFF0C\u76F4\u81F3\u91CD\u65B0\u542F\u52A8\u4EE3\u7406\u3002\u786E\u8BA4\u505C\u6B62\uFF1F",
+    headroomStopDesc: "\u505C\u6B62\u540E\uFF0CZCode \u53CA\u5176\u4ED6\u7A0B\u5E8F\u4E2D\u6307\u5411\u8BE5\u4EE3\u7406\uFF08127.0.0.1\uFF09\u7684\u8BF7\u6C42\u90FD\u4F1A\u5931\u8D25\uFF0C\u76F4\u81F3\u91CD\u65B0\u542F\u52A8\u4EE3\u7406\u3002headroom \u662F\u5171\u4EAB\u7684\uFF0C\u5176\u4ED6\u5DE5\u5177\u53EF\u80FD\u6B63\u5728\u4F7F\u7528\u3002\u786E\u8BA4\u505C\u6B62\uFF1F",
     headroomStoppedWarn: "\u4EE3\u7406\u5DF2\u505C\u6B62\uFF1B\u6307\u5411 127.0.0.1 \u7684\u4F9B\u5E94\u5546\u5C06\u65E0\u6CD5\u8FDE\u63A5",
     headroomBackend: "\u538B\u7F29\u8BBE\u5907",
     headroomBackendAuto: "\u81EA\u52A8 \xB7 \u663E\u5361\u4F18\u5148",
@@ -316,8 +316,6 @@
     headroomInterval: "\u76D1\u89C6\u95F4\u9694",
     headroomIntervalDesc: "\u7701\u7535\u76D1\u89C6\u5668\u8F6E\u8BE2\u7535\u6E90\u72B6\u6001\u7684\u95F4\u9694\uFF0810\u20133600 \u79D2\uFF0C\u9ED8\u8BA4 60\uFF09\uFF1B\u4FDD\u5B58\u540E\u4ECE\u4E0B\u4E00\u8F6E\u5DE1\u68C0\u8D77\u751F\u6548\uFF0C\u65E0\u9700\u91CD\u542F\u3002",
     headroomSecUnit: "\u79D2",
-    headroomVersionPlugin: "\u63D2\u4EF6",
-    headroomVersionBin: "\u7A0B\u5E8F",
     upgradeCheck: "\u68C0\u67E5\u66F4\u65B0",
     upgradeChecking: "\u68C0\u67E5\u4E2D\u2026",
     upgradeUpToDate: "\u5DF2\u662F\u6700\u65B0\uFF08{v}\uFF09",
@@ -639,7 +637,7 @@
     headroomRestart: "Restart",
     headroomStopAction: "Stop",
     headroomStopTitle: "Stop the Headroom proxy",
-    headroomStopDesc: "Providers in ZCode that point at this proxy (127.0.0.1) will fail to connect until it is started again. Stop it?",
+    headroomStopDesc: "Requests from ZCode and other apps pointing at this proxy (127.0.0.1) will fail until it is started again. headroom is shared \u2014 other tools may be using it. Stop it?",
     headroomStoppedWarn: "Proxy stopped; providers pointing at 127.0.0.1 cannot connect.",
     headroomBackend: "Compression device",
     headroomBackendAuto: "Auto \xB7 GPU first",
@@ -657,8 +655,6 @@
     headroomInterval: "Watch interval",
     headroomIntervalDesc: "Seconds between power checks (10\u20133600, default 60); applies from the next round, no restart needed.",
     headroomSecUnit: "s",
-    headroomVersionPlugin: "plugin",
-    headroomVersionBin: "program",
     upgradeCheck: "Check update",
     upgradeChecking: "Checking\u2026",
     upgradeUpToDate: "Up to date ({v})",
@@ -2700,11 +2696,13 @@
     } catch {
     }
   }
-  function makeUpgradeControls({ endpoint, metaRefresh }) {
+  function makeUpgradeControls({ endpoint, metaRefresh, idleText }) {
     const L = t();
     const state = h("span", { class: "min-w-0 flex-1 truncate text-left text-ui-xs/relaxed text-foreground-subtle" });
+    const hasIdle = () => typeof idleText === "function";
     const setState = (text, kind = "") => {
-      state.textContent = text;
+      const shown = text || (hasIdle() ? idleText() || "" : "");
+      state.textContent = shown ? kind === "error" ? shown : ` \xB7 ${shown}` : "";
       state.className = "min-w-0 flex-1 truncate text-left text-ui-xs/relaxed " + (kind === "error" ? "text-destructive" : "text-foreground-subtle");
     };
     let latest = null;
@@ -2822,6 +2820,7 @@
       const res = await rpc(endpoint + "/upgrade");
       if (res.ok && res.upgrade && res.upgrade.running) pollStart();
     })();
+    setState("");
     return { btn, state, stop: stopPoll };
   }
   function openSettingsDialog() {
@@ -4264,13 +4263,16 @@
         };
         const rtkInputCls = "h-8 w-full rounded-lg border border-border bg-input px-2.5 text-ui-sm text-foreground outline-none transition-shadow placeholder:text-foreground-subtle focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40";
         const rtkVersionLine = h("span", { class: "shrink-0 whitespace-nowrap text-ui-xs/relaxed text-foreground-subtle" });
+        let rtkLocText = "";
         const renderRtkVersion = (meta) => {
-          const v = meta.version || "rtk";
-          rtkVersionLine.textContent = meta.binPath ? `${v} \xB7 ${meta.binPath}` : v;
+          const v = String(meta.version || "").replace(/^rtk\s+/i, "").trim();
+          rtkVersionLine.textContent = `\u63D2\u4EF6 ${meta.pluginVersion || "\u2014"}${v ? ` \xB7 rtk ${v}` : ""}`;
+          rtkLocText = meta.binPath || "";
         };
         renderRtkVersion(rtkRes);
         const rtkUp = makeUpgradeControls({
           endpoint: "/rtk",
+          idleText: () => rtkLocText,
           metaRefresh: async () => {
             const meta = await rpc("/rtk");
             if (meta.ok) {
@@ -4283,19 +4285,49 @@
         const rtkSwitchRow = h("div");
         const rtkVersionCard = h(
           "div",
-          { class: "mt-3 flex items-center gap-2 rounded-xl border border-border p-2" },
+          { class: "mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-border p-2" },
           rtkVersionLine,
           rtkUp.state,
           rtkUp.btn,
-          rtkSwitchRow
+          h("div", { class: "ml-auto shrink-0" }, rtkSwitchRow)
         );
         const rtkBody = h("div");
+        const rtkPluginRow = h("div");
+        const renderRtkPluginRow = () => {
+          rtkPluginRow.replaceChildren(...rtkRes.hook ? [] : [
+            pluginInstallCard("rtk", async () => {
+              const meta = await rpc("/rtk");
+              if (meta.ok) {
+                Object.assign(rtkRes, meta);
+                renderRtkVersion(meta);
+                rtkCfg = {
+                  installed: meta.installed !== false,
+                  version: meta.version || "",
+                  binPath: meta.binPath || "",
+                  mode: meta.mode === "off" ? "off" : "hint",
+                  whitelist: Array.isArray(meta.whitelist) ? [...meta.whitelist] : [],
+                  builtinGit: Array.isArray(meta.builtinGit) ? [...meta.builtinGit] : [],
+                  builtinPlain: Array.isArray(meta.builtinPlain) ? [...meta.builtinPlain] : []
+                };
+              }
+              renderRtkPluginRow();
+              renderRtk();
+            })
+          ]);
+        };
+        renderRtkPluginRow();
         paneRtk.append(
           h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.rtkDesc),
+          rtkPluginRow,
           rtkVersionCard,
           rtkBody
         );
         const renderRtk = () => {
+          if (rtkRes.ok && !rtkRes.hook) {
+            rtkVersionCard.style.display = "none";
+            rtkBody.replaceChildren();
+            return;
+          }
           rtkVersionCard.style.display = rtkCfg && rtkCfg.installed ? "" : "none";
           if (!rtkCfg) {
             rtkBody.replaceChildren(
@@ -4341,7 +4373,55 @@
             })
           );
           rtkBody.replaceChildren(
-            ...rtkCfg.installed ? [] : [h("p", { class: "text-ui-sm text-amber-500" }, L.rtkNotInstalled)],
+            ...rtkCfg.installed ? [] : [h(
+              "div",
+              { class: "flex items-center gap-2" },
+              h("p", { class: "min-w-0 flex-1 text-ui-sm text-amber-500" }, L.rtkNotInstalled),
+              // 一键安装本体：与“检查更新”同一条 helper 升级管线（未装则装到 ~/.local/bin）
+              (() => {
+                const b = btnSmall(L.rtkInstallBin, () => {
+                  void run();
+                }, "shrink-0");
+                const run = async () => {
+                  b.disabled = true;
+                  b.textContent = L.headroomInstalling;
+                  const res = await rpc("/rtk", { method: "POST", body: { upgrade: true } });
+                  if (!res.ok) {
+                    b.disabled = false;
+                    b.textContent = L.rtkInstallBin;
+                    showToast(L.failed + ": " + errText(res), "error");
+                    return;
+                  }
+                  const done = await new Promise((resolve) => {
+                    const iv = setInterval(async () => {
+                      const s = await rpc("/rtk/upgrade");
+                      if (s.ok && s.upgrade && !s.upgrade.running) {
+                        clearInterval(iv);
+                        resolve(s.upgrade);
+                      }
+                    }, 1200);
+                    setTimeout(() => {
+                      clearInterval(iv);
+                      resolve(null);
+                    }, 10 * 60 * 1e3);
+                  });
+                  if (done && !done.error && done.version) {
+                    const meta = await rpc("/rtk");
+                    if (meta.ok) {
+                      Object.assign(rtkRes, meta);
+                      rtkCfg = { ...rtkCfg, installed: meta.installed !== false, version: meta.version || "", binPath: meta.binPath || "" };
+                    }
+                    showToast(L.rtkBinInstalled, "success");
+                    renderRtk();
+                  } else {
+                    b.disabled = false;
+                    b.textContent = L.rtkInstallBin;
+                    showToast(done && done.error || L.headroomInstallRetry, "error");
+                  }
+                };
+                return b;
+              })()
+            )],
             h(
               "div",
               { class: "mt-2 rounded-xl border border-border p-2" },
@@ -4398,15 +4478,16 @@
         };
         renderRtk();
         const hrVersionLine = h("span", { class: "shrink-0 whitespace-nowrap text-ui-xs/relaxed text-foreground-subtle" });
+        let hrLocText = "";
+        const hrSwitchRow = h("div");
         const renderHrVersion = (meta) => {
-          const parts = [];
-          if (meta.pluginVersion) parts.push(`${L.headroomVersionPlugin} ${meta.pluginVersion}`);
-          if (meta.version) parts.push(`${L.headroomVersionBin} ${meta.version}`);
-          hrVersionLine.textContent = parts.length ? parts.join(" \xB7 ") : `${L.headroomVersionPlugin} \u2014`;
+          hrVersionLine.textContent = `\u63D2\u4EF6 ${meta.pluginVersion || "\u2014"}${meta.version ? ` \xB7 headroom ${meta.version}` : ""}`;
+          hrLocText = meta.binPath || "";
         };
         renderHrVersion(headroomRes);
         const hrUp = makeUpgradeControls({
           endpoint: "/headroom",
+          idleText: () => hrLocText,
           metaRefresh: async () => {
             const meta = await rpc("/headroom");
             if (meta.ok) {
@@ -4445,6 +4526,7 @@
               if (meta.ok) Object.assign(headroomRes, meta);
               if (headroomRes.hook) {
                 showToast(L.headroomInstalled, "success");
+                renderHrVersion(headroomRes);
                 renderHeadroomPane();
               } else {
                 installBtn.disabled = false;
@@ -4474,17 +4556,60 @@
           const hrRun = async (reqBody, warn) => {
             if (hrBusy) return false;
             hrBusy = true;
-            const res = await rpc("/headroom", { method: "POST", body: reqBody });
-            hrBusy = false;
+            const action = reqBody && reqBody.action;
+            const isStart = action === "start" || action === "restart";
+            const isStop = action === "stop";
+            const rpcDone = rpc("/headroom", { method: "POST", body: reqBody });
+            let timerIv = null;
+            if (isStart || isStop) {
+              const wantUp = isStart;
+              const msg = action === "restart" ? L.hrRestarting : isStart ? L.hrStarting : L.hrStopping;
+              const doneMsg = isStart ? L.hrStarted : L.hrStopped;
+              const timeoutMs = isStart ? 90 * 1e3 : 30 * 1e3;
+              const t0 = Date.now();
+              const timerSpan = h("span", { class: "text-ui-sm text-foreground-subtle/70" }, msg + " (0s)");
+              hrStatusLine.replaceChildren(timerSpan);
+              timerIv = setInterval(() => {
+                timerSpan.textContent = msg + ` (${Math.round((Date.now() - t0) / 1e3)}s)`;
+              }, 1e3);
+              void (async () => {
+                const kick = await rpcDone;
+                if (!kick.ok) return;
+                while (Date.now() - t0 < timeoutMs) {
+                  await new Promise((r) => setTimeout(r, 2e3));
+                  const st = await rpc("/headroom/status");
+                  if (!st.ok) continue;
+                  const up = !!(st.status && st.status.up);
+                  if (up === wantUp) {
+                    clearInterval(timerIv);
+                    hrBusy = false;
+                    await hrRefresh();
+                    showToast(doneMsg, isStart ? "success" : void 0);
+                    return;
+                  }
+                }
+                clearInterval(timerIv);
+                hrBusy = false;
+                if (isStart) showToast(L.hrStartTimeout, "error");
+                void hrRefresh();
+              })();
+            }
+            const res = await rpcDone;
             if (!res.ok) {
+              if (timerIv) clearInterval(timerIv);
+              hrBusy = false;
               showToast(L.failed + ": " + errText(res), "error");
+              void hrRefresh();
               return false;
             }
             if (res.config) Object.assign(hrCfg, res.config);
             if (warn) showToast(warn);
-            setTimeout(() => {
-              void hrRefresh();
-            }, 1200);
+            if (!isStart && !isStop) {
+              hrBusy = false;
+              setTimeout(() => {
+                void hrRefresh();
+              }, 1200);
+            }
             return true;
           };
           const hrDevLabel = (v) => v == null ? "\u2014" : v === "auto" ? L.hrValAuto : v === "cpu" ? "CPU" : v;
@@ -4529,6 +4654,23 @@
             hrHintLine.textContent = s.saverHint || "";
             hrHintLine.style.display = s.saverHint ? "" : "none";
           };
+          const renderHrUsageSwitch = () => {
+            const usageOn = !!(headroomRes.usage && headroomRes.usage.enabled);
+            hrSwitchRow.replaceChildren(
+              settingRow(L.pluginEnable, "", usageOn, async () => {
+                const next = !usageOn;
+                const res = await rpc("/headroom", { method: "POST", body: { usage: next } });
+                if (!res.ok) {
+                  showToast(L.failed + ": " + errText(res), "error");
+                  return;
+                }
+                if (res.usage) headroomRes.usage = res.usage;
+                renderHrUsageSwitch();
+                if (next && !res.changed && !(res.usage && res.usage.enabled)) showToast(L.hrUsageNone);
+              })
+            );
+          };
+          renderHrUsageSwitch();
           const hrRefreshBtn = btnSmall(L.headroomRefresh, () => {
             void hrRefresh();
           });
@@ -4621,14 +4763,69 @@
             hrPwrHint.style.display = hrCfg.kompressBackend === "cpu" ? "" : "none";
           };
           updateHrPwrHint();
+          const hrInstallBinBtn = (() => {
+            const b = btnSmall(L.hrInstallBin, () => {
+              void run();
+            }, "shrink-0");
+            let busy = false;
+            const run = async () => {
+              if (busy) return;
+              busy = true;
+              b.disabled = true;
+              b.textContent = L.headroomInstalling;
+              const res = await rpc("/headroom", { method: "POST", body: { upgrade: true } });
+              if (!res.ok) {
+                b.disabled = false;
+                b.textContent = L.hrInstallBin;
+                showToast(L.failed + ": " + errText(res), "error");
+                busy = false;
+                return;
+              }
+              const done = await new Promise((resolve) => {
+                const iv = setInterval(async () => {
+                  const s = await rpc("/headroom/upgrade");
+                  if (s.ok && s.upgrade && !s.upgrade.running) {
+                    clearInterval(iv);
+                    resolve(s.upgrade);
+                  }
+                }, 2e3);
+                setTimeout(() => {
+                  clearInterval(iv);
+                  resolve(null);
+                }, 12 * 60 * 1e3);
+              });
+              busy = false;
+              if (done && !done.error && done.version) {
+                const meta = await rpc("/headroom");
+                if (meta.ok) {
+                  renderHrVersion(meta);
+                  Object.assign(headroomRes, meta);
+                }
+                showToast(L.hrBinInstalled, "success");
+                renderHeadroomPane();
+              } else {
+                b.disabled = false;
+                b.textContent = L.hrInstallBin;
+                showToast(done && done.error || L.headroomInstallRetry, "error");
+              }
+            };
+            return b;
+          })();
           paneHeadroom.append(
             h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.headroomDesc),
-            ...headroomRes.installed === false ? [h("p", { class: "mt-2 text-ui-sm text-amber-500" }, L.headroomBinMissing)] : [],
+            ...headroomRes.installed === false ? [h(
+              "div",
+              { class: "mt-2 flex items-center gap-2" },
+              h("p", { class: "min-w-0 flex-1 text-ui-sm text-amber-500" }, L.headroomBinMissing),
+              hrInstallBinBtn
+            )] : [],
             h(
               "div",
-              { class: "mt-3 flex items-center justify-between gap-2 rounded-xl border border-border p-2" },
-              h("div", { class: "flex min-w-0 items-center gap-2" }, hrVersionLine, hrUp.state),
-              hrUp.btn
+              { class: "mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-border p-2" },
+              hrVersionLine,
+              hrUp.state,
+              hrUp.btn,
+              h("div", { class: "ml-auto shrink-0" }, hrSwitchRow)
             ),
             h(
               "div",

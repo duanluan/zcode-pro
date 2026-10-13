@@ -15,12 +15,18 @@ function openExternal(url) {
 // 检查更新 → 升级（helper 后台任务，轮询进度，输出取最后一行、超长省略中间）→
 // 进行中可停止；关弹窗不中断升级，重开恢复显示。endpoint 为 /headroom 或 /rtk，
 // metaRefresh 在升级完成后刷新各面板自己的版本行与配置。
-function makeUpgradeControls({ endpoint, metaRefresh }) {
+function makeUpgradeControls({ endpoint, metaRefresh, idleText }) {
   const L = t();
   const state = h('span', { class: 'min-w-0 flex-1 truncate text-left text-ui-xs/relaxed text-foreground-subtle' });
-  // 失败原因在状态行直显红字（toast 只有 5 秒且易被弹窗遮挡）
+  // 失败原因在状态行直显红字（toast 只有 5 秒且易被弹窗遮挡）。
+  // idleText：空闲（无检查/升级活动）时该槽位显示调用方给的文本——rtk/headroom
+  // 面板用它显示本体位置；一旦有活动（检查中/下载进度/结果），活动文本顶替位置
+  const hasIdle = () => typeof idleText === 'function';
   const setState = (text, kind = '') => {
-    state.textContent = text;
+    const shown = text || (hasIdle() ? (idleText() || '') : '');
+    // 「 · 」前缀：与前面的版本行无缝拼成「插件 x · rtk y · 状态/路径」一行；
+    // 错误信息不加前缀——它是独立提示，拼在版本行后会读成版本的一部分
+    state.textContent = shown ? (kind === 'error' ? shown : ` · ${shown}`) : '';
     state.className = 'min-w-0 flex-1 truncate text-left text-ui-xs/relaxed '
       + (kind === 'error' ? 'text-destructive' : 'text-foreground-subtle');
   };
@@ -129,6 +135,8 @@ function makeUpgradeControls({ endpoint, metaRefresh }) {
     const res = await rpc(endpoint + '/upgrade');
     if (res.ok && res.upgrade && res.upgrade.running) pollStart();
   })();
+  // 初始化为空闲态（有 idleText 时即显示位置等空闲文本）
+  setState('');
   return { btn, state, stop: stopPoll };
 }
 
@@ -1398,15 +1406,20 @@ export function openSettingsDialog() {
         return res.ok;
       };
       const rtkInputCls = 'h-8 w-full rounded-lg border border-border bg-input px-2.5 text-ui-sm text-foreground outline-none transition-shadow placeholder:text-foreground-subtle focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40';
-      // rtk 本体（GitHub Releases 下载替换）的版本行与升级控件，渲染函数外创建一次
+      // rtk 本体（GitHub Releases 下载替换）的版本行与升级控件，渲染函数外创建一次。
+      // 信息卡单行：版本行 + 弹性状态槽（空闲显示本体位置，检查更新/升级时被活动
+      // 日志顶替，见 makeUpgradeControls 的 idleText）+ 检查更新按钮 + 启用开关
       const rtkVersionLine = h('span', { class: 'shrink-0 whitespace-nowrap text-ui-xs/relaxed text-foreground-subtle' });
+      let rtkLocText = '';
       const renderRtkVersion = (meta) => {
-        const v = meta.version || 'rtk';
-        rtkVersionLine.textContent = meta.binPath ? `${v} · ${meta.binPath}` : v;
+        const v = String(meta.version || '').replace(/^rtk\s+/i, '').trim();
+        rtkVersionLine.textContent = `插件 ${meta.pluginVersion || '—'}${v ? ` · rtk ${v}` : ''}`;
+        rtkLocText = meta.binPath || '';
       };
       renderRtkVersion(rtkRes);
       const rtkUp = makeUpgradeControls({
         endpoint: '/rtk',
+        idleText: () => rtkLocText,
         metaRefresh: async () => {
           const meta = await rpc('/rtk');
           if (meta.ok) {
@@ -1419,15 +1432,50 @@ export function openSettingsDialog() {
       rtkUpgradePollStop = rtkUp.stop;
       // 版本/路径/检查更新 + 启用 rtk 压缩开关合到一行（开关靠右，顶部已有简介不带描述）
       const rtkSwitchRow = h('div');
-      const rtkVersionCard = h('div', { class: 'mt-3 flex items-center gap-2 rounded-xl border border-border p-2' },
-        rtkVersionLine, rtkUp.state, rtkUp.btn, rtkSwitchRow);
+      const rtkVersionCard = h('div', { class: 'mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-border p-2' },
+        rtkVersionLine, rtkUp.state, rtkUp.btn,
+        h('div', { class: 'ml-auto shrink-0' }, rtkSwitchRow));
       const rtkBody = h('div');
-      // 简介置顶（与 Headroom 面板一致），其下版本卡（含启用 rtk 压缩开关），再下白名单
+      // 插件未装时的一键安装行（本体未装另有提示行），装完原地撤下
+      const rtkPluginRow = h('div');
+      const renderRtkPluginRow = () => {
+        rtkPluginRow.replaceChildren(...(rtkRes.hook ? [] : [
+          pluginInstallCard('rtk', async () => {
+            const meta = await rpc('/rtk');
+            if (meta.ok) {
+              Object.assign(rtkRes, meta);
+              // 版本行 span 与 rtkCfg 都是弹窗打开时的未装态快照，装完必须重算/重建
+              renderRtkVersion(meta);
+              // rtkCfg 整体重建（未装态时内置清单为空，不重建则白名单区块渲染旧空清单）
+              rtkCfg = {
+                installed: meta.installed !== false,
+                version: meta.version || '',
+                binPath: meta.binPath || '',
+                mode: meta.mode === 'off' ? 'off' : 'hint',
+                whitelist: Array.isArray(meta.whitelist) ? [...meta.whitelist] : [],
+                builtinGit: Array.isArray(meta.builtinGit) ? [...meta.builtinGit] : [],
+                builtinPlain: Array.isArray(meta.builtinPlain) ? [...meta.builtinPlain] : [],
+              };
+            }
+            renderRtkPluginRow();
+            renderRtk();
+          }),
+        ]));
+      };
+      renderRtkPluginRow();
+      // 简介置顶（与 Headroom 面板一致），其下插件安装卡，再下版本卡（含启用 rtk 压缩开关），再下白名单
       paneRtk.append(
         h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.rtkDesc),
+        rtkPluginRow,
         rtkVersionCard,
         rtkBody);
       const renderRtk = () => {
+        // 插件未装：只显示安装卡，隐藏版本卡与全部设置项（与 vision/headroom 未装时一致）
+        if (rtkRes.ok && !rtkRes.hook) {
+          rtkVersionCard.style.display = 'none';
+          rtkBody.replaceChildren();
+          return;
+        }
         rtkVersionCard.style.display = rtkCfg && rtkCfg.installed ? '' : 'none';
         if (!rtkCfg) {
           rtkBody.replaceChildren(
@@ -1471,7 +1519,45 @@ export function openSettingsDialog() {
         rtkBody.replaceChildren(
           ...(rtkCfg.installed
             ? []
-            : [h('p', { class: 'text-ui-sm text-amber-500' }, L.rtkNotInstalled)]),
+            : [h('div', { class: 'flex items-center gap-2' },
+                h('p', { class: 'min-w-0 flex-1 text-ui-sm text-amber-500' }, L.rtkNotInstalled),
+                // 一键安装本体：与“检查更新”同一条 helper 升级管线（未装则装到 ~/.local/bin）
+                (() => {
+                  const b = btnSmall(L.rtkInstallBin, () => { void run(); }, 'shrink-0');
+                  const run = async () => {
+                    b.disabled = true;
+                    b.textContent = L.headroomInstalling;
+                    const res = await rpc('/rtk', { method: 'POST', body: { upgrade: true } });
+                    if (!res.ok) {
+                      b.disabled = false;
+                      b.textContent = L.rtkInstallBin;
+                      showToast(L.failed + ': ' + errText(res), 'error');
+                      return;
+                    }
+                    const done = await new Promise((resolve) => {
+                      const iv = setInterval(async () => {
+                        const s = await rpc('/rtk/upgrade');
+                        if (s.ok && s.upgrade && !s.upgrade.running) { clearInterval(iv); resolve(s.upgrade); }
+                      }, 1200);
+                      // 超时也要 resolve：否则按钮永久停在“安装中…”
+                      setTimeout(() => { clearInterval(iv); resolve(null); }, 10 * 60 * 1000);
+                    });
+                    if (done && !done.error && done.version) {
+                      const meta = await rpc('/rtk');
+                      if (meta.ok) {
+                        Object.assign(rtkRes, meta);
+                        rtkCfg = { ...rtkCfg, installed: meta.installed !== false, version: meta.version || '', binPath: meta.binPath || '' };
+                      }
+                      showToast(L.rtkBinInstalled, 'success');
+                      renderRtk();
+                    } else {
+                      b.disabled = false;
+                      b.textContent = L.rtkInstallBin;
+                      showToast((done && done.error) || L.headroomInstallRetry, 'error');
+                    }
+                  };
+                  return b;
+                })())]),
           h('div', { class: 'mt-2 rounded-xl border border-border p-2' },
             h('div', { class: 'text-ui-sm font-medium text-foreground' }, L.rtkWhitelistTitle),
             h('p', { class: 'mt-1 text-ui-xs/relaxed text-foreground-subtle' }, L.rtkWhitelistDesc),
@@ -1519,15 +1605,18 @@ export function openSettingsDialog() {
       // 可整面重渲染：未装插件时显示安装卡，安装成功后原地恢复完整面板。
       // 版本行与本体升级控件（pip 通道）在渲染函数外创建一次，重渲染时复用同一组节点
       const hrVersionLine = h('span', { class: 'shrink-0 whitespace-nowrap text-ui-xs/relaxed text-foreground-subtle' });
+      let hrLocText = '';
+      // 启用开关（与 rtk 面板同款，版本卡右上角）：开 = ZCode 供应商走 headroom，
+      // 关 = 直连上游；只改供应商地址，不动代理进程（headroom 可被其他程序共用）
+      const hrSwitchRow = h('div');
       const renderHrVersion = (meta) => {
-        const parts = [];
-        if (meta.pluginVersion) parts.push(`${L.headroomVersionPlugin} ${meta.pluginVersion}`);
-        if (meta.version) parts.push(`${L.headroomVersionBin} ${meta.version}`);
-        hrVersionLine.textContent = parts.length ? parts.join(' · ') : `${L.headroomVersionPlugin} —`;
+        hrVersionLine.textContent = `插件 ${meta.pluginVersion || '—'}${meta.version ? ` · headroom ${meta.version}` : ''}`;
+        hrLocText = meta.binPath || '';
       };
       renderHrVersion(headroomRes);
       const hrUp = makeUpgradeControls({
         endpoint: '/headroom',
+        idleText: () => hrLocText,
         metaRefresh: async () => {
           const meta = await rpc('/headroom');
           if (meta.ok) {
@@ -1565,6 +1654,8 @@ export function openSettingsDialog() {
             if (meta.ok) Object.assign(headroomRes, meta);
             if (headroomRes.hook) {
               showToast(L.headroomInstalled, 'success');
+              // 版本行 span 在弹窗打开时按未装态算过一次，装完必须重算
+              renderHrVersion(headroomRes);
               renderHeadroomPane();
             } else {
               installBtn.disabled = false;
@@ -1588,16 +1679,65 @@ export function openSettingsDialog() {
         const hrRun = async (reqBody, warn) => {
           if (hrBusy) return false;
           hrBusy = true;
-          const res = await rpc('/headroom', { method: 'POST', body: reqBody });
-          hrBusy = false;
+          const action = reqBody && reqBody.action;
+          const isStart = action === 'start' || action === 'restart';
+          const isStop = action === 'stop';
+          // 生命周期按钮：点击瞬间就显示等待提示 + 计时（不等 RPC 返回——
+          // RPC 里 helper 要杀/拉进程，期间 3-10 秒界面不能毫无反应）
+          // RPC 先发出（不等返回——期间界面要显示等待反馈）
+          const rpcDone = rpc('/headroom', { method: 'POST', body: reqBody });
+          let timerIv = null;
+          if (isStart || isStop) {
+            const wantUp = isStart;
+            const msg = action === 'restart' ? L.hrRestarting : isStart ? L.hrStarting : L.hrStopping;
+            const doneMsg = isStart ? L.hrStarted : L.hrStopped;
+            const timeoutMs = isStart ? 90 * 1000 : 30 * 1000;
+            const t0 = Date.now();
+            const timerSpan = h('span', { class: 'text-ui-sm text-foreground-subtle/70' }, msg + ' (0s)');
+            hrStatusLine.replaceChildren(timerSpan);
+            timerIv = setInterval(() => {
+              timerSpan.textContent = msg + ` (${Math.round((Date.now() - t0) / 1000)}s)`;
+            }, 1000);
+            // RPC 完成后进入轮询（RPC 执行实际的 stop/start，可能要 3-10 秒）。
+            // 轮询出结果前 hrBusy 一直占着：期间再点开关或按钮直接忽略，否则
+            // 每次点击都会重发 start、把计时和启动流程从头来过
+            void (async () => {
+              const kick = await rpcDone;
+              if (!kick.ok) return; // 失败由主流程提示并复位
+              while (Date.now() - t0 < timeoutMs) {
+                await new Promise((r) => setTimeout(r, 2000));
+                const st = await rpc('/headroom/status');
+                if (!st.ok) continue;
+                const up = !!(st.status && st.status.up);
+                if (up === wantUp) {
+                  clearInterval(timerIv);
+                  hrBusy = false;
+                  await hrRefresh();
+                  showToast(doneMsg, isStart ? 'success' : undefined);
+                  return;
+                }
+              }
+              clearInterval(timerIv);
+              hrBusy = false;
+              if (isStart) showToast(L.hrStartTimeout, 'error');
+              void hrRefresh();
+            })();
+          }
+          const res = await rpcDone;
           if (!res.ok) {
+            if (timerIv) clearInterval(timerIv);
+            hrBusy = false;
             showToast(L.failed + ': ' + errText(res), 'error');
+            void hrRefresh();
             return false;
           }
           if (res.config) Object.assign(hrCfg, res.config);
           if (warn) showToast(warn);
-          // backend/power 动作会重启代理，稍等其就绪再刷状态，避免闪现“未运行”
-          setTimeout(() => { void hrRefresh(); }, 1200);
+          // 非生命周期动作（backend/power）：稍等后刷一次
+          if (!isStart && !isStop) {
+            hrBusy = false;
+            setTimeout(() => { void hrRefresh(); }, 1200);
+          }
           return true;
         };
         // 状态值本地化：钩子输出的是 auto/cpu/ac/ok 等内部值，面板显示成人话
@@ -1636,6 +1776,23 @@ export function openSettingsDialog() {
           hrHintLine.textContent = s.saverHint || '';
           hrHintLine.style.display = s.saverHint ? '' : 'none';
         };
+        // 启用开关不走 hrRun：与代理进程无关，点击即时生效，也不受生命周期等待锁影响
+        const renderHrUsageSwitch = () => {
+          const usageOn = !!(headroomRes.usage && headroomRes.usage.enabled);
+          hrSwitchRow.replaceChildren(
+            settingRow(L.pluginEnable, '', usageOn, async () => {
+              const next = !usageOn;
+              const res = await rpc('/headroom', { method: 'POST', body: { usage: next } });
+              if (!res.ok) {
+                showToast(L.failed + ': ' + errText(res), 'error');
+                return;
+              }
+              if (res.usage) headroomRes.usage = res.usage;
+              renderHrUsageSwitch();
+              if (next && !res.changed && !(res.usage && res.usage.enabled)) showToast(L.hrUsageNone);
+            }));
+        };
+        renderHrUsageSwitch();
         const hrRefreshBtn = btnSmall(L.headroomRefresh, () => { void hrRefresh(); });
         const hrStartBtn = btnSmall(L.headroomStart, () => { void hrRun({ action: 'start' }); });
         const hrRestartBtn = btnSmall(L.headroomRestart, () => { void hrRun({ action: 'restart' }); });
@@ -1729,14 +1886,60 @@ export function openSettingsDialog() {
         };
         updateHrPwrHint();
 
+        // 本体未装：一键安装（pip 全新安装通道，helper 同一条升级任务管线）；
+        // 装完刷新 meta 并整面重渲染（版本行、本体状态、代理控制全部就位）
+        const hrInstallBinBtn = (() => {
+          const b = btnSmall(L.hrInstallBin, () => { void run(); }, 'shrink-0');
+          let busy = false;
+          const run = async () => {
+            if (busy) return;
+            busy = true;
+            b.disabled = true;
+            b.textContent = L.headroomInstalling;
+            const res = await rpc('/headroom', { method: 'POST', body: { upgrade: true } });
+            if (!res.ok) {
+              b.disabled = false;
+              b.textContent = L.hrInstallBin;
+              showToast(L.failed + ': ' + errText(res), 'error');
+              busy = false;
+              return;
+            }
+            // pip 下载大包可持续数分钟，轮询后台任务到结束（超时 resolve，避免按钮卡死）
+            const done = await new Promise((resolve) => {
+              const iv = setInterval(async () => {
+                const s = await rpc('/headroom/upgrade');
+                if (s.ok && s.upgrade && !s.upgrade.running) { clearInterval(iv); resolve(s.upgrade); }
+              }, 2000);
+              setTimeout(() => { clearInterval(iv); resolve(null); }, 12 * 60 * 1000);
+            });
+            busy = false;
+            if (done && !done.error && done.version) {
+              const meta = await rpc('/headroom');
+              if (meta.ok) {
+                renderHrVersion(meta);
+                Object.assign(headroomRes, meta);
+              }
+              showToast(L.hrBinInstalled, 'success');
+              renderHeadroomPane();
+            } else {
+              b.disabled = false;
+              b.textContent = L.hrInstallBin;
+              showToast((done && done.error) || L.headroomInstallRetry, 'error');
+            }
+          };
+          return b;
+        })();
+
         paneHeadroom.append(
           h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.headroomDesc),
           ...(headroomRes.installed === false
-            ? [h('p', { class: 'mt-2 text-ui-sm text-amber-500' }, L.headroomBinMissing)]
+            ? [h('div', { class: 'mt-2 flex items-center gap-2' },
+                h('p', { class: 'min-w-0 flex-1 text-ui-sm text-amber-500' }, L.headroomBinMissing),
+                hrInstallBinBtn)]
             : []),
-          h('div', { class: 'mt-3 flex items-center justify-between gap-2 rounded-xl border border-border p-2' },
-            h('div', { class: 'flex min-w-0 items-center gap-2' }, hrVersionLine, hrUp.state),
-            hrUp.btn),
+          h('div', { class: 'mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-border p-2' },
+            hrVersionLine, hrUp.state, hrUp.btn,
+            h('div', { class: 'ml-auto shrink-0' }, hrSwitchRow)),
           h('div', { class: 'mt-2 rounded-xl border border-border p-2' },
             h('div', { class: 'flex flex-wrap items-center justify-between gap-2' },
               h('span', { class: 'text-ui-sm font-medium text-foreground' }, L.headroomStatusTitle),

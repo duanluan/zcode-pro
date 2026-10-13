@@ -462,10 +462,14 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         const dir = defaultRtkDir();
         const mode = readRtkMode(join(dir, 'mode'));
         const info = await rtkBinaryInfo();
+        // 已装插件探测：新版（≥1.3.0）钩子入口是跨平台 rtk-pretooluse.mjs，旧版是 .sh
+        const hook = findMarketplaceHook('rtk', join('hooks', 'rtk-pretooluse.mjs'))
+          || findMarketplaceHook('rtk', join('hooks', 'rtk-pretooluse.sh'));
         // rtkBinaryInfo 走 PATH 命中时 binPath 是命令名；换绝对路径用于面板展示
         json(res, 200, {
           ok: true, mode, whitelist: readRtkWhitelist(join(dir, 'whitelist')),
-          dir, ...readRtkBuiltinWhitelist(), ...info,
+          dir, hook, pluginVersion: installedPluginVersion('rtk'),
+          ...readRtkBuiltinWhitelist(), ...info,
           binPath: info.binPath ? (rtkFindBin() || info.binPath) : null,
         });
         return;
@@ -539,12 +543,15 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
           json(res, 500, { ok: false, code: 'headroom-read', error: '读取 headroom.json 失败: ' + (err?.message || err) });
           return;
         }
-        const hook = findMarketplaceHook('headroom', join('hooks', 'ensure-proxy.sh'));
+        // 已安装探测：新版（≥1.2.0）钩子入口是跨平台 ensure-proxy.mjs，旧版是 ensure-proxy.sh
+        const hook = findMarketplaceHook('headroom', join('hooks', 'ensure-proxy.mjs'))
+          || findMarketplaceHook('headroom', join('hooks', 'ensure-proxy.sh'));
         // 插件版本取自缓存目录名（…/headroom/1.0.2/hooks/…）
         const vm = hook ? /[/\\]headroom[/\\](\d+(?:\.\d+){0,3})[/\\]/.exec(hook) : null;
         json(res, 200, {
           ok: true, config, file, hook,
           pluginVersion: vm ? vm[1] : null,
+          usage: headroomUsageScan(dataRoot),
           ...(await headroomBinaryInfo()),
         });
         return;
@@ -604,6 +611,15 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
             return;
           }
           output = r.output;
+        } else if (body && typeof body.usage === 'boolean') {
+          // 启用开关：只改 ZCode 供应商配置里的地址（走/不走本地压缩代理），不动代理进程
+          const r = setHeadroomUsage(dataRoot, configFile, body.usage);
+          if (!r.ok) {
+            json(res, 500, { ok: false, code: r.code, error: r.error });
+            return;
+          }
+          json(res, 200, { ok: true, usage: headroomUsageScan(dataRoot), changed: r.changed });
+          return;
         } else if (body && body.cancelUpgrade === true) {
           json(res, 200, { ok: true, upgrade: cancelHeadroomUpgrade() });
           return;
@@ -639,7 +655,7 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
             return;
           }
         } else {
-          json(res, 400, { ok: false, code: 'invalid-request', error: 'body 需包含 action/backend/power/interval 之一' });
+          json(res, 400, { ok: false, code: 'invalid-request', error: 'body 需包含 action/backend/power/usage/interval 之一' });
           return;
         }
         let config = null;
@@ -1786,16 +1802,22 @@ function readRtkBuiltinWhitelist() {
 // —— rtk 本体（独立二进制）的检查更新与升级：GitHub Releases 下载 → sha256 校验 → 原子替换 ——
 
 function rtkFindBin() {
+  // 兜底候选按平台给全扩展名：全新安装装到 ~/.local/bin 后 PATH 对运行中的 helper
+  // 不可见（需注销重登），必须能按固定位置直接找到，否则面板误报“未安装”
   return findBinFile(
-    process.platform === 'win32' ? ['rtk.exe', 'rtk.cmd'] : ['rtk'],
-    [join(homedir(), '.local', 'bin', 'rtk'), join(homedir(), 'miniforge3', 'bin', 'rtk'),
-     '/usr/local/bin/rtk', '/usr/bin/rtk']);
+    process.platform === 'win32' ? ['rtk.exe'] : ['rtk'],
+    process.platform === 'win32'
+      ? [join(homedir(), '.local', 'bin', 'rtk.exe'), join(homedir(), '.cargo', 'bin', 'rtk.exe'),
+         join(homedir(), 'miniforge3', 'Scripts', 'rtk.exe'), join(homedir(), 'miniconda3', 'Scripts', 'rtk.exe')]
+      : [join(homedir(), '.local', 'bin', 'rtk'), join(homedir(), 'miniforge3', 'bin', 'rtk'),
+         '/usr/local/bin/rtk', '/usr/bin/rtk']);
 }
 
-// 最新版本探测（两条互补通道，任一成功即用）：
-// ① releases/latest 的 302 重定向拿 tag——不受 API 速率限制，但 github.com 网页在
-//    部分网络直连不通（超时）；② 匿名 GitHub API——直连常可用，但走代理时出口 IP
-//    常被限流（403 无 tag_name）。资产与 checksums 的下载地址按官方命名规则构造。
+// 最新版本探测。两条互补通道，任一成功即用：① 匿名 GitHub API——直连常可用，但
+// 走代理时出口 IP 常被限流；② releases/latest 302 的 Location 头——不受速率限制，
+// 但 github.com 网页在部分网络直连不通。资产与 checksums 的下载地址按官方命名规则
+// 构造。请求复用 webdavRequest（curl 优先、按 proxyScopes 注入代理；无 curl 的精简
+// Windows 回退 fetch 直连，代理在那条路径不生效）。
 async function rtkLatestInfo() {
   const assetName = rtkAssetName();
   if (!assetName) return { code: 'rtk-update', error: '当前平台不支持自动升级' };
@@ -1803,25 +1825,23 @@ async function rtkLatestInfo() {
     const base = `https://github.com/rtk-ai/rtk/releases/download/v${tag}`;
     return { tag, assetName, assetUrl: `${base}/${assetName}`, sumsUrl: `${base}/checksums.txt` };
   };
-  let redirErr = '';
-  const redir = await execCapture('curl', ['-sS', '-o', '/dev/null', '-w', '%{url_effective}', '-L', '--max-time', '6',
-    'https://github.com/rtk-ai/rtk/releases/latest'], 8000);
-  if (redir.ok) {
-    const m = /\/tag\/v?(\d[\w.+-]*)\s*$/.exec(redir.output.trim());
-    if (m) return mkInfo(m[1]);
-    redirErr = '重定向未携带版本';
-  } else {
-    redirErr = (redir.output || redir.error || '').split('\n').slice(-1)[0];
-  }
-  const api = await execCapture('curl', ['-s', '--max-time', '8',
-    'https://api.github.com/repos/rtk-ai/rtk/releases/latest'], 10000);
-  if (api.ok) {
+  const proxyUrl = proxyUrlFor('deps');
+  const api = await webdavRequest({
+    method: 'GET', url: 'https://api.github.com/repos/rtk-ai/rtk/releases/latest',
+    proxyUrl, timeoutMs: 12000, headers: ['User-Agent: zcode-pro'],
+  });
+  if (api.ok && api.httpCode === 200) {
     try {
-      const tag = String((JSON.parse(api.output) || {}).tag_name || '').replace(/^v/, '');
+      const tag = String(JSON.parse(api.body).tag_name || '').replace(/^v/, '');
       if (tag) return mkInfo(tag);
-    } catch { /* 落到统一报错 */ }
+    } catch { /* body 不是 JSON：换重定向通道 */ }
   }
-  return { code: 'rtk-update', error: '查询 GitHub Releases 失败（可尝试在“代理”标签页设置代理）。重定向: ' + redirErr };
+  const redir = await webdavRequest({
+    method: 'GET', url: 'https://github.com/rtk-ai/rtk/releases/latest', proxyUrl, timeoutMs: 10000,
+  });
+  const m = /\/tag\/v?(\d[\w.+-]*)\s*$/.exec(redir.redirectUrl || '');
+  if (m) return mkInfo(m[1]);
+  return { code: 'rtk-update', error: '查询 GitHub Releases 失败（网络不通或需代理）' };
 }
 
 // 按平台/架构选资产文件名（与官方 Release 命名一致）
@@ -1838,72 +1858,92 @@ export function rtkUpgradeSnapshot() { return upgradeJobSnapshot(rtkUpgradeJob);
 
 function cancelRtkUpgrade() { return cancelUpgradeJob(rtkUpgradeJob); }
 
-// 启动 rtk 本体升级（后台任务，面板经 GET /rtk/upgrade 轮询）：
-// 下载资产与 checksums → sha256 校验 → 解压 → 试运行 → 原子替换旧二进制
+// 启动 rtk 本体升级或安装（后台任务，面板经 GET /rtk/upgrade 轮询）：
+// 下载资产与 checksums → sha256 校验 → 解压 → 试运行 → 原子替换旧二进制；
+// 未安装时装到 ~/.local/bin（钩子的 rtk 查找清单含该位置，装完钩子立即可用；
+// Windows 资产是 zip，用系统自带 bsdtar 解压、PowerShell Get-FileHash 校验，
+// 全新安装后把 ~/.local/bin 注册进用户级 PATH，运行中的进程读不到——重启 ZCode 生效）
 function startRtkUpgrade() {
   if (rtkUpgradeJob && rtkUpgradeJob.running) return rtkUpgradeSnapshot();
   const j = newUpgradeJob();
   rtkUpgradeJob = j;
+  const WIN = process.platform === 'win32';
   void (async () => {
     let dir = null;
     let bin = null;
     try {
-      if (process.platform === 'win32') throw new Error('Windows 暂不支持自动升级，请手动下载 Release 覆盖安装');
-      bin = rtkFindBin();
-      if (!bin) throw new Error('未找到 rtk 程序');
+      const freshInstall = !rtkFindBin();
+      bin = rtkFindBin() || join(homedir(), '.local', 'bin', WIN ? 'rtk.exe' : 'rtk');
       const info = await rtkLatestInfo();
       if (info.code) throw new Error(info.error);
       dir = await mkdtemp(join(tmpdir(), 'rtk-upgrade-'));
       j.output += `下载 ${info.assetName}…\n`;
       const archPath = join(dir, info.assetName);
-      await jobRun(j, 'curl', ['-L', '--fail', '--progress-bar', '-o', archPath, info.assetUrl], 600000);
+      await downloadToFile(j, info.assetUrl, archPath, 600000);
       // sha256 校验（checksums.txt 与本机摘要工具；失败即中止，不替换）
       if (info.sumsUrl) {
         const sumPath = join(dir, 'checksums.txt');
-        await jobRun(j, 'curl', ['-sL', '--fail', '-o', sumPath, info.sumsUrl], 30000);
+        await downloadToFile(j, info.sumsUrl, sumPath, 30000);
         const want = readFileSync(sumPath, 'utf8').split('\n')
           .find((l) => l.trim().endsWith(info.assetName))?.trim().split(/\s+/)[0];
-        const sumCmd = process.platform === 'darwin' ? 'shasum' : 'sha256sum';
-        const sumArgs = process.platform === 'darwin' ? ['-a', '256', archPath] : [archPath];
-        const local = await execCapture(sumCmd, sumArgs, 30000);
-        const got = local.ok ? (local.output.split(/\s+/)[0] || '') : '';
+        let got = '';
+        if (WIN) {
+          const local = await execCapture('powershell.exe',
+            ['-NoProfile', '-Command', `(Get-FileHash -Algorithm SHA256 -LiteralPath "${archPath}").Hash`], 60000);
+          got = (/[0-9a-fA-F]{64}/.exec(local.output || '') || [''])[0];
+        } else {
+          const sumCmd = process.platform === 'darwin' ? 'shasum' : 'sha256sum';
+          const sumArgs = process.platform === 'darwin' ? ['-a', '256', archPath] : [archPath];
+          const local = await execCapture(sumCmd, sumArgs, 30000);
+          got = local.ok ? (local.output.split(/\s+/)[0] || '') : '';
+        }
         if (!want || !got || want.toLowerCase() !== got.toLowerCase()) {
           throw new Error(`sha256 校验失败（期望 ${want || '?'}，实际 ${got || '?'}）`);
         }
         j.output += 'sha256 校验通过\n';
       }
-      // 解压并定位二进制（包内根目录或一级子目录）
-      await jobRun(j, 'tar', ['-xzf', archPath, '-C', dir], 60000);
-      let newBin = join(dir, 'rtk');
+      // 解压并定位二进制（包内根目录或一级子目录）。Windows 资产是 zip，
+      // 系统自带 bsdtar（tar.exe）可直接解，不加 -z
+      await jobRun(j, 'tar', WIN ? ['-xf', archPath, '-C', dir] : ['-xzf', archPath, '-C', dir], 60000);
+      const exeName = WIN ? 'rtk.exe' : 'rtk';
+      let newBin = join(dir, exeName);
       if (!existsSync(newBin)) {
         for (const ent of readdirSync(dir, { withFileTypes: true })) {
-          const cand = join(dir, ent.name, 'rtk');
+          const cand = join(dir, ent.name, exeName);
           if (ent.isDirectory() && existsSync(cand)) { newBin = cand; break; }
         }
       }
       if (!existsSync(newBin)) throw new Error('解压后未找到 rtk 二进制');
-      chmodSync(newBin, 0o755);
+      if (!WIN) chmodSync(newBin, 0o755);
       const v = await binVersionOf(newBin);
       if (!v) throw new Error('新版本无法运行（--version 无输出）');
-      // 原子替换：旧文件先挪走，失败可回滚
+      // 放置：全新安装建目录直接放；已有旧文件则原子替换（先挪走，失败可回滚）
+      if (freshInstall) mkdirSync(dirname(bin), { recursive: true });
       const backup = bin + '.rtk-old';
       try { rmSync(backup, { force: true }); } catch { /* ignore */ }
-      renameSync(bin, backup);
+      const hadOld = existsSync(bin);
+      if (hadOld) renameSync(bin, backup);
       try {
         try {
           renameSync(newBin, bin);
         } catch (renameErr) {
           // 跨文件系统（EXDEV）等 rename 失败：退化为复制（复制再失败由外层 catch 回滚）
           copyFileSync(newBin, bin);
-          chmodSync(bin, 0o755);
+          if (!WIN) chmodSync(bin, 0o755);
         }
       } catch (err) {
-        renameSync(backup, bin);
+        if (hadOld && existsSync(backup)) { try { renameSync(backup, bin); } catch { /* ignore */ } }
         throw err;
       }
-      try { rmSync(backup, { force: true }); } catch { /* ignore */ }
+      try { if (existsSync(backup)) rmSync(backup, { force: true }); } catch { /* ignore */ }
       j.version = v;
-      j.output += `已升级到 ${v}\n`;
+      if (WIN && freshInstall) {
+        const inPath = await ensureUserPathEntry(dirname(bin));
+        j.output += `已安装 rtk ${v}（${bin}；PATH 需注销重登后对会话生效，插件钩子即时生效）\n`;
+        if (!inPath) j.output += '注意：把 ~/.local/bin 写入用户 PATH 失败，钩子不受影响，会话里直接跑 rtk 需手动加 PATH\n';
+      } else {
+        j.output += freshInstall ? `已安装 rtk ${v}（${bin}）\n` : `已升级到 ${v}\n`;
+      }
     } catch (err) {
       if (!j.canceled) j.error = j.timedOut ? '升级超时已终止' : String(err?.stack || err?.message || err);
     } finally {
@@ -2057,10 +2097,62 @@ function jobRun(j, cmd, args, timeoutMs, scope = 'deps') {
   });
 }
 
+// rtk 资产/校验和下载：有 curl 时经子进程下载（jobRun 注入 deps 代理并提供取消
+// 与超时；-f 让 HTTP 错误直接失败，不会把错误页写成文件，此路径无百分比进度）。
+// 无 curl 的精简 Windows 用 node fetch 流式写文件兜底：进度按 5% 一档喂给升级
+// 任务，j.canceled 时立即中止（fetch 不读代理环境变量，配了代理又无 curl 的机器
+// 在这条路径只能直连——与 WebDAV 同步的 fetch 兜底同一限制）
+async function downloadToFile(j, url, dest, timeoutMs = 600000) {
+  const curl = findCurl();
+  if (curl) {
+    await jobRun(j, curl,
+      ['-fsSL', '--connect-timeout', '20', '--max-time', String(Math.ceil(timeoutMs / 1000)), '-o', dest, url],
+      timeoutMs);
+    return;
+  }
+  const res = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
+  if (!res.ok || !res.body) throw new Error(`下载失败 HTTP ${res.status}`);
+  const total = Number(res.headers.get('content-length')) || 0;
+  const out = createWriteStream(dest);
+  let got = 0;
+  let lastPct = -1;
+  try {
+    for await (const chunk of res.body) {
+      if (j.canceled) throw new Error('canceled');
+      if (!out.write(chunk)) await new Promise((r) => out.once('drain', r));
+      got += chunk.length;
+      if (total > 0) {
+        const pct = Math.floor((got / total) * 100);
+        if (pct >= lastPct + 5) { lastPct = pct; j.output += `下载中 ${pct}%\n`; }
+      }
+    }
+    await new Promise((resolve, reject) => { out.end(resolve); out.once('error', reject); });
+  } catch (err) {
+    try { out.destroy(); } catch { /* ignore */ }
+    throw err;
+  }
+}
+
 // headroom 程序探测：镜像钩子 hr_find_headroom 的查找清单（PATH + 常见安装位置）
 function headroomFindBin() {
-  return findBinFile(
-    process.platform === 'win32' ? ['headroom.exe', 'headroom.cmd'] : ['headroom'],
+  // Windows 兜底：pip 的 console script 落在各 Python 环境的 Scripts 目录（.exe），
+  // Scripts 目录不一定在桌面应用的 PATH 里
+  if (process.platform === 'win32') {
+    const home = homedir();
+    const pfRoots = [...new Set([process.env.PROGRAMFILES || 'C:\\Program Files', 'C:\\Program Files', 'C:\\ProgramFiles'])];
+    const extra = [
+      join(home, '.local', 'bin', 'headroom.exe'),
+      join(home, 'miniforge3', 'Scripts', 'headroom.exe'),
+      join(home, 'miniconda3', 'Scripts', 'headroom.exe'),
+      join(home, 'anaconda3', 'Scripts', 'headroom.exe'),
+    ];
+    for (const pf of pfRoots) {
+      extra.push(join(pf, 'miniforge3', 'Scripts', 'headroom.exe'), join(pf, 'miniconda3', 'Scripts', 'headroom.exe'));
+      for (const v of ['313', '312', '311']) extra.push(join(pf, `Python${v}`, 'Scripts', 'headroom.exe'));
+    }
+    return findBinFile(['headroom.exe'], extra);
+  }
+  return findBinFile(['headroom'],
     [join(homedir(), '.local', 'bin', 'headroom'), join(homedir(), 'miniforge3', 'bin', 'headroom'),
      join(homedir(), '.cargo', 'bin', 'headroom'), '/usr/local/bin/headroom', '/usr/bin/headroom']);
 }
@@ -2089,6 +2181,19 @@ function execCapture(cmd, args, timeoutMs = 30000, scope = 'deps') {
 // headroom 本体（pip 安装）的升级通道：控制台脚本 shebang 指向安装它的 Python
 // 解释器，检查更新与升级都通过该环境的 pip 执行（尊重用户 pip 源配置）。
 function headroomPythonOf(binPath) {
+  // Windows：pip console script 是 .exe（无 shebang），从所在目录推导——
+  // Scripts\headroom.exe → 同环境根目录的 python.exe
+  if (process.platform === 'win32') {
+    const dir = dirname(binPath);
+    if (basename(dir).toLowerCase() === 'scripts') {
+      const py = join(dirname(dir), 'python.exe');
+      if (existsSync(py)) return py;
+    }
+    const sibling = join(dir, 'python.exe');
+    if (existsSync(sibling)) return sibling;
+    return headroomFallbackPython();
+  }
+  // POSIX：读脚本的 shebang 行
   try {
     const first = (readFileSync(binPath, 'utf8').split('\n')[0] || '').trim();
     const m = /^#!\s*(.*python\S*)/.exec(first);
@@ -2107,9 +2212,35 @@ const HEADROOM_DIST_PY = [
   "        print(n + '\\t' + d.version); break",
 ].join('\n');
 
+// 本体未装时的全新安装通道：找可用的 Python（PATH + 常见安装位置），
+// 用官方发行版 headroom-ai[all] 走同一套 pip 升级任务
+function headroomFallbackPython() {
+  const WIN = process.platform === 'win32';
+  const home = homedir();
+  if (WIN) {
+    const pfRoots = [...new Set([process.env.PROGRAMFILES || 'C:\\Program Files', 'C:\\Program Files', 'C:\\ProgramFiles'])];
+    const extra = [
+      join(home, 'miniforge3', 'python.exe'),
+      join(home, 'miniconda3', 'python.exe'),
+      join(home, 'anaconda3', 'python.exe'),
+    ];
+    for (const pf of pfRoots) {
+      extra.push(join(pf, 'miniforge3', 'python.exe'), join(pf, 'miniconda3', 'python.exe'));
+      for (const v of ['313', '312', '311']) extra.push(join(pf, `Python${v}`, 'python.exe'));
+    }
+    return findBinFile(['python.exe'], extra);
+  }
+  return findBinFile(['python3', 'python'],
+    ['/usr/bin/python3', '/usr/local/bin/python3', join(home, '.local', 'bin', 'python3')]);
+}
+
 async function headroomPipChannel() {
   const bin = headroomFindBin();
-  if (!bin) return { code: 'headroom-update', error: '未找到 headroom 程序' };
+  if (!bin) {
+    const py = headroomFallbackPython();
+    if (!py) return { code: 'headroom-update', error: '未找到 headroom 程序，也未找到可用的 Python（全新安装需要 Python ≥ 3.10）' };
+    return { py, dist: 'headroom-ai[all]', current: null, freshInstall: true };
+  }
   const py = headroomPythonOf(bin);
   if (!py) return { code: 'headroom-update', error: '无法确定 headroom 的 Python 安装来源（不是 pip 控制台脚本）' };
   const r = await execCapture(py, ['-c', HEADROOM_DIST_PY], 20000);
@@ -2151,15 +2282,27 @@ function startHeadroomUpgrade(channel) {
   return headroomUpgradeSnapshot();
 }
 
-// 运行 headroom 插件钩子（ensure-proxy.sh，POSIX sh）：backend/power 写配置并立即
-// 生效，status/start/stop/restart 管理代理生命周期
-function runHeadroomHook(args, timeoutMs = 20000) {
+// 运行 headroom 插件钩子：新版插件（≥1.2.0）是跨平台 node 入口 ensure-proxy.mjs
+// （Windows 原生实现、POSIX 内部委托 ensure-proxy.sh），经 runNodeScript 跑（自动
+// 处理 node/内嵌 node 回退）；旧版只有 .sh 时用 sh 直跑（仅 POSIX）。
+// backend/power 写配置并立即生效，status/start/stop/restart 管理代理生命周期。
+// 钩子运行注意两点：
+// 1. 不注入下载代理（scope 'none'）——钩子不是安装/升级下载，代理范围开关不管它；
+// 2. localhost 强制不走代理——钩子里 curl 探测 http://127.0.0.1:<端口> 判断代理
+//    是否在跑，环境里残留的 http_proxy（包括 zcode-pro 自己注入的下载代理）会把
+//    探测请求送进代理服务器，代理停了就把在跑的 headroom 误判成未运行，面板一直
+//    卡在“正在启动”。
+async function runHeadroomHook(args, timeoutMs = 30000) {
+  const noProxy = ['127.0.0.1', 'localhost', process.env.NO_PROXY || process.env.no_proxy || ''].filter(Boolean).join(',');
+  const hookEnv = { NO_PROXY: noProxy, no_proxy: noProxy };
+  const mjs = findMarketplaceHook('headroom', join('hooks', 'ensure-proxy.mjs'));
+  if (mjs) return runNodeScript([mjs, ...args], timeoutMs, 'none', hookEnv);
   const hook = findMarketplaceHook('headroom', join('hooks', 'ensure-proxy.sh'));
   if (!hook) {
-    return Promise.resolve({ ok: false, code: 'headroom-plugin', error: '未找到 headroom 插件（先在插件市场安装）' });
+    return { ok: false, code: 'headroom-plugin', error: '未找到 headroom 插件（先在插件市场安装）' };
   }
   return new Promise((resolveRun) => {
-    execFile('sh', [hook, ...args], { timeout: timeoutMs, windowsHide: true }, (err, stdout, stderr) => {
+    execFile('sh', [hook, ...args], { timeout: timeoutMs, windowsHide: true, env: { ...process.env, ...hookEnv } }, (err, stdout, stderr) => {
       if (err && err.code === 'ENOENT') {
         resolveRun({ ok: false, code: 'headroom-sh', error: '未找到 sh，无法运行 headroom 插件脚本' });
         return;
@@ -2200,11 +2343,102 @@ export function parseHeadroomStatus(text) {
   };
 }
 
+// —— headroom 启用开关（设置弹窗“Headroom”标签页右上角）：只切换 ZCode 供应商配置
+// 里指向本地压缩代理（http://127.0.0.1:<端口>）的条目与直连上游之间的地址，绝不碰
+// 代理进程——headroom 是共享程序，其他工具（如 codex）可能同时在用。
+// 关闭时把条目改回直连地址（headroom 的默认转发上游），并在 zcodepro.json 的
+// headroomRoutes 里记下 { 供应商 id → { proxy, direct } }；开启时按记录切回代理。
+const HEADROOM_DIRECT_URL = 'https://open.bigmodel.cn/api/anthropic';
+const HEADROOM_LOCAL_URL_RE = /^http:\/\/127\.0\.0\.1:\d+\/?$/;
+
+// 扫描 v2/config.json（provider.<id>.options.baseURL）与 v2/provider_config.json
+// （providerRules[].config.api.baseUrl），统计当前走本地代理的条目数
+export function headroomUsageScan(dataRoot) {
+  let via = 0;
+  const v2 = readJsonFile(join(dataRoot, 'v2', 'config.json'));
+  for (const p of Object.values((v2 && typeof v2.provider === 'object' && v2.provider) || {})) {
+    const u = typeof p?.options?.baseURL === 'string' ? p.options.baseURL.trim() : '';
+    if (HEADROOM_LOCAL_URL_RE.test(u)) via += 1;
+  }
+  const pc = readJsonFile(join(dataRoot, 'v2', 'provider_config.json'));
+  for (const r of pc?.config?.providerConfigRules?.providerRules || []) {
+    const u = typeof r?.config?.api?.baseUrl === 'string' ? r.config.api.baseUrl.trim() : '';
+    if (HEADROOM_LOCAL_URL_RE.test(u)) via += 1;
+  }
+  return { enabled: via > 0, entries: via };
+}
+
+// 切换启用状态：enable=false 时 127.0.0.1 条目 → 直连（并记录）；enable=true 时按
+// 记录把直连条目切回代理。改写前各留 .zcodepro-backup 备份，与同步导入同款。
+export function setHeadroomUsage(dataRoot, configFile, enable) {
+  const backupFile = (p) => {
+    try { if (existsSync(p)) copyFileSync(p, p + '.zcodepro-backup'); } catch { /* 备份失败不阻塞 */ }
+  };
+  const atomicWrite = (p, obj) => {
+    const tmp = p + '.zcodepro-tmp';
+    writeFileSync(tmp, JSON.stringify(obj, null, 2) + '\n', 'utf8');
+    renameSync(tmp, p);
+  };
+  const v2File = join(dataRoot, 'v2', 'config.json');
+  const pcFile = join(dataRoot, 'v2', 'provider_config.json');
+  const v2 = readJsonFile(v2File);
+  const pc = readJsonFile(pcFile);
+  if (!v2 && !pc) return { ok: false, code: 'headroom-provider-config', error: '未找到 ZCode 供应商配置（v2/config.json）' };
+
+  const config = loadConfig(configFile);
+  const routes = { ...(config.headroomRoutes || {}) };
+  let changed = 0;
+  // 供应商 id 来自配置文件，跳过保留键：对普通对象按 ["__proto__"] 赋值改的是原型，
+  // 不是自有属性，记录会悄悄丢失
+  const reserved = (id) => id === '__proto__' || id === 'constructor' || id === 'prototype';
+  const apply = (get, set, id) => {
+    const u = get();
+    if (!enable && HEADROOM_LOCAL_URL_RE.test(u)) {
+      routes[id] = { proxy: u, direct: HEADROOM_DIRECT_URL };
+      set(HEADROOM_DIRECT_URL);
+      changed += 1;
+      return true;
+    }
+    if (enable && routes[id] && u === routes[id].direct) {
+      set(routes[id].proxy);
+      changed += 1;
+      return true;
+    }
+    return false;
+  };
+
+  if (v2 && v2.provider && typeof v2.provider === 'object') {
+    let touched = false;
+    for (const [id, p] of Object.entries(v2.provider)) {
+      if (reserved(id) || !p || typeof p !== 'object' || !p.options || typeof p.options !== 'object') continue;
+      const u = typeof p.options.baseURL === 'string' ? p.options.baseURL.trim() : '';
+      if (apply(() => u, (v) => { p.options.baseURL = v; }, id)) touched = true;
+    }
+    if (touched) { backupFile(v2File); atomicWrite(v2File, v2); }
+  }
+  if (Array.isArray(pc?.config?.providerConfigRules?.providerRules)) {
+    let touched = false;
+    for (const r of pc.config.providerConfigRules.providerRules) {
+      const id = typeof r?.providerId === 'string' ? r.providerId : '';
+      const api = r?.config?.api;
+      if (!id || reserved(id) || !api || typeof api.baseUrl !== 'string') continue;
+      const u = api.baseUrl.trim();
+      if (apply(() => u, (v) => { api.baseUrl = v; }, id)) touched = true;
+    }
+    if (touched) { backupFile(pcFile); atomicWrite(pcFile, pc); }
+  }
+  config.headroomRoutes = routes;
+  saveConfig(configFile, config);
+  return { ok: true, changed };
+}
+
 // 用 node 跑脚本：优先 PATH 里的 node；桌面环境没有时用自身进程
 // （zcode-pro 本就跑在 ELECTRON_RUN_AS_NODE=1 的 ZCode 二进制上）。导出以便测试。
-export function runNodeScript(scriptArgs, timeoutMs = 120000) {
-  const attempt = (cmd, extraEnv) => new Promise((resolveRun) => {
-    execFile(cmd, scriptArgs, { timeout: timeoutMs, env: { ...process.env, ...proxyEnv(), ...extraEnv }, windowsHide: true }, (err, stdout, stderr) => {
+// scope 默认 deps（headroom、rtk 的安装与升级）；插件市场的 zcode CLI 传 plugins；
+// extraEnv 是调用方要额外覆盖的环境变量（如 NO_PROXY）
+export function runNodeScript(scriptArgs, timeoutMs = 120000, scope = 'deps', extraEnv = {}) {
+  const attempt = (cmd, runEnv) => new Promise((resolveRun) => {
+    execFile(cmd, scriptArgs, { timeout: timeoutMs, env: { ...process.env, ...proxyEnv({}, scope), ...extraEnv, ...runEnv }, windowsHide: true }, (err, stdout, stderr) => {
       if (err && err.code === 'ENOENT') { resolveRun(null); return; }
       resolveRun({
         ok: !err,
