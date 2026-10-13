@@ -17,6 +17,17 @@ import { runSetup } from './setup.mjs';
 const here = dirname(fileURLToPath(import.meta.url));
 const INJECT_BUNDLE = resolve(here, '..', '..', 'dist', 'inject.js');
 
+// Windows 控制台中文乱码适配：输出为 UTF-8 字节，旧版 conhost/PowerShell 的默认
+// 代码页（936/GBK）按 GBK 解码会显示乱码。检测到真实控制台且非 UTF-8 代码页时
+// 切到 65001——只影响当前控制台会话（重开终端即恢复），重定向/非交互不干预。
+// 放在模块顶层：cli.mjs 经 import main.mjs 进入，setup 等子命令的输出同样受益。
+if (process.platform === 'win32' && process.stdout.isTTY) {
+  try {
+    const cp = execSync('chcp.com', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], windowsHide: true }).match(/(\d+)/)?.[1];
+    if (cp && cp !== '65001') execSync('chcp.com 65001', { stdio: 'ignore', windowsHide: true });
+  } catch { /* 无控制台或 chcp 不可用时保持原样 */ }
+}
+
 function usage() {
   return `ZCode Pro — ZCode 桌面版界面增强启动器
 

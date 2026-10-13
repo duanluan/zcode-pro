@@ -148,7 +148,7 @@ const psQuote = (s) => String(s).replace(/'/g, "''"); // PowerShell 单引号字
 // 桌面目录由 PowerShell 的 GetFolderPath 解析（正确跟随 OneDrive 重定向等）。
 // wshOk 为假（WSH 异常的机器）时降级：.lnk 直接经 cmd 最小化启动，不再依赖
 // wscript+vbs，代价是启动瞬间任务栏短暂闪一个最小化控制台
-export function windowsShortcutPlan(cmd, desktop = false, wshOk = true) {
+export function windowsShortcutPlan(cmd, desktop = false, wshOk = true, menuLnk = true) {
   const paths = windowsPaths();
   // vbs 由 wscript 按 ANSI 代码页解析（不支持 UTF-8），内容只用 ASCII
   const vbsContent = [
@@ -193,9 +193,11 @@ export function windowsShortcutPlan(cmd, desktop = false, wshOk = true) {
     "$ErrorActionPreference = 'Stop'",
     '$wsh = New-Object -ComObject WScript.Shell',
     ...setProps,
-    `$lnk = $wsh.CreateShortcut('${psQuote(paths.lnkPath)}')`,
-    'setProps $lnk',
-    '$lnk.Save()',
+    ...(menuLnk ? [
+      `$lnk = $wsh.CreateShortcut('${psQuote(paths.lnkPath)}')`,
+      'setProps $lnk',
+      '$lnk.Save()',
+    ] : []),
     ...(desktop ? [
       "$desk = Join-Path ([Environment]::GetFolderPath('Desktop')) 'ZCode Pro.lnk'",
       '$dl = $wsh.CreateShortcut($desk)',
@@ -207,6 +209,16 @@ export function windowsShortcutPlan(cmd, desktop = false, wshOk = true) {
     ] : []),
   ].filter(Boolean).join('\r\n');
   return { ...paths, vbsContent, psScript, icon, wshOk };
+}
+
+// 桌面 .lnk 的 JS 侧近似路径（仅用于结果汇报与“外来不覆盖”预判；实际创建仍走
+// PowerShell 的 GetFolderPath，正确跟随 OneDrive 重定向）。OneDrive 桌面重定向时
+// 桌面在 %OneDrive%\Desktop，未重定向时在用户主目录
+export function desktopLnkPathApprox() {
+  for (const od of [process.env.OneDrive, process.env.OneDriveConsumer]) {
+    if (od && existsSync(join(od, 'Desktop'))) return join(od, 'Desktop', 'ZCode Pro.lnk');
+  }
+  return join(homedir(), 'Desktop', 'ZCode Pro.lnk');
 }
 
 // —— 快捷方式设置项 ——
@@ -346,10 +358,18 @@ const shortcutItem = {
 
   installWindows(cmd, opts = {}) {
     const wshOk = windowsWshOk();
-    const plan = windowsShortcutPlan(cmd, !!opts.desktop, wshOk);
-    // .lnk 已存在且不属于本功能（Arguments 无归属标记）＝ install.ps1 等其他方式创建，不覆盖
-    if (existsSync(plan.lnkPath) && !lnkIsOurs(plan.lnkPath)) {
-      return { skipped: `已存在其他方式创建的 ${plan.lnkPath}，未覆盖` };
+    // 菜单/桌面两个 .lnk 各自独立判断“外来不覆盖”，互不连坐（与 Linux/macOS 的
+    // 桌面条目一致）：开始菜单被 install.ps1 等创建占位时，桌面快捷方式仍应能建
+    const paths = windowsPaths();
+    const menuForeign = existsSync(paths.lnkPath) && !lnkIsOurs(paths.lnkPath);
+    const deskPath = desktopLnkPathApprox();
+    const deskForeign = !!opts.desktop && existsSync(deskPath) && !lnkIsOurs(deskPath);
+    const plan = windowsShortcutPlan(cmd, !!opts.desktop, wshOk, !menuForeign);
+    if (menuForeign && (!opts.desktop || deskForeign)) {
+      return { skipped: [
+        menuForeign ? `已存在其他方式创建的 ${plan.lnkPath}，未覆盖` : '',
+        deskForeign ? `桌面 ${deskPath} 已存在其他方式创建的条目，未覆盖` : '',
+      ].filter(Boolean).join('；') };
     }
     if (wshOk) {
       mkdirSync(plan.vbsDir, { recursive: true });
@@ -359,7 +379,12 @@ const shortcutItem = {
     const how = wshOk
       ? `经 ${plan.vbsPath} 静默启动`
       : '本机 WSH 异常，经 cmd 最小化启动（启动时会短暂闪烁控制台窗口）';
-    return { detail: `已创建 ${plan.lnkPath}（${how}${opts.desktop ? '，含桌面' : ''}）` };
+    const parts = [];
+    parts.push(menuForeign
+      ? `开始菜单 ${plan.lnkPath} 已存在其他方式创建的条目，未覆盖`
+      : `已创建 ${plan.lnkPath}`);
+    if (opts.desktop) parts.push(deskForeign ? `桌面 ${deskPath} 已存在其他方式创建的条目，未覆盖` : '已创建桌面快捷方式');
+    return { detail: `${parts.join('；')}（${how}）` };
   },
 
   installMac(cmd, opts = {}) {

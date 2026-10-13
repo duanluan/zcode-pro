@@ -1,5 +1,5 @@
-// 系统原生目录选择器（Linux：xdg-desktop-portal FileChooser，经 gdbus 调用，
-// KDE/GNOME 弹出各自的原生对话框），支持指定起始目录。
+// 系统原生目录选择器（Windows：PowerShell FolderBrowserDialog；Linux：xdg-desktop-portal
+// FileChooser，经 gdbus 调用，KDE/GNOME 弹出各自的原生对话框），支持指定起始目录。
 // 返回 { path: string | null }（用户取消为 null）或 { unavailable: true }（环境无可用选择器）。
 
 import { spawn, spawnSync } from 'node:child_process';
@@ -133,10 +133,55 @@ function portalPickFolder(startDir, title, timeoutMs) {
   });
 }
 
+// Windows：PowerShell 的 FolderBrowserDialog（系统自带 .NET，无需额外安装）。
+// -STA 是对话框的线程模型要求；无属主窗口的对话框可能沉到别的窗口后面，
+// 用一个 TopMost 空窗当属主强制置前。startDir 经 SelectedPath 预选（路径不存在
+// 时对话框自行忽略）；输出编码固定 UTF-8——GUI 启动的进程无控制台，PowerShell
+// 重定向输出默认走 OEM 代码页（中文系统是 936），Node 按 UTF-8 解码会乱码。
+// 返回路径 / null（取消或超时）/ undefined（起不来）
+function powershellPickFolder(startDir, title, timeoutMs = 600000) {
+  return new Promise((resolve) => {
+    const safeTitle = String(title || '').replace(/'/g, "''");
+    const safeStart = String(startDir || '').replace(/'/g, "''");
+    const script = [
+      '[Console]::OutputEncoding = [System.Text.Encoding]::UTF8',
+      'Add-Type -AssemblyName System.Windows.Forms | Out-Null',
+      "$owner = New-Object System.Windows.Forms.Form",
+      '$owner.TopMost = $true',
+      '$d = New-Object System.Windows.Forms.FolderBrowserDialog',
+      `$d.Description = '${safeTitle}'`,
+      ...(safeStart ? [`$d.SelectedPath = '${safeStart}'`] : []),
+      "if ($d.ShowDialog($owner) -eq [System.Windows.Forms.DialogResult]::OK) { [Console]::Out.Write($d.SelectedPath) }",
+    ].join('; ');
+    let out = '';
+    let done = false;
+    const finish = (v) => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      try { child.kill(); } catch { /* ignore */ }
+      resolve(v);
+    };
+    const child = spawn('powershell', ['-NoProfile', '-STA', '-Command', script], {
+      stdio: ['ignore', 'pipe', 'ignore'], windowsHide: true,
+    });
+    child.on('error', () => finish(undefined));
+    child.stdout.on('data', (d) => { out += d.toString(); });
+    // 退出码非 0 = PowerShell 本身出错（视为不可用）；0 且无输出 = 用户取消
+    child.on('close', (code) => finish(code === 0 ? (out.trim() || null) : undefined));
+    const timer = setTimeout(() => finish(null), timeoutMs);
+  });
+}
+
 export async function pickFolderSystem(startDir, title, timeoutMs = 180000) {
+  const dialogTitle = title || '选择文件夹';
+  if (process.platform === 'win32') {
+    const r = await powershellPickFolder(String(startDir || ''), dialogTitle, timeoutMs);
+    if (r !== undefined) return { path: r };
+    return { unavailable: true };
+  }
   if (process.platform !== 'linux') return { unavailable: true };
   const start = firstExistingDir(String(startDir || '/'));
-  const dialogTitle = title || '选择文件夹';
   if (kdialogAvailable()) {
     const r = await kdialogPickFolder(start, dialogTitle);
     if (r !== undefined) return { path: r };
