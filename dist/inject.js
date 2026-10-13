@@ -3108,7 +3108,8 @@
         const paneVision = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
         const paneRtk = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
         const paneHeadroom = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
-        const panes = { features: paneFeatures, styles: paneStyles, perf: panePerf, agents: paneAgents, proxy: paneProxy, sync: paneSync, vision: paneVision, headroom: paneHeadroom, rtk: paneRtk };
+        const paneDebug = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
+        const panes = { features: paneFeatures, styles: paneStyles, perf: panePerf, agents: paneAgents, proxy: paneProxy, sync: paneSync, vision: paneVision, headroom: paneHeadroom, rtk: paneRtk, debug: paneDebug };
         const tabDefs = [
           ["features", L.tabFeatures],
           ["styles", L.tabStyles],
@@ -3118,7 +3119,10 @@
           ["sync", L.tabSync],
           ["vision", L.tabVision],
           ["headroom", L.tabHeadroom],
-          ["rtk", L.tabRtk]
+          ["rtk", L.tabRtk],
+          // “调试”标签页只对开发模式生效的用户显示（配置开关或 ZCODEPRO_DEV=1），
+          // 普通用户不可见
+          ...config.devMode === true || config.devActive === true ? [["debug", L.tabDebug]] : []
         ];
         const tablist = h("div", { role: "tablist", "aria-orientation": "horizontal", class: "zcodepro-tablist mt-4" });
         const renderTabs = () => tablist.replaceChildren(...tabDefs.map(([id, label]) => h("button", {
@@ -3891,6 +3895,59 @@
           ),
           h("p", { class: "mt-2 text-ui-xs/relaxed text-foreground-subtle" }, L.syncHint)
         );
+        const persistDevMode = async (v) => {
+          const res = await rpc("/config", { method: "POST", body: { devMode: v } });
+          if (!res.ok) {
+            showToast(L.failed + ": " + errText(res), "error");
+            return false;
+          }
+          if (res.config) config.devMode = res.config.devMode;
+          return true;
+        };
+        const devReloadBtn = btnSmall(L.devReload, () => {
+          void runDevReload();
+        }, "shrink-0", "primary");
+        const runDevReload = async () => {
+          devReloadBtn.disabled = true;
+          devReloadBtn.textContent = L.devReloading;
+          try {
+            await rpc("/dev/reload", { method: "POST", body: {} });
+          } catch {
+          }
+          setTimeout(() => {
+            try {
+              location.reload();
+            } catch {
+            }
+          }, 2e3);
+        };
+        const devModeWrap = h("div");
+        const renderDevPane = () => {
+          const dev = config.devMode === true;
+          devModeWrap.replaceChildren(
+            h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.devModeDesc),
+            h(
+              "div",
+              { class: "mt-3 divide-y divide-border rounded-xl border border-border" },
+              settingRow(L.devMode, L.devModeRowDesc, dev, async () => {
+                if (await persistDevMode(!dev)) renderDevPane();
+              }),
+              ...dev ? [h(
+                "div",
+                { class: "flex items-center justify-between gap-2 px-2 py-1.5" },
+                h(
+                  "div",
+                  { class: "min-w-0" },
+                  h("div", { class: "text-ui-sm font-medium text-foreground" }, L.devReload),
+                  h("div", { class: "mt-0.5 text-ui-xs/relaxed text-foreground-subtle" }, L.devReloadDesc)
+                ),
+                devReloadBtn
+              )] : []
+            )
+          );
+        };
+        renderDevPane();
+        paneDebug.append(devModeWrap);
         const VISION_DEFAULT_PROMPT = "\u8BF7\u8BE6\u7EC6\u63CF\u8FF0\u8FD9\u5F20\u56FE\u7247\u7684\u5168\u90E8\u5185\u5BB9\u3002\u82E5\u662F\u754C\u9762\u6216\u56FE\u8868\u622A\u56FE\uFF0C\u8BF7\u5148\u628A\u6240\u6709\u9519\u8BEF\u3001\u8B66\u544A\u3001\u5F02\u5E38\u72B6\u6001\u9010\u5B57\u5F15\u7528\u51FA\u6765\uFF08\u542B\u5B8C\u6574\u539F\u6587\uFF09\uFF0C\u518D\u63CF\u8FF0\u6574\u4F53\u5E03\u5C40\u3001\u6587\u5B57\u4E0E\u5173\u952E\u6570\u636E\u3002";
         const VISION_DEFAULT_CFG = {
           enabled: true,
@@ -4898,7 +4955,8 @@
           paneSync,
           paneVision,
           paneHeadroom,
-          paneRtk
+          paneRtk,
+          paneDebug
         );
       }
     });
@@ -6383,8 +6441,14 @@
   // src/inject/index.js
   (function zcodeproInject() {
     if (typeof window === "undefined") return;
-    if (window.__zcodeproInjected) return;
+    if (window.__zcodeproInjected) {
+      const boot = window.__ZCODEPRO__ || {};
+      const sameGeneration = window.__zcodeproBootedToken && boot.token && window.__zcodeproBootedToken === boot.token;
+      if (!sameGeneration) location.reload();
+      return;
+    }
     window.__zcodeproInjected = true;
+    window.__zcodeproBootedToken = (window.__ZCODEPRO__ || {}).token || "";
     try {
       startLocaleResolver();
     } catch {

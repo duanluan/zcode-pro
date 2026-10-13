@@ -1,5 +1,6 @@
 // ZCode Pro 注入脚本入口（由 esbuild 打包为 dist/inject.js，launcher 拼上启动参数后注入页面）。
-// 幂等守卫：页面刷新/重复注入时只初始化一次。
+// 幂等守卫：同一启动器的重复注入（CDP 重连）只初始化一次；换了启动器（开发重载，
+// token 每次启动随机生成）则让页面整页刷新，由新启动器注入唯一一份新代码。
 import { observeRadixPopups, startLocaleResolver } from './core.js';
 import { handleProjectMenu } from './features/project-menu.js';
 import { handleFileMenu } from './features/file-menu.js';
@@ -20,8 +21,17 @@ import { ensureStyle } from './ui.js';
 
 (function zcodeproInject() {
   if (typeof window === 'undefined') return;
-  if (window.__zcodeproInjected) return;
+  if (window.__zcodeproInjected) {
+    // 已有实例在跑：bootstrap 里 token 相同 = 同一启动器的重复注入，跳过；
+    // token 不同（或旧版脚本没记 token）= 开发重载换了个启动器 → 刷新页面接管
+    const boot = window.__ZCODEPRO__ || {};
+    const sameGeneration = window.__zcodeproBootedToken && boot.token
+      && window.__zcodeproBootedToken === boot.token;
+    if (!sameGeneration) location.reload();
+    return;
+  }
   window.__zcodeproInjected = true;
+  window.__zcodeproBootedToken = (window.__ZCODEPRO__ || {}).token || '';
 
   // 尽早取回系统语言（异步 IPC）：system 偏好下 macOS 的 navigator.language 可能与
   // 实际不符；start() 里会再调一次，覆盖 preload 桥未就绪的情况

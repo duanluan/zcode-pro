@@ -664,6 +664,41 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         json(res, 200, { ok: true, output, config });
         return;
       }
+      // —— 开发模式重载（设置弹窗“调试”标签页）：不重启 ZCode 换新代码 ——
+      if (req.method === 'POST' && url.pathname === '/dev/reload') {
+        if (loadConfig(configFile).devMode !== true && process.env.ZCODEPRO_DEV !== '1') {
+          json(res, 404, { ok: false, error: 'not found' });
+          return;
+        }
+        // 源码目录（有 package.json 与 esbuild）先构建，安装副本没有构建环境则跳过
+        let built = false;
+        const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
+        const esbuildBin = [join(repoRoot, 'node_modules', 'esbuild', 'bin', 'esbuild'),
+          join(repoRoot, 'node_modules', 'esbuild', 'bin', 'esbuild.exe')]
+          .find((p) => existsSync(p)) || '';
+        if (esbuildBin) {
+          try {
+            const b = spawnSync(esbuildBin, ['src/inject/index.js', '--bundle',
+              '--format=iife', '--target=chrome120', '--outfile=dist/inject.js'],
+              { cwd: repoRoot, timeout: 60000, encoding: 'utf8', windowsHide: true });
+            built = !b.error && b.status === 0;
+          } catch { /* 构建失败也继续交接（可能只改了 host 端代码） */ }
+        }
+        json(res, 200, { ok: true, built });
+        // 先应答再交接：拉起新的启动器进程（同一入口与参数，读新构建的 inject.js
+        // 与新 host 代码），本进程随后退出。页面刷新由注入脚本的换代守卫触发
+        // （见 src/inject/index.js）；新进程的 helper 端口占用靠监听重试等待
+        setTimeout(() => {
+          try {
+            const child = spawn(process.execPath, process.argv.slice(1), {
+              detached: true, stdio: 'ignore', windowsHide: true, env: process.env,
+            });
+            child.unref();
+          } catch { /* 拉不起来就只能等下次手动重启 */ }
+          setTimeout(() => process.exit(0), 250);
+        }, 150);
+        return;
+      }
       // —— 软件代理连通性检测：经 curl -x 走代理访问插件市场/本体升级实际要用的站点 ——
       if (req.method === 'POST' && url.pathname === '/proxy/test') {
         const body = await readBody(req);
@@ -957,9 +992,24 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
     }
   });
 
+  // 端口被占时重试：开发重载的交接窗口内，旧进程退出略晚于新进程启动，
+  // 新进程在这里等它让出端口（最多 20 秒），而不是启动失败
   return new Promise((resolveStarted, rejectStarted) => {
-    server.once('error', rejectStarted);
-    server.listen(port, '127.0.0.1', () => resolveStarted(server));
+    let attempts = 0;
+    const tryListen = () => {
+      attempts += 1;
+      server.removeAllListeners('error');
+      server.once('error', (err) => {
+        if (err && err.code === 'EADDRINUSE' && attempts < 40) {
+          try { server.close(); } catch { /* ignore */ }
+          setTimeout(tryListen, 500);
+          return;
+        }
+        rejectStarted(err);
+      });
+      server.listen(port, '127.0.0.1', () => resolveStarted(server));
+    };
+    tryListen();
   });
 }
 

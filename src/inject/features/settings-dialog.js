@@ -384,7 +384,8 @@ export function openSettingsDialog() {
       const paneVision = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
       const paneRtk = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
       const paneHeadroom = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
-      const panes = { features: paneFeatures, styles: paneStyles, perf: panePerf, agents: paneAgents, proxy: paneProxy, sync: paneSync, vision: paneVision, headroom: paneHeadroom, rtk: paneRtk };
+      const paneDebug = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
+      const panes = { features: paneFeatures, styles: paneStyles, perf: panePerf, agents: paneAgents, proxy: paneProxy, sync: paneSync, vision: paneVision, headroom: paneHeadroom, rtk: paneRtk, debug: paneDebug };
       const tabDefs = [
         ['features', L.tabFeatures],
         ['styles', L.tabStyles],
@@ -395,6 +396,9 @@ export function openSettingsDialog() {
         ['vision', L.tabVision],
         ['headroom', L.tabHeadroom],
         ['rtk', L.tabRtk],
+        // “调试”标签页只对开发模式生效的用户显示（配置开关或 ZCODEPRO_DEV=1），
+        // 普通用户不可见
+        ...(config.devMode === true || config.devActive === true ? [['debug', L.tabDebug]] : []),
       ];
       const tablist = h('div', { role: 'tablist', 'aria-orientation': 'horizontal', class: 'zcodepro-tablist mt-4' });
       const renderTabs = () => tablist.replaceChildren(...tabDefs.map(([id, label]) =>
@@ -1100,6 +1104,48 @@ export function openSettingsDialog() {
           h('div', { class: 'flex shrink-0 items-center gap-1.5' }, syncUploadBtn, syncDownloadBtn)),
         h('p', { class: 'mt-2 text-ui-xs/relaxed text-foreground-subtle' }, L.syncHint),
       );
+
+      // “调试”：开发模式开关 + 重载按钮。重载 = 构建 → 换新启动器进程（新 helper
+      // 代码与新注入脚本）→ 各 ZCode 窗口检测到换代自动整页刷新重新注入；
+      // ZCode 本体与所有会话不受影响，不用重启 ZCode
+      const persistDevMode = async (v) => {
+        const res = await rpc('/config', { method: 'POST', body: { devMode: v } });
+        if (!res.ok) {
+          showToast(L.failed + ': ' + errText(res), 'error');
+          return false;
+        }
+        if (res.config) config.devMode = res.config.devMode;
+        return true;
+      };
+      const devReloadBtn = btnSmall(L.devReload, () => { void runDevReload(); }, 'shrink-0', 'primary');
+      const runDevReload = async () => {
+        devReloadBtn.disabled = true;
+        devReloadBtn.textContent = L.devReloading;
+        // 旧进程应答后即退出，fetch 可能中断，成败都进入下面的兜底刷新
+        try { await rpc('/dev/reload', { method: 'POST', body: {} }); } catch { /* ignore */ }
+        // 兜底：正常情况下新启动器注入时本页会自动刷新；2 秒没动静（交接失败）
+        // 就自己刷新，宁可多刷一次也不能停在旧代码 + 失效 token 上
+        setTimeout(() => { try { location.reload(); } catch { /* ignore */ } }, 2000);
+      };
+      const devModeWrap = h('div');
+      const renderDevPane = () => {
+        const dev = config.devMode === true;
+        devModeWrap.replaceChildren(
+          h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.devModeDesc),
+          h('div', { class: 'mt-3 divide-y divide-border rounded-xl border border-border' },
+            settingRow(L.devMode, L.devModeRowDesc, dev, async () => {
+              if (await persistDevMode(!dev)) renderDevPane();
+            }),
+            ...(dev ? [h('div', { class: 'flex items-center justify-between gap-2 px-2 py-1.5' },
+              h('div', { class: 'min-w-0' },
+                h('div', { class: 'text-ui-sm font-medium text-foreground' }, L.devReload),
+                h('div', { class: 'mt-0.5 text-ui-xs/relaxed text-foreground-subtle' }, L.devReloadDesc)),
+              devReloadBtn)] : []),
+          ),
+        );
+      };
+      renderDevPane();
+      paneDebug.append(devModeWrap);
 
       // “视觉代理”：编辑 ~/.zcode/zcode-vision.json（zcode-vision 插件与 /vision-* 命令共用同一文件）。
       // 代理列表顺序即执行链；结构性改动（开关/模式/排序/删增）即时保存，文本输入防抖保存。
@@ -1977,6 +2023,7 @@ export function openSettingsDialog() {
         paneVision,
         paneHeadroom,
         paneRtk,
+        paneDebug,
       );
     },
   });
