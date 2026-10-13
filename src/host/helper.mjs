@@ -3,17 +3,18 @@
 // 仅绑定 127.0.0.1，并通过每次启动随机生成的 token 鉴权。
 
 import { createServer } from 'node:http';
-import { execFile, spawn } from 'node:child_process';
-import { chmodSync, copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, readlinkSync, realpathSync, renameSync, rmSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
+import { execFile, spawn, spawnSync } from 'node:child_process';
+import { chmodSync, copyFileSync, createWriteStream, existsSync, mkdirSync, readdirSync, readFileSync, readlinkSync, realpathSync, renameSync, rmSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { mkdtemp } from 'node:fs/promises'; // 注意：fs 的 mkdtemp 是回调版，await 它会把 undefined 当回调
 import { basename, delimiter, dirname, isAbsolute, join, resolve, sep } from 'node:path';
 import { homedir, tmpdir } from 'node:os';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { readSettings, writeSettingsAtomic, remapSettingsPaths, isProjectOpenInTabs } from './settings.mjs';
 import { taskIndexPath, probeTaskIndexWritable, remapTaskIndexPaths, taskIndexDriverAvailable, listOverriddenTitles, listTaskWorkspaceMap } from './taskIndex.mjs';
 import { pickFolderSystem } from './pickFolder.mjs';
 import { reorderWorkspaceTasks, reorderGroupMembers } from './taskOrder.mjs';
-import { webdavRequest, webdavPutWithMkcol, webdavHttpText } from './webdav.mjs';
+import { webdavRequest, webdavPutWithMkcol, webdavHttpText, parseWebdavListing, findCurl } from './webdav.mjs';
+import { resolveZcodeExecutable } from './paths.mjs';
 
 const VERSION = '0.17.2';
 
@@ -677,11 +678,21 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
           ['GitHub', 'https://github.com'],
           ['PyPI', pypiTarget],
         ];
+        // Windows 精简环境 PATH 可能不含 curl：与同步功能共用 findCurl（补测 System32）
+        const curlBin = findCurl();
         const results = [];
         for (const [name, targetUrl] of targets) {
           results.push(await new Promise((resolveT) => {
             const started = Date.now();
-            execFile('curl', ['-s', '-o', '/dev/null', '-w', '%{http_code}', '--max-time', '8', '-x', proxy, targetUrl],
+            if (!curlBin) {
+              resolveT({ name, httpCode: null, ms: null, ok: false, error: '未找到 curl 命令' });
+              return;
+            }
+            // -I 只取响应头：连通性检测不必下载整页（github 主页数百 KB，
+            // 经慢代理节点 8 秒必然超时误报）。-o 丢弃输出用各平台的空设备
+            // （Windows 上 /dev/null 是普通路径且目录不存在，必须用 NUL）
+            const nullDev = process.platform === 'win32' ? 'NUL' : '/dev/null';
+            execFile(curlBin, ['-sI', '-o', nullDev, '-w', '%{http_code}', '--max-time', '8', '-x', proxy, targetUrl],
               { timeout: 10000, windowsHide: true }, (err, stdout) => {
                 if (err && err.code === 'ENOENT') {
                   resolveT({ name, httpCode: null, ms: null, ok: false, error: '未找到 curl' });
@@ -745,8 +756,132 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         json(res, 200, { ok: true, direction, applied: r.applied, sync: loadConfig(configFile).sync });
         return;
       }
+      // —— 同步连通性测试（“测试”按钮）：用表单当前值逐步验证（可先测再存），不写入配置文件 ——
+      if (req.method === 'POST' && url.pathname === '/sync/test') {
+        const body = await readBody(req);
+        const v = validateSyncForm(body?.sync || {});
+        if (v.error) {
+          json(res, 400, { ok: false, code: 'sync-invalid', error: v.error });
+          return;
+        }
+        // dir 缺省时沿用已保存的值
+        const sync = { ...loadConfig(configFile).sync, ...v.sync };
+        const r = await runSyncTest({ sync, proxyUrl: proxyUrlFor('sync') });
+        if (r.error) {
+          json(res, r.status || 500, { ok: false, code: r.code || 'sync-test', error: r.error });
+          return;
+        }
+        json(res, 200, { ok: true, targets: r.targets, fileCount: r.fileCount });
+        return;
+      }
+      // —— 云端版本列表（“从云端下载”先弹文件选择，任选一个版本恢复）——
+      if (req.method === 'POST' && url.pathname === '/sync/versions') {
+        const config = loadConfig(configFile);
+        const sync = config.sync;
+        if (!sync.url || !/^https?:\/\/\S+$/.test(sync.url)) {
+          json(res, 400, { ok: false, code: 'sync-not-configured', error: '请先填写 WebDAV URL 并保存' });
+          return;
+        }
+        const r = await listSyncVersions(sync, proxyUrlFor('sync'));
+        if (r.error) {
+          json(res, r.status || 500, { ok: false, code: r.code || 'sync-request', error: r.error });
+          return;
+        }
+        json(res, 200, { ok: true, files: r.files });
+        return;
+      }
+      // —— 按文件操作（文件名必须整串匹配 SYNC_VERSION_RE）：apply 导入 / delete 删除 / export 保存到磁盘 ——
+      if (req.method === 'POST' && url.pathname.startsWith('/sync/version/')) {
+        const action = url.pathname.slice('/sync/version/'.length);
+        if (!['apply', 'delete', 'export'].includes(action)) {
+          json(res, 404, { ok: false, error: 'not found' });
+          return;
+        }
+        const body = await readBody(req);
+        const file = typeof body?.file === 'string' ? body.file : '';
+        if (!SYNC_VERSION_RE.test(file)) {
+          json(res, 400, { ok: false, code: 'sync-file-invalid', error: '文件名不合法（只能是同步目录里的 zcode-pro 备份文件）' });
+          return;
+        }
+        const config = loadConfig(configFile);
+        const sync = config.sync;
+        if (!sync.url || !/^https?:\/\/\S+$/.test(sync.url)) {
+          json(res, 400, { ok: false, code: 'sync-not-configured', error: '请先填写 WebDAV URL 并保存' });
+          return;
+        }
+        const remoteMissing = () => json(res, 404, { ok: false, code: 'sync-remote-missing', error: `云端文件 ${file} 不存在（可能已被删除）` });
+        if (action === 'apply') {
+          const remote = await fetchSyncNamedDoc(sync, proxyUrlFor('sync'), file);
+          if (remote.error) {
+            json(res, remote.status || 500, { ok: false, code: remote.code, error: remote.error });
+            return;
+          }
+          if (remote.missing) {
+            remoteMissing();
+            return;
+          }
+          const kind = file.startsWith('model') ? 'model' : 'zcodepro';
+          sync.lastPullAt = Date.now();
+          const r = applySyncDocs({ docs: { [kind]: remote.doc.data }, dataRoot, configFile, config, sync });
+          json(res, 200, { ok: true, applied: r.applied, sync: loadConfig(configFile).sync });
+          return;
+        }
+        if (action === 'delete') {
+          const r = await webdavRequest({ method: 'DELETE', url: syncFileUrlByName(sync, file), login: sync.login, password: sync.password, proxyUrl: proxyUrlFor('sync'), timeoutMs: 30000 });
+          if (!r.ok) {
+            json(res, 502, { ok: false, code: 'sync-request', error: r.error });
+            return;
+          }
+          if (r.httpCode === 404) {
+            remoteMissing();
+            return;
+          }
+          if (r.httpCode < 200 || r.httpCode >= 300) {
+            json(res, 502, { ok: false, code: 'sync-request', error: webdavHttpText(r.httpCode) });
+            return;
+          }
+          json(res, 200, { ok: true });
+          return;
+        }
+        // export：把云端文件原样保存到本机（不做信封校验，取回什么存什么）
+        const r = await webdavRequest({ method: 'GET', url: syncFileUrlByName(sync, file), login: sync.login, password: sync.password, proxyUrl: proxyUrlFor('sync'), timeoutMs: 60000 });
+        if (!r.ok) {
+          json(res, 502, { ok: false, code: 'sync-request', error: r.error });
+          return;
+        }
+        if (r.httpCode === 404 || r.httpCode === 409) {
+          remoteMissing();
+          return;
+        }
+        if (r.httpCode < 200 || r.httpCode >= 300) {
+          json(res, 502, { ok: false, code: 'sync-request', error: webdavHttpText(r.httpCode) });
+          return;
+        }
+        if (r.body.length > 8 * 1024 * 1024) {
+          json(res, 400, { ok: false, code: 'sync-remote-invalid', error: `云端 ${file} 超过 8MB，已拒绝保存` });
+          return;
+        }
+        // 系统目录选择器选保存位置；环境没有选择器时退回用户主目录，用户取消则中止
+        const picked = await pickFolderSystem(homedir(), '选择保存位置');
+        let target = '';
+        if (picked && typeof picked.path === 'string' && picked.path) target = join(picked.path, file);
+        else if (picked && picked.unavailable) target = join(homedir(), file);
+        else {
+          json(res, 200, { ok: false, code: 'export-cancelled', error: '已取消' });
+          return;
+        }
+        try {
+          writeFileSync(target, r.body, 'utf8');
+        } catch (err) {
+          json(res, 500, { ok: false, code: 'sync-export', error: `写入 ${target} 失败: ${err?.message || err}` });
+          return;
+        }
+        json(res, 200, { ok: true, path: target });
+        return;
+      }
       // —— zcode-plugins 市场更新：读状态（带 30 分钟节流的市场同步）与执行更新 ————
       if (req.method === 'GET' && url.pathname === '/plugins/status') {
+        await ensureZcodePluginsMarketplace();
         if (Date.now() - lastMarketplaceSync > 30 * 60 * 1000) {
           await runZcodeCli(['plugins', 'marketplace', 'update', ZCODE_PLUGINS_MARKETPLACE], 60000);
           lastMarketplaceSync = Date.now();
@@ -882,6 +1017,18 @@ function validateSyncForm(raw) {
 // 上传/下载按勾选逐文件进行，可单独覆盖其中一项 ——
 const SYNC_FILES = { zcodepro: 'zcodepro.json', model: 'model.json' };
 
+// 云端版本文件名的合法形态：固定名（zcodepro.json / model.json，始终是最新一版）
+// 或组名 + ISO 时间戳（冒号换成 -，部分网盘文件名不允许冒号），如
+// zcodepro-2025-10-25T14-59-53-169Z.json。按文件操作的端点（导入/删除/导出）
+// 都先整串匹配该正则，杜绝 ../ 之类的路径注入
+const SYNC_VERSION_RE = /^(zcodepro|model)(?:-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z)?\.json$/;
+
+// 历史版本文件名（同一次上传的各组共用同一时间戳，像“一次备份”而不是两个时刻）
+function syncVersionName(kind, ts) {
+  const iso = ts.toISOString(); // 2025-10-25T14:59:53.169Z
+  return `${kind}-${iso.slice(0, 19).replace(/:/g, '-')}-${iso.slice(20, 23)}Z.json`;
+}
+
 // 云端目录 = URL（服务器地址，容忍尾斜杠）+ 上传目录（默认 zcode-pro，可多级）。
 // 目录段逐段编码，中文/空格等文件夹名也能正确落到地址里
 function syncBaseDir(sync) {
@@ -896,6 +1043,25 @@ function syncFileUrl(sync, kind) {
   return syncBaseDir(sync) + '/' + SYNC_FILES[kind];
 }
 
+// 拼出云端目录里某个已校验文件名（固定名或历史版本）的完整地址
+function syncFileUrlByName(sync, fileName) {
+  return syncBaseDir(sync) + '/' + encodeURIComponent(fileName);
+}
+
+// 信封校验：云端文件必须是 { app: 'zcode-pro', kind, format, data } 且组别与文件名
+// 前缀一致；4MB 上限挡住异常大文件
+function parseSyncEnvelope(body, kind, label) {
+  if (body.length > 4 * 1024 * 1024) {
+    return { error: `云端 ${label} 超过 4MB，已拒绝应用`, code: 'sync-remote-invalid', status: 400 };
+  }
+  let doc = null;
+  try { doc = JSON.parse(body); } catch { /* 落到统一报错 */ }
+  if (!doc || typeof doc !== 'object' || doc.app !== 'zcode-pro' || doc.kind !== kind || !doc.data || typeof doc.data !== 'object') {
+    return { error: `云端 ${label} 不是 zcode-pro 的同步数据（可能被其他内容占用），请删除该文件或换一个目录`, code: 'sync-remote-invalid', status: 409 };
+  }
+  return { doc };
+}
+
 // 读云端某个同步文件：{ doc } 成功 | { missing } 云端没有该组数据 | { error, code, status } 失败。
 // 文件里已是其他内容（或组别不符）时拒绝覆盖；4MB 上限挡住异常大文件。
 async function fetchSyncDoc(sync, proxyUrl, kind) {
@@ -906,15 +1072,19 @@ async function fetchSyncDoc(sync, proxyUrl, kind) {
   if (r.httpCode === 404 || r.httpCode === 409) return { missing: true };
   if (r.httpCode < 200 || r.httpCode >= 300) return { error: webdavHttpText(r.httpCode), code: 'sync-request', status: 502 };
   if (!r.body.trim()) return { missing: true }; // 个别网盘对不存在的文件返回 200 空内容
-  if (r.body.length > 4 * 1024 * 1024) {
-    return { error: `云端 ${SYNC_FILES[kind]} 超过 4MB，已拒绝应用`, code: 'sync-remote-invalid', status: 400 };
-  }
-  let doc = null;
-  try { doc = JSON.parse(r.body); } catch { /* 落到统一报错 */ }
-  if (!doc || typeof doc !== 'object' || doc.app !== 'zcode-pro' || doc.kind !== kind || !doc.data || typeof doc.data !== 'object') {
-    return { error: `云端已存在其他内容的 ${SYNC_FILES[kind]}，请换一个目录`, code: 'sync-remote-invalid', status: 409 };
-  }
-  return { doc };
+  return parseSyncEnvelope(r.body, kind, SYNC_FILES[kind]);
+}
+
+// 读云端某个版本文件（固定名或带时间戳的历史版本，文件名需已过 SYNC_VERSION_RE）。
+// 返回值约定与 fetchSyncDoc 相同；kind 由文件名前缀决定
+async function fetchSyncNamedDoc(sync, proxyUrl, fileName) {
+  const kind = fileName.startsWith('model') ? 'model' : 'zcodepro';
+  const r = await webdavRequest({ method: 'GET', url: syncFileUrlByName(sync, fileName), login: sync.login, password: sync.password, proxyUrl });
+  if (!r.ok) return { error: r.error, code: 'sync-request', status: 502 };
+  if (r.httpCode === 404 || r.httpCode === 409) return { missing: true };
+  if (r.httpCode < 200 || r.httpCode >= 300) return { error: webdavHttpText(r.httpCode), code: 'sync-request', status: 502 };
+  if (!r.body.trim()) return { missing: true };
+  return parseSyncEnvelope(r.body, kind, fileName);
 }
 
 async function runSettingsSync({ direction, dataRoot, configFile, config, proxyUrl }) {
@@ -930,8 +1100,10 @@ async function runSettingsSync({ direction, dataRoot, configFile, config, proxyU
     : runSyncPull({ dataRoot, configFile, config, sync, proxyUrl });
 }
 
-// 上传：每组独立一个云端文件（zcodepro.json / model.json），勾选几组写几个；
-// 写前预读只为确认没顶到别人的文件，自己的文件直接整份覆盖
+// 上传：每组独立一个云端文件（zcodepro.json / model.json，始终最新一版），勾选几组
+// 写几个；写前预读云端内容，别名与本机的合并后再写（合并规则见 mergeAliases），
+// 其余内容整份覆盖。同一份内容再写一个带时间戳的历史版本文件，供下载时任选版本
+// 恢复（旧版 zcode-pro 仍读固定名）
 async function runSyncPush({ dataRoot, configFile, config, sync, proxyUrl }) {
   const docs = {};
   if (sync.include.zcodepro) {
@@ -954,21 +1126,33 @@ async function runSyncPush({ dataRoot, configFile, config, sync, proxyUrl }) {
     return { code: 'sync-run', status: 400, error: '本机没有可同步的内容' };
   }
   const pushed = [];
+  const stamp = new Date(); // 各组共用同一时间戳，对应“一次备份”
   const dir = await mkdtemp(join(tmpdir(), 'zcodepro-sync-'));
   try {
     for (const kind of Object.keys(docs)) {
       const remote = await fetchSyncDoc(sync, proxyUrl, kind);
       if (remote.error) return remote;
-      const doc = { app: 'zcode-pro', kind, format: 1, savedAt: new Date().toISOString(), data: docs[kind] };
+      // 别名先与云端合并：本机没配过的条目从云端带上，别让这次上传把别的机器配的别名顶掉
+      if (kind === 'zcodepro' && remote.doc) {
+        const remoteAliases = sanitizeAliases(remote.doc.data?.aliases);
+        if (remoteAliases) docs.zcodepro.aliases = mergeAliases(docs.zcodepro.aliases, remoteAliases);
+      }
+      const doc = { app: 'zcode-pro', kind, format: 1, savedAt: stamp.toISOString(), data: docs[kind] };
       const docPath = join(dir, SYNC_FILES[kind]);
       writeFileSync(docPath, JSON.stringify(doc, null, 2), 'utf8');
-      const put = await webdavPutWithMkcol({
-        url: syncFileUrl(sync, kind), login: sync.login, password: sync.password,
+      const putUrl = (name) => webdavPutWithMkcol({
+        url: syncFileUrlByName(sync, name), login: sync.login, password: sync.password,
         uploadFile: docPath, proxyUrl, timeoutMs: 60000,
       });
+      const put = await putUrl(SYNC_FILES[kind]);
       if (!put.ok) return { code: 'sync-request', status: 502, error: put.error };
       if (put.httpCode < 200 || put.httpCode >= 300) {
         return { code: 'sync-request', status: 502, error: webdavHttpText(put.httpCode) };
+      }
+      const putVersion = await putUrl(syncVersionName(kind, stamp));
+      if (!putVersion.ok) return { code: 'sync-request', status: 502, error: putVersion.error };
+      if (putVersion.httpCode < 200 || putVersion.httpCode >= 300) {
+        return { code: 'sync-request', status: 502, error: webdavHttpText(putVersion.httpCode) };
       }
       pushed.push(kind);
     }
@@ -981,8 +1165,8 @@ async function runSyncPush({ dataRoot, configFile, config, sync, proxyUrl }) {
 }
 
 // 下载：把云端所选组应用到本机（各组独立文件，勾选几组读几组，可只覆盖模型设置）。
-// 覆盖前留 .zcodepro-backup 备份；zcodepro 组只覆盖功能/样式/别名/代理，
-// sync 配置与凭据始终保留本机的
+// 覆盖前留 .zcodepro-backup 备份；zcodepro 组覆盖功能/样式/代理，别名与本机的
+// 合并（合并规则见 mergeAliases）；sync 配置与凭据始终保留本机的
 async function runSyncPull({ dataRoot, configFile, config, sync, proxyUrl }) {
   // 先把勾选组的云端数据全部读到（任何一组读取失败都不动本机文件），再逐组应用
   const docs = {};
@@ -995,6 +1179,14 @@ async function runSyncPull({ dataRoot, configFile, config, sync, proxyUrl }) {
   if (!Object.keys(docs).length) {
     return { code: 'sync-remote-missing', status: 404, error: '云端没有同步数据，请先在其他电脑上传' };
   }
+  sync.lastPullAt = Date.now();
+  return applySyncDocs({ docs, dataRoot, configFile, config, sync });
+}
+
+// 把云端读到的各组数据落到本机（runSyncPull 与按文件的历史版本导入共用）：
+// zcodepro 组覆盖功能/样式/代理（sync 配置与凭据保留本机的），别名与本机的合并，
+// model 组覆盖 v2/config.json 的 provider 与 provider_config.json；覆盖前都留备份
+function applySyncDocs({ docs, dataRoot, configFile, config, sync }) {
   const applied = [];
   const backupFile = (p) => {
     try { if (existsSync(p)) copyFileSync(p, p + '.zcodepro-backup'); } catch { /* 备份失败不阻塞 */ }
@@ -1004,15 +1196,16 @@ async function runSyncPull({ dataRoot, configFile, config, sync, proxyUrl }) {
     writeFileSync(tmp, JSON.stringify(obj, null, 2) + '\n', 'utf8');
     renameSync(tmp, p);
   };
-  sync.lastPullAt = Date.now();
 
   if (docs.zcodepro) {
     const rz = docs.zcodepro;
     const next = loadConfig(configFile);
     applyFeaturesPartial(next.features, rz.features);
     next.styles = applyStylesPartial(next.styles, rz.styles);
-    const aliases = sanitizeAliases(rz.aliases);
-    if (aliases) next.aliases = aliases;
+    // 别名与本机的合并（本机配过的优先），不再整份替换——各机器项目路径不同，
+    // 合并后两边的别名都在，谁也不会被对方的同步顶掉
+    const remoteAliases = sanitizeAliases(rz.aliases);
+    if (remoteAliases) next.aliases = mergeAliases(next.aliases, remoteAliases);
     if (typeof rz.proxy === 'string') {
       const v = rz.proxy.trim();
       if (v === '' || /^https?:\/\/\S+:\d+$/.test(v)) next.proxy = v;
@@ -1038,8 +1231,77 @@ async function runSyncPull({ dataRoot, configFile, config, sync, proxyUrl }) {
     }
     applied.push('model');
   }
+  // 没动 zcodepro.json 时，lastPullAt 也要写入配置文件（动了则已随 next 一起保存）
   if (!applied.includes('zcodepro')) saveConfig(configFile, config);
   return { applied };
+}
+
+// 同步“测试”按钮的实现：分三步验证，任一步失败即止（后续步骤没有意义）。
+// ① 连接与凭据：PROPFIND 上传目录——404/409 只说明目录还没建，能拿到 HTTP 响应
+// 且不是 401/403 即证明服务器可达、凭据可用（坚果云的应用密码可限定目录，
+// 探服务器根会误报）；② 上传目录：不存在时逐段 MKCOL 建出来再验（顺带验证写
+// 权限，与上传时的自动建目录一致）；③ 文件列表：PROPFIND Depth 1 数备份文件。
+// targets 的 step 供前端映射本地化步骤名（connect/dir/list）
+async function runSyncTest({ sync, proxyUrl }) {
+  const auth = { login: sync.login, password: sync.password, proxyUrl };
+  const targets = [];
+  const probe = async (step, run) => {
+    const started = Date.now();
+    const resp = await run();
+    const ok = resp.ok && resp.httpCode >= 200 && resp.httpCode < 300;
+    targets.push({
+      step, ok,
+      ms: Date.now() - started,
+      httpCode: resp.ok ? resp.httpCode : null,
+      error: ok ? '' : (resp.ok ? webdavHttpText(resp.httpCode) : resp.error),
+    });
+    return { ok, resp };
+  };
+  const baseDir = syncBaseDir(sync);
+  // ① 只要拿到响应且不是凭据问题就算连通（404/409 = 目录还没建，交给第②步处理）
+  const connect = await probe('connect', () => webdavRequest({ method: 'PROPFIND', url: baseDir, ...auth, timeoutMs: 20000, headers: ['Depth: 0'] }));
+  if (!connect.ok && connect.resp.ok && (connect.resp.httpCode === 404 || connect.resp.httpCode === 409)) {
+    // 目录缺失不算连接失败：改写第一步结果，继续建目录
+    targets[targets.length - 1] = { ...targets[targets.length - 1], ok: true, error: '' };
+  } else if (!connect.ok) {
+    return { targets };
+  }
+  // ② 目录不存在则逐段 MKCOL（已存在段 MKCOL 多半回 405，忽略），再 PROPFIND 验证
+  const dir = await probe('dir', async () => {
+    let r = connect.resp;
+    if (r.httpCode === 404 || r.httpCode === 409) {
+      try {
+        const u = new URL(baseDir);
+        let cur = u.origin;
+        for (const s of u.pathname.split('/').filter(Boolean)) {
+          cur += '/' + s;
+          await webdavRequest({ method: 'MKCOL', url: cur, ...auth, timeoutMs: 15000 });
+        }
+      } catch { /* URL 解析失败：交给下面的 PROPFIND 报错 */ }
+      r = await webdavRequest({ method: 'PROPFIND', url: baseDir, ...auth, timeoutMs: 20000, headers: ['Depth: 0'] });
+    }
+    return r;
+  });
+  if (!dir.ok) return { targets };
+  // ③ 列文件（Depth 1），数出同步目录里的备份文件个数
+  const list = await probe('list', () => webdavRequest({ method: 'PROPFIND', url: baseDir, ...auth, timeoutMs: 30000, headers: ['Depth: 1'] }));
+  if (!list.ok) return { targets };
+  const fileCount = parseWebdavListing(list.resp.body).filter((e) => SYNC_VERSION_RE.test(e.name)).length;
+  return { targets, fileCount };
+}
+
+// PROPFIND 云端同步目录，列出全部备份版本（固定名 + 带时间戳的历史）：
+// 按修改时间从新到旧（时间缺失的按文件名排后）；目录还不存在视为空列表
+async function listSyncVersions(sync, proxyUrl) {
+  const r = await webdavRequest({ method: 'PROPFIND', url: syncBaseDir(sync), login: sync.login, password: sync.password, proxyUrl, timeoutMs: 30000, headers: ['Depth: 1'] });
+  if (!r.ok) return { error: r.error, code: 'sync-request', status: 502 };
+  if (r.httpCode === 404 || r.httpCode === 409) return { files: [] };
+  if (r.httpCode < 200 || r.httpCode >= 300) return { error: webdavHttpText(r.httpCode), code: 'sync-request', status: 502 };
+  const files = parseWebdavListing(r.body)
+    .filter((e) => SYNC_VERSION_RE.test(e.name))
+    .map((e) => ({ name: e.name, size: e.size, lastModified: e.lastModified }));
+  files.sort((a, b) => ((b.lastModified || 0) - (a.lastModified || 0)) || b.name.localeCompare(a.name));
+  return { files };
 }
 
 // 别名表清洗（同步下载用）：只收 路径字符串 → 短字符串 的条目，数量限幅
@@ -1052,6 +1314,26 @@ function sanitizeAliases(raw) {
     if (typeof v !== 'string' || v.length > 200 || /[\r\n\0]/.test(v)) continue;
     out[k] = v;
     if (++n >= 2000) break;
+  }
+  return out;
+}
+
+// 别名表合并（同步上传/下载共用）：取两边的并集，配过别名的条目优先——同一路径
+// 两边都配了别名时用本机的；只有一边配过时保留配过的那个。所以在一台机器上清除
+// 别名后，只要别的机器还配着，下次同步还会把这条带回来，两边都清掉才会真正消失。
+// 导出以便测试脚本直接驱动。
+export function mergeAliases(localRaw, remoteRaw) {
+  const out = {};
+  const put = (k, v) => {
+    if (typeof k !== 'string' || k.length > 500 || k.includes('\0')) return;
+    if (typeof v !== 'string' || !v || v.length > 200 || /[\r\n\0]/.test(v)) return;
+    out[k] = v;
+  };
+  const entries = (raw) => (raw && typeof raw === 'object' && !Array.isArray(raw)) ? Object.entries(raw) : [];
+  for (const [k, v] of entries(remoteRaw)) put(k, v);
+  for (const [k, v] of entries(localRaw)) {
+    // 本机配过的覆盖云端同路径条目；本机是空值（视为没配过）时不覆盖，云端配过的留下
+    if (v) put(k, v);
   }
   return out;
 }
@@ -1908,25 +2190,34 @@ export function runNodeScript(scriptArgs, timeoutMs = 120000) {
   return attempt('node', {}).then((r) => r || attempt(process.execPath, { ELECTRON_RUN_AS_NODE: '1' }));
 }
 
-// ZCode CLI bundle（plugins 子命令入口）：按常见安装位置查找，可用环境变量覆盖
+// ZCode CLI bundle（plugins 子命令入口）：优先从定位到的 ZCode 可执行文件推导
+// （paths.mjs 覆盖 --zcode-path/环境变量/平台默认位置/Windows 注册表，含
+// C:\Program Files\ZCode 安装），再退回常见安装位置，可用环境变量覆盖
 function zcodeCliBundleCandidates() {
+  const fromExe = [];
+  try {
+    const exe = resolveZcodeExecutable();
+    if (exe) fromExe.push(join(dirname(exe), 'resources', 'glm', 'zcode.cjs'));
+  } catch { /* 未找到 ZCode 可执行文件时走静态候选 */ }
   return [
     process.env.ZCODEPRO_ZCODE_CLI,
+    ...fromExe,
     '/opt/ZCode/resources/glm/zcode.cjs',
     '/usr/lib/zcode/resources/glm/zcode.cjs',
     '/usr/share/zcode/resources/glm/zcode.cjs',
     '/Applications/ZCode.app/Contents/Resources/glm/zcode.cjs',
     process.env.LOCALAPPDATA ? join(process.env.LOCALAPPDATA, 'Programs', 'ZCode', 'resources', 'glm', 'zcode.cjs') : null,
+    process.env.PROGRAMFILES ? join(process.env.PROGRAMFILES, 'ZCode', 'resources', 'glm', 'zcode.cjs') : null,
   ].filter(Boolean);
 }
 
-// 运行 zcode CLI 子命令（plugins …）
+// 运行 zcode CLI 子命令（plugins …，走 plugins 代理范围）
 function runZcodeCli(subArgs, timeoutMs = 120000) {
   const bundle = zcodeCliBundleCandidates().find((c) => existsSync(c));
   if (!bundle) {
     return Promise.resolve({ ok: false, code: 'cli-not-found', error: '未找到 ZCode CLI（resources/glm/zcode.cjs）' });
   }
-  return runNodeScript([bundle, ...subArgs], timeoutMs);
+  return runNodeScript([bundle, ...subArgs], timeoutMs, 'plugins');
 }
 
 // 比对市场清单与已装清单：每个插件的已装版本与最新版本。导出以便测试。

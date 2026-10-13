@@ -63,7 +63,7 @@
     syncPassword: "\u5BC6\u7801",
     syncSave: "\u4FDD\u5B58",
     syncSaved: "\u540C\u6B65\u914D\u7F6E\u5DF2\u4FDD\u5B58",
-    syncFormHint: "\u540C\u6B65\u6587\u4EF6\u5B58\u5230\u201C\u4E0A\u4F20\u76EE\u5F55\u201D\uFF08\u9ED8\u8BA4 zcode-pro\uFF0C\u53EF\u591A\u7EA7\uFF0C\u81EA\u52A8\u521B\u5EFA\uFF09\u4E0B\u7684 zcodepro.json \u4E0E model.json\u3002",
+    syncFormHint: "\u540C\u6B65\u6587\u4EF6\u5B58\u5230\u201C\u4E0A\u4F20\u76EE\u5F55\u201D\uFF08\u9ED8\u8BA4 zcode-pro\uFF0C\u53EF\u591A\u7EA7\uFF0C\u81EA\u52A8\u521B\u5EFA\uFF09\uFF1Azcodepro.json \u4E0E model.json \u59CB\u7EC8\u662F\u6700\u65B0\u4E00\u7248\uFF0C\u65C1\u8FB9\u53E6\u4FDD\u7559\u5E26\u65F6\u95F4\u6233\u7684\u5386\u53F2\u7248\u672C\u3002",
     syncRecLink: "\u575A\u679C\u4E91 WebDAV",
     syncRecSuffix: "\uFF1A\u767B\u5F55\u4E0E\u5BC6\u7801\u586B\u201C\u5E94\u7528\u5BC6\u7801\u201D\uFF0C\u4E0D\u662F\u8D26\u53F7\u5BC6\u7801\u3002",
     syncIncludeZcp: "ZCode Pro \u8BBE\u7F6E",
@@ -73,16 +73,44 @@
     syncUpload: "\u4E0A\u4F20\u5230\u4E91\u7AEF",
     syncDownload: "\u4ECE\u4E91\u7AEF\u4E0B\u8F7D",
     syncUploading: "\u4E0A\u4F20\u4E2D\u2026",
-    syncDownloading: "\u4E0B\u8F7D\u4E2D\u2026",
     syncUploaded: "\u5DF2\u4E0A\u4F20\u5230\u4E91\u7AEF",
     syncDownloaded: "\u5DF2\u4ECE\u4E91\u7AEF\u6062\u590D",
     syncLastPush: "\u4E0A\u6B21\u4E0A\u4F20",
     syncLastPull: "\u4E0A\u6B21\u4E0B\u8F7D",
     syncNever: "\u65E0",
     syncConfirmTitle: "\u4ECE\u4E91\u7AEF\u4E0B\u8F7D",
-    syncConfirmDesc: "\u5C06\u7528\u4E91\u7AEF\u6570\u636E\u8986\u76D6\u672C\u673A\u52FE\u9009\u7684\u540C\u6B65\u5185\u5BB9\uFF08\u8986\u76D6\u524D\u4F1A\u5728\u539F\u6587\u4EF6\u65C1\u7559\u4E0B .zcodepro-backup \u5907\u4EFD\uFF09\uFF1B\u672C\u673A\u7684\u540C\u6B65\u914D\u7F6E\u4E0E\u767B\u5F55\u51ED\u636E\u4E0D\u53D7\u5F71\u54CD\u3002\u6A21\u578B\u8BBE\u7F6E\u6062\u590D\u540E\u5EFA\u8BAE\u91CD\u542F ZCode \u751F\u6548\u3002\u786E\u8BA4\u4E0B\u8F7D\uFF1F",
-    syncConfirmGo: "\u786E\u8BA4\u4E0B\u8F7D",
+    syncConfirmDesc: "\u5C06\u7528\u6240\u9009\u6587\u4EF6\u8986\u76D6\u672C\u673A\u5BF9\u5E94\u7684\u4E00\u9879\uFF08\u8986\u76D6\u524D\u4F1A\u5728\u539F\u6587\u4EF6\u65C1\u7559\u4E0B .zcodepro-backup \u5907\u4EFD\uFF09\uFF1B\u672C\u673A\u7684\u540C\u6B65\u914D\u7F6E\u4E0E\u767B\u5F55\u51ED\u636E\u4E0D\u53D7\u5F71\u54CD\u3002\u6A21\u578B\u8BBE\u7F6E\u6062\u590D\u540E\u5EFA\u8BAE\u91CD\u542F ZCode \u751F\u6548\u3002\u786E\u8BA4\u5BFC\u5165\uFF1F",
+    syncConfirmGo: "\u786E\u8BA4\u5BFC\u5165",
+    syncPickDesc: "\u56FA\u5B9A\u540D\u6587\u4EF6\u59CB\u7EC8\u662F\u6700\u65B0\u4E00\u7248\uFF0C\u5E26\u65F6\u95F4\u6233\u7684\u662F\u6BCF\u6B21\u4E0A\u4F20\u7559\u4E0B\u7684\u5386\u53F2\u7248\u672C\uFF1B\u300C\u5BFC\u5165\u300D\u7528\u6240\u9009\u6587\u4EF6\u8986\u76D6\u672C\u673A\u5BF9\u5E94\u7684\u4E00\u9879\u3002",
+    syncVerDeleteLatestNote: "\u6CE8\u610F\uFF1A\u8FD9\u662F\u201C\u6700\u65B0\u201D\u6587\u4EF6\uFF0C\u65E7\u7248 zcode-pro \u7684\u300C\u4ECE\u4E91\u7AEF\u4E0B\u8F7D\u300D\u4F9D\u8D56\u5B83\uFF0C\u5220\u9664\u540E\u65E7\u7248\u673A\u5668\u5C06\u65E0\u6CD5\u4E0B\u8F7D\uFF1B\u5E26\u65F6\u95F4\u6233\u7684\u5386\u53F2\u7248\u672C\u4E0D\u53D7\u5F71\u54CD\u3002",
     syncHint: "\u540C\u6B65\u767B\u5F55\u51ED\u636E\u4EC5\u4FDD\u5B58\u5728\u672C\u673A zcodepro.json\uFF1B\u6A21\u578B\u8BBE\u7F6E\u5305\u542B\u81EA\u5B9A\u4E49\u4F9B\u5E94\u5546\u7684 API Key\uFF0C\u53EA\u4F1A\u4E0A\u4F20\u5230\u4F60\u81EA\u5DF1\u7684 WebDAV\u3002",
+    syncTest: "\u6D4B\u8BD5",
+    syncTesting: "\u6D4B\u8BD5\u4E2D\u2026",
+    syncTestEmpty: "\u8BF7\u5148\u586B\u5199 URL",
+    syncTestFailed: "\u6D4B\u8BD5\u5931\u8D25",
+    syncTestStepConnect: "\u8FDE\u63A5",
+    syncTestStepDir: "\u76EE\u5F55",
+    syncTestStepList: "\u6587\u4EF6",
+    syncTestFilesFound: "\u4E91\u7AEF\u5DF2\u6709 {n} \u4E2A\u5907\u4EFD\u6587\u4EF6",
+    syncPickTitle: "\u8BF7\u9009\u62E9\u4E00\u4E2A\u6587\u4EF6",
+    syncPickLoading: "\u6B63\u5728\u8BFB\u53D6\u4E91\u7AEF\u6587\u4EF6\u5217\u8868\u2026",
+    syncPickEmpty: "\u4E91\u7AEF\u8FD8\u6CA1\u6709\u5907\u4EFD\u6587\u4EF6\uFF0C\u8BF7\u5148\u5728\u5176\u4ED6\u7535\u8111\u4E0A\u4F20",
+    syncVerImport: "\u5BFC\u5165",
+    syncVerImporting: "\u5BFC\u5165\u4E2D\u2026",
+    syncVerDelete: "\u5220\u9664",
+    syncVerSave: "\u4FDD\u5B58\u5230\u78C1\u76D8",
+    syncVerSaving: "\u4FDD\u5B58\u4E2D\u2026",
+    syncVerLatest: "\u6700\u65B0",
+    syncVerDeleteTitle: "\u5220\u9664\u4E91\u7AEF\u6587\u4EF6",
+    syncVerDeleteDesc: "\u5C06\u5220\u9664\u4E91\u7AEF\u7684\u8FD9\u4EFD\u5907\u4EFD\uFF0C\u4E0D\u53EF\u6062\u590D\uFF1A",
+    syncVerDeleted: "\u5DF2\u5220\u9664\u4E91\u7AEF\u5907\u4EFD",
+    syncVerSaved: "\u5DF2\u4FDD\u5B58\u5230",
+    devMode: "\u5F00\u53D1\u6A21\u5F0F",
+    devModeRowDesc: "\u5F00\u542F\u540E\u51FA\u73B0\u300C\u91CD\u8F7D ZCode Pro\u300D\u6309\u94AE\uFF1B\u4E5F\u53EF\u7ED9\u542F\u52A8\u5668\u8BBE\u73AF\u5883\u53D8\u91CF ZCODEPRO_DEV=1 \u542F\u7528\u3002\u6B64\u6807\u7B7E\u9875\u4EC5\u5728\u5F00\u53D1\u6A21\u5F0F\u751F\u6548\u65F6\u663E\u793A\u3002",
+    devModeDesc: "\u5F00\u53D1\u8C03\u8BD5\u7528\uFF1A\u6539\u5B8C zcode-pro \u4EE3\u7801\u540E\u4E0D\u5FC5\u91CD\u542F ZCode\uFF0C\u70B9\u300C\u91CD\u8F7D ZCode Pro\u300D\u5373\u53EF\u52A0\u8F7D\u65B0\u4EE3\u7801\u3002\u6D41\u7A0B\u4E3A\u81EA\u52A8\u6784\u5EFA\uFF08\u9700\u5728\u6E90\u7801\u76EE\u5F55\u8FD0\u884C\uFF09\u2192 \u4EE5\u65B0\u8FDB\u7A0B\u91CD\u542F ZCode Pro\uFF08\u672C\u5730\u52A9\u624B\u4E0E\u6CE8\u5165\u811A\u672C\u90FD\u6362\u65B0\uFF09\u2192 \u6240\u6709 ZCode \u7A97\u53E3\u81EA\u52A8\u5237\u65B0\u5E76\u91CD\u65B0\u6CE8\u5165\uFF1BZCode \u672C\u4F53\u4E0E\u5DF2\u6253\u5F00\u7684\u4F1A\u8BDD\u4E0D\u53D7\u5F71\u54CD\u3002",
+    devReload: "\u91CD\u8F7D ZCode Pro",
+    devReloading: "\u91CD\u8F7D\u4E2D\u2026",
+    devReloadDesc: "\u70B9\u51FB\u540E\u7EA6 2-3 \u79D2\u5185\u6240\u6709 ZCode \u7A97\u53E3\u81EA\u52A8\u5237\u65B0\u4E00\u6B21\u5E76\u52A0\u8F7D\u65B0\u811A\u672C\u3002",
     rowGapName: "\u6BB5\u843D\u95F4\u8DDD",
     rowGapDesc: "\u4F1A\u8BDD\u4E2D\u6BB5\u843D\u7B49\u6587\u672C\u5757\u4E4B\u95F4\u7684\u5782\u76F4\u95F4\u8DDD\uFF08\u56DE\u5408\u4E4B\u95F4\u3001\u7B54\u6848\u5185\u90E8\uFF09\u3002",
     listSpacingName: "\u5217\u8868\u4E0A\u4E0B\u8FB9\u8DDD",
@@ -363,7 +391,7 @@
     syncPassword: "Password",
     syncSave: "Save",
     syncSaved: "Sync settings saved.",
-    syncFormHint: "Sync files go to zcodepro.json and model.json inside the folder (default zcode-pro, multi-level allowed, created automatically).",
+    syncFormHint: "Sync files go inside the folder (default zcode-pro, multi-level allowed, created automatically): zcodepro.json and model.json are always the latest version; timestamped history versions are kept alongside.",
     syncRecLink: "Jianguoyun WebDAV",
     syncRecSuffix: " \u2014 use the app password, not your account password.",
     syncIncludeZcp: "ZCode Pro settings",
@@ -373,16 +401,44 @@
     syncUpload: "Upload",
     syncDownload: "Download",
     syncUploading: "Uploading\u2026",
-    syncDownloading: "Downloading\u2026",
     syncUploaded: "Uploaded to the server.",
     syncDownloaded: "Restored from the server.",
     syncLastPush: "Last upload",
     syncLastPull: "Last download",
     syncNever: "never",
     syncConfirmTitle: "Download from the server",
-    syncConfirmDesc: "Cloud data will overwrite the selected sections locally (a .zcodepro-backup copy is kept next to each file); your local sync config and credentials stay untouched. Restarting ZCode is recommended after restoring model settings. Download now?",
-    syncConfirmGo: "Download",
+    syncConfirmDesc: "The selected file will overwrite the matching local section (a .zcodepro-backup copy is kept next to each file); your local sync config and credentials stay untouched. Restarting ZCode is recommended after restoring model settings. Import now?",
+    syncConfirmGo: "Import",
+    syncPickDesc: "Fixed names are always the latest version; timestamped files are the history each upload leaves behind. Import overwrites the matching local section.",
+    syncVerDeleteLatestNote: 'Note: this is the "latest" file that older zcode-pro installs download from; deleting it breaks their download. Timestamped history versions are not affected.',
     syncHint: "Sync credentials are stored locally in zcodepro.json only; model settings contain the API keys of custom providers and go to your own WebDAV only.",
+    syncTest: "Test",
+    syncTesting: "Testing\u2026",
+    syncTestEmpty: "Enter the WebDAV URL first",
+    syncTestFailed: "Test failed",
+    syncTestStepConnect: "Connect",
+    syncTestStepDir: "Folder",
+    syncTestStepList: "Files",
+    syncTestFilesFound: "{n} backup file(s) on the server",
+    syncPickTitle: "Select a file",
+    syncPickLoading: "Loading files from the server\u2026",
+    syncPickEmpty: "No backups on the server yet. Upload from a computer first.",
+    syncVerImport: "Import",
+    syncVerImporting: "Importing\u2026",
+    syncVerDelete: "Delete",
+    syncVerSave: "Save to disk",
+    syncVerSaving: "Saving\u2026",
+    syncVerLatest: "Latest",
+    syncVerDeleteTitle: "Delete server file",
+    syncVerDeleteDesc: "This backup will be deleted from the server and cannot be recovered: ",
+    syncVerDeleted: "Backup deleted from the server.",
+    syncVerSaved: "Saved to",
+    devMode: "Developer mode",
+    devModeRowDesc: 'Shows the "Reload ZCode Pro" button; can also be enabled with the ZCODEPRO_DEV=1 environment variable. This tab is visible only while developer mode is active.',
+    devModeDesc: 'For development: after changing zcode-pro code, click "Reload ZCode Pro" instead of restarting ZCode. It builds automatically (when running from the source repo), restarts the ZCode Pro launcher process (fresh helper and injected script), and every ZCode window refreshes and re-injects. The ZCode app itself and all sessions stay untouched.',
+    devReload: "Reload ZCode Pro",
+    devReloading: "Reloading\u2026",
+    devReloadDesc: "Every ZCode window refreshes automatically within 2-3 seconds to load the new script.",
     rowGapName: "Paragraph spacing",
     rowGapDesc: "Vertical spacing between text blocks (turns, paragraphs inside answers).",
     listSpacingName: "List spacing",
@@ -694,7 +750,9 @@
     "sync-remote-missing": "No synced data on the server yet; upload from another computer first",
     "sync-remote-invalid": "The URL already holds a different file; use another file path",
     "sync-request": "The WebDAV request failed",
-    "sync-run": "Sync failed"
+    "sync-run": "Sync failed",
+    "sync-file-invalid": "Invalid backup file name",
+    "sync-export": "Failed to save the backup to disk"
   };
   function errText(res) {
     if (!res) return "";
@@ -3467,6 +3525,43 @@
             syncCheckDirty();
           }
         };
+        const syncTestState = h("p", { class: "mt-2 text-ui-xs/relaxed text-foreground-subtle" });
+        let syncTesting = false;
+        const syncTestBtn = btnSmall(L.syncTest, () => {
+          void runSyncTest();
+        }, "shrink-0");
+        const runSyncTest = async () => {
+          if (syncTesting) return;
+          if (!syncUrlInput.value.trim()) {
+            syncTestState.className = "mt-2 text-ui-xs/relaxed text-amber-500";
+            syncTestState.textContent = L.syncTestEmpty;
+            return;
+          }
+          syncTesting = true;
+          syncTestBtn.disabled = true;
+          syncTestBtn.textContent = L.syncTesting;
+          syncTestState.textContent = "";
+          syncTestState.className = "mt-2 text-ui-xs/relaxed text-foreground-subtle";
+          const res = await rpc("/sync/test", { method: "POST", body: { sync: syncFormValues() } });
+          syncTesting = false;
+          syncTestBtn.disabled = false;
+          syncTestBtn.textContent = L.syncTest;
+          if (!res.ok) {
+            syncTestState.className = "mt-2 text-ui-xs/relaxed text-destructive";
+            syncTestState.textContent = L.syncTestFailed + ": " + errText(res);
+            return;
+          }
+          const stepName = { connect: L.syncTestStepConnect, dir: L.syncTestStepDir, list: L.syncTestStepList };
+          const parts = (res.targets || []).map((t2) => `${stepName[t2.step] || t2.step} ${t2.ok ? "\u2713" + (t2.ms != null ? " " + t2.ms + "ms" : "") : "\u2717 " + (t2.error || t2.httpCode || "")}`.trim());
+          const allOk = (res.targets || []).length > 0 && (res.targets || []).every((t2) => t2.ok);
+          let host = syncUrlInput.value.trim();
+          try {
+            host = new URL(host).host;
+          } catch {
+          }
+          syncTestState.className = "mt-2 text-ui-xs/relaxed " + (allOk ? "text-foreground-subtle" : "text-amber-500");
+          syncTestState.textContent = `${host}\uFF1A${parts.join(" \xB7 ")}` + (allOk && res.fileCount != null ? `\uFF08${L.syncTestFilesFound.replace("{n}", res.fileCount)}\uFF09` : "");
+        };
         const JIANGUO_HELP = "https://help.jianguoyun.com/?p=2064";
         const syncRecLine = h("p", { class: "mt-1 text-ui-xs/relaxed text-foreground-subtle" });
         if (typeof window.zcode?.openExternal === "function") {
@@ -3510,56 +3605,216 @@
         };
         renderSyncStatus(savedSync);
         const syncUploadBtn = btnSmall(L.syncUpload, () => {
-          void runSyncDirection("push");
+          void runSyncPush();
         }, "shrink-0", "primary");
         const syncDownloadBtn = btnSmall(L.syncDownload, () => {
-          confirmSyncDownload();
+          openSyncVersionPicker();
         }, "shrink-0");
-        const confirmSyncDownload = () => {
+        const openSyncVersionPicker = () => {
           openDialog({
-            title: L.syncConfirmTitle,
-            description: L.syncConfirmDesc,
-            width: "sm:max-w-md",
-            onMount: ({ body: confirmBody, close: closeConfirm }) => {
-              confirmBody.append(
-                dialogFooter(
-                  btnSecondary(L.cancel, () => closeConfirm()),
-                  btnPrimary(L.syncConfirmGo, () => {
-                    closeConfirm();
-                    void runSyncDirection("pull");
-                  }, "min-w-24")
-                )
-              );
+            title: L.syncPickTitle,
+            description: L.syncPickDesc,
+            width: "max-w-2xl",
+            dismissOnOutside: false,
+            onMount: async ({ body: pickBody, content: content2, close: closePicker }) => {
+              const titleEl2 = content2 && content2.firstElementChild;
+              if (titleEl2 && titleEl2.tagName === "H2") {
+                titleEl2.classList.add("flex", "w-full", "items-center", "justify-between");
+                titleEl2.replaceChildren(
+                  h("span", { class: "flex min-w-0 items-center" }, L.syncPickTitle),
+                  h("button", {
+                    type: "button",
+                    class: "zcodepro-close",
+                    title: L.close,
+                    "aria-label": L.close,
+                    onMousedown: (e) => {
+                      e.stopPropagation();
+                    },
+                    onClick: () => {
+                      closePicker();
+                    }
+                  }, "\u2715")
+                );
+              }
+              const listWrap = h("div", { class: "space-y-1" });
+              pickBody.append(listWrap);
+              const fmtSize = (n) => {
+                if (!Number.isFinite(n) || n <= 0) return "";
+                return n >= 1048576 ? (n / 1048576).toFixed(2) + " MB" : Math.max(1, Math.round(n / 1024)) + " KB";
+              };
+              const setStatus = (el) => {
+                listWrap.replaceChildren(el);
+              };
+              const setRowBusy = (btns, busy) => {
+                for (const b of btns) b.disabled = busy;
+              };
+              const versionRow = (f) => {
+                const isLatest = !/-\d{4}-\d{2}-\d{2}T/.test(f.name);
+                const importBtn = btnSmall(L.syncVerImport, () => {
+                  confirmImport(f, rowBtns, importBtn);
+                }, "shrink-0");
+                const deleteBtn = btnSmall(L.syncVerDelete, () => {
+                  confirmDelete(f, rowBtns, isLatest);
+                }, "shrink-0");
+                const saveBtn = btnSmall(L.syncVerSave, () => {
+                  void exportVersion(f, rowBtns, saveBtn);
+                }, "shrink-0");
+                const rowBtns = [importBtn, deleteBtn, saveBtn];
+                return h(
+                  "div",
+                  { class: "flex items-center gap-3 rounded-xl border border-border px-3 py-2" },
+                  h(
+                    "div",
+                    { class: "min-w-0 flex-1" },
+                    h(
+                      "div",
+                      { class: "flex min-w-0 items-center gap-1.5" },
+                      h("span", { class: "truncate font-mono text-ui-xs text-foreground", title: f.name }, f.name),
+                      ...isLatest ? [h("span", { class: "shrink-0 rounded border border-border px-1.5 text-ui-xs text-foreground-subtle" }, L.syncVerLatest)] : []
+                    ),
+                    h(
+                      "div",
+                      { class: "mt-0.5 text-ui-xs/relaxed text-foreground-subtle" },
+                      [fmtSize(f.size), f.lastModified ? new Date(f.lastModified).toLocaleString() : ""].filter(Boolean).join(" \xB7 ")
+                    )
+                  ),
+                  h("div", { class: "flex shrink-0 items-center gap-1.5" }, importBtn, deleteBtn, saveBtn)
+                );
+              };
+              const loadList = async () => {
+                setStatus(h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.syncPickLoading));
+                const res = await rpc("/sync/versions", { method: "POST", body: {} });
+                if (!res.ok) {
+                  setStatus(h("p", { class: "text-ui-sm text-destructive" }, L.failed + ": " + errText(res)));
+                  return;
+                }
+                const files = res.files || [];
+                if (!files.length) {
+                  setStatus(h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.syncPickEmpty));
+                  return;
+                }
+                const parts = [];
+                for (const [prefix, label] of [["zcodepro", L.syncIncludeZcp], ["model", L.syncIncludeModel]]) {
+                  const group = files.filter((f) => f.name === `${prefix}.json` || f.name.startsWith(`${prefix}-`));
+                  if (!group.length) continue;
+                  const latest = group.find((f) => f.name === `${prefix}.json`);
+                  const history = group.filter((f) => f !== latest).sort((a, b) => (b.lastModified || 0) - (a.lastModified || 0) || b.name.localeCompare(a.name));
+                  parts.push(h(
+                    "div",
+                    { class: "px-1 pt-2 text-ui-xs font-medium text-foreground-subtle" },
+                    `${label}${isZhLocale() ? "\uFF08" : " ("}${group.length}${isZhLocale() ? "\uFF09" : ")"}`
+                  ));
+                  for (const f of [latest, ...history]) {
+                    if (f) parts.push(versionRow(f));
+                  }
+                }
+                listWrap.replaceChildren(...parts);
+              };
+              const confirmImport = (f, rowBtns, importBtn) => {
+                openDialog({
+                  title: L.syncConfirmTitle,
+                  width: "sm:max-w-md",
+                  onMount: ({ body: confirmBody, close: closeConfirm }) => {
+                    confirmBody.append(
+                      h("p", { class: "mb-2 truncate font-mono text-ui-xs text-foreground-subtle", title: f.name }, f.name),
+                      h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.syncConfirmDesc),
+                      dialogFooter(
+                        btnSecondary(L.cancel, () => closeConfirm()),
+                        btnPrimary(L.syncConfirmGo, () => {
+                          closeConfirm();
+                          void importVersion(f, rowBtns, importBtn);
+                        }, "min-w-24")
+                      )
+                    );
+                  }
+                });
+              };
+              const importVersion = async (f, rowBtns, importBtn) => {
+                setRowBusy(rowBtns, true);
+                importBtn.textContent = L.syncVerImporting;
+                const res = await rpc("/sync/version/apply", { method: "POST", body: { file: f.name } });
+                setRowBusy(rowBtns, false);
+                importBtn.textContent = L.syncVerImport;
+                if (!res.ok) {
+                  showToast(L.failed + ": " + errText(res), "error");
+                  return;
+                }
+                closePicker();
+                renderSyncStatus(res.sync || {});
+                clearConfigCache();
+                window.dispatchEvent(new CustomEvent("zcodepro:config-changed"));
+                Object.assign(config, await getConfig(true));
+                refreshRows();
+                renderToolbarSwitch();
+                const names = (res.applied || []).map((k) => k === "model" ? L.syncIncludeModel : L.syncIncludeZcp).join(isZhLocale() ? "\u3001" : ", ");
+                showToast(names ? `${L.syncDownloaded}\uFF08${names}\uFF09` : L.syncDownloaded, "success");
+              };
+              const confirmDelete = (f, rowBtns, isLatest) => {
+                openDialog({
+                  title: L.syncVerDeleteTitle,
+                  width: "sm:max-w-md",
+                  onMount: ({ body: confirmBody, close: closeConfirm }) => {
+                    confirmBody.append(
+                      h(
+                        "p",
+                        { class: "text-ui-sm/relaxed text-foreground-subtle" },
+                        L.syncVerDeleteDesc,
+                        h("span", { class: "font-mono" }, f.name)
+                      ),
+                      ...isLatest ? [h("p", { class: "mt-2 text-ui-xs/relaxed text-amber-500" }, L.syncVerDeleteLatestNote)] : [],
+                      dialogFooter(
+                        btnSecondary(L.cancel, () => closeConfirm()),
+                        btnPrimary(L.syncVerDelete, () => {
+                          closeConfirm();
+                          void deleteVersion(f, rowBtns);
+                        }, "min-w-24")
+                      )
+                    );
+                  }
+                });
+              };
+              const deleteVersion = async (f, rowBtns) => {
+                setRowBusy(rowBtns, true);
+                const res = await rpc("/sync/version/delete", { method: "POST", body: { file: f.name } });
+                setRowBusy(rowBtns, false);
+                if (!res.ok) {
+                  showToast(L.failed + ": " + errText(res), "error");
+                  return;
+                }
+                showToast(L.syncVerDeleted, "success");
+                void loadList();
+              };
+              const exportVersion = async (f, rowBtns, saveBtn) => {
+                setRowBusy(rowBtns, true);
+                saveBtn.textContent = L.syncVerSaving;
+                const res = await rpc("/sync/version/export", { method: "POST", body: { file: f.name } });
+                setRowBusy(rowBtns, false);
+                saveBtn.textContent = L.syncVerSave;
+                if (!res.ok) {
+                  if (res.code !== "export-cancelled") showToast(L.failed + ": " + errText(res), "error");
+                  return;
+                }
+                showToast(`${L.syncVerSaved} ${res.path}`, "success");
+              };
+              void loadList();
             }
           });
         };
-        const runSyncDirection = async (direction) => {
+        const runSyncPush = async () => {
           syncUploadBtn.disabled = true;
           syncDownloadBtn.disabled = true;
-          const btn = direction === "push" ? syncUploadBtn : syncDownloadBtn;
-          const idleText = btn.textContent;
-          btn.textContent = direction === "push" ? L.syncUploading : L.syncDownloading;
-          const res = await rpc("/sync/run", { method: "POST", body: { direction } });
+          const idleText = syncUploadBtn.textContent;
+          syncUploadBtn.textContent = L.syncUploading;
+          const res = await rpc("/sync/run", { method: "POST", body: { direction: "push" } });
           syncUploadBtn.disabled = false;
           syncDownloadBtn.disabled = false;
-          btn.textContent = idleText;
+          syncUploadBtn.textContent = idleText;
           if (!res.ok) {
             showToast(L.failed + ": " + errText(res), "error");
             return;
           }
           renderSyncStatus(res.sync || {});
-          if (direction === "pull") {
-            clearConfigCache();
-            window.dispatchEvent(new CustomEvent("zcodepro:config-changed"));
-            Object.assign(config, await getConfig(true));
-            refreshRows();
-            renderToolbarSwitch();
-          }
-          if (direction === "push") showToast(L.syncUploaded, "success");
-          else {
-            const names = (res.applied || []).map((k) => k === "model" ? L.syncIncludeModel : L.syncIncludeZcp).join(isZhLocale() ? "\u3001" : ", ");
-            showToast(names ? `${L.syncDownloaded}\uFF08${names}\uFF09` : L.syncDownloaded, "success");
-          }
+          showToast(L.syncUploaded, "success");
         };
         paneSync.append(
           h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.syncDesc),
@@ -3579,9 +3834,10 @@
                 h("p", { class: "text-ui-xs/relaxed text-foreground-subtle" }, L.syncFormHint),
                 syncRecLine
               ),
-              syncSaveBtn
+              h("div", { class: "flex shrink-0 items-center gap-1.5" }, syncSaveBtn, syncTestBtn)
             )
           ),
+          syncTestState,
           h("div", { class: "mt-2 divide-y divide-border rounded-xl border border-border" }, syncIncludeWrap),
           h(
             "div",

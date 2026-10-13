@@ -752,8 +752,10 @@ export function openSettingsDialog() {
 
       // “同步”：把 ZCode Pro 设置与模型设置手动备份到 WebDAV / 从 WebDAV 恢复
       // （交互参考 Tampermonkey：URL/登录/密码 + 手动触发，无自动同步）。仅 WebDAV
-      // 一种后端且本就只在点击时传输，不设“类型/禁用”下拉。表单显式保存；
-      // 同步内容开关即时保存；下载会覆盖本机，先弹二次确认
+      // 一种后端且本就只在点击时传输，不设“类型/禁用”下拉。表单显式保存（旁有
+      // 「测试」用当前表单值验证连通）；同步内容开关即时保存；下载先弹云端版本
+      // 列表（固定名 = 最新 + 带时间戳的历史），任选一个导入，导入会覆盖本机、
+      // 先弹二次确认
       const savedSync = (config.sync && typeof config.sync === 'object') ? config.sync
         : { url: '', dir: 'zcode-pro', login: '', password: '', include: { zcodepro: true, model: true }, lastPushAt: null, lastPullAt: null };
       const syncInputCls = 'h-8 w-full rounded-lg border border-border bg-input px-2.5 text-ui-sm text-foreground outline-none transition-shadow placeholder:text-foreground-subtle focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40';
@@ -801,6 +803,44 @@ export function openSettingsDialog() {
           syncCheckDirty();
         }
       };
+      // 「测试」：用表单当前值（先测再存）验证 WebDAV：连接与凭据 → 上传目录
+      // （缺则自动建，等同上传时的行为）→ 文件列表；结果仿“代理”标签页的检测，
+      // 一行显示各步耗时与云端备份文件数
+      const syncTestState = h('p', { class: 'mt-2 text-ui-xs/relaxed text-foreground-subtle' });
+      let syncTesting = false;
+      const syncTestBtn = btnSmall(L.syncTest, () => { void runSyncTest(); }, 'shrink-0');
+      const runSyncTest = async () => {
+        if (syncTesting) return;
+        // 没填 URL 不发请求（等超时才报“测试失败”的体验太差），立即提示
+        if (!syncUrlInput.value.trim()) {
+          syncTestState.className = 'mt-2 text-ui-xs/relaxed text-amber-500';
+          syncTestState.textContent = L.syncTestEmpty;
+          return;
+        }
+        syncTesting = true;
+        syncTestBtn.disabled = true;
+        syncTestBtn.textContent = L.syncTesting;
+        syncTestState.textContent = '';
+        syncTestState.className = 'mt-2 text-ui-xs/relaxed text-foreground-subtle';
+        const res = await rpc('/sync/test', { method: 'POST', body: { sync: syncFormValues() } });
+        syncTesting = false;
+        syncTestBtn.disabled = false;
+        syncTestBtn.textContent = L.syncTest;
+        if (!res.ok) {
+          syncTestState.className = 'mt-2 text-ui-xs/relaxed text-destructive';
+          syncTestState.textContent = L.syncTestFailed + ': ' + errText(res);
+          return;
+        }
+        const stepName = { connect: L.syncTestStepConnect, dir: L.syncTestStepDir, list: L.syncTestStepList };
+        const parts = (res.targets || []).map((t) =>
+          `${stepName[t.step] || t.step} ${t.ok ? '✓' + (t.ms != null ? ' ' + t.ms + 'ms' : '') : '✗ ' + (t.error || t.httpCode || '')}`.trim());
+        const allOk = (res.targets || []).length > 0 && (res.targets || []).every((t) => t.ok);
+        let host = syncUrlInput.value.trim();
+        try { host = new URL(host).host; } catch { /* 非法输入保留原文 */ }
+        syncTestState.className = 'mt-2 text-ui-xs/relaxed ' + (allOk ? 'text-foreground-subtle' : 'text-amber-500');
+        syncTestState.textContent = `${host}：${parts.join(' · ')}`
+          + (allOk && res.fileCount != null ? `（${L.syncTestFilesFound.replace('{n}', res.fileCount)}）` : '');
+      };
       // 坚果云推荐行：外链经宿主 openExternal 打开系统浏览器（无该能力时只出纯文字）
       const JIANGUO_HELP = 'https://help.jianguoyun.com/?p=2064';
       const syncRecLine = h('p', { class: 'mt-1 text-ui-xs/relaxed text-foreground-subtle' });
@@ -838,61 +878,199 @@ export function openSettingsDialog() {
         );
       };
       renderSyncInclude();
-      // 上次操作时间 + 上传/下载按钮；下载覆盖本机，需二次确认
+      // 上次操作时间 + 上传/下载按钮；上传固定名与历史版本双写，下载弹云端版本列表
       const fmtSyncTime = (ts) => (ts ? new Date(ts).toLocaleString() : L.syncNever);
       const syncStatusLine = h('div', { class: 'text-ui-xs/relaxed text-foreground-subtle' });
       const renderSyncStatus = (s) => {
         syncStatusLine.textContent = `${L.syncLastPush} ${fmtSyncTime(s.lastPushAt)} · ${L.syncLastPull} ${fmtSyncTime(s.lastPullAt)}`;
       };
       renderSyncStatus(savedSync);
-      const syncUploadBtn = btnSmall(L.syncUpload, () => { void runSyncDirection('push'); }, 'shrink-0', 'primary');
-      const syncDownloadBtn = btnSmall(L.syncDownload, () => { confirmSyncDownload(); }, 'shrink-0');
-      const confirmSyncDownload = () => {
+      const syncUploadBtn = btnSmall(L.syncUpload, () => { void runSyncPush(); }, 'shrink-0', 'primary');
+      const syncDownloadBtn = btnSmall(L.syncDownload, () => { openSyncVersionPicker(); }, 'shrink-0');
+      // 「从云端下载」先弹版本列表（备份管理器的样子）：列出云端目录里的备份文件
+      // （固定名 = 最新一版 + 带时间戳的历史），每行可导入到本机 / 从云端删除 /
+      // 另存到本机磁盘；导入按文件名前缀决定覆盖哪一项，不受“同步内容”勾选影响
+      const openSyncVersionPicker = () => {
         openDialog({
-          title: L.syncConfirmTitle,
-          description: L.syncConfirmDesc,
-          width: 'sm:max-w-md',
-          onMount: ({ body: confirmBody, close: closeConfirm }) => {
-            confirmBody.append(
-              dialogFooter(
-                btnSecondary(L.cancel, () => closeConfirm()),
-                btnPrimary(L.syncConfirmGo, () => { closeConfirm(); void runSyncDirection('pull'); }, 'min-w-24'),
-              ),
-            );
+          title: L.syncPickTitle,
+          description: L.syncPickDesc,
+          width: 'max-w-2xl',
+          dismissOnOutside: false,
+          onMount: async ({ body: pickBody, content, close: closePicker }) => {
+            // 标题栏 ✕（设置弹窗同款）；h2 也是拖拽把手，✕ 上要拦住 mousedown 冒泡
+            const titleEl = content && content.firstElementChild;
+            if (titleEl && titleEl.tagName === 'H2') {
+              titleEl.classList.add('flex', 'w-full', 'items-center', 'justify-between');
+              titleEl.replaceChildren(
+                h('span', { class: 'flex min-w-0 items-center' }, L.syncPickTitle),
+                h('button', {
+                  type: 'button',
+                  class: 'zcodepro-close',
+                  title: L.close,
+                  'aria-label': L.close,
+                  onMousedown: (e) => { e.stopPropagation(); },
+                  onClick: () => { closePicker(); },
+                }, '✕'),
+              );
+            }
+            const listWrap = h('div', { class: 'space-y-1' });
+            pickBody.append(listWrap);
+            const fmtSize = (n) => {
+              if (!Number.isFinite(n) || n <= 0) return '';
+              return n >= 1048576 ? (n / 1048576).toFixed(2) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
+            };
+            const setStatus = (el) => { listWrap.replaceChildren(el); };
+            const setRowBusy = (btns, busy) => { for (const b of btns) b.disabled = busy; };
+            const versionRow = (f) => {
+              // 固定名（zcodepro.json / model.json）不含时间戳段，始终是最新一版；
+              // 归属哪项同步内容由分组标题说明，行内不再重复
+              const isLatest = !/-\d{4}-\d{2}-\d{2}T/.test(f.name);
+              const importBtn = btnSmall(L.syncVerImport, () => { confirmImport(f, rowBtns, importBtn); }, 'shrink-0');
+              const deleteBtn = btnSmall(L.syncVerDelete, () => { confirmDelete(f, rowBtns, isLatest); }, 'shrink-0');
+              const saveBtn = btnSmall(L.syncVerSave, () => { void exportVersion(f, rowBtns, saveBtn); }, 'shrink-0');
+              const rowBtns = [importBtn, deleteBtn, saveBtn];
+              return h('div', { class: 'flex items-center gap-3 rounded-xl border border-border px-3 py-2' },
+                h('div', { class: 'min-w-0 flex-1' },
+                  h('div', { class: 'flex min-w-0 items-center gap-1.5' },
+                    h('span', { class: 'truncate font-mono text-ui-xs text-foreground', title: f.name }, f.name),
+                    ...(isLatest ? [h('span', { class: 'shrink-0 rounded border border-border px-1.5 text-ui-xs text-foreground-subtle' }, L.syncVerLatest)] : [])),
+                  h('div', { class: 'mt-0.5 text-ui-xs/relaxed text-foreground-subtle' },
+                    [fmtSize(f.size), f.lastModified ? new Date(f.lastModified).toLocaleString() : ''].filter(Boolean).join(' · '))),
+                h('div', { class: 'flex shrink-0 items-center gap-1.5' }, importBtn, deleteBtn, saveBtn));
+            };
+            const loadList = async () => {
+              setStatus(h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.syncPickLoading));
+              const res = await rpc('/sync/versions', { method: 'POST', body: {} });
+              if (!res.ok) {
+                setStatus(h('p', { class: 'text-ui-sm text-destructive' }, L.failed + ': ' + errText(res)));
+                return;
+              }
+              const files = res.files || [];
+              if (!files.length) {
+                setStatus(h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.syncPickEmpty));
+                return;
+              }
+              // 按同步内容分组排列：组标题下固定名（最新）放最上面，历史版本按
+              // 时间新→旧往下——两组文件多了也不会按时间交错混排
+              const parts = [];
+              for (const [prefix, label] of [['zcodepro', L.syncIncludeZcp], ['model', L.syncIncludeModel]]) {
+                const group = files.filter((f) => f.name === `${prefix}.json` || f.name.startsWith(`${prefix}-`));
+                if (!group.length) continue;
+                const latest = group.find((f) => f.name === `${prefix}.json`);
+                const history = group.filter((f) => f !== latest)
+                  .sort((a, b) => ((b.lastModified || 0) - (a.lastModified || 0)) || b.name.localeCompare(a.name));
+                parts.push(h('div', { class: 'px-1 pt-2 text-ui-xs font-medium text-foreground-subtle' },
+                  `${label}${isZhLocale() ? '（' : ' ('}${group.length}${isZhLocale() ? '）' : ')'}`));
+                for (const f of [latest, ...history]) {
+                  if (f) parts.push(versionRow(f));
+                }
+              }
+              listWrap.replaceChildren(...parts);
+            };
+            // 导入沿用原有的覆盖确认文案，并注明选中的是哪个文件
+            const confirmImport = (f, rowBtns, importBtn) => {
+              openDialog({
+                title: L.syncConfirmTitle,
+                width: 'sm:max-w-md',
+                onMount: ({ body: confirmBody, close: closeConfirm }) => {
+                  confirmBody.append(
+                    h('p', { class: 'mb-2 truncate font-mono text-ui-xs text-foreground-subtle', title: f.name }, f.name),
+                    h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.syncConfirmDesc),
+                    dialogFooter(
+                      btnSecondary(L.cancel, () => closeConfirm()),
+                      btnPrimary(L.syncConfirmGo, () => { closeConfirm(); void importVersion(f, rowBtns, importBtn); }, 'min-w-24'),
+                    ),
+                  );
+                },
+              });
+            };
+            const importVersion = async (f, rowBtns, importBtn) => {
+              setRowBusy(rowBtns, true);
+              importBtn.textContent = L.syncVerImporting;
+              const res = await rpc('/sync/version/apply', { method: 'POST', body: { file: f.name } });
+              setRowBusy(rowBtns, false);
+              importBtn.textContent = L.syncVerImport;
+              if (!res.ok) {
+                showToast(L.failed + ': ' + errText(res), 'error');
+                return;
+              }
+              closePicker();
+              renderSyncStatus(res.sync || {});
+              // 该版本已落到本机：刷新弹窗内开关显示，并让常驻功能立即按新配置生效
+              clearConfigCache();
+              window.dispatchEvent(new CustomEvent('zcodepro:config-changed'));
+              Object.assign(config, await getConfig(true));
+              refreshRows();
+              renderToolbarSwitch();
+              const names = (res.applied || [])
+                .map((k) => (k === 'model' ? L.syncIncludeModel : L.syncIncludeZcp))
+                .join(isZhLocale() ? '、' : ', ');
+              showToast(names ? `${L.syncDownloaded}（${names}）` : L.syncDownloaded, 'success');
+            };
+            const confirmDelete = (f, rowBtns, isLatest) => {
+              openDialog({
+                title: L.syncVerDeleteTitle,
+                width: 'sm:max-w-md',
+                onMount: ({ body: confirmBody, close: closeConfirm }) => {
+                  confirmBody.append(
+                    h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' },
+                      L.syncVerDeleteDesc,
+                      h('span', { class: 'font-mono' }, f.name)),
+                    // 删“最新”文件会让旧版 zcode-pro 失去下载入口，多提醒一句
+                    ...(isLatest ? [h('p', { class: 'mt-2 text-ui-xs/relaxed text-amber-500' }, L.syncVerDeleteLatestNote)] : []),
+                    dialogFooter(
+                      btnSecondary(L.cancel, () => closeConfirm()),
+                      btnPrimary(L.syncVerDelete, () => { closeConfirm(); void deleteVersion(f, rowBtns); }, 'min-w-24'),
+                    ),
+                  );
+                },
+              });
+            };
+            const deleteVersion = async (f, rowBtns) => {
+              setRowBusy(rowBtns, true);
+              const res = await rpc('/sync/version/delete', { method: 'POST', body: { file: f.name } });
+              setRowBusy(rowBtns, false);
+              if (!res.ok) {
+                showToast(L.failed + ': ' + errText(res), 'error');
+                return;
+              }
+              showToast(L.syncVerDeleted, 'success');
+              void loadList();
+            };
+            const exportVersion = async (f, rowBtns, saveBtn) => {
+              setRowBusy(rowBtns, true);
+              saveBtn.textContent = L.syncVerSaving;
+              // 宿主会弹系统目录选择器选保存位置；用户取消时不作提示
+              const res = await rpc('/sync/version/export', { method: 'POST', body: { file: f.name } });
+              setRowBusy(rowBtns, false);
+              saveBtn.textContent = L.syncVerSave;
+              if (!res.ok) {
+                if (res.code !== 'export-cancelled') showToast(L.failed + ': ' + errText(res), 'error');
+                return;
+              }
+              showToast(`${L.syncVerSaved} ${res.path}`, 'success');
+            };
+            void loadList();
           },
         });
       };
-      const runSyncDirection = async (direction) => {
+      // 上传：云端固定名（最新）与时间戳历史版本由服务端一并写入云端；下载期间按钮也
+      // 禁用（列表在变，选了也会过期）
+      const runSyncPush = async () => {
         syncUploadBtn.disabled = true;
         syncDownloadBtn.disabled = true;
-        const btn = direction === 'push' ? syncUploadBtn : syncDownloadBtn;
-        const idleText = btn.textContent;
-        btn.textContent = direction === 'push' ? L.syncUploading : L.syncDownloading;
-        const res = await rpc('/sync/run', { method: 'POST', body: { direction } });
+        const idleText = syncUploadBtn.textContent;
+        syncUploadBtn.textContent = L.syncUploading;
+        const res = await rpc('/sync/run', { method: 'POST', body: { direction: 'push' } });
         syncUploadBtn.disabled = false;
         syncDownloadBtn.disabled = false;
-        btn.textContent = idleText;
+        syncUploadBtn.textContent = idleText;
         if (!res.ok) {
           showToast(L.failed + ': ' + errText(res), 'error');
           return;
         }
         renderSyncStatus(res.sync || {});
-        if (direction === 'pull') {
-          // 云端配置已落到本机：刷新弹窗内开关显示，并让常驻功能立即按新配置生效
-          clearConfigCache();
-          window.dispatchEvent(new CustomEvent('zcodepro:config-changed'));
-          Object.assign(config, await getConfig(true));
-          refreshRows();
-          renderToolbarSwitch();
-        }
-        // 下载 toast 标明本次覆盖了哪几项（两项独立成文件，可能只覆盖了一项）
-        if (direction === 'push') showToast(L.syncUploaded, 'success');
-        else {
-          const names = (res.applied || [])
-            .map((k) => (k === 'model' ? L.syncIncludeModel : L.syncIncludeZcp))
-            .join(isZhLocale() ? '、' : ', ');
-          showToast(names ? `${L.syncDownloaded}（${names}）` : L.syncDownloaded, 'success');
-        }
+        showToast(L.syncUploaded, 'success');
       };
       paneSync.append(
         h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.syncDesc),
@@ -905,7 +1083,8 @@ export function openSettingsDialog() {
             h('div', { class: 'min-w-0' },
               h('p', { class: 'text-ui-xs/relaxed text-foreground-subtle' }, L.syncFormHint),
               syncRecLine),
-            syncSaveBtn)),
+            h('div', { class: 'flex shrink-0 items-center gap-1.5' }, syncSaveBtn, syncTestBtn))),
+        syncTestState,
         h('div', { class: 'mt-2 divide-y divide-border rounded-xl border border-border' }, syncIncludeWrap),
         h('div', { class: 'mt-2 flex items-center justify-between gap-2 rounded-xl border border-border p-2' },
           h('div', { class: 'min-w-0' }, syncStatusLine),
