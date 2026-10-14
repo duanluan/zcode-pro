@@ -2600,12 +2600,30 @@ export function writeAgents(body, agentsFile) {
   return [200, { ok: true, content: body.content }];
 }
 
+// 路径不存在时的还原尝试。宿主把消息里的反斜杠路径渲染成文件 chip 时，markdown
+// 会把 “\.” 当转义序列吃掉反斜杠（Administrator\.zcode 变成 Administrator.zcode），
+// 其余分隔符再统一显示为 /，chip 上拿到的就是这种坏路径。把每个“段名.点开头后缀”
+// 形式的段试着拆回两级（Administrator.zcode → Administrator/.zcode），哪个变体
+// 真实存在就用哪个；都不存在返回 null，按原路径走 not-found。导出以便测试脚本直接驱动。
+export function recoverSwallowedSeparator(rawPath) {
+  const segs = String(rawPath).split(/[\\/]/);
+  for (let i = 0; i < segs.length; i++) {
+    const dot = segs[i].indexOf('.');
+    if (dot <= 0) continue; // 段里没有点，或本身就是 .zcode 这类点开头目录
+    const candidate = [...segs.slice(0, i), segs[i].slice(0, dot), segs[i].slice(dot), ...segs.slice(i + 1)].join(sep);
+    try {
+      if (existsSync(candidate)) return candidate;
+    } catch { /* ignore */ }
+  }
+  return null;
+}
+
 // 在系统文件管理器中定位文件：
 // Linux 走 freedesktop FileManager1.ShowItems（Dolphin/Nautilus 均支持），无会话服务时回退打开所在目录；
 // macOS 用 open -R；Windows 用 explorer /select。导出以便测试脚本直接驱动。
 export function revealInFileManager(rawPath) {
   return new Promise((resolveReveal) => {
-    const p = typeof rawPath === 'string' ? rawPath.trim() : '';
+    let p = typeof rawPath === 'string' ? rawPath.trim() : '';
     if (!p || !isAbsolute(p)) {
       resolveReveal([400, { ok: false, code: 'invalid-path', error: '无效的路径' }]);
       return;
@@ -2660,25 +2678,46 @@ export function openFolder(rawPath) {
   });
 }
 
-// 用系统默认应用打开文件（或文件夹）：macOS 用 open；Windows 用 explorer；
-// Linux 用 xdg-open。导出以便测试脚本直接驱动。
+// 用系统默认应用打开文件（或文件夹）：macOS 用 open；Windows 走 rundll32 的
+// FileProtocolHandler（等价 ShellExecute，启动失败时退回 cmd start）；Linux 用
+// xdg-open。导出以便测试脚本直接驱动。Windows 上不能用 explorer.exe <文件路径>：
+// 那只会在资源管理器里定位该文件（打开所在目录并选中），不会启动默认关联应用。
 export function openWithDefaultApp(rawPath) {
   return new Promise((resolveOpen) => {
-    const p = typeof rawPath === 'string' ? rawPath.trim() : '';
+    let p = typeof rawPath === 'string' ? rawPath.trim() : '';
     if (!p || !isAbsolute(p)) {
       resolveOpen([400, { ok: false, code: 'invalid-path', error: '无效的路径' }]);
       return;
     }
     if (!existsSync(p)) {
-      resolveOpen([400, { ok: false, code: 'not-found', error: '文件不存在' }]);
-      return;
+      // chip 带来的路径可能被宿主渲染弄坏（见 recoverSwallowedSeparator），先试还原
+      const recovered = recoverSwallowedSeparator(p);
+      if (!recovered) {
+        resolveOpen([400, { ok: false, code: 'not-found', error: '文件不存在' }]);
+        return;
+      }
+      p = recovered;
     }
     const done = (err) => resolveOpen(err ? [500, { ok: false, error: err.message }] : [200, { ok: true }]);
     if (process.platform === 'darwin') execFile('open', [p], { timeout: 5000 }, done);
     else if (process.platform === 'win32') {
-      const child = spawn('explorer.exe', [p], { detached: true, stdio: 'ignore' });
-      child.on('error', done);
-      child.on('close', () => done(null));
+      // rundll32 的参数不经 shell 解释，路径里的空格、%、& 等字符都安全；
+      // start 的第一个引号参数是窗口标题，兜底时必须先给空标题再给路径。
+      // 进程拉起即算成功：系统里没有该类型的关联应用时 rundll32 会弹
+      // “你要如何打开这个文件”对话框并一直挂着，不能等它退出才回话
+      let settled = false;
+      const finish = (err) => {
+        if (settled) return;
+        settled = true;
+        done(err);
+      };
+      const child = spawn('rundll32.exe', ['url.dll,FileProtocolHandler', p], { detached: true, stdio: 'ignore', windowsHide: true });
+      child.on('spawn', () => finish(null));
+      child.on('error', () => {
+        const viaCmd = spawn('cmd.exe', [`/d /s /c start "" "${p}"`], { windowsVerbatimArguments: true, detached: true, stdio: 'ignore', windowsHide: true });
+        viaCmd.on('spawn', () => finish(null));
+        viaCmd.on('error', finish);
+      });
     } else execFile('xdg-open', [p], { timeout: 5000 }, done);
   });
 }

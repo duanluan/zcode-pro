@@ -8,6 +8,7 @@
 // 触发器/菜单的 React fiber props（OpenSplitButton 场景 target/fileLink/row.path）。
 import { t, closeRadixMenu, itemsOf, itemText, rpc } from '../core.js';
 import { getConfig } from '../core.js';
+import { showToast } from '../ui.js';
 
 const COPY_ABS_TEXTS = ['复制绝对路径', 'Copy absolute path'];
 const NO_APPS_TEXTS = ['未找到可用 App', 'No apps found'];
@@ -126,6 +127,12 @@ export function handleFileMenu(content) {
     const path = resolveTargetPath(content);
     if (!path) return;
     const L = t();
+    // 打开失败（路径不存在等）弹 toast 报错，不再无声无息
+    const fire = (endpoint, label) => {
+      rpc(endpoint, { method: 'POST', body: { path } })
+        .then((r) => { if (r && r.ok === false) showToast(`${label}失败：${r.error || '未知错误'}`, 'error'); })
+        .catch(() => { /* 网络异常时 helper 多半未运行，此时菜单不会注入，静默 */ });
+    };
     // “默认应用打开”锚在编辑器列表末尾（无可用编辑器时即“未找到可用 App”禁用项）之上；
     // 找不到该组时退而锚在“复制绝对路径”上，保持“打开方式在前、路径操作在后”的次序
     const noApps = items.find((el) => NO_APPS_TEXTS.some((x) => itemText(el) === x))
@@ -135,13 +142,13 @@ export function handleFileMenu(content) {
       marker: 'file-open-default',
       label: L.fileOpenDefault,
       icon: ICON_OPEN_DEFAULT,
-      onPick: () => { try { void rpc('/open-path', { method: 'POST', body: { path } }); } catch { /* ignore */ } },
+      onPick: () => { void fire('/open-path', L.fileOpenDefault); },
     });
     appendMenuItem(content, copyAbs, copyAbs, {
       marker: 'file-reveal',
       label: L.fileReveal,
       icon: ICON_REVEAL,
-      onPick: () => { try { void rpc('/reveal-path', { method: 'POST', body: { path } }); } catch { /* ignore */ } },
+      onPick: () => { void fire('/reveal-path', L.fileReveal); },
     });
   })();
 }

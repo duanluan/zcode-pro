@@ -1,5 +1,5 @@
 (() => {
-  // src/inject/core.js
+  // ../../../../../../../tmp/zpro-cleanbuild/src/inject/core.js
   var BOOT = typeof window !== "undefined" ? window.__ZCODEPRO__ || {} : {};
   var HELPER_URL = BOOT.helperUrl || "http://127.0.0.1:47889";
   function liveBoot() {
@@ -848,7 +848,7 @@
     return (item.textContent || "").trim();
   }
 
-  // src/inject/ui.js
+  // ../../../../../../../tmp/zpro-cleanbuild/src/inject/ui.js
   var toastTimer = null;
   function showToast(text, kind = "info") {
     document.getElementById("__zcodepro_toast__")?.remove();
@@ -1592,7 +1592,7 @@
   `));
   }
 
-  // src/inject/features/alias.js
+  // ../../../../../../../tmp/zpro-cleanbuild/src/inject/features/alias.js
   var norm = (p) => String(p || "").replace(/[\\/]+$/, "");
   var basenameOf = (p) => norm(p).split(/[\\/]/).pop() || "";
   function extractPathFromTestId(testid) {
@@ -1790,7 +1790,7 @@
     });
   }
 
-  // src/inject/features/relocate-dialog.js
+  // ../../../../../../../tmp/zpro-cleanbuild/src/inject/features/relocate-dialog.js
   function appendRelocateItem(menu, anchorItem, project) {
     if (menu.querySelector('[data-zcodepro-item="relocate"]')) return;
     const L = t();
@@ -1952,7 +1952,7 @@
     });
   }
 
-  // src/inject/features/open-folder.js
+  // ../../../../../../../tmp/zpro-cleanbuild/src/inject/features/open-folder.js
   function appendOpenFolderItem(menu, anchorItem, project) {
     if (menu.querySelector('[data-zcodepro-item="open-folder"]')) return;
     const L = t();
@@ -1994,7 +1994,7 @@
     return svg;
   }
 
-  // src/inject/features/copy-path.js
+  // ../../../../../../../tmp/zpro-cleanbuild/src/inject/features/copy-path.js
   async function appendCopyPathItem(menu, anchorItem, project) {
     if (menu.querySelector('[data-zcodepro-item="copy-path"]')) return;
     const L = t();
@@ -2064,7 +2064,7 @@
     return svg;
   }
 
-  // src/inject/features/project-menu.js
+  // ../../../../../../../tmp/zpro-cleanbuild/src/inject/features/project-menu.js
   var REMOVE_TEXTS = ["\u79FB\u9664", "Remove"];
   function extractPathFromTestId2(testid) {
     let m = testid.match(/[-:=,|](\/.+)$/);
@@ -2106,7 +2106,7 @@
     })();
   }
 
-  // src/inject/features/file-menu.js
+  // ../../../../../../../tmp/zpro-cleanbuild/src/inject/features/file-menu.js
   var COPY_ABS_TEXTS = ["\u590D\u5236\u7EDD\u5BF9\u8DEF\u5F84", "Copy absolute path"];
   var NO_APPS_TEXTS = ["\u672A\u627E\u5230\u53EF\u7528 App", "No apps found"];
   var ICON_OPEN_DEFAULT = [
@@ -2212,6 +2212,12 @@
       const path = resolveTargetPath(content);
       if (!path) return;
       const L = t();
+      const fire = (endpoint, label) => {
+        rpc(endpoint, { method: "POST", body: { path } }).then((r) => {
+          if (r && r.ok === false) showToast(`${label}\u5931\u8D25\uFF1A${r.error || "\u672A\u77E5\u9519\u8BEF"}`, "error");
+        }).catch(() => {
+        });
+      };
       const noApps = items.find((el) => NO_APPS_TEXTS.some((x) => itemText(el) === x)) || content.querySelector('[data-disabled][role="menuitem"]');
       const openAnchor = noApps && content.contains(noApps) ? noApps : copyAbs;
       appendMenuItem(content, copyAbs, openAnchor, {
@@ -2219,10 +2225,7 @@
         label: L.fileOpenDefault,
         icon: ICON_OPEN_DEFAULT,
         onPick: () => {
-          try {
-            void rpc("/open-path", { method: "POST", body: { path } });
-          } catch {
-          }
+          void fire("/open-path", L.fileOpenDefault);
         }
       });
       appendMenuItem(content, copyAbs, copyAbs, {
@@ -2230,16 +2233,13 @@
         label: L.fileReveal,
         icon: ICON_REVEAL,
         onPick: () => {
-          try {
-            void rpc("/reveal-path", { method: "POST", body: { path } });
-          } catch {
-          }
+          void fire("/reveal-path", L.fileReveal);
         }
       });
     })();
   }
 
-  // src/inject/features/image-menu.js
+  // ../../../../../../../tmp/zpro-cleanbuild/src/inject/features/image-menu.js
   var MIN_SIZE = 48;
   function copyTargetOf(el, x, y) {
     const sizeOk = (img) => {
@@ -2445,7 +2445,7 @@
     }, true);
   }
 
-  // src/inject/features/styles.js
+  // ../../../../../../../tmp/zpro-cleanbuild/src/inject/features/styles.js
   var STYLE_DEFAULTS = {
     rowGap: 20,
     // 段落间距：会话内各块之间的垂直间距
@@ -2708,7 +2708,7 @@
     if (hlEl) hlEl.textContent = "";
   }
 
-  // src/inject/features/settings-dialog.js
+  // ../../../../../../../tmp/zpro-cleanbuild/src/inject/features/settings-dialog.js
   function openExternal(url) {
     try {
       void window.zcode.openExternal(url);
@@ -4963,7 +4963,7 @@
     });
   }
 
-  // src/inject/features/settings-entry.js
+  // ../../../../../../../tmp/zpro-cleanbuild/src/inject/features/settings-entry.js
   var SETTINGS_BUTTON_TESTID = "task-settings-button";
   function handleSettingsContextmenu(e) {
     const target = e.target;
@@ -4978,7 +4978,7 @@
     document.addEventListener("contextmenu", handleSettingsContextmenu, true);
   }
 
-  // src/inject/features/task-order.js
+  // ../../../../../../../tmp/zpro-cleanbuild/src/inject/features/task-order.js
   var installed = false;
   var dragKey = null;
   function startTaskOrderWatcher() {
@@ -5041,7 +5041,7 @@
     }
   }
 
-  // src/inject/features/session-switch.js
+  // ../../../../../../../tmp/zpro-cleanbuild/src/inject/features/session-switch.js
   var MRU_LIMIT = 50;
   var SCAN_DEBOUNCE_MS = 150;
   var SCAN_FALLBACK_MS = 5e3;
@@ -5266,7 +5266,7 @@
     window.addEventListener("blur", () => closePopup(false));
   }
 
-  // src/inject/features/title-lock.js
+  // ../../../../../../../tmp/zpro-cleanbuild/src/inject/features/title-lock.js
   var TASK_SEL = "[data-task-item-key]";
   var SCAN_DEBOUNCE_MS2 = 150;
   var SCAN_FALLBACK_MS2 = 5e3;
@@ -5459,7 +5459,7 @@
     });
   }
 
-  // src/inject/features/pinned-expand.js
+  // ../../../../../../../tmp/zpro-cleanbuild/src/inject/features/pinned-expand.js
   var installed3 = false;
   var keepCollapsed = false;
   var CONFIG_POLL_MIN_MS = 5e3;
@@ -5566,7 +5566,7 @@
     return String(s).replace(/(["\\\]])/g, "\\$1");
   }
 
-  // src/inject/features/ws-running.js
+  // ../../../../../../../tmp/zpro-cleanbuild/src/inject/features/ws-running.js
   var installed4 = false;
   var enabled3 = true;
   var SCAN_DEBOUNCE_MS3 = 150;
@@ -5936,7 +5936,7 @@
     }, true);
   }
 
-  // src/inject/features/idle-reclaim.js
+  // ../../../../../../../tmp/zpro-cleanbuild/src/inject/features/idle-reclaim.js
   var CHECK_MS = 3e4;
   var WS_SEL2 = '[data-testid^="workspace-item-"]';
   var MIN_MINUTES = 1;
@@ -6086,7 +6086,7 @@
     setInterval(loop, CHECK_MS);
   }
 
-  // src/inject/features/toolbar-icons.js
+  // ../../../../../../../tmp/zpro-cleanbuild/src/inject/features/toolbar-icons.js
   var HIDE_CLASS = "zcodepro-tb-hidden";
   var SYNC_DEBOUNCE_MS = 150;
   var SCAN_FALLBACK_MS4 = 5e3;
@@ -6281,7 +6281,7 @@
     });
   }
 
-  // src/inject/features/pinned-collapse.js
+  // ../../../../../../../tmp/zpro-cleanbuild/src/inject/features/pinned-collapse.js
   var COLLAPSED_CLASS = "zcodepro-pin-collapsed";
   var HEAD_CLASS = "zcodepro-pin-head";
   var STORE_KEY = "zcodepro:pinned-collapsed";
@@ -6411,7 +6411,7 @@
     });
   }
 
-  // src/inject/features/plugin-updates.js
+  // ../../../../../../../tmp/zpro-cleanbuild/src/inject/features/plugin-updates.js
   var NOTIFIED_KEY = "zcodepro-plugin-updates-notified";
   async function startPluginUpdateCheck() {
     const status = await rpc("/plugins/status");
@@ -6439,7 +6439,7 @@
     showToast(L.pluginsUpdatesAvailable.replaceAll("{n}", String(status.updates.length)), "info");
   }
 
-  // src/inject/index.js
+  // ../../../../../../../tmp/zpro-cleanbuild/src/inject/index.js
   (function zcodeproInject() {
     if (typeof window === "undefined") return;
     if (window.__zcodeproInjected) {
