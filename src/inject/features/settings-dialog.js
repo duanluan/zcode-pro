@@ -1358,10 +1358,19 @@ export function openSettingsDialog() {
                 if (src === 'select') renderVision();
               },
               { placeholder: L.titleGenProviderSession, staleLabel: L.titleGenProviderDeleted })),
+            // 跟随会话时模型下拉头部有「跟随当前会话当前模型」（值为空，
+            // 插件 ≥1.6.1 在调用时解析为会话当前模型）；具体供应商为其模型列表
             field(L.visionModel, comboField(p.model || '',
-              modelOptionsOf(p.useProvider, titleGenProviders),
+              modelOptionsOf(p.useProvider, titleGenProviders, {
+                followSession: (p.useProvider || '').trim() === 'session',
+                followSessionLabel: L.titleGenModelFollowSession,
+              }),
               (v) => { p.model = v; saveVisionSoon(); },
-              { placeholder: modelPlaceholderOf(p.useProvider, L), emptyLabel: L.titleGenModelEmpty })),
+              {
+                placeholder: modelPlaceholderOf(p.useProvider, L),
+                emptyLabel: (p.useProvider || '').trim() === 'session'
+                  ? L.titleGenModelFollowSession : L.titleGenModelEmpty,
+              })),
             ...(isManualConn(p.useProvider, titleGenProviders) ? [
               field(L.visionBaseUrl, textIn(p.baseUrl, (v) => { p.baseUrl = v; saveVisionSoon(); })),
               field(L.visionApiKey + ' · ' + L.visionApiKeyHint, textIn(p.apiKey, (v) => { p.apiKey = v; saveVisionSoon(); }, { type: 'password' })),
@@ -2074,11 +2083,17 @@ export function openSettingsDialog() {
           { placeholder: L.titleGenProviderSession, staleLabel: L.titleGenProviderDeleted });
         const modelCombo = comboField(
           titleGenCfg.model || '',
-          modelOptionsOf(titleGenCfg.provider, titleGenProviders),
+          // 跟随会话时选项表头部有“跟随当前会话当前模型”（值为空，生成时用
+          // 会话当前模型），选了具体模型后也能再切回它
+          modelOptionsOf(titleGenCfg.provider, titleGenProviders, {
+            followSession: true,
+            followSessionLabel: L.titleGenModelFollowSession,
+          }),
           (v) => { titleGenCfg.model = v; saveTitleGenSoon(); },
           {
             placeholder: modelPlaceholderOf(titleGenCfg.provider, L),
-            emptyLabel: L.titleGenModelEmpty,
+            emptyLabel: (titleGenCfg.provider || '').trim() === 'session'
+              ? L.titleGenModelFollowSession : L.titleGenModelEmpty,
           });
         // 接口地址 / API Key / 协议（显隐见上方 showInlineConn）：不跟随时由
         // 用户填写；供应商被删时展示保存的副本，仍可直连或改填

@@ -2122,7 +2122,11 @@ export function validateVisionConfig(raw) {
     names.add(name);
     proxy.name = name;
     if (!(proxy.baseUrl || '').trim() && !(proxy.useProvider || '').trim()) return [null, `代理 ${name} 缺少 baseUrl（或设置 useProvider 跟随供应商）`];
-    if (!(proxy.model || '').trim()) return [null, `代理 ${name} 缺少 model`];
+    // 跟随会话（useProvider=session）时允许 model 留空：留空 = 用会话当前模型
+    //（zcode-vision ≥1.6.1 支持）；其余情况必须填写
+    if (!(proxy.model || '').trim() && proxy.useProvider !== 'session') {
+      return [null, `代理 ${name} 缺少 model`];
+    }
     if (proxy.baseUrl) proxy.baseUrl = proxy.baseUrl.trim();
     if (proxy.model) proxy.model = proxy.model.trim();
     if (proxy.useProvider) proxy.useProvider = proxy.useProvider.trim();

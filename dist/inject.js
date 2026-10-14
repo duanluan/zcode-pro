@@ -157,7 +157,8 @@
     titleGenModel: "\u6A21\u578B",
     titleGenModelHint: "\u4ECE\u5217\u8868\u9009\u62E9\uFF0C\u6216\u76F4\u63A5\u586B\u5199\u6A21\u578B id",
     titleGenModelEmpty: "\uFF08\u672A\u9009\u62E9\uFF09",
-    titleGenModelSessionHint: "\u7559\u7A7A\u8DDF\u968F\u4F1A\u8BDD\u5F53\u524D\u6A21\u578B\uFF0C\u6216\u8F93\u5165\u6A21\u578B id",
+    titleGenModelSessionHint: "\u4ECE\u5217\u8868\u9009\u62E9\u6A21\u578B\uFF1B\u5217\u8868\u7B2C\u4E00\u9879\u4E3A\u8DDF\u968F\u4F1A\u8BDD\u5F53\u524D\u6A21\u578B",
+    titleGenModelFollowSession: "\u8DDF\u968F\u5F53\u524D\u4F1A\u8BDD\u5F53\u524D\u6A21\u578B",
     titleGenModelManualHint: "\u8F93\u5165\u6A21\u578B id",
     titleGenBaseUrl: "\u63A5\u53E3\u5730\u5740",
     titleGenApiKey: "API Key",
@@ -517,7 +518,8 @@
     titleGenModel: "Model",
     titleGenModelHint: "Pick from the list, or type a model id",
     titleGenModelEmpty: "(not set)",
-    titleGenModelSessionHint: "Empty = session model, or type a model id",
+    titleGenModelSessionHint: "Pick from the list; the first entry follows the session model",
+    titleGenModelFollowSession: "Follow the session model",
     titleGenModelManualHint: "Type a model id",
     titleGenBaseUrl: "Base URL",
     titleGenApiKey: "API Key",
@@ -2515,11 +2517,14 @@
       ...providers.map((p) => ({ value: p.id, label: p.name }))
     ];
   }
-  function modelOptionsOf(providerValue, providers) {
+  function modelOptionsOf(providerValue, providers, { followSession = false, followSessionLabel = "" } = {}) {
     const v = (providerValue || "").trim();
     const cur = providers.find((p) => p.id === v);
     if (cur) return cur.models.map((m) => ({ value: m, label: m }));
-    if (v === "session") return [...new Set(providers.flatMap((p) => p.models))].map((m) => ({ value: m, label: m }));
+    if (v === "session") {
+      const head = followSession && followSessionLabel ? [{ value: "", label: followSessionLabel }] : [];
+      return [...head, ...[...new Set(providers.flatMap((p) => p.models))].map((m) => ({ value: m, label: m }))];
+    }
     return [];
   }
   function modelPlaceholderOf(providerValue, L) {
@@ -4286,14 +4291,22 @@
                 },
                 { placeholder: L.titleGenProviderSession, staleLabel: L.titleGenProviderDeleted }
               )),
+              // 跟随会话时模型下拉头部有「跟随当前会话当前模型」（值为空，
+              // 插件 ≥1.6.1 在调用时解析为会话当前模型）；具体供应商为其模型列表
               field(L.visionModel, comboField(
                 p.model || "",
-                modelOptionsOf(p.useProvider, titleGenProviders),
+                modelOptionsOf(p.useProvider, titleGenProviders, {
+                  followSession: (p.useProvider || "").trim() === "session",
+                  followSessionLabel: L.titleGenModelFollowSession
+                }),
                 (v) => {
                   p.model = v;
                   saveVisionSoon();
                 },
-                { placeholder: modelPlaceholderOf(p.useProvider, L), emptyLabel: L.titleGenModelEmpty }
+                {
+                  placeholder: modelPlaceholderOf(p.useProvider, L),
+                  emptyLabel: (p.useProvider || "").trim() === "session" ? L.titleGenModelFollowSession : L.titleGenModelEmpty
+                }
               )),
               ...isManualConn(p.useProvider, titleGenProviders) ? [
                 field(L.visionBaseUrl, textIn(p.baseUrl, (v) => {
@@ -5090,14 +5103,19 @@
           );
           const modelCombo = comboField(
             titleGenCfg.model || "",
-            modelOptionsOf(titleGenCfg.provider, titleGenProviders),
+            // 跟随会话时选项表头部有“跟随当前会话当前模型”（值为空，生成时用
+            // 会话当前模型），选了具体模型后也能再切回它
+            modelOptionsOf(titleGenCfg.provider, titleGenProviders, {
+              followSession: true,
+              followSessionLabel: L.titleGenModelFollowSession
+            }),
             (v) => {
               titleGenCfg.model = v;
               saveTitleGenSoon();
             },
             {
               placeholder: modelPlaceholderOf(titleGenCfg.provider, L),
-              emptyLabel: L.titleGenModelEmpty
+              emptyLabel: (titleGenCfg.provider || "").trim() === "session" ? L.titleGenModelFollowSession : L.titleGenModelEmpty
             }
           );
           const textIn = (value, onInput, { type = "text", placeholder = "" } = {}) => {

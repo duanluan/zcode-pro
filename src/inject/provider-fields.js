@@ -40,12 +40,18 @@ export function providerOptionsOf(providers, L) {
 }
 
 // 模型下拉选项：具体供应商 = 该供应商的模型；跟随会话 = 汇总全部供应商的
-// 模型（去重，方便快速选一个）；不跟随 / 已删供应商 = 空列表（纯手输）
-export function modelOptionsOf(providerValue, providers) {
+// 模型（去重，方便快速选一个）；不跟随 / 已删供应商 = 空列表（纯手输）。
+// followSession = true 时，跟随会话的选项表头部多一个“跟随当前会话当前模型”
+//（值为空）：任务名提示词与视觉代理（zcode-vision ≥1.6.1）都在运行时把它
+// 解析为会话当前模型；不需要该能力的场景不传即可
+export function modelOptionsOf(providerValue, providers, { followSession = false, followSessionLabel = '' } = {}) {
   const v = (providerValue || '').trim();
   const cur = providers.find((p) => p.id === v);
   if (cur) return cur.models.map((m) => ({ value: m, label: m }));
-  if (v === 'session') return [...new Set(providers.flatMap((p) => p.models))].map((m) => ({ value: m, label: m }));
+  if (v === 'session') {
+    const head = followSession && followSessionLabel ? [{ value: '', label: followSessionLabel }] : [];
+    return [...head, ...[...new Set(providers.flatMap((p) => p.models))].map((m) => ({ value: m, label: m }))];
+  }
   return [];
 }
 
