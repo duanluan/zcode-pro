@@ -1214,7 +1214,7 @@
       "data-state": checked ? "on" : "off"
     }, knob);
     const extraEl = extra ? h("div", {
-      class: "flex shrink-0 items-center pt-0.5",
+      class: "flex shrink-0 items-center",
       onClick: (e) => {
         e.stopPropagation();
       },
@@ -1228,7 +1228,7 @@
     const row = h(
       "div",
       {
-        class: `flex cursor-pointer items-start gap-2 rounded-lg ${desc ? "p-2" : "p-1.5"} transition-colors hover:bg-surface-hover`,
+        class: `flex cursor-pointer items-center gap-2 rounded-lg ${desc ? "p-2" : "p-1.5"} transition-colors hover:bg-surface-hover`,
         onClick: () => {
           onToggle();
         }

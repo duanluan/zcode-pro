@@ -331,14 +331,16 @@ export function settingRow(name, desc, checked, onToggle, extra) {
   }, knob);
   const extraEl = extra
     ? h('div', {
-      class: 'flex shrink-0 items-center pt-0.5',
+      class: 'flex shrink-0 items-center',
       onClick: (e) => { e.stopPropagation(); },
       onMousedown: (e) => { e.stopPropagation(); },
       onWheel: (e) => { e.stopPropagation(); },
     }, extra)
     : null;
+  // items-center：简介换行成多行时，开关与整个“标题+简介”块垂直居中
+  //（顶对齐会把开关吊在第一行的高度上）
   const row = h('div', {
-    class: `flex cursor-pointer items-start gap-2 rounded-lg ${desc ? 'p-2' : 'p-1.5'} transition-colors hover:bg-surface-hover`,
+    class: `flex cursor-pointer items-center gap-2 rounded-lg ${desc ? 'p-2' : 'p-1.5'} transition-colors hover:bg-surface-hover`,
     onClick: () => { onToggle(); },
   },
     h('div', { class: 'min-w-0 flex-1' },
