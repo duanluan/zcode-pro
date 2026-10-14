@@ -491,6 +491,7 @@ export function openSettingsDialog() {
         styleCell(L.rowGapName, L.rowGapDesc, 'rowGap'),
         styleCell(L.userLineHeightName, L.userLineHeightDesc, 'userLineHeight', { min: 1, max: 3, step: 0.05, unit: 'x' }),
         styleCell(L.lineHeightName, L.lineHeightDesc, 'lineHeight', { min: 1, max: 3, step: 0.05, unit: 'x' }),
+        styleCell(L.thinkingLineHeightName, L.thinkingLineHeightDesc, 'thinkingLineHeight', { min: 1, max: 3, step: 0.05, unit: 'x' }),
         styleCell(L.codeLineHeightName, L.codeLineHeightDesc, 'codeLineHeight', { min: 1, max: 3, step: 0.05, unit: 'x' }),
         styleCell(L.listSpacingName, L.listSpacingDesc, 'listSpacing'),
         styleCell(L.listItemSpacingName, L.listItemSpacingDesc, 'listItemSpacing'),

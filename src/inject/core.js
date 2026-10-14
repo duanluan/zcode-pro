@@ -1,14 +1,22 @@
 // 注入脚本公共工具：与 helper 通信、DOM 构建、多语言文案。
 export const BOOT = typeof window !== 'undefined' ? (window.__ZCODEPRO__ || {}) : {};
 export const HELPER_URL = BOOT.helperUrl || 'http://127.0.0.1:47889';
-const TOKEN = BOOT.token || '';
+
+// token/helperUrl 必须在每次调用时实时读 window.__ZCODEPRO__：cli.mjs 重启后 helper 换了
+// 随机 token，重新注入会被 index.js 的幂等守卫跳过、页面继续用旧闭包——若在模块求值时
+// 固化成常量，旧闭包会永远拿旧 token 报 unauthorized。重注入的 bootstrap 会先更新
+// window.__ZCODEPRO__，实时读即可对上新一轮 token。
+function liveBoot() {
+  return (typeof window !== 'undefined' && window.__ZCODEPRO__) || BOOT;
+}
 
 export function rpc(path, options = {}) {
-  return fetch(HELPER_URL + path, {
+  const boot = liveBoot();
+  return fetch((boot.helperUrl || HELPER_URL) + path, {
     method: options.method || 'GET',
     headers: {
       'Content-Type': 'application/json',
-      'X-ZCodePro-Token': TOKEN,
+      'X-ZCodePro-Token': boot.token || '',
     },
     body: options.body ? JSON.stringify(options.body) : undefined,
   })
@@ -130,6 +138,8 @@ const zh = {
   tableCellPaddingDesc: '表格单元格内的留白；左输入框为上下、右为左右。',
   lineHeightName: '回答行高',
   lineHeightDesc: '回答正文的行高（倍数）。',
+  thinkingLineHeightName: '思考行高',
+  thinkingLineHeightDesc: '「已工作/工作中」过程记录（读取/编辑/查阅/终端条目与思考内容）的行高（倍数）。',
   userLineHeightName: '提问行高',
   userLineHeightDesc: '提问内容的行高（倍数）。',
   contentWidthName: '内容宽度',
@@ -470,6 +480,8 @@ const en = {
   tableCellPaddingDesc: 'Padding inside table cells; left input is vertical, right is horizontal.',
   lineHeightName: 'Answer line height',
   lineHeightDesc: 'Line height of answer text (multiplier).',
+  thinkingLineHeightName: 'Work-log line height',
+  thinkingLineHeightDesc: 'Line height of the “worked for…” history panel (tool entries and reasoning, multiplier).',
   userLineHeightName: 'Question line height',
   userLineHeightDesc: 'Line height of question text (multiplier).',
   contentWidthName: 'Content width',

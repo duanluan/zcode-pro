@@ -20,6 +20,7 @@ export const STYLE_DEFAULTS = {
   tableCellPaddingV: 3,  // 单元格上下边距（应用默认 3px）
   tableCellPaddingH: 3,  // 单元格左右边距（应用默认 3px）
   lineHeight: 1.75,     // 回答行高（leading-[1.75]，挂在答案内容容器上）
+  thinkingLineHeight: 1.5, // 思考行高：“已工作/工作中”过程视图的行距（实测应用默认 1.5；范围见 buildCss 注释）
   userLineHeight: 1.5,  // 提问行高（用户消息文本容器，默认 normal=1.5）
   contentWidth: null,   // 内容宽度：默认 100%（跟随应用，不覆盖）
   sidebarProjectSpacing: 20,  // 侧栏项目间距：项目行视觉间距（行内留白 12 + 边距 8）
@@ -136,6 +137,16 @@ function buildCss(styles) {
   if (typeof lh === 'number' && Number.isFinite(lh) && lh >= 0.8) {
     // 行高挂在内容容器上，段落/列表项继承；代码块等自带行高的元素不受影响
     parts.push(`${CONV} .space-y-4{line-height:${lh} !important;}`);
+  }
+  const tlh = styles.thinkingLineHeight;
+  if (typeof tlh === 'number' && Number.isFinite(tlh) && tlh >= 0.8) {
+    // 「思考行高」管“已工作/工作中 N 秒”过程视图的行距（读取/编辑/查阅/终端等
+    // 条目行、流式思考预览，默认 1.5）：行高挂在历史内容容器上由各行继承；
+    // 过程里的叙述正文走 .space-y-4（回答行高，选择器更具体压过这里的继承）。
+    // 单独展开的“思考·持续了 N 秒”块内内容不在此设置范围内
+    parts.push(
+      `[data-testid^="chat-assistant-history-content"]{line-height:${tlh} !important;}`,
+    );
   }
   const ulh = styles.userLineHeight;
   if (typeof ulh === 'number' && Number.isFinite(ulh) && ulh >= 0.8) {
@@ -258,7 +269,10 @@ const HL_SELECTORS = {
   tableCellPaddingV: `${CONV} td, ${CONV} th`,
   tableCellPaddingH: `${CONV} td, ${CONV} th`,
   codeLineHeight: `${CONV} diffs-container, ${CONV} pre`,
-  lineHeight: `${CONV} .space-y-4`,
+  lineHeight: `${CONV} .space-y-4:not([data-reasoning-content] *)`,
+  // 思考行高作用在“已工作/工作中”过程视图容器上；视图折叠未挂载时不标
+  // （触发行不属此设置范围，不额外描边）
+  thinkingLineHeight: `[data-testid^="chat-assistant-history-content"]`,
   userLineHeight: `${CONV} [class*="user-row"] .whitespace-pre-wrap`,
   contentWidth: '[data-v4-timeline-content-column]',
   sidebarProjectSpacing: '[data-testid^="workspace-item-"]',

@@ -77,6 +77,7 @@ export function defaultConfig() {
       listItemSpacing: null,  // 列表项之间的间距（应用默认 6px）
       quoteCodeSpacing: null, // 引用/代码块上下留白（应用默认 16px，my-4）
       lineHeight: null,       // 回答行高，倍数（应用默认 1.75）
+      thinkingLineHeight: null, // 思考行高，倍数（应用默认 1.5）
       codeLineHeight: null,    // 代码块行高，倍数（应用默认 12px 字号 × 20px 行盒，约 1.65）
       tableSpacing: null,      // 表格上下边距（未设置时跟随段落间距）
       tableCellPaddingV: null, // 单元格上下边距（应用默认 3px）
@@ -1587,7 +1588,7 @@ function applyStylesPartial(base, partial) {
       else if (typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 96) out[key] = Math.round(v);
     }
   }
-  for (const key of ['lineHeight', 'codeLineHeight', 'userLineHeight']) {
+  for (const key of ['lineHeight', 'thinkingLineHeight', 'codeLineHeight', 'userLineHeight']) {
     if (key in partial) {
       const v = partial[key];
       if (v === null) out[key] = null;

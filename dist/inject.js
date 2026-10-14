@@ -2,13 +2,16 @@
   // src/inject/core.js
   var BOOT = typeof window !== "undefined" ? window.__ZCODEPRO__ || {} : {};
   var HELPER_URL = BOOT.helperUrl || "http://127.0.0.1:47889";
-  var TOKEN = BOOT.token || "";
+  function liveBoot() {
+    return typeof window !== "undefined" && window.__ZCODEPRO__ || BOOT;
+  }
   function rpc(path, options = {}) {
-    return fetch(HELPER_URL + path, {
+    const boot = liveBoot();
+    return fetch((boot.helperUrl || HELPER_URL) + path, {
       method: options.method || "GET",
       headers: {
         "Content-Type": "application/json",
-        "X-ZCodePro-Token": TOKEN
+        "X-ZCodePro-Token": boot.token || ""
       },
       body: options.body ? JSON.stringify(options.body) : void 0
     }).then((r) => r.json()).catch((err) => ({ ok: false, error: String(err && err.message || err) }));
@@ -127,6 +130,8 @@
     tableCellPaddingDesc: "\u8868\u683C\u5355\u5143\u683C\u5185\u7684\u7559\u767D\uFF1B\u5DE6\u8F93\u5165\u6846\u4E3A\u4E0A\u4E0B\u3001\u53F3\u4E3A\u5DE6\u53F3\u3002",
     lineHeightName: "\u56DE\u7B54\u884C\u9AD8",
     lineHeightDesc: "\u56DE\u7B54\u6B63\u6587\u7684\u884C\u9AD8\uFF08\u500D\u6570\uFF09\u3002",
+    thinkingLineHeightName: "\u601D\u8003\u884C\u9AD8",
+    thinkingLineHeightDesc: "\u300C\u5DF2\u5DE5\u4F5C/\u5DE5\u4F5C\u4E2D\u300D\u8FC7\u7A0B\u8BB0\u5F55\uFF08\u8BFB\u53D6/\u7F16\u8F91/\u67E5\u9605/\u7EC8\u7AEF\u6761\u76EE\u4E0E\u601D\u8003\u5185\u5BB9\uFF09\u7684\u884C\u9AD8\uFF08\u500D\u6570\uFF09\u3002",
     userLineHeightName: "\u63D0\u95EE\u884C\u9AD8",
     userLineHeightDesc: "\u63D0\u95EE\u5185\u5BB9\u7684\u884C\u9AD8\uFF08\u500D\u6570\uFF09\u3002",
     contentWidthName: "\u5185\u5BB9\u5BBD\u5EA6",
@@ -466,6 +471,8 @@
     tableCellPaddingDesc: "Padding inside table cells; left input is vertical, right is horizontal.",
     lineHeightName: "Answer line height",
     lineHeightDesc: "Line height of answer text (multiplier).",
+    thinkingLineHeightName: "Work-log line height",
+    thinkingLineHeightDesc: "Line height of the \u201Cworked for\u2026\u201D history panel (tool entries and reasoning, multiplier).",
     userLineHeightName: "Question line height",
     userLineHeightDesc: "Line height of question text (multiplier).",
     contentWidthName: "Content width",
@@ -2457,6 +2464,8 @@
     // 单元格左右边距（应用默认 3px）
     lineHeight: 1.75,
     // 回答行高（leading-[1.75]，挂在答案内容容器上）
+    thinkingLineHeight: 1.5,
+    // 思考行高：“已工作/工作中”过程视图的行距（实测应用默认 1.5；范围见 buildCss 注释）
     userLineHeight: 1.5,
     // 提问行高（用户消息文本容器，默认 normal=1.5）
     contentWidth: null,
@@ -2552,6 +2561,12 @@
     const lh = styles.lineHeight;
     if (typeof lh === "number" && Number.isFinite(lh) && lh >= 0.8) {
       parts.push(`${CONV} .space-y-4{line-height:${lh} !important;}`);
+    }
+    const tlh = styles.thinkingLineHeight;
+    if (typeof tlh === "number" && Number.isFinite(tlh) && tlh >= 0.8) {
+      parts.push(
+        `[data-testid^="chat-assistant-history-content"]{line-height:${tlh} !important;}`
+      );
     }
     const ulh = styles.userLineHeight;
     if (typeof ulh === "number" && Number.isFinite(ulh) && ulh >= 0.8) {
@@ -2649,7 +2664,10 @@
     tableCellPaddingV: `${CONV} td, ${CONV} th`,
     tableCellPaddingH: `${CONV} td, ${CONV} th`,
     codeLineHeight: `${CONV} diffs-container, ${CONV} pre`,
-    lineHeight: `${CONV} .space-y-4`,
+    lineHeight: `${CONV} .space-y-4:not([data-reasoning-content] *)`,
+    // 思考行高作用在“已工作/工作中”过程视图容器上；视图折叠未挂载时不标
+    // （触发行不属此设置范围，不额外描边）
+    thinkingLineHeight: `[data-testid^="chat-assistant-history-content"]`,
     userLineHeight: `${CONV} [class*="user-row"] .whitespace-pre-wrap`,
     contentWidth: "[data-v4-timeline-content-column]",
     sidebarProjectSpacing: '[data-testid^="workspace-item-"]',
@@ -3218,6 +3236,7 @@
           styleCell(L.rowGapName, L.rowGapDesc, "rowGap"),
           styleCell(L.userLineHeightName, L.userLineHeightDesc, "userLineHeight", { min: 1, max: 3, step: 0.05, unit: "x" }),
           styleCell(L.lineHeightName, L.lineHeightDesc, "lineHeight", { min: 1, max: 3, step: 0.05, unit: "x" }),
+          styleCell(L.thinkingLineHeightName, L.thinkingLineHeightDesc, "thinkingLineHeight", { min: 1, max: 3, step: 0.05, unit: "x" }),
           styleCell(L.codeLineHeightName, L.codeLineHeightDesc, "codeLineHeight", { min: 1, max: 3, step: 0.05, unit: "x" }),
           styleCell(L.listSpacingName, L.listSpacingDesc, "listSpacing"),
           styleCell(L.listItemSpacingName, L.listItemSpacingDesc, "listItemSpacing"),
