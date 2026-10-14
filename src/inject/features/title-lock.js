@@ -202,6 +202,20 @@ async function bootstrap() {
   if (map) scan();
 }
 
+// 供智能起名（title-gen.js）复用：把指定会话键的所有侧栏行标题改为 text
+// （同一会话可能多行呈现，与失配回写共用同一套元素定位与写法）
+export function setRowTitle(key, text) {
+  for (const item of findRows(key)) {
+    for (const el of titleElsOf(item)) writeTitle(el, text);
+  }
+}
+
+// 供智能起名在写库成功后立即刷新锁定表（拉最新标题表并全量复核一次），
+// 之后官方推送的自动标题由本功能按新表钉回
+export function refreshPinnedTitles() {
+  return fetchPinned().then((m) => { if (m) scan(); });
+}
+
 export function startTitleLock() {
   if (installed || typeof document === 'undefined') return;
   installed = true;

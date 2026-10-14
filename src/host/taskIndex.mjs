@@ -206,9 +206,92 @@ export async function listOverriddenTitles(dataRoot) {
   return { titles };
 }
 
+// 智能起名写入：把生成标题按“手动重命名”存入索引（title_overridden = 1），
+// 之后官方自动标题不会再覆盖这条记录。仅在会话未删除、且从未被手动重命名过
+// （title_overridden = 0）时写入——手动重命名永远优先。返回 { written, title }；
+// written = false 表示没写（已重命名或会话不在索引中）。库被占用时抛 index-busy。
+export async function setTaskTitleIfNotOverridden(dataRoot, sessId, title) {
+  const dbFile = taskIndexPath(dataRoot);
+  if (!existsSync(dbFile)) return { written: false, title };
+  const driver = await loadDriver();
+  if (!driver) {
+    const err = new Error('缺少 SQLite 支持（需要 Node ≥23.4 或 sqlite3 命令）');
+    err.code = 'index-error';
+    throw err;
+  }
+  try {
+    if (driver.kind === 'node') {
+      const db = new driver.DatabaseSync(dbFile);
+      try {
+        db.exec(`PRAGMA busy_timeout = ${BUSY_TIMEOUT_MS}`);
+        db.exec('BEGIN IMMEDIATE');
+        try {
+          const r = db.prepare(
+            'UPDATE tasks SET title = ?, title_overridden = 1 WHERE task_id = ? AND deleted = 0 AND title_overridden = 0'
+          ).run(title, sessId);
+          db.exec('COMMIT');
+          return { written: r.changes > 0, title };
+        } catch (err) {
+          try { db.exec('ROLLBACK'); } catch { /* 已回滚/连接失效 */ }
+          throw err;
+        }
+      } finally { db.close(); }
+    }
+    const esc = (v) => "'" + String(v).replace(/'/g, "''") + "'";
+    const r = runCli(dbFile,
+      'BEGIN IMMEDIATE;\n'
+      + `UPDATE tasks SET title = ${esc(title)}, title_overridden = 1`
+      + ` WHERE task_id = ${esc(sessId)} AND deleted = 0 AND title_overridden = 0;\n`
+      + 'SELECT changes();\nCOMMIT;');
+    return { written: Number(r.stdout.trim()) > 0, title };
+  } catch (err) {
+    if (isBusyError(err)) {
+      const e = new Error('任务索引正被占用（ZCode 可能正在写入）');
+      e.code = 'index-busy';
+      throw e;
+    }
+    const e = new Error('写入任务标题失败: ' + (err?.message || err));
+    e.code = 'index-error';
+    throw e;
+  }
+}
+
 function isBusyError(err) {
   const s = String(err?.code || '') + String(err?.message || '');
   return /SQLITE_BUSY|database is locked/i.test(s);
+}
+
+// 读某会话记录的模型信息（智能起名“跟随当前会话”用）。model 列存
+// “<供应商id>/<模型id>”（如 be0a90cb…/glm-5.3），拆开后返回
+// { providerId, modelId }；没有斜线时 providerId 退回 provider 列的值。
+// 会话不存在返回 null；读取失败按 null 处理（调用方换明确报错）
+export async function getTaskProviderModel(dataRoot, sessId) {
+  const dbFile = taskIndexPath(dataRoot);
+  if (!existsSync(dbFile)) return null;
+  const driver = await loadDriver();
+  if (!driver) return null;
+  let row = null;
+  try {
+    if (driver.kind === 'node') {
+      const db = new driver.DatabaseSync(dbFile);
+      try {
+        db.exec(`PRAGMA busy_timeout = ${BUSY_TIMEOUT_MS}`);
+        row = db.prepare('SELECT provider, model FROM tasks WHERE task_id = ? AND deleted = 0').get(sessId) || null;
+      } finally { db.close(); }
+    } else {
+      const esc = (v) => "'" + String(v).replace(/'/g, "''") + "'";
+      const r = runCli(dbFile,
+        `SELECT coalesce(json_object('provider', provider, 'model', model), 'null') FROM tasks WHERE task_id = ${esc(sessId)} AND deleted = 0;`);
+      const parsed = JSON.parse((r.stdout.trim() || 'null'));
+      row = parsed && typeof parsed === 'object' ? parsed : null;
+    }
+  } catch { /* 读不了就当没有 */ }
+  if (!row) return null;
+  const model = String(row.model || '');
+  const slash = model.indexOf('/');
+  return slash > 0
+    ? { providerId: model.slice(0, slash), modelId: model.slice(slash + 1) }
+    : { providerId: String(row.provider || ''), modelId: model };
 }
 
 // 任务（会话）ID → 工作区路径（无尾分隔符）：空闲回收在 Windows 上的后台命令

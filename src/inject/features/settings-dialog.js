@@ -2,6 +2,7 @@
 // 顶部标签页切换（视觉参考侧栏“分组/项目”切换）；配置写入 helper（~/.zcode/zcodepro.json）。
 import { h, t, rpc, getConfig, clearConfigCache, errText, HELPER_URL, isZhLocale } from '../core.js';
 import { openDialog, dialogFooter, btnPrimary, btnSecondary, btnSmall, settingRow, ensureStyle, showToast, numberField, unitField } from '../ui.js';
+import { comboField, providerOptionsOf, modelOptionsOf, modelPlaceholderOf, isManualConn } from '../provider-fields.js';
 import { refreshAliases } from './alias.js';
 import { applyStyles, STYLE_DEFAULTS, showStyleHighlight, hideStyleHighlight } from './styles.js';
 import { copyToClipboard, hCopyIcon } from './copy-path.js';
@@ -149,8 +150,10 @@ export function openSettingsDialog() {
   openDialog({
     title: L.settingsTitle,
     // 宽度类必须用宿主样式表已有的工具类（注入的类名不会生成 CSS）：
-    // sm:max-w-3xl 不存在会失去约束拉满全屏；max-w-2xl=42rem 存在且尺寸合适
-    width: 'max-w-2xl',
+    // sm:max-w-3xl 不存在会失去约束拉满全屏；max-w-3xl=48rem 存在——英文界面
+    // 标签栏较长，42rem 会挤出一块空白并触发横向滚动
+    width: 'max-w-3xl',
+    bodyClass: 'mt-1',
     overlay: 'none',
     draggable: true,
     posKey: 'settings',
@@ -202,7 +205,11 @@ export function openSettingsDialog() {
       const config = await getConfig(true);
       const agentsRes = await rpc('/agents');
       const visionRes = await rpc('/vision');
-      const visionProvidersRes = await rpc('/vision/providers');
+      const titleGenRes = await rpc('/title-gen');
+      const titleGenProvidersRes = await rpc('/title-gen/providers');
+      // 供应商表（含各供应商可选模型）：视觉代理的模型下拉也用这份
+      const titleGenProviders = titleGenProvidersRes.ok && Array.isArray(titleGenProvidersRes.providers)
+        ? titleGenProvidersRes.providers : [];
       const rtkRes = await rpc('/rtk');
       const headroomRes = await rpc('/headroom');
 
@@ -225,7 +232,7 @@ export function openSettingsDialog() {
         'data-zcodepro-status': '1',
       },
         h('span', { class: 'inline-block size-2 rounded-full bg-emerald-500' }),
-        h('span', { class: 'text-foreground-subtle/70' }, `${L.version} ${health.version} · ${HELPER_URL}`)
+        h('span', { class: 'text-foreground-subtle/70' }, `${health.version} · ${HELPER_URL}`)
       );
 
       const rows = h('div', { class: 'divide-y divide-border rounded-xl border border-border' });
@@ -378,19 +385,20 @@ export function openSettingsDialog() {
       );
       const paneStyles = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
       const panePerf = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
-      const paneAgents = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
+      const paneAgents = h('div', { role: 'tabpanel', class: 'mt-2', style: 'display:none' });
       const paneProxy = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
       const paneSync = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
       const paneVision = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
       const paneRtk = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
       const paneHeadroom = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
+      const paneTitleGen = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
       const paneDebug = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
       const panes = { features: paneFeatures, styles: paneStyles, perf: panePerf, agents: paneAgents, proxy: paneProxy, sync: paneSync, vision: paneVision, headroom: paneHeadroom, rtk: paneRtk, debug: paneDebug };
       const tabDefs = [
         ['features', L.tabFeatures],
+        ['agents', L.tabBehavior],
         ['styles', L.tabStyles],
         ['perf', L.tabPerformance],
-        ['agents', L.tabAgents],
         ['proxy', L.tabProxy],
         ['sync', L.tabSync],
         ['vision', L.tabVision],
@@ -400,7 +408,7 @@ export function openSettingsDialog() {
         // 普通用户不可见
         ...(config.devMode === true || config.devActive === true ? [['debug', L.tabDebug]] : []),
       ];
-      const tablist = h('div', { role: 'tablist', 'aria-orientation': 'horizontal', class: 'zcodepro-tablist mt-4' });
+      const tablist = h('div', { role: 'tablist', 'aria-orientation': 'horizontal', class: 'zcodepro-tablist mt-1' });
       const renderTabs = () => tablist.replaceChildren(...tabDefs.map(([id, label]) =>
         h('button', {
           type: 'button', role: 'tab', class: 'zcodepro-tab',
@@ -581,7 +589,7 @@ export function openSettingsDialog() {
       // “全局提示词”：编辑 ~/.zcode/AGENTS.md（helper /agents 端点读写）。
       // 大段文本不做即存即生效——显式保存；未修改时保存按钮禁用
       const agentsArea = h('textarea', {
-        class: 'zcodepro-textarea',
+        class: 'zcodepro-textarea zcodepro-textarea-lg',
         placeholder: L.agentsPlaceholder,
         spellcheck: 'false',
       });
@@ -610,7 +618,11 @@ export function openSettingsDialog() {
           agentsSaveBtn.disabled = false;
         }
       };
-      paneAgents.append(
+      // “行为”标签页：二级标签切换「全局提示词 / 任务名」。全局提示词编辑
+      // ~/.zcode/AGENTS.md；任务名（智能起名）面板复用 paneTitleGen（原本是
+      // 一级标签页，收进来后不再单独出现在顶部标签栏）
+      const agentsPromptPane = h('div', { class: 'mt-4' });
+      agentsPromptPane.append(
         h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.agentsDesc),
         ...(agentsFailed
           ? [h('p', { class: 'mt-2 text-ui-sm text-destructive' }, L.agentsLoadFailed + ': ' + errText(agentsRes))]
@@ -618,6 +630,27 @@ export function openSettingsDialog() {
         h('div', { class: 'mt-3' }, agentsArea),
         h('div', { class: 'mt-3 flex justify-end' }, agentsSaveBtn),
       );
+      let agentsSubTab = 'prompt';
+      const agentsSubPanes = { prompt: agentsPromptPane, titleGen: paneTitleGen };
+      const agentsSubList = h('div', { role: 'tablist', 'aria-orientation': 'horizontal', class: 'zcodepro-tablist' });
+      const renderAgentsSubTabs = () => {
+        agentsSubList.replaceChildren(...[
+          ['prompt', L.tabAgents],
+          ['titleGen', L.tabTitleGen],
+        ].map(([id, label]) => h('button', {
+          type: 'button', role: 'tab', class: 'zcodepro-tab',
+          'aria-selected': String(agentsSubTab === id),
+          'data-state': agentsSubTab === id ? 'active' : 'inactive',
+          onClick: () => {
+            agentsSubTab = id;
+            for (const [pid, pane] of Object.entries(agentsSubPanes)) pane.style.display = pid === id ? '' : 'none';
+            renderAgentsSubTabs();
+          },
+        }, label)));
+      };
+      for (const [pid, pane] of Object.entries(agentsSubPanes)) pane.style.display = pid === agentsSubTab ? '' : 'none';
+      renderAgentsSubTabs();
+      paneAgents.append(agentsSubList, agentsPromptPane, paneTitleGen);
 
       // “代理”：为 helper 发起的网络访问（插件市场更新/安装、headroom 本体升级）设
       // HTTP 代理；保存即生效（helper 子进程环境变量注入），不影响 ZCode 应用与模型请求。
@@ -1168,8 +1201,6 @@ export function openSettingsDialog() {
         skipMinutes: 30,
         forceIntercept: true,
       };
-      // 供应商下拉数据：合并 zcode 两张供应商表（config.json 的 provider 与 provider_config.json 的 providerRules）
-      const visionProviders = visionProvidersRes.ok && Array.isArray(visionProvidersRes.providers) ? visionProvidersRes.providers : [];
       let visionCfg = visionRes.ok && visionRes.config && typeof visionRes.config === 'object'
         ? structuredClone(visionRes.config)
         : null;
@@ -1283,6 +1314,8 @@ export function openSettingsDialog() {
           return h('label', { class: 'flex shrink-0 items-center gap-1.5', title },
             h('span', { class: 'text-ui-xs font-medium text-foreground-subtle' }, label), n);
         };
+        // 接口地址 / API Key 是否显示走 provider-fields 的共用规则
+        //（isManualConn：不跟随或供应商已删才显示，连接其余由跟随对象负责）
         const cards = visionCfg.proxies.map((p, i) => h('div', { class: 'mt-2 rounded-xl border border-border p-2' },
           h('div', { class: 'flex flex-wrap items-center gap-2' },
             h('span', { class: 'shrink-0 rounded-md bg-surface px-1.5 py-0.5 text-ui-xs tabular-nums text-foreground-subtle' }, String(i + 1)),
@@ -1313,43 +1346,26 @@ export function openSettingsDialog() {
             smallBtn(L.visionRemove, () => { visionCfg.proxies.splice(i, 1); void persistVision(); renderVision(); }),
           ),
           h('div', { class: 'mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2' },
-            field(L.visionUseProvider, (() => {
-              // 组合框：下拉（不跟随/session/全部供应商）+ 手动输入；手输失焦校验，未知供应商给提示
-              const wrap = h('div', { class: 'flex flex-col gap-1' });
-              const input = h('input', { type: 'text', value: p.useProvider || '', placeholder: L.visionUseProviderHint, class: visionInputCls });
-              const warn = h('p', { class: 'text-ui-xs text-destructive', style: 'display:none' }, L.visionUseProviderUnknown);
-              const isKnown = (v) => !v || v === 'session'
-                || visionProviders.some((pr) => pr.id === v || pr.name === v || (pr.aliases || []).includes(v));
-              const sel = h('select', { class: visionInputCls });
-              const syncSelect = () => {
-                const cur = (p.useProvider || '').trim();
-                const opts = [h('option', { value: '' }, L.visionUseProviderNone), h('option', { value: 'session' }, L.visionUseProviderSession)];
-                for (const pr of visionProviders) {
-                  opts.push(h('option', { value: pr.id }, pr.name && pr.name !== pr.id ? `${pr.name}（${pr.id}）` : pr.id));
-                }
-                if (cur && !opts.some((o) => o.value === cur)) opts.push(h('option', { value: cur }, `${cur}（${L.visionUseProvider}）`));
-                sel.replaceChildren(...opts);
-                sel.value = cur;
-              };
-              sel.addEventListener('change', () => {
-                input.value = sel.value;
-                p.useProvider = sel.value.trim();
-                warn.style.display = 'none';
+            // 供应商与模型走 provider-fields 共用逻辑：跟随会话时模型下拉为
+            // 全部供应商模型汇总，具体供应商为其模型列表；已删 id 标注「已删除」
+            field(L.visionUseProvider, comboField(p.useProvider || '',
+              providerOptionsOf(titleGenProviders, L),
+              (v, src) => {
+                p.useProvider = v;
                 saveVisionSoon();
-              });
-              input.addEventListener('input', () => { p.useProvider = input.value.trim(); saveVisionSoon(); });
-              input.addEventListener('blur', () => {
-                p.useProvider = input.value.trim();
-                warn.style.display = isKnown(p.useProvider) ? 'none' : '';
-                syncSelect();
-              });
-              syncSelect();
-              wrap.append(sel, input, warn);
-              return wrap;
-            })()),
-            field(L.visionModel, textIn(p.model, (v) => { p.model = v; saveVisionSoon(); })),
-            field(L.visionBaseUrl, textIn(p.baseUrl, (v) => { p.baseUrl = v; saveVisionSoon(); })),
-            field(L.visionApiKey + ' · ' + L.visionApiKeyHint, textIn(p.apiKey, (v) => { p.apiKey = v; saveVisionSoon(); }, { type: 'password' })),
+                // 下拉切换后重渲染整个面板：模型下拉选项随新供应商变化，接口
+                // 地址/API Key 字段按「不跟随或供应商已删才显示」重新显隐
+                if (src === 'select') renderVision();
+              },
+              { placeholder: L.titleGenProviderSession, staleLabel: L.titleGenProviderDeleted })),
+            field(L.visionModel, comboField(p.model || '',
+              modelOptionsOf(p.useProvider, titleGenProviders),
+              (v) => { p.model = v; saveVisionSoon(); },
+              { placeholder: modelPlaceholderOf(p.useProvider, L), emptyLabel: L.titleGenModelEmpty })),
+            ...(isManualConn(p.useProvider, titleGenProviders) ? [
+              field(L.visionBaseUrl, textIn(p.baseUrl, (v) => { p.baseUrl = v; saveVisionSoon(); })),
+              field(L.visionApiKey + ' · ' + L.visionApiKeyHint, textIn(p.apiKey, (v) => { p.apiKey = v; saveVisionSoon(); }, { type: 'password' })),
+            ] : []),
           ),
           (() => {
             const n = h('textarea', { class: 'zcodepro-textarea zcodepro-textarea-sm', rows: '3', placeholder: L.visionPrompt });
@@ -2011,13 +2027,158 @@ export function openSettingsDialog() {
       };
       renderHeadroomPane();
 
+      // “任务名提示词”（位于“行为”标签页的二级标签）：新会话开始作答时 →
+      // 按自定义供应商/提示词生成标题并按手动重命名写库。配置读写走 /title-gen
+      //（存 zcodepro.json）；供应商下拉数据走 /title-gen/providers（与视觉代理
+      // 同源，但只列 helper 能直连调用的条目）。
+      // 结构性改动（开关/供应商/协议）即时保存，提示词与文本输入防抖保存。
+      let titleGenCfg = titleGenRes.ok && titleGenRes.titleGen && typeof titleGenRes.titleGen === 'object'
+        ? structuredClone(titleGenRes.titleGen) : null;
+      const titleGenDefaultPrompt = titleGenRes.ok && typeof titleGenRes.defaultPrompt === 'string'
+        ? titleGenRes.defaultPrompt : '';
+      let titleGenSaveTimer = null;
+      const persistTitleGen = async () => {
+        const res = await rpc('/title-gen', { method: 'POST', body: { titleGen: titleGenCfg } });
+        clearConfigCache();
+        if (!res.ok) showToast(L.failed + ': ' + errText(res), 'error');
+        return res.ok;
+      };
+      const saveTitleGenSoon = () => {
+        clearTimeout(titleGenSaveTimer);
+        titleGenSaveTimer = setTimeout(() => { void persistTitleGen(); }, 500);
+      };
+      const renderTitleGenPane = () => {
+        if (!titleGenCfg) {
+          paneTitleGen.replaceChildren(
+            h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.titleGenShortDesc),
+            h('p', { class: 'mt-2 text-ui-sm text-destructive' }, L.visionLoadFailed + ': ' + errText(titleGenRes)),
+          );
+          return;
+        }
+        const inputCls = 'h-8 w-full rounded-lg border border-border bg-input px-2.5 text-ui-sm text-foreground outline-none transition-shadow placeholder:text-foreground-subtle focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40';
+        const field = (labelText, node) => h('label', { class: 'block min-w-0' },
+          h('span', { class: 'mb-1 block text-ui-xs font-medium text-foreground-subtle' }, labelText), node);
+        // 供应商 / 模型 / 地址密钥共用 provider-fields 的规则（详见该模块说明）。
+        // 换供应商后重渲染：模型下拉换成新供应商的模型、地址字段按模式显隐；
+        // 手动输入过的模型保留（不在新列表里时显示为「手动输入」项，是否改选
+        // 由用户决定）
+        const showInlineConn = isManualConn(titleGenCfg.provider, titleGenProviders);
+        const providerCombo = comboField(
+          titleGenCfg.provider || '',
+          providerOptionsOf(titleGenProviders, L),
+          (v, src) => {
+            titleGenCfg.provider = v;
+            if (src === 'select') { void persistTitleGen(); renderTitleGenPane(); }
+            else saveTitleGenSoon();
+          },
+          { placeholder: L.titleGenProviderSession, staleLabel: L.titleGenProviderDeleted });
+        const modelCombo = comboField(
+          titleGenCfg.model || '',
+          modelOptionsOf(titleGenCfg.provider, titleGenProviders),
+          (v) => { titleGenCfg.model = v; saveTitleGenSoon(); },
+          {
+            placeholder: modelPlaceholderOf(titleGenCfg.provider, L),
+            emptyLabel: L.titleGenModelEmpty,
+          });
+        // 接口地址 / API Key / 协议（显隐见上方 showInlineConn）：不跟随时由
+        // 用户填写；供应商被删时展示保存的副本，仍可直连或改填
+        const textIn = (value, onInput, { type = 'text', placeholder = '' } = {}) => {
+          const n = h('input', { type, value: value || '', placeholder, class: inputCls });
+          n.addEventListener('input', () => onInput(n.value));
+          return n;
+        };
+        const formatSel = h('select', { class: inputCls },
+          h('option', { value: 'anthropic' }, 'anthropic'),
+          h('option', { value: 'openai' }, 'openai'));
+        formatSel.value = titleGenCfg.format === 'openai' ? 'openai' : 'anthropic';
+        formatSel.addEventListener('change', () => {
+          titleGenCfg.format = formatSel.value;
+          void persistTitleGen();
+        });
+        const inlineConnCard = h('div', {
+          class: 'mt-2 grid grid-cols-1 gap-2 rounded-xl border border-border p-2 sm:grid-cols-3',
+          style: showInlineConn ? '' : 'display:none',
+        },
+          field(L.titleGenBaseUrl, textIn(titleGenCfg.baseUrl, (v) => { titleGenCfg.baseUrl = v; saveTitleGenSoon(); }, { placeholder: 'https://…' })),
+          field(L.titleGenApiKey, textIn(titleGenCfg.apiKey, (v) => { titleGenCfg.apiKey = v; saveTitleGenSoon(); }, { type: 'password' })),
+          field(L.titleGenFormat, formatSel));
+        // 提示词：留空 = 内置默认；「查看默认提示词」把默认值载入编辑框供修改
+        const promptArea = h('textarea', {
+          class: 'zcodepro-textarea zcodepro-textarea-sm', rows: '8',
+          placeholder: L.titleGenPromptPlaceholder,
+        });
+        promptArea.value = titleGenCfg.prompt || '';
+        promptArea.addEventListener('input', () => { titleGenCfg.prompt = promptArea.value; saveTitleGenSoon(); });
+        // 测试：用示例首条消息实际生成一次（不写库），验证供应商/模型/提示词
+        // 连通；示例文本随界面语言取中英文版
+        const sampleText = isZhLocale()
+          ? '帮我看下这个报错是什么原因：NullPointerException at com.example.OrderService.calculate(OrderService.java:87)'
+          : 'Why does my Spring Boot app throw NullPointerException intermittently in OrderService.calculate?';
+        const sampleInput = h('input', {
+          type: 'text', class: inputCls + ' min-w-0 flex-1',
+          value: sampleText,
+        });
+        let testBtn;
+        const testState = h('span', { class: 'min-w-0 flex-1 truncate text-ui-xs/relaxed text-foreground-subtle' });
+        testBtn = btnSmall(L.titleGenTest, async () => {
+          testBtn.disabled = true;
+          testBtn.textContent = L.titleGenTesting;
+          testState.textContent = L.titleGenTesting;
+          const res = await rpc('/title-gen/run', {
+            method: 'POST',
+            body: { text: sampleInput.value, test: true },
+          });
+          testBtn.disabled = false;
+          testBtn.textContent = L.titleGenTest;
+          if (res && res.ok) {
+            testState.textContent = L.titleGenTestOk + res.title;
+            showToast(res.title, 'success');
+          } else {
+            testState.textContent = (res && errText(res)) || L.titleGenTestFailed;
+            testState.className = 'min-w-0 flex-1 truncate text-ui-xs/relaxed text-destructive';
+            showToast(L.titleGenTestFailed + ': ' + (res ? errText(res) : ''), 'error');
+          }
+        }, 'shrink-0');
+        paneTitleGen.replaceChildren(
+          // 信息卡：一句话简介在左，启用开关右对齐
+          h('div', { class: 'mt-3 flex items-center justify-between gap-2 rounded-xl border border-border p-2' },
+            h('span', { class: 'min-w-0 text-ui-sm/relaxed text-foreground-subtle' }, L.titleGenShortDesc),
+            h('div', { class: 'shrink-0' }, settingRow(L.titleGenEnabled, '', titleGenCfg.enabled === true, async () => {
+              titleGenCfg.enabled = !(titleGenCfg.enabled === true);
+              await persistTitleGen();
+              renderTitleGenPane();
+            }))),
+          // 供应商 + 模型
+          h('div', { class: 'mt-2 grid grid-cols-1 gap-2 rounded-xl border border-border p-2 sm:grid-cols-2' },
+            field(L.titleGenProvider, providerCombo),
+            field(L.titleGenModel, modelCombo)),
+          inlineConnCard,
+          // 提示词 + 载入默认
+          h('div', { class: 'mt-2 rounded-xl border border-border p-2' },
+            h('div', { class: 'mb-1 flex items-center justify-between gap-2' },
+              h('span', { class: 'text-ui-xs font-medium text-foreground-subtle' }, L.titleGenPrompt),
+              btnSmall(L.titleGenPromptReset, () => {
+                promptArea.value = titleGenDefaultPrompt;
+                titleGenCfg.prompt = titleGenDefaultPrompt;
+                void persistTitleGen();
+                promptArea.focus();
+              })),
+            promptArea),
+          // 测试
+          h('div', { class: 'mt-2 flex items-center gap-2 rounded-xl border border-border p-2' },
+            sampleInput, testBtn),
+          testState,
+        );
+      };
+      renderTitleGenPane();
+
       body.append(
         statusLine,
         tablist,
         paneFeatures,
+        paneAgents,
         paneStyles,
         panePerf,
-        paneAgents,
         paneProxy,
         paneSync,
         paneVision,

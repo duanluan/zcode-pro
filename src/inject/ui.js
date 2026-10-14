@@ -38,7 +38,7 @@ const contentClass = 'w-full sm:max-w-md rounded-2xl border-none bg-popover/98 p
 // Esc 只关最上层，避免一次 Esc 把两层一起关掉
 let dialogStack = [];
 
-export function openDialog({ title, description, onMount, onClose, width = 'sm:max-w-md', overlay = 'dim', draggable = false, posKey = '', dismissOnOutside = true }) {
+export function openDialog({ title, description, onMount, onClose, width = 'sm:max-w-md', overlay = 'dim', draggable = false, posKey = '', dismissOnOutside = true, bodyClass = '' }) {
   const L = t();
   const prevActive = document.activeElement;
   let cleanupDrag = null;
@@ -77,7 +77,9 @@ export function openDialog({ title, description, onMount, onClose, width = 'sm:m
     // 注意不能把 null 直接传给 append：DOM 会把 null 渲染成字面量 "null" 文本
     ...(description ? [h('p', { class: 'mt-2 text-ui-sm/relaxed text-foreground-subtle' }, description)] : [])
   );
-  const body = h('div', { class: 'mt-4 zcodepro-dialog-body' });
+  // bodyClass 覆盖默认的 mt-4（标题与内容间距）：设置弹窗标题下还有状态行和
+  // 标签栏，需要更紧凑时传更小的间距类
+  const body = h('div', { class: 'zcodepro-dialog-body ' + (bodyClass || 'mt-4') });
   content.append(body);
   let restorePos = null;
   if (draggable) {
@@ -420,13 +422,14 @@ export function ensureStyle() {
       align-items: center;
       justify-content: center;
       height: 24px;
-      padding: 0 14px;
+      padding: 0 8px;
       border: none;
       border-radius: 9999px;
       background: transparent;
       cursor: pointer;
       font-size: 12px;
       line-height: 1;
+      white-space: nowrap;
       color: var(--color-muted-foreground, #888);
       transition: color 0.15s ease, background-color 0.15s ease;
     }
@@ -515,6 +518,8 @@ export function ensureStyle() {
     .zcodepro-textarea:disabled { opacity: 0.5; }
     /* 小型文本域（视觉代理提示词等）：11rem 最小高度只属于全局提示词大编辑框，这里按 rows 定高 */
     .zcodepro-textarea.zcodepro-textarea-sm { min-height: 0; }
+    /* 全局提示词大编辑框：默认/最大高度都比默认文本域更高 */
+    .zcodepro-textarea.zcodepro-textarea-lg { min-height: 16rem; max-height: 40rem; }
     /* 行高滑杆（样式调整标签页） */
     .zcodepro-range {
       -webkit-appearance: none;

@@ -10,7 +10,7 @@ import { basename, delimiter, dirname, isAbsolute, join, resolve, sep } from 'no
 import { homedir, tmpdir } from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { readSettings, writeSettingsAtomic, remapSettingsPaths, isProjectOpenInTabs } from './settings.mjs';
-import { taskIndexPath, probeTaskIndexWritable, remapTaskIndexPaths, taskIndexDriverAvailable, listOverriddenTitles, listTaskWorkspaceMap } from './taskIndex.mjs';
+import { taskIndexPath, probeTaskIndexWritable, remapTaskIndexPaths, taskIndexDriverAvailable, listOverriddenTitles, listTaskWorkspaceMap, setTaskTitleIfNotOverridden, getTaskProviderModel } from './taskIndex.mjs';
 import { pickFolderSystem } from './pickFolder.mjs';
 import { reorderWorkspaceTasks, reorderGroupMembers } from './taskOrder.mjs';
 import { webdavRequest, webdavPutWithMkcol, webdavHttpText, parseWebdavListing, findCurl } from './webdav.mjs';
@@ -95,6 +95,22 @@ export function defaultConfig() {
     // headroom 启用开关的记忆（供应商 id → { proxy, direct }）：关闭时把走 headroom 的
     // 供应商地址切回直连并记录下来，再次开启时按记录把地址切回代理
     headroomRoutes: {},
+    // 任务名提示词（自动起名）：新会话开始作答后按可配置的供应商与提示词生成
+    // 标题，并按“手动重命名”写入任务索引。默认关闭。provider：
+    // 'session' = 跟随当前会话（调用时从任务索引解析该会话的供应商，默认）、
+    // '' = 不跟随（自填 baseUrl/apiKey/format）、其余 = 供应商 id（保存时同步
+    // 解析一份 baseUrl/apiKey/format 副本，供应商日后被删仍可直连）；
+    // model 默认 glm-5.3-flash（起名用快模型即可），跟随会话时可留空
+    //（用会话当前模型）；prompt 留空 = 内置默认提示词
+    titleGen: {
+      enabled: false,
+      provider: 'session',
+      model: 'glm-5.3-flash',
+      prompt: '',
+      baseUrl: '',
+      apiKey: '',
+      format: '',
+    },
     // HTTP 代理（http(s)://host:port）：helper 发起的网络访问走它——插件市场更新/安装
     // （zcode CLI → git）、headroom/rtk 的安装与升级（pip/GitHub）。空 = 不用代理。
     proxy: '',
@@ -141,6 +157,7 @@ export function loadConfig(configFile) {
       styles: { ...defaultConfig().styles, ...(saved.styles && typeof saved.styles === 'object' ? saved.styles : {}) },
       aliases: { ...((saved.aliases && typeof saved.aliases === 'object') ? saved.aliases : {}) },
       headroomRoutes: { ...((saved.headroomRoutes && typeof saved.headroomRoutes === 'object' && !Array.isArray(saved.headroomRoutes)) ? saved.headroomRoutes : {}) },
+      titleGen: mergeTitleGenConfig(saved.titleGen),
       proxyScopes: mergeProxyScopes(saved.proxyScopes),
       devMode: saved.devMode === true,
       // devActive 每次读取时重算（保存时会随配置一起写入文件，但读取方不用保存的值）：
@@ -299,6 +316,9 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         if (body && typeof body === 'object' && body.styles && typeof body.styles === 'object') {
           current.styles = applyStylesPartial(current.styles, body.styles);
         }
+        if (body && typeof body === 'object' && body.titleGen && typeof body.titleGen === 'object') {
+          current.titleGen = mergeTitleGenConfig({ ...current.titleGen, ...body.titleGen });
+        }
         saveConfig(configFile, current);
         json(res, 200, { ok: true, config: current });
         return;
@@ -405,6 +425,89 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         }
         const config = loadConfig(configFile);
         json(res, 200, { ok: true, enabled: config.features.titleLock !== false, titles: r.titles });
+        return;
+      }
+      // —— 智能起名：配置读写 + 供应商列表 + 生成并写库 ——
+      if (req.method === 'GET' && url.pathname === '/title-gen') {
+        json(res, 200, { ok: true, titleGen: loadConfig(configFile).titleGen, defaultPrompt: titleGenDefaultPrompt() });
+        return;
+      }
+      if (req.method === 'POST' && url.pathname === '/title-gen') {
+        const body = await readBody(req);
+        if (body && typeof body === 'object' && body.titleGen && typeof body.titleGen === 'object') {
+          const current = loadConfig(configFile);
+          const next = { ...current.titleGen, ...body.titleGen };
+          // 选了列表内供应商：同步解析并保存其地址/密钥/协议副本——供应商日后
+          // 被删，这份副本仍可直连（界面标注“已删除”并展开字段）；
+          // 跟随会话不存副本（每次调用时按该会话实时解析）
+          const providerId = (next.provider || '').trim();
+          if (providerId && providerId !== 'session') {
+            const found = listTitleGenProviders().find((p) => p.id === providerId);
+            if (found) {
+              next.baseUrl = found.baseUrl;
+              next.apiKey = found.apiKey;
+              next.format = found.format;
+            }
+            // 找不到（手输 id 或已删）：保留原有副本字段不动
+          } else if (providerId === 'session') {
+            // 跟随会话不存副本（每次调用时按该会话实时解析）
+            next.baseUrl = '';
+            next.apiKey = '';
+            next.format = '';
+          }
+          current.titleGen = mergeTitleGenConfig(next);
+          saveConfig(configFile, current);
+          json(res, 200, { ok: true, titleGen: current.titleGen });
+          return;
+        }
+        json(res, 400, { ok: false, code: 'invalid-request', error: 'body 需包含 titleGen 对象' });
+        return;
+      }
+      // 供应商下拉数据：与视觉代理同源同规则，但只列 helper 能在会话外直接
+      // 调用的条目（有地址、密钥且协议可判定），并带可选模型列表；不回密钥
+      if (req.method === 'GET' && url.pathname === '/title-gen/providers') {
+        json(res, 200, {
+          ok: true,
+          providers: listTitleGenProviders().map(({ apiKey, ...rest }) => rest),
+        });
+        return;
+      }
+      // 生成（并可选写库）：text = 会话首条消息；sessId 指定且非 test 时按
+      // “手动重命名”写入任务索引（已重命名的会话不会被动）；test = 设置面板
+      // 的测试按钮，只生成不写库
+      if (req.method === 'POST' && url.pathname === '/title-gen/run') {
+        const body = await readBody(req);
+        const text = typeof body?.text === 'string' ? body.text : '';
+        if (!text.trim()) {
+          json(res, 400, { ok: false, code: 'invalid-request', error: 'text 不能为空' });
+          return;
+        }
+        const cfg = loadConfig(configFile).titleGen;
+        if (cfg.enabled !== true && body.test !== true) {
+          json(res, 400, { ok: false, code: 'title-gen-disabled', error: '智能起名未开启' });
+          return;
+        }
+        const sessId = typeof body?.sessId === 'string' && /^sess_[A-Za-z0-9._-]+$/.test(body.sessId) ? body.sessId : '';
+        const title = await generateTitleWith(cfg, text, dataRoot, sessId);
+        let written = false;
+        if (sessId && body.test !== true) {
+          // 写库撞上宿主写入时稍候重试（起名不急这几秒）
+          for (let attempt = 0; ; attempt++) {
+            try {
+              const r = await setTaskTitleIfNotOverridden(dataRoot, sessId, title);
+              written = r.written;
+              break;
+            } catch (err) {
+              if (err.code === 'index-busy' && attempt < 2) {
+                await new Promise((r) => setTimeout(r, 1200));
+                continue;
+              }
+              json(res, 500, { ok: false, code: err.code || 'index-error', error: err.message });
+              return;
+            }
+          }
+        }
+        json(res, 200, { ok: true, title, written });
         return;
       }
       // —— zcode-vision 插件（图片视觉代理）：设置弹窗“视觉代理”标签页读写 ————
@@ -1031,6 +1134,25 @@ function clampInt(v, min, max, dflt) {
 }
 
 // —— 设置同步（“同步”标签页）的实现 ——
+
+// loadConfig 时把磁盘上的 titleGen 段按默认值归一（智能起名）：只收已知字段，
+// 字符串限长；enabled 默认关闭（改动官方起名行为，需用户显式开启）
+function mergeTitleGenConfig(saved) {
+  const d = defaultConfig().titleGen;
+  const s = (saved && typeof saved === 'object' && !Array.isArray(saved)) ? saved : {};
+  // 旧版配置的 'cli'（登录账号单独成模式）统一迁移为 'session'：
+  // 登录账号的套餐已在供应商列表里，跟随会话即覆盖原语义
+  const provider = typeof s.provider === 'string' ? s.provider.trim().slice(0, 200) : d.provider;
+  return {
+    enabled: s.enabled === true,
+    provider: provider === 'cli' ? 'session' : provider,
+    model: typeof s.model === 'string' ? s.model.trim().slice(0, 200) : d.model,
+    prompt: typeof s.prompt === 'string' ? s.prompt.slice(0, 20000) : d.prompt,
+    baseUrl: typeof s.baseUrl === 'string' ? s.baseUrl.trim().slice(0, 500) : d.baseUrl,
+    apiKey: typeof s.apiKey === 'string' ? s.apiKey.trim().slice(0, 500) : d.apiKey,
+    format: s.format === 'openai' ? 'openai' : s.format === 'anthropic' ? 'anthropic' : '',
+  };
+}
 
 // loadConfig 时把磁盘上的 proxyScopes 按默认值归一（只收布尔，缺的补默认：
 // 插件市场/依赖软件开、同步关）
@@ -1672,33 +1794,290 @@ function sanitizeFontStack(v) {
   return s;
 }
 
-// 跟随供应商下拉取数：合并 ~/.zcode/v2/config.json 的 provider（优先）与
-// ~/.zcode/v2/provider_config.json 的 providerRules（同 id 时规则表的名字保留为别名）；只回 id/名称/别名，不含密钥。
+// 视觉代理「跟随供应商」下拉取数：与智能起名共用同一套供应商列表和过滤规则
+//（见 listTitleGenProviders），只回 id/名称/别名，不含密钥。
 // 导出以便测试脚本直接驱动。
 export function listVisionProviders() {
-  const list = [];
-  const byId = new Map();
-  const v2 = readJsonFile(join(homedir(), '.zcode', 'v2', 'config.json'));
-  for (const [id, p] of Object.entries((v2 && typeof v2.provider === 'object' && v2.provider) || {})) {
-    const entry = { id, name: (p && typeof p.name === 'string' && p.name.trim()) || id, aliases: [] };
-    list.push(entry);
-    byId.set(id, entry);
+  return listTitleGenProviders().map((p) => ({ id: p.id, name: p.name, aliases: p.aliases || [] }));
+}
+
+// —— 智能起名：供应商取数、模型调用与标题清洗 ——
+
+// 内置默认提示词（用户可在设置弹窗覆盖），按界面语言取中文或英文版。
+// 英文版的词数上限比中文版紧：英文单词更长，3~15 个词在会话列表里放不下
+const TITLE_GEN_DEFAULT_PROMPTS = {
+  zh: [
+    '为下面的会话生成一个简短的标题。',
+    '要求：',
+    '- 使用用户消息的主要语言（中文消息用中文标题）',
+    '- 概括用户要做的主要事情或主题，不要给出答案或结果',
+    '- 一般3~15个词，在会话列表里能一眼认出',
+    '- 保留重要的专有名词（文件名、产品名、技术名词等，如有）',
+    '- 不要用`用户请求`、`新任务`、`提问`这类泛泛的标题',
+    '- 不要直接复述或截取用户消息原文当标题',
+    '- 只输出标题本身：不要解释、不要引号、不要末尾标点、不要markdown',
+  ].join('\n'),
+  en: [
+    'Generate a short title for the session below.',
+    'Requirements:',
+    "- Use the primary language of the user's message (an English message gets an English title)",
+    '- Summarize the user\'s main task or topic; do not give the answer or result',
+    '- Usually 3-8 words, easy to recognize in a session list',
+    '- Keep important proper nouns (file names, product names, technical terms, if any)',
+    '- Avoid generic titles such as `User Request`, `New Task`, or `Question`',
+    '- Do not copy or truncate the user\'s message as the title',
+    '- Output only the title itself: no explanation, no quotes, no trailing punctuation, no markdown',
+  ].join('\n'),
+};
+
+// 界面语言：桌面设置（v2/setting.json 的 localePreference）为 en-US / zh-CN 时
+// 直接采用；system 或未设置时按系统环境语言判断（中文环境 → 中文，其余 → 英文）
+function titleGenLocale() {
+  const s = readJsonFile(join(homedir(), '.zcode', 'v2', 'setting.json'));
+  const pref = String((s && s.localePreference) || '').toLowerCase();
+  if (pref.startsWith('en')) return 'en';
+  if (pref.startsWith('zh')) return 'zh';
+  const lang = String(process.env.LC_ALL || process.env.LC_MESSAGES || process.env.LANG || '').toLowerCase();
+  return lang.startsWith('zh') ? 'zh' : 'en';
+}
+
+function titleGenDefaultPrompt() {
+  return TITLE_GEN_DEFAULT_PROMPTS[titleGenLocale()] || TITLE_GEN_DEFAULT_PROMPTS.en;
+}
+
+const TITLE_GEN_MAX_TEXT = 1200;  // 用户消息送入模型的长度上限（与官方起名一致）
+const TITLE_GEN_MAX_TITLE = 64;   // 生成标题的长度上限（按字符计）
+const TITLE_GEN_TIMEOUT_MS = 60000; // 单次模型调用超时（与官方起名一致；推理模型思考占时较长）
+
+// 内置套餐显示名：与 ZCode 界面的叫法一致——条目原始名区分度差
+//（coding-plan 与 start-plan 都叫 "Coding Plan"），界面里按套餐类型显示。
+// coding-plan 的个人/团队是动态的：从桌面设置（v2/setting.json 的
+// providerFamilyConnectionSelections）读当前登录的连接方式（kind 含
+// individual → 个人、team → 团队），读不到时退回「个人/团队」
+function codingPlanKindByFamily() {
+  const s = readJsonFile(join(homedir(), '.zcode', 'v2', 'setting.json'));
+  const sel = (s && s.providerFamilyConnectionSelections && typeof s.providerFamilyConnectionSelections === 'object')
+    ? s.providerFamilyConnectionSelections : {};
+  const out = {};
+  for (const [family, v] of Object.entries(sel)) {
+    const kind = String(v?.kind || '');
+    if (/individual/i.test(kind)) out[family] = '个人';
+    else if (/team/i.test(kind)) out[family] = '团队';
   }
+  return out;
+}
+
+function titleGenProviderDisplayName(id, name, planKinds = {}) {
+  const m = /^builtin:(zai|bigmodel)-coding-plan$/.exec(id);
+  if (m) {
+    const fam = m[1] === 'zai' ? 'Z.ai' : 'BigModel';
+    return `${fam}（${planKinds[m[1]] || '个人/团队'}）`;
+  }
+  if (/^builtin:(zai|bigmodel)-start-plan$/.test(id)) return 'Start Plan';
+  return (name && String(name).trim()) || id;
+}
+
+// 供应商条目（智能起名与视觉代理共用），列表范围与 ZCode 界面的供应商列表
+// 保持一致：
+// - 内置套餐（builtin:*）：有地址、密钥才列出（无密钥的 helper 无法在会话外
+//   调用，如未配 key 的 API Key 型条目）；
+// - 自定义供应商：以 provider_config.json 的 providerOrder 为准（ZCode 界面的
+//   自定义列表就来自它），provider 表里不在其中的残留条目（已弃用的中转等）
+//   不列出；
+// - 协议：api.type / kind 缺失时按地址推断（含 anthropic → anthropic，含
+//   openai 或以 /v\d 结尾 → openai），两个都推不出才放弃该条目。
+// 两张来源表同 id 合并（模型并集、原始名收进别名）。models 为该供应商的
+// 可选模型（下拉用，可为空）。导出以便测试
+export function listTitleGenProviders() {
+  const out = [];
+  const byId = new Map();
+  const planKinds = codingPlanKindByFamily();
+  const add = (id, { name, aliases = [], kind, baseUrl, apiKey, models = [] }) => {
+    baseUrl = typeof baseUrl === 'string' ? baseUrl.trim() : '';
+    apiKey = typeof apiKey === 'string' ? apiKey.trim() : '';
+    if (!id || !baseUrl || !apiKey) return;
+    let format = /anthropic/i.test(String(kind)) ? 'anthropic' : /openai/i.test(String(kind)) ? 'openai' : '';
+    if (!format) format = /anthropic/i.test(baseUrl) ? 'anthropic'
+      : (/openai/i.test(baseUrl) || /\/v\d+$/.test(baseUrl)) ? 'openai' : '';
+    if (!format) return;
+    models = models.filter(Boolean);
+    const known = byId.get(id);
+    if (known) {
+      known.models = [...new Set([...known.models, ...models])];
+      for (const a of aliases) if (a && !known.aliases.includes(a)) known.aliases.push(a);
+      return;
+    }
+    const shown = titleGenProviderDisplayName(id, name, planKinds);
+    const entry = {
+      id, name: shown, aliases: [...new Set(aliases.filter((a) => a && a !== shown))],
+      format, baseUrl, apiKey, models: [...new Set(models)],
+    };
+    byId.set(id, entry);
+    out.push(entry);
+  };
+
+  const v2 = readJsonFile(join(homedir(), '.zcode', 'v2', 'config.json'));
+  const providers = (v2 && typeof v2.provider === 'object' && v2.provider) || {};
   const rulesDoc = readJsonFile(join(homedir(), '.zcode', 'v2', 'provider_config.json'));
   const rules = (rulesDoc && rulesDoc.config?.providerConfigRules?.providerRules) || [];
-  for (const r of rules) {
-    if (!r || typeof r.providerId !== 'string' || !r.providerId) continue;
-    const existing = byId.get(r.providerId);
-    if (existing) {
-      const alias = (typeof r.providerName === 'string' && r.providerName.trim()) || r.providerId;
-      if (alias !== existing.name && !existing.aliases.includes(alias)) existing.aliases.push(alias);
-      continue;
-    }
-    const entry = { id: r.providerId, name: (typeof r.providerName === 'string' && r.providerName.trim()) || r.providerId, aliases: [] };
-    list.push(entry);
-    byId.set(r.providerId, entry);
+  const ruleById = new Map(rules.filter((r) => r && typeof r.providerId === 'string').map((r) => [r.providerId, r]));
+  // 同一 id 在两张表的字段并起来（provider 表优先：地址/密钥以桌面实际在用的为准）
+  const addMerged = (id) => {
+    const p = providers[id];
+    if (p !== undefined && (p === null || typeof p !== 'object')) return;
+    const r = ruleById.get(id) || {};
+    const c = r.config || {};
+    add(id, {
+      name: (p && p.name) || r.providerName,
+      aliases: [r.providerName, p && p.name],
+      kind: (p && p.kind) || c.api?.type,
+      baseUrl: (p && p.options?.baseURL) || c.api?.baseUrl,
+      apiKey: (p && p.options?.apiKey) || c.access?.apiKey,
+      models: [...Object.keys((p && p.models) || {}), ...(c.modelOrder || []), ...(c.personalModelIds || [])],
+    });
+  };
+
+  // 内置套餐在前（BigModel（个人/团队）→ Start Plan 的顺序）
+  for (const id of Object.keys(providers)) {
+    if (id.startsWith('builtin:')) addMerged(id);
   }
-  return list;
+  // 自定义供应商按界面顺序（providerOrder）
+  const order = (rulesDoc && Array.isArray(rulesDoc.config?.providerOrder) ? rulesDoc.config.providerOrder : [])
+    .filter((id) => typeof id === 'string');
+  for (const id of order) addMerged(id);
+  return out;
+}
+
+// Anthropic Messages 文本调用（无系统提示词，单条用户消息）。max_tokens 给足
+// 2048：glm 系列等推理模型先输出 thinking 块再出正文，给小了会全部耗在
+// 思考上（stop_reason=max_tokens 且没有任何 text 块），起名调用不在意这点额度
+async function callAnthropicText(baseUrl, apiKey, model, content) {
+  const url = baseUrl.replace(/\/+$/, '') + '/v1/messages';
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), TITLE_GEN_TIMEOUT_MS);
+  try {
+    const resp = await fetch(url, {
+      method: 'POST', signal: ctrl.signal,
+      headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({ model, max_tokens: 2048, messages: [{ role: 'user', content }] }),
+    });
+    const body = await resp.text();
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${body.slice(0, 300)}`);
+    const doc = JSON.parse(body);
+    const text = Array.isArray(doc.content)
+      ? doc.content.filter((b) => b && b.type === 'text').map((b) => b.text || '').join('') : '';
+    if (!text) throw new Error(doc.stop_reason === 'max_tokens'
+      ? '模型的思考用完了输出上限，仍未给出标题' : '响应中没有文本内容');
+    return text;
+  } catch (err) {
+    if (err && err.name === 'AbortError') throw new Error(`请求超时（${Math.round(TITLE_GEN_TIMEOUT_MS / 1000)} 秒）`);
+    throw err;
+  } finally { clearTimeout(timer); }
+}
+
+// OpenAI Chat Completions 文本调用；baseURL 已含 /v1 时不重复拼
+async function callOpenAiText(baseUrl, apiKey, model, content) {
+  const base = baseUrl.replace(/\/+$/, '');
+  const url = /\/v\d+$/.test(base) ? base + '/chat/completions' : base + '/v1/chat/completions';
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), TITLE_GEN_TIMEOUT_MS);
+  try {
+    const resp = await fetch(url, {
+      method: 'POST', signal: ctrl.signal,
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({ model, max_tokens: 2048, messages: [{ role: 'user', content }] }),
+    });
+    const body = await resp.text();
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${body.slice(0, 300)}`);
+    const doc = JSON.parse(body);
+    const text = doc.choices?.[0]?.message?.content || '';
+    if (typeof text !== 'string' || !text.trim()) throw new Error('响应中没有文本内容');
+    return text;
+  } catch (err) {
+    if (err && err.name === 'AbortError') throw new Error(`请求超时（${Math.round(TITLE_GEN_TIMEOUT_MS / 1000)} 秒）`);
+    throw err;
+  } finally { clearTimeout(timer); }
+}
+
+// 生成标题。provider 三种取值：
+// - 'session'：跟随当前会话——从任务索引解析该会话正在用的供应商与模型
+//   （model 已填时用填写的），供应商需在可直连列表内；
+// - ''：不跟随，用配置里的 baseUrl/apiKey/format 直连；
+// - 供应商 id：按列表解析直连；id 已被删时退回保存时留下的地址/密钥副本。
+// 输出统一清洗为单行短标题。导出以便测试
+export async function generateTitleWith(cfg, rawText, dataRoot = '', sessId = '') {
+  const text = String(rawText || '').trim().replace(/\s+/g, ' ').slice(0, TITLE_GEN_MAX_TEXT);
+  const prompt = (cfg.prompt && cfg.prompt.trim()) || titleGenDefaultPrompt();
+  const userContent = `${prompt}\n\n会话的用户消息：\n${text}`;
+  const providerId = (cfg.provider || '').trim();
+  const model = (cfg.model || '').trim();
+  const conn = await resolveTitleGenConnection(cfg, providerId, model, dataRoot, sessId);
+  const raw = conn.format === 'anthropic'
+    ? await callAnthropicText(conn.baseUrl, conn.apiKey, conn.model, userContent)
+    : await callOpenAiText(conn.baseUrl, conn.apiKey, conn.model, userContent);
+  const title = cleanGeneratedTitle(raw);
+  if (!title) throw new Error('模型未返回可用标题');
+  return title;
+}
+
+// 直连前的连接解析（见 generateTitleWith 的取值说明）；解析不出抛明确错误
+async function resolveTitleGenConnection(cfg, providerId, model, dataRoot, sessId) {
+  if (providerId === 'session') {
+    if (!sessId || !dataRoot) {
+      throw new Error('跟随当前会话需要会话信息（测试按钮请选择具体供应商或“不跟随”）');
+    }
+    const task = await getTaskProviderModel(dataRoot, sessId);
+    if (!task || !task.providerId) throw new Error('索引中查不到该会话的供应商信息');
+    const entry = listTitleGenProviders().find((p) => p.id === task.providerId);
+    if (!entry) throw new Error(`会话供应商 ${task.providerId} 无法在会话外直连（无密钥或协议未知）`);
+    const useModel = model || task.modelId;
+    if (!useModel) throw new Error('未能确定会话当前模型，请手动填写模型');
+    return { format: entry.format, baseUrl: entry.baseUrl, apiKey: entry.apiKey, model: useModel };
+  }
+  if (providerId) {
+    const entry = listTitleGenProviders().find((p) => p.id === providerId);
+    if (entry) {
+      if (!model) throw new Error('已选择供应商，但未填写模型');
+      return { format: entry.format, baseUrl: entry.baseUrl, apiKey: entry.apiKey, model };
+    }
+    // 供应商已被删：退回保存时的地址/密钥副本
+    if (cfg.baseUrl && cfg.apiKey && cfg.format) {
+      if (!model) throw new Error('已删除的供应商需手动填写模型');
+      return { format: cfg.format, baseUrl: cfg.baseUrl, apiKey: cfg.apiKey, model };
+    }
+    throw new Error(`供应商 ${providerId} 已不可用（未保存地址/密钥副本），请重新选择`);
+  }
+  // 不跟随（自填地址）
+  if (!cfg.baseUrl || !cfg.apiKey || !cfg.format) {
+    throw new Error('不跟随（自填地址）需要填写接口地址、API Key 与协议');
+  }
+  if (!model) throw new Error('不跟随（自填地址）需要填写模型');
+  return { format: cfg.format, baseUrl: cfg.baseUrl, apiKey: cfg.apiKey, model };
+}
+
+// 清洗模型输出：去思考块/代码围栏/首尾引号/序号/末尾标点，取首个非空行并限长。
+// 模型可能沿用官方起名的习惯回 JSON 对象，此时取其 title 字段。导出以便测试
+export function cleanGeneratedTitle(text) {
+  let t = String(text || '').replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+  // 整段包在代码围栏里时先去掉围栏标记（先取行会把「```json」当成标题内容）
+  t = t.replace(/^```[a-zA-Z]*\s*\n?/, '').replace(/\n?```\s*$/, '').trim();
+  let line = t.split(/\r?\n/).map((s) => s.trim()).find(Boolean) || '';
+  line = line.replace(/^```[a-zA-Z]*\s*/, '').replace(/```\s*$/, '');
+  try {
+    const doc = JSON.parse(line);
+    if (doc && typeof doc.title === 'string') line = doc.title;
+  } catch { /* 不是 JSON，按纯文本处理 */ }
+  line = line.replace(/^["'「『“]+/, '').replace(/["'」』”]+$/, '');
+  line = line.replace(/^\d+[.、)\]]\s*/, '');
+  line = line.replace(/[.。!！?？，,;；:：]\s*$/, '');
+  line = line.replace(/\s+/g, ' ').trim();
+  const chars = [...line];
+  if (chars.length > TITLE_GEN_MAX_TITLE) {
+    line = chars.slice(0, TITLE_GEN_MAX_TITLE).join('');
+    // 截断落在英文单词中间时退到词边界，避免出现半个单词
+    if (line.includes(' ')) line = line.slice(0, line.lastIndexOf(' '));
+  }
+  return line.trim();
 }
 
 // zcode-vision 配置校验：只保留已知字段并规范化；出错时返回中文原因。
@@ -2523,13 +2902,14 @@ function zcodeCliBundleCandidates() {
   ].filter(Boolean);
 }
 
-// 运行 zcode CLI 子命令（plugins …，走 plugins 代理范围）
-function runZcodeCli(subArgs, timeoutMs = 120000) {
+// 运行 zcode CLI 子命令（plugins … 默认走 plugins 代理范围；智能起名的
+// 无界面提问传 none——模型 API 直连，不走下载代理）
+function runZcodeCli(subArgs, timeoutMs = 120000, scope = 'plugins') {
   const bundle = zcodeCliBundleCandidates().find((c) => existsSync(c));
   if (!bundle) {
     return Promise.resolve({ ok: false, code: 'cli-not-found', error: '未找到 ZCode CLI（resources/glm/zcode.cjs）' });
   }
-  return runNodeScript([bundle, ...subArgs], timeoutMs, 'plugins');
+  return runNodeScript([bundle, ...subArgs], timeoutMs, scope);
 }
 
 // 比对市场清单与已装清单：每个插件的已装版本与最新版本。导出以便测试。

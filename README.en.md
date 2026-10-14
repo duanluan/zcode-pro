@@ -18,6 +18,7 @@ ZCode Pro enhances the ZCode desktop UI. No client files are modified; just laun
 | Session drag ordering | Reorder sessions in Pinned, Projects and Groups; persists across refreshes |
 | Session quick switch | `alt+z` toggles between the current and the last session; hold `alt` and press `x` / `c` to pick from recent sessions, release `alt` to switch (like `alt+tab`) |
 | Keep renamed session titles | Sessions you renamed keep their custom title; auto-generated titles no longer overwrite it in the sidebar |
+| Task name prompt | When a new session starts answering, generates the task name with a provider and prompt you choose (following the current session and glm-5.3-flash by default; every question sent before the first answer counts), saved as a manual rename the built-in auto title never overrides; provider, model and prompt are editable in settings, with a test button |
 | Running indicator on collapsed projects | Spins a collapsed project's icon while any of its sessions is still running; stops when they all finish |
 | Idle project memory reclaim | Projects unused for a while with no running tasks release their memory automatically, and unused ones are reclaimed once after startup; sessions are untouched and reload when reopened (durations adjustable) |
 | Sidebar menu in the top bar | Turns the sidebar menu (New task / Search / Automations / Plugin store) into icon buttons next to the top-bar arrows: hover shows the name, highlighted while its view is open, shortcuts still work |

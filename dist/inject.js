@@ -1,5 +1,5 @@
 (() => {
-  // ../../../../../../../tmp/zpro-cleanbuild/src/inject/core.js
+  // src/inject/core.js
   var BOOT = typeof window !== "undefined" ? window.__ZCODEPRO__ || {} : {};
   var HELPER_URL = BOOT.helperUrl || "http://127.0.0.1:47889";
   function liveBoot() {
@@ -35,6 +35,7 @@
     tabFeatures: "\u529F\u80FD",
     tabStyles: "\u6837\u5F0F",
     tabProxy: "\u4EE3\u7406",
+    tabBehavior: "\u884C\u4E3A",
     tabAgents: "\u5168\u5C40\u63D0\u793A\u8BCD",
     agentsDesc: "\u5199\u5165 ~/.zcode/AGENTS.md\uFF0C\u4F5C\u4E3A\u9ED8\u8BA4\u6307\u4EE4\u7528\u4E8E\u6240\u6709\u9879\u76EE\u7684\u6BCF\u6B21\u4F1A\u8BDD\uFF1B\u4FDD\u5B58\u540E\u4ECE\u65B0\u4F1A\u8BDD\u8D77\u751F\u6548\uFF0C\u9879\u76EE\u5185\u7684 AGENTS.md \u53EF\u8865\u5145\u6216\u8986\u76D6\u3002\u5185\u5BB9\u8D85\u8FC7 100KB \u4F1A\u88AB\u5E94\u7528\u622A\u65AD\u3002",
     agentsPlaceholder: "\u586B\u5199\u5E0C\u671B\u6240\u6709\u9879\u76EE\u9ED8\u8BA4\u9075\u5FAA\u7684\u6307\u4EE4\uFF1B\u6E05\u7A7A\u5E76\u4FDD\u5B58\u5373\u79FB\u9664\u5168\u5C40\u63D0\u793A\u8BCD",
@@ -146,6 +147,29 @@
     featureSessionSwitchDesc: "alt+z \u5728\u5F53\u524D\u4E0E\u4E0A\u6B21\u4F1A\u8BDD\u95F4\u6765\u56DE\u5207\u6362\uFF1B\u6309\u4F4F alt \u518D\u6309 x/c \u5F39\u51FA\u6700\u8FD1\u4F1A\u8BDD\u5217\u8868\u524D\u540E\u9009\u62E9\uFF0C\u677E\u5F00 alt \u5207\u6362\uFF08\u7C7B alt+tab\uFF09\u3002",
     featureTitleLock: "\u91CD\u547D\u540D\u4F1A\u8BDD\u540D\u9501\u5B9A",
     featureTitleLockDesc: "\u624B\u52A8\u91CD\u547D\u540D\u8FC7\u7684\u4F1A\u8BDD\u4E0D\u518D\u88AB\u81EA\u52A8\u6807\u9898\u8986\u76D6\uFF1A\u4F1A\u8BDD\u6709\u65B0\u56DE\u7B54\u540E\u754C\u9762\u53EF\u80FD\u6539\u663E\u81EA\u52A8\u6807\u9898\uFF0C\u91CD\u542F\u540E\u53C8\u53D8\u56DE\uFF0C\u672C\u529F\u80FD\u8BA9\u4FA7\u680F\u59CB\u7EC8\u663E\u793A\u91CD\u547D\u540D\u540E\u7684\u540D\u5B57\u3002",
+    tabTitleGen: "\u4EFB\u52A1\u540D\u63D0\u793A\u8BCD",
+    titleGenShortDesc: "\u65B0\u4F1A\u8BDD\u5F00\u59CB\u4F5C\u7B54\u65F6\uFF0C\u6309\u6240\u9009\u4F9B\u5E94\u5546\u4E0E\u63D0\u793A\u8BCD\u751F\u6210\u4EFB\u52A1\u540D\u5E76\u6309\u624B\u52A8\u91CD\u547D\u540D\u4FDD\u5B58\uFF0C\u5B98\u65B9\u81EA\u52A8\u6807\u9898\u4E0D\u518D\u8986\u76D6\u3002",
+    titleGenEnabled: "\u542F\u7528",
+    titleGenProvider: "\u4F9B\u5E94\u5546",
+    titleGenProviderNone: "\u4E0D\u8DDF\u968F\uFF08\u81EA\u586B\u5730\u5740\uFF09",
+    titleGenProviderSession: "\u8DDF\u968F\u5F53\u524D\u4F1A\u8BDD",
+    titleGenProviderDeleted: "\uFF08\u5DF2\u5220\u9664\uFF09",
+    titleGenModel: "\u6A21\u578B",
+    titleGenModelHint: "\u4ECE\u5217\u8868\u9009\u62E9\uFF0C\u6216\u76F4\u63A5\u586B\u5199\u6A21\u578B id",
+    titleGenModelEmpty: "\uFF08\u672A\u9009\u62E9\uFF09",
+    titleGenModelSessionHint: "\u7559\u7A7A\u8DDF\u968F\u4F1A\u8BDD\u5F53\u524D\u6A21\u578B\uFF0C\u6216\u8F93\u5165\u6A21\u578B id",
+    titleGenModelManualHint: "\u8F93\u5165\u6A21\u578B id",
+    titleGenBaseUrl: "\u63A5\u53E3\u5730\u5740",
+    titleGenApiKey: "API Key",
+    titleGenFormat: "\u534F\u8BAE",
+    titleGenPrompt: "\u63D0\u793A\u8BCD",
+    titleGenPromptPlaceholder: "\u7559\u7A7A\u4F7F\u7528\u5185\u7F6E\u9ED8\u8BA4\u63D0\u793A\u8BCD\uFF08\u70B9\u51FB\u4E0B\u65B9\u6309\u94AE\u53EF\u67E5\u770B\uFF09",
+    titleGenPromptReset: "\u4F7F\u7528\u9ED8\u8BA4\u63D0\u793A\u8BCD",
+    titleGenSample: "\u6D4B\u8BD5\u6D88\u606F",
+    titleGenTest: "\u6D4B\u8BD5\u751F\u6210",
+    titleGenTesting: "\u751F\u6210\u4E2D\u2026",
+    titleGenTestOk: "\u751F\u6210\u7ED3\u679C\uFF1A",
+    titleGenTestFailed: "\u751F\u6210\u5931\u8D25",
     featureWsRunning: "\u6298\u53E0\u9879\u76EE\u8FD0\u884C\u63D0\u793A\uFF08\u5B9E\u9A8C\u6027\uFF09",
     featureWsRunningDesc: "\u6298\u53E0\u7684\u9879\u76EE\u91CC\u4ECD\u6709\u4F1A\u8BDD\u5728\u8FD0\u884C\u65F6\uFF0C\u9879\u76EE\u56FE\u6807\u65CB\u8F6C\u63D0\u793A\uFF1B\u5168\u90E8\u7ED3\u675F\u6216\u5C55\u5F00\u9879\u76EE\u540E\u6062\u590D\u3002\u671F\u95F4\u6BCF 60 \u79D2\u5728\u540E\u53F0\u77ED\u6682\u5C55\u5F00\u8BE5\u9879\u76EE\u590D\u6838\u8FD0\u884C\u72B6\u6001\u518D\u6536\u8D77\uFF0C\u4F1A\u8BDD\u884C\u4E0D\u663E\u793A\uFF0C\u4EC5\u9879\u76EE\u4F4D\u7F6E\u53EF\u80FD\u6709\u7EA6\u56DB\u5206\u4E4B\u4E00\u79D2\u7684\u8F7B\u5FAE\u9AD8\u5EA6\u8D77\u4F0F\u3002",
     tabPerformance: "\u6027\u80FD",
@@ -220,10 +244,6 @@
     visionMoveDown: "\u4E0B\u79FB",
     visionName: "\u540D\u79F0",
     visionUseProvider: "\u4F9B\u5E94\u5546",
-    visionUseProviderHint: "\u4E0B\u62C9\u9009\u62E9\u6216\u624B\u52A8\u8F93\u5165\uFF1Asession=\u8DDF\u968F\u5F53\u524D\u4F1A\u8BDD\u4F9B\u5E94\u5546\uFF0C\u6216\u4F9B\u5E94\u5546\u540D/ID\uFF1B\u8BBE\u7F6E\u540E baseUrl/API Key/\u683C\u5F0F\u81EA\u52A8\u53D6\u8BE5\u4F9B\u5E94\u5546",
-    visionUseProviderNone: "\u4E0D\u8DDF\u968F\uFF08\u81EA\u586B\u5730\u5740\uFF09",
-    visionUseProviderSession: "\u8DDF\u968F\u5F53\u524D\u4F1A\u8BDD\uFF08session\uFF09",
-    visionUseProviderUnknown: "\u672A\u627E\u5230\u8BE5\u4F9B\u5E94\u5546\uFF0C\u8BC6\u522B\u65F6\u4F1A\u62A5\u9519\uFF1B\u8BF7\u4ECE\u4E0B\u62C9\u9009\u62E9\uFF0C\u6216\u8F93\u5165 session",
     visionSkipAfterFailures: "\u8FDE\u7EED\u5931\u8D25\u6B21\u6570",
     visionSkipAfterFailuresHint: "\u67D0\u4EE3\u7406\u8FDE\u7EED\u5931\u8D25\u6EE1\u6B21\u6570\u540E\u6682\u65F6\u8DF3\u8FC7\u5B83\uFF0C\u76F4\u63A5\u8BD5\u4E0B\u4E00\u4E2A\uFF1B0 = \u4E0D\u8DF3\u8FC7",
     visionSkipMinutes: "\u8DF3\u8FC7\u5206\u949F\u6570",
@@ -332,7 +352,6 @@
     upgradeDone: "\u5DF2\u66F4\u65B0\u5230 {v}",
     upgradeFinished: "\u5347\u7EA7\u5B8C\u6210",
     upgradeCheckFailed: "\u68C0\u67E5\u66F4\u65B0\u5931\u8D25",
-    version: "\u7248\u672C",
     close: "\u5173\u95ED",
     cancel: "\u53D6\u6D88",
     pathLabel: "\u8DEF\u5F84",
@@ -376,6 +395,7 @@
     tabFeatures: "Features",
     tabStyles: "Styles",
     tabProxy: "Proxy",
+    tabBehavior: "Behavior",
     tabAgents: "Global Prompt",
     agentsDesc: "Written to ~/.zcode/AGENTS.md and used as default instructions in every session across all projects. Takes effect for new sessions; per-project AGENTS.md can extend or override it. Content over 100 KB is truncated by the app.",
     agentsPlaceholder: "Instructions followed by all projects by default; save empty to remove the global prompt",
@@ -487,6 +507,29 @@
     featureSessionSwitchDesc: "alt+z toggles between the current and the last session; hold alt and press x/c to move the highlight across recently used sessions, release alt to switch (like alt+tab).",
     featureTitleLock: "Keep renamed session titles",
     featureTitleLockDesc: "Sessions you renamed keep their custom title: after new replies the app may show an auto-generated title instead, which reverts after a restart; this keeps the renamed title in the sidebar.",
+    tabTitleGen: "Task name prompt",
+    titleGenShortDesc: "When a new session starts answering, generates the task name with the chosen provider and prompt and saves it as a manual rename the built-in title never overrides.",
+    titleGenEnabled: "Enable",
+    titleGenProvider: "Provider",
+    titleGenProviderNone: "Custom endpoint (no provider)",
+    titleGenProviderSession: "Follow current session",
+    titleGenProviderDeleted: " (deleted)",
+    titleGenModel: "Model",
+    titleGenModelHint: "Pick from the list, or type a model id",
+    titleGenModelEmpty: "(not set)",
+    titleGenModelSessionHint: "Empty = session model, or type a model id",
+    titleGenModelManualHint: "Type a model id",
+    titleGenBaseUrl: "Base URL",
+    titleGenApiKey: "API Key",
+    titleGenFormat: "Protocol",
+    titleGenPrompt: "Prompt",
+    titleGenPromptPlaceholder: "Leave empty for the built-in default prompt (button below shows it)",
+    titleGenPromptReset: "Use default prompt",
+    titleGenSample: "Test message",
+    titleGenTest: "Test",
+    titleGenTesting: "Generating\u2026",
+    titleGenTestOk: "Result: ",
+    titleGenTestFailed: "Generation failed",
     featureWsRunning: "Running indicator on collapsed projects (experimental)",
     featureWsRunningDesc: "Spins a collapsed project's icon while any of its sessions is still running; stops when they all finish or the project is expanded. While spinning, the project is briefly re-expanded in the background every 60 s to re-check and then collapsed \u2014 rows stay hidden, with only a subtle quarter-second height ripple at the project.",
     tabPerformance: "Performance",
@@ -561,10 +604,6 @@
     visionMoveDown: "Down",
     visionName: "Name",
     visionUseProvider: "Provider",
-    visionUseProviderHint: "Pick from the list or type: session = follow the current session provider, or a provider name/ID; baseUrl/API key/format follow that provider",
-    visionUseProviderNone: "Not following (enter base URL)",
-    visionUseProviderSession: "Follow session provider (session)",
-    visionUseProviderUnknown: "Unknown provider; recognition will fail. Pick from the list or type session",
     visionSkipAfterFailures: "Skip after failures",
     visionSkipAfterFailuresHint: "After this many consecutive failures a proxy is skipped and the next one is tried; 0 = never skip",
     visionSkipMinutes: "Skip minutes",
@@ -673,7 +712,6 @@
     upgradeDone: "Updated to {v}",
     upgradeFinished: "Update finished",
     upgradeCheckFailed: "Update check failed",
-    version: "Version",
     close: "Close",
     cancel: "Cancel",
     pathLabel: "Path",
@@ -848,7 +886,7 @@
     return (item.textContent || "").trim();
   }
 
-  // ../../../../../../../tmp/zpro-cleanbuild/src/inject/ui.js
+  // src/inject/ui.js
   var toastTimer = null;
   function showToast(text, kind = "info") {
     document.getElementById("__zcodepro_toast__")?.remove();
@@ -870,7 +908,7 @@
   var overlayClassBare = "fixed inset-0 isolate z-50 flex items-center justify-center duration-100 p-4 platform-linux-desktop:top-12";
   var contentClass = "w-full sm:max-w-md rounded-2xl border-none bg-popover/98 p-5 text-ui-base/relaxed text-foreground ring-border shadow-2xl";
   var dialogStack = [];
-  function openDialog({ title, description, onMount, onClose, width = "sm:max-w-md", overlay = "dim", draggable = false, posKey = "", dismissOnOutside = true }) {
+  function openDialog({ title, description, onMount, onClose, width = "sm:max-w-md", overlay = "dim", draggable = false, posKey = "", dismissOnOutside = true, bodyClass = "" }) {
     const L = t();
     const prevActive = document.activeElement;
     let cleanupDrag = null;
@@ -914,7 +952,7 @@
       titleEl,
       ...description ? [h("p", { class: "mt-2 text-ui-sm/relaxed text-foreground-subtle" }, description)] : []
     );
-    const body = h("div", { class: "mt-4 zcodepro-dialog-body" });
+    const body = h("div", { class: "zcodepro-dialog-body " + (bodyClass || "mt-4") });
     content.append(body);
     let restorePos = null;
     if (draggable) {
@@ -1278,13 +1316,14 @@
       align-items: center;
       justify-content: center;
       height: 24px;
-      padding: 0 14px;
+      padding: 0 8px;
       border: none;
       border-radius: 9999px;
       background: transparent;
       cursor: pointer;
       font-size: 12px;
       line-height: 1;
+      white-space: nowrap;
       color: var(--color-muted-foreground, #888);
       transition: color 0.15s ease, background-color 0.15s ease;
     }
@@ -1373,6 +1412,8 @@
     .zcodepro-textarea:disabled { opacity: 0.5; }
     /* \u5C0F\u578B\u6587\u672C\u57DF\uFF08\u89C6\u89C9\u4EE3\u7406\u63D0\u793A\u8BCD\u7B49\uFF09\uFF1A11rem \u6700\u5C0F\u9AD8\u5EA6\u53EA\u5C5E\u4E8E\u5168\u5C40\u63D0\u793A\u8BCD\u5927\u7F16\u8F91\u6846\uFF0C\u8FD9\u91CC\u6309 rows \u5B9A\u9AD8 */
     .zcodepro-textarea.zcodepro-textarea-sm { min-height: 0; }
+    /* \u5168\u5C40\u63D0\u793A\u8BCD\u5927\u7F16\u8F91\u6846\uFF1A\u9ED8\u8BA4/\u6700\u5927\u9AD8\u5EA6\u90FD\u6BD4\u9ED8\u8BA4\u6587\u672C\u57DF\u66F4\u9AD8 */
+    .zcodepro-textarea.zcodepro-textarea-lg { min-height: 16rem; max-height: 40rem; }
     /* \u884C\u9AD8\u6ED1\u6746\uFF08\u6837\u5F0F\u8C03\u6574\u6807\u7B7E\u9875\uFF09 */
     .zcodepro-range {
       -webkit-appearance: none;
@@ -1592,7 +1633,7 @@
   `));
   }
 
-  // ../../../../../../../tmp/zpro-cleanbuild/src/inject/features/alias.js
+  // src/inject/features/alias.js
   var norm = (p) => String(p || "").replace(/[\\/]+$/, "");
   var basenameOf = (p) => norm(p).split(/[\\/]/).pop() || "";
   function extractPathFromTestId(testid) {
@@ -1790,7 +1831,7 @@
     });
   }
 
-  // ../../../../../../../tmp/zpro-cleanbuild/src/inject/features/relocate-dialog.js
+  // src/inject/features/relocate-dialog.js
   function appendRelocateItem(menu, anchorItem, project) {
     if (menu.querySelector('[data-zcodepro-item="relocate"]')) return;
     const L = t();
@@ -1952,7 +1993,7 @@
     });
   }
 
-  // ../../../../../../../tmp/zpro-cleanbuild/src/inject/features/open-folder.js
+  // src/inject/features/open-folder.js
   function appendOpenFolderItem(menu, anchorItem, project) {
     if (menu.querySelector('[data-zcodepro-item="open-folder"]')) return;
     const L = t();
@@ -1994,7 +2035,7 @@
     return svg;
   }
 
-  // ../../../../../../../tmp/zpro-cleanbuild/src/inject/features/copy-path.js
+  // src/inject/features/copy-path.js
   async function appendCopyPathItem(menu, anchorItem, project) {
     if (menu.querySelector('[data-zcodepro-item="copy-path"]')) return;
     const L = t();
@@ -2064,7 +2105,7 @@
     return svg;
   }
 
-  // ../../../../../../../tmp/zpro-cleanbuild/src/inject/features/project-menu.js
+  // src/inject/features/project-menu.js
   var REMOVE_TEXTS = ["\u79FB\u9664", "Remove"];
   function extractPathFromTestId2(testid) {
     let m = testid.match(/[-:=,|](\/.+)$/);
@@ -2106,7 +2147,7 @@
     })();
   }
 
-  // ../../../../../../../tmp/zpro-cleanbuild/src/inject/features/file-menu.js
+  // src/inject/features/file-menu.js
   var COPY_ABS_TEXTS = ["\u590D\u5236\u7EDD\u5BF9\u8DEF\u5F84", "Copy absolute path"];
   var NO_APPS_TEXTS = ["\u672A\u627E\u5230\u53EF\u7528 App", "No apps found"];
   var ICON_OPEN_DEFAULT = [
@@ -2239,7 +2280,7 @@
     })();
   }
 
-  // ../../../../../../../tmp/zpro-cleanbuild/src/inject/features/image-menu.js
+  // src/inject/features/image-menu.js
   var MIN_SIZE = 48;
   function copyTargetOf(el, x, y) {
     const sizeOk = (img) => {
@@ -2445,7 +2486,54 @@
     }, true);
   }
 
-  // ../../../../../../../tmp/zpro-cleanbuild/src/inject/features/styles.js
+  // src/inject/provider-fields.js
+  var PROVIDER_FIELD_CLS = "h-8 w-full rounded-lg border border-border bg-input px-2.5 text-ui-sm text-foreground outline-none transition-shadow placeholder:text-foreground-subtle focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40";
+  function comboField(current2, options, onChange, { disabled = false, placeholder = "", staleLabel = "\uFF08\u624B\u52A8\u8F93\u5165\uFF09", emptyLabel = "" } = {}) {
+    const sel = h("select", { class: PROVIDER_FIELD_CLS, disabled: disabled || void 0 });
+    const input = h("input", { type: "text", value: current2, placeholder, class: PROVIDER_FIELD_CLS, disabled: disabled || void 0 });
+    const sync3 = () => {
+      const cur = input.value;
+      const opts = [...options];
+      if (cur && !opts.some((o) => o.value === cur)) opts.push({ value: cur, label: `${cur}${staleLabel}` });
+      if (!cur && !opts.some((o) => o.value === "")) opts.unshift({ value: "", label: emptyLabel });
+      sel.replaceChildren(...opts.map((o) => h("option", { value: o.value, title: o.value }, o.label)));
+      sel.value = cur;
+    };
+    sel.addEventListener("change", () => {
+      input.value = sel.value;
+      onChange(sel.value, "select");
+    });
+    input.addEventListener("input", () => onChange(input.value, "type"));
+    input.addEventListener("blur", () => sync3());
+    sync3();
+    return h("div", { class: "flex flex-col gap-1" }, sel, input);
+  }
+  function providerOptionsOf(providers, L) {
+    return [
+      { value: "", label: L.titleGenProviderNone },
+      { value: "session", label: L.titleGenProviderSession },
+      ...providers.map((p) => ({ value: p.id, label: p.name }))
+    ];
+  }
+  function modelOptionsOf(providerValue, providers) {
+    const v = (providerValue || "").trim();
+    const cur = providers.find((p) => p.id === v);
+    if (cur) return cur.models.map((m) => ({ value: m, label: m }));
+    if (v === "session") return [...new Set(providers.flatMap((p) => p.models))].map((m) => ({ value: m, label: m }));
+    return [];
+  }
+  function modelPlaceholderOf(providerValue, L) {
+    const v = (providerValue || "").trim();
+    if (v === "session") return L.titleGenModelSessionHint;
+    if (v === "") return L.titleGenModelManualHint;
+    return L.titleGenModelHint;
+  }
+  function isManualConn(providerValue, providers) {
+    const v = (providerValue || "").trim();
+    return v === "" || v !== "session" && !providers.some((p) => p.id === v);
+  }
+
+  // src/inject/features/styles.js
   var STYLE_DEFAULTS = {
     rowGap: 20,
     // 段落间距：会话内各块之间的垂直间距
@@ -2708,7 +2796,7 @@
     if (hlEl) hlEl.textContent = "";
   }
 
-  // ../../../../../../../tmp/zpro-cleanbuild/src/inject/features/settings-dialog.js
+  // src/inject/features/settings-dialog.js
   function openExternal(url) {
     try {
       void window.zcode.openExternal(url);
@@ -2850,8 +2938,10 @@
     openDialog({
       title: L.settingsTitle,
       // 宽度类必须用宿主样式表已有的工具类（注入的类名不会生成 CSS）：
-      // sm:max-w-3xl 不存在会失去约束拉满全屏；max-w-2xl=42rem 存在且尺寸合适
-      width: "max-w-2xl",
+      // sm:max-w-3xl 不存在会失去约束拉满全屏；max-w-3xl=48rem 存在——英文界面
+      // 标签栏较长，42rem 会挤出一块空白并触发横向滚动
+      width: "max-w-3xl",
+      bodyClass: "mt-1",
       overlay: "none",
       draggable: true,
       posKey: "settings",
@@ -2912,7 +3002,9 @@
         const config = await getConfig(true);
         const agentsRes = await rpc("/agents");
         const visionRes = await rpc("/vision");
-        const visionProvidersRes = await rpc("/vision/providers");
+        const titleGenRes = await rpc("/title-gen");
+        const titleGenProvidersRes = await rpc("/title-gen/providers");
+        const titleGenProviders = titleGenProvidersRes.ok && Array.isArray(titleGenProvidersRes.providers) ? titleGenProvidersRes.providers : [];
         const rtkRes = await rpc("/rtk");
         const headroomRes = await rpc("/headroom");
         const setFeature = async (key, value) => {
@@ -2934,7 +3026,7 @@
             "data-zcodepro-status": "1"
           },
           h("span", { class: "inline-block size-2 rounded-full bg-emerald-500" }),
-          h("span", { class: "text-foreground-subtle/70" }, `${L.version} ${health.version} \xB7 ${HELPER_URL}`)
+          h("span", { class: "text-foreground-subtle/70" }, `${health.version} \xB7 ${HELPER_URL}`)
         );
         const rows = h("div", { class: "divide-y divide-border rounded-xl border border-border" });
         const refreshRows = () => {
@@ -3103,19 +3195,20 @@
         );
         const paneStyles = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
         const panePerf = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
-        const paneAgents = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
+        const paneAgents = h("div", { role: "tabpanel", class: "mt-2", style: "display:none" });
         const paneProxy = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
         const paneSync = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
         const paneVision = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
         const paneRtk = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
         const paneHeadroom = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
+        const paneTitleGen = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
         const paneDebug = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
         const panes = { features: paneFeatures, styles: paneStyles, perf: panePerf, agents: paneAgents, proxy: paneProxy, sync: paneSync, vision: paneVision, headroom: paneHeadroom, rtk: paneRtk, debug: paneDebug };
         const tabDefs = [
           ["features", L.tabFeatures],
+          ["agents", L.tabBehavior],
           ["styles", L.tabStyles],
           ["perf", L.tabPerformance],
-          ["agents", L.tabAgents],
           ["proxy", L.tabProxy],
           ["sync", L.tabSync],
           ["vision", L.tabVision],
@@ -3125,7 +3218,7 @@
           // 普通用户不可见
           ...config.devMode === true || config.devActive === true ? [["debug", L.tabDebug]] : []
         ];
-        const tablist = h("div", { role: "tablist", "aria-orientation": "horizontal", class: "zcodepro-tablist mt-4" });
+        const tablist = h("div", { role: "tablist", "aria-orientation": "horizontal", class: "zcodepro-tablist mt-1" });
         const renderTabs = () => tablist.replaceChildren(...tabDefs.map(([id, label]) => h("button", {
           type: "button",
           role: "tab",
@@ -3334,7 +3427,7 @@
           )
         );
         const agentsArea = h("textarea", {
-          class: "zcodepro-textarea",
+          class: "zcodepro-textarea zcodepro-textarea-lg",
           placeholder: L.agentsPlaceholder,
           spellcheck: "false"
         });
@@ -3365,12 +3458,36 @@
             agentsSaveBtn.disabled = false;
           }
         };
-        paneAgents.append(
+        const agentsPromptPane = h("div", { class: "mt-4" });
+        agentsPromptPane.append(
           h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.agentsDesc),
           ...agentsFailed ? [h("p", { class: "mt-2 text-ui-sm text-destructive" }, L.agentsLoadFailed + ": " + errText(agentsRes))] : [],
           h("div", { class: "mt-3" }, agentsArea),
           h("div", { class: "mt-3 flex justify-end" }, agentsSaveBtn)
         );
+        let agentsSubTab = "prompt";
+        const agentsSubPanes = { prompt: agentsPromptPane, titleGen: paneTitleGen };
+        const agentsSubList = h("div", { role: "tablist", "aria-orientation": "horizontal", class: "zcodepro-tablist" });
+        const renderAgentsSubTabs = () => {
+          agentsSubList.replaceChildren(...[
+            ["prompt", L.tabAgents],
+            ["titleGen", L.tabTitleGen]
+          ].map(([id, label]) => h("button", {
+            type: "button",
+            role: "tab",
+            class: "zcodepro-tab",
+            "aria-selected": String(agentsSubTab === id),
+            "data-state": agentsSubTab === id ? "active" : "inactive",
+            onClick: () => {
+              agentsSubTab = id;
+              for (const [pid, pane] of Object.entries(agentsSubPanes)) pane.style.display = pid === id ? "" : "none";
+              renderAgentsSubTabs();
+            }
+          }, label)));
+        };
+        for (const [pid, pane] of Object.entries(agentsSubPanes)) pane.style.display = pid === agentsSubTab ? "" : "none";
+        renderAgentsSubTabs();
+        paneAgents.append(agentsSubList, agentsPromptPane, paneTitleGen);
         const savedProxy = typeof config.proxy === "string" ? config.proxy : "";
         const proxyInputCls = "h-8 w-full rounded-lg border border-border bg-input px-2.5 text-ui-sm text-foreground outline-none transition-shadow placeholder:text-foreground-subtle focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40";
         const proxyInput = h("input", { type: "text", value: savedProxy, placeholder: L.proxyPlaceholder, spellcheck: "false", class: proxyInputCls + " min-w-0 flex-1" });
@@ -3966,7 +4083,6 @@
           skipMinutes: 30,
           forceIntercept: true
         };
-        const visionProviders = visionProvidersRes.ok && Array.isArray(visionProvidersRes.providers) ? visionProvidersRes.providers : [];
         let visionCfg = visionRes.ok && visionRes.config && typeof visionRes.config === "object" ? structuredClone(visionRes.config) : null;
         let visionSaveTimer = null;
         const persistVision = async () => {
@@ -4158,53 +4274,37 @@
             h(
               "div",
               { class: "mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2" },
-              field(L.visionUseProvider, (() => {
-                const wrap = h("div", { class: "flex flex-col gap-1" });
-                const input = h("input", { type: "text", value: p.useProvider || "", placeholder: L.visionUseProviderHint, class: visionInputCls });
-                const warn = h("p", { class: "text-ui-xs text-destructive", style: "display:none" }, L.visionUseProviderUnknown);
-                const isKnown = (v) => !v || v === "session" || visionProviders.some((pr) => pr.id === v || pr.name === v || (pr.aliases || []).includes(v));
-                const sel = h("select", { class: visionInputCls });
-                const syncSelect = () => {
-                  const cur = (p.useProvider || "").trim();
-                  const opts = [h("option", { value: "" }, L.visionUseProviderNone), h("option", { value: "session" }, L.visionUseProviderSession)];
-                  for (const pr of visionProviders) {
-                    opts.push(h("option", { value: pr.id }, pr.name && pr.name !== pr.id ? `${pr.name}\uFF08${pr.id}\uFF09` : pr.id));
-                  }
-                  if (cur && !opts.some((o) => o.value === cur)) opts.push(h("option", { value: cur }, `${cur}\uFF08${L.visionUseProvider}\uFF09`));
-                  sel.replaceChildren(...opts);
-                  sel.value = cur;
-                };
-                sel.addEventListener("change", () => {
-                  input.value = sel.value;
-                  p.useProvider = sel.value.trim();
-                  warn.style.display = "none";
+              // 供应商与模型走 provider-fields 共用逻辑：跟随会话时模型下拉为
+              // 全部供应商模型汇总，具体供应商为其模型列表；已删 id 标注「已删除」
+              field(L.visionUseProvider, comboField(
+                p.useProvider || "",
+                providerOptionsOf(titleGenProviders, L),
+                (v, src) => {
+                  p.useProvider = v;
                   saveVisionSoon();
-                });
-                input.addEventListener("input", () => {
-                  p.useProvider = input.value.trim();
+                  if (src === "select") renderVision();
+                },
+                { placeholder: L.titleGenProviderSession, staleLabel: L.titleGenProviderDeleted }
+              )),
+              field(L.visionModel, comboField(
+                p.model || "",
+                modelOptionsOf(p.useProvider, titleGenProviders),
+                (v) => {
+                  p.model = v;
                   saveVisionSoon();
-                });
-                input.addEventListener("blur", () => {
-                  p.useProvider = input.value.trim();
-                  warn.style.display = isKnown(p.useProvider) ? "none" : "";
-                  syncSelect();
-                });
-                syncSelect();
-                wrap.append(sel, input, warn);
-                return wrap;
-              })()),
-              field(L.visionModel, textIn(p.model, (v) => {
-                p.model = v;
-                saveVisionSoon();
-              })),
-              field(L.visionBaseUrl, textIn(p.baseUrl, (v) => {
-                p.baseUrl = v;
-                saveVisionSoon();
-              })),
-              field(L.visionApiKey + " \xB7 " + L.visionApiKeyHint, textIn(p.apiKey, (v) => {
-                p.apiKey = v;
-                saveVisionSoon();
-              }, { type: "password" }))
+                },
+                { placeholder: modelPlaceholderOf(p.useProvider, L), emptyLabel: L.titleGenModelEmpty }
+              )),
+              ...isManualConn(p.useProvider, titleGenProviders) ? [
+                field(L.visionBaseUrl, textIn(p.baseUrl, (v) => {
+                  p.baseUrl = v;
+                  saveVisionSoon();
+                })),
+                field(L.visionApiKey + " \xB7 " + L.visionApiKeyHint, textIn(p.apiKey, (v) => {
+                  p.apiKey = v;
+                  saveVisionSoon();
+                }, { type: "password" }))
+              ] : []
             ),
             (() => {
               const n = h("textarea", { class: "zcodepro-textarea zcodepro-textarea-sm", rows: "3", placeholder: L.visionPrompt });
@@ -4945,13 +5045,185 @@
           );
         };
         renderHeadroomPane();
+        let titleGenCfg = titleGenRes.ok && titleGenRes.titleGen && typeof titleGenRes.titleGen === "object" ? structuredClone(titleGenRes.titleGen) : null;
+        const titleGenDefaultPrompt = titleGenRes.ok && typeof titleGenRes.defaultPrompt === "string" ? titleGenRes.defaultPrompt : "";
+        let titleGenSaveTimer = null;
+        const persistTitleGen = async () => {
+          const res = await rpc("/title-gen", { method: "POST", body: { titleGen: titleGenCfg } });
+          clearConfigCache();
+          if (!res.ok) showToast(L.failed + ": " + errText(res), "error");
+          return res.ok;
+        };
+        const saveTitleGenSoon = () => {
+          clearTimeout(titleGenSaveTimer);
+          titleGenSaveTimer = setTimeout(() => {
+            void persistTitleGen();
+          }, 500);
+        };
+        const renderTitleGenPane = () => {
+          if (!titleGenCfg) {
+            paneTitleGen.replaceChildren(
+              h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.titleGenShortDesc),
+              h("p", { class: "mt-2 text-ui-sm text-destructive" }, L.visionLoadFailed + ": " + errText(titleGenRes))
+            );
+            return;
+          }
+          const inputCls = "h-8 w-full rounded-lg border border-border bg-input px-2.5 text-ui-sm text-foreground outline-none transition-shadow placeholder:text-foreground-subtle focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40";
+          const field = (labelText, node) => h(
+            "label",
+            { class: "block min-w-0" },
+            h("span", { class: "mb-1 block text-ui-xs font-medium text-foreground-subtle" }, labelText),
+            node
+          );
+          const showInlineConn = isManualConn(titleGenCfg.provider, titleGenProviders);
+          const providerCombo = comboField(
+            titleGenCfg.provider || "",
+            providerOptionsOf(titleGenProviders, L),
+            (v, src) => {
+              titleGenCfg.provider = v;
+              if (src === "select") {
+                void persistTitleGen();
+                renderTitleGenPane();
+              } else saveTitleGenSoon();
+            },
+            { placeholder: L.titleGenProviderSession, staleLabel: L.titleGenProviderDeleted }
+          );
+          const modelCombo = comboField(
+            titleGenCfg.model || "",
+            modelOptionsOf(titleGenCfg.provider, titleGenProviders),
+            (v) => {
+              titleGenCfg.model = v;
+              saveTitleGenSoon();
+            },
+            {
+              placeholder: modelPlaceholderOf(titleGenCfg.provider, L),
+              emptyLabel: L.titleGenModelEmpty
+            }
+          );
+          const textIn = (value, onInput, { type = "text", placeholder = "" } = {}) => {
+            const n = h("input", { type, value: value || "", placeholder, class: inputCls });
+            n.addEventListener("input", () => onInput(n.value));
+            return n;
+          };
+          const formatSel = h(
+            "select",
+            { class: inputCls },
+            h("option", { value: "anthropic" }, "anthropic"),
+            h("option", { value: "openai" }, "openai")
+          );
+          formatSel.value = titleGenCfg.format === "openai" ? "openai" : "anthropic";
+          formatSel.addEventListener("change", () => {
+            titleGenCfg.format = formatSel.value;
+            void persistTitleGen();
+          });
+          const inlineConnCard = h(
+            "div",
+            {
+              class: "mt-2 grid grid-cols-1 gap-2 rounded-xl border border-border p-2 sm:grid-cols-3",
+              style: showInlineConn ? "" : "display:none"
+            },
+            field(L.titleGenBaseUrl, textIn(titleGenCfg.baseUrl, (v) => {
+              titleGenCfg.baseUrl = v;
+              saveTitleGenSoon();
+            }, { placeholder: "https://\u2026" })),
+            field(L.titleGenApiKey, textIn(titleGenCfg.apiKey, (v) => {
+              titleGenCfg.apiKey = v;
+              saveTitleGenSoon();
+            }, { type: "password" })),
+            field(L.titleGenFormat, formatSel)
+          );
+          const promptArea = h("textarea", {
+            class: "zcodepro-textarea zcodepro-textarea-sm",
+            rows: "8",
+            placeholder: L.titleGenPromptPlaceholder
+          });
+          promptArea.value = titleGenCfg.prompt || "";
+          promptArea.addEventListener("input", () => {
+            titleGenCfg.prompt = promptArea.value;
+            saveTitleGenSoon();
+          });
+          const sampleText = isZhLocale() ? "\u5E2E\u6211\u770B\u4E0B\u8FD9\u4E2A\u62A5\u9519\u662F\u4EC0\u4E48\u539F\u56E0\uFF1ANullPointerException at com.example.OrderService.calculate(OrderService.java:87)" : "Why does my Spring Boot app throw NullPointerException intermittently in OrderService.calculate?";
+          const sampleInput = h("input", {
+            type: "text",
+            class: inputCls + " min-w-0 flex-1",
+            value: sampleText
+          });
+          let testBtn;
+          const testState = h("span", { class: "min-w-0 flex-1 truncate text-ui-xs/relaxed text-foreground-subtle" });
+          testBtn = btnSmall(L.titleGenTest, async () => {
+            testBtn.disabled = true;
+            testBtn.textContent = L.titleGenTesting;
+            testState.textContent = L.titleGenTesting;
+            const res = await rpc("/title-gen/run", {
+              method: "POST",
+              body: { text: sampleInput.value, test: true }
+            });
+            testBtn.disabled = false;
+            testBtn.textContent = L.titleGenTest;
+            if (res && res.ok) {
+              testState.textContent = L.titleGenTestOk + res.title;
+              showToast(res.title, "success");
+            } else {
+              testState.textContent = res && errText(res) || L.titleGenTestFailed;
+              testState.className = "min-w-0 flex-1 truncate text-ui-xs/relaxed text-destructive";
+              showToast(L.titleGenTestFailed + ": " + (res ? errText(res) : ""), "error");
+            }
+          }, "shrink-0");
+          paneTitleGen.replaceChildren(
+            // 信息卡：一句话简介在左，启用开关右对齐
+            h(
+              "div",
+              { class: "mt-3 flex items-center justify-between gap-2 rounded-xl border border-border p-2" },
+              h("span", { class: "min-w-0 text-ui-sm/relaxed text-foreground-subtle" }, L.titleGenShortDesc),
+              h("div", { class: "shrink-0" }, settingRow(L.titleGenEnabled, "", titleGenCfg.enabled === true, async () => {
+                titleGenCfg.enabled = !(titleGenCfg.enabled === true);
+                await persistTitleGen();
+                renderTitleGenPane();
+              }))
+            ),
+            // 供应商 + 模型
+            h(
+              "div",
+              { class: "mt-2 grid grid-cols-1 gap-2 rounded-xl border border-border p-2 sm:grid-cols-2" },
+              field(L.titleGenProvider, providerCombo),
+              field(L.titleGenModel, modelCombo)
+            ),
+            inlineConnCard,
+            // 提示词 + 载入默认
+            h(
+              "div",
+              { class: "mt-2 rounded-xl border border-border p-2" },
+              h(
+                "div",
+                { class: "mb-1 flex items-center justify-between gap-2" },
+                h("span", { class: "text-ui-xs font-medium text-foreground-subtle" }, L.titleGenPrompt),
+                btnSmall(L.titleGenPromptReset, () => {
+                  promptArea.value = titleGenDefaultPrompt;
+                  titleGenCfg.prompt = titleGenDefaultPrompt;
+                  void persistTitleGen();
+                  promptArea.focus();
+                })
+              ),
+              promptArea
+            ),
+            // 测试
+            h(
+              "div",
+              { class: "mt-2 flex items-center gap-2 rounded-xl border border-border p-2" },
+              sampleInput,
+              testBtn
+            ),
+            testState
+          );
+        };
+        renderTitleGenPane();
         body.append(
           statusLine,
           tablist,
           paneFeatures,
+          paneAgents,
           paneStyles,
           panePerf,
-          paneAgents,
           paneProxy,
           paneSync,
           paneVision,
@@ -4963,7 +5235,7 @@
     });
   }
 
-  // ../../../../../../../tmp/zpro-cleanbuild/src/inject/features/settings-entry.js
+  // src/inject/features/settings-entry.js
   var SETTINGS_BUTTON_TESTID = "task-settings-button";
   function handleSettingsContextmenu(e) {
     const target = e.target;
@@ -4978,7 +5250,7 @@
     document.addEventListener("contextmenu", handleSettingsContextmenu, true);
   }
 
-  // ../../../../../../../tmp/zpro-cleanbuild/src/inject/features/task-order.js
+  // src/inject/features/task-order.js
   var installed = false;
   var dragKey = null;
   function startTaskOrderWatcher() {
@@ -5041,7 +5313,7 @@
     }
   }
 
-  // ../../../../../../../tmp/zpro-cleanbuild/src/inject/features/session-switch.js
+  // src/inject/features/session-switch.js
   var MRU_LIMIT = 50;
   var SCAN_DEBOUNCE_MS = 150;
   var SCAN_FALLBACK_MS = 5e3;
@@ -5266,7 +5538,7 @@
     window.addEventListener("blur", () => closePopup(false));
   }
 
-  // ../../../../../../../tmp/zpro-cleanbuild/src/inject/features/title-lock.js
+  // src/inject/features/title-lock.js
   var TASK_SEL = "[data-task-item-key]";
   var SCAN_DEBOUNCE_MS2 = 150;
   var SCAN_FALLBACK_MS2 = 5e3;
@@ -5424,6 +5696,16 @@
     const map = await fetchPinned();
     if (map) scan2();
   }
+  function setRowTitle(key, text) {
+    for (const item of findRows(key)) {
+      for (const el of titleElsOf(item)) writeTitle(el, text);
+    }
+  }
+  function refreshPinnedTitles() {
+    return fetchPinned().then((m) => {
+      if (m) scan2();
+    });
+  }
   function startTitleLock() {
     if (installed2 || typeof document === "undefined") return;
     installed2 = true;
@@ -5459,8 +5741,146 @@
     });
   }
 
-  // ../../../../../../../tmp/zpro-cleanbuild/src/inject/features/pinned-expand.js
+  // src/inject/features/title-gen.js
+  var CONV2 = '[class*="@md/conversation"]';
+  var USER_ROW = '[class*="user-row"]';
+  var SCAN_DEBOUNCE_MS3 = 300;
+  var SCAN_FALLBACK_MS3 = 5e3;
+  var SELECT_WAIT_MS = 2e3;
+  var MSG_WAIT_MS = 1e4;
+  var QUIET_FALLBACK_MS = 12e4;
+  var COLLECT_MAX_MS = 6e5;
   var installed3 = false;
+  var knownKeys = /* @__PURE__ */ new Set();
+  var attempted = /* @__PURE__ */ new Set();
+  var sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  function sessIdOf2(key) {
+    const i = key.indexOf(":sess_");
+    return i > 0 ? key.slice(i + 1) : "";
+  }
+  function currentKey() {
+    for (const el of document.querySelectorAll("[data-task-item-key]")) {
+      if ((el.className + "").includes("bg-selected")) return el.getAttribute("data-task-item-key") || "";
+    }
+    return "";
+  }
+  function userTexts() {
+    return [...document.querySelectorAll(`${CONV2} ${USER_ROW}`)].map((r) => {
+      const el = r.querySelector(".whitespace-pre-wrap");
+      return ((el ? el.textContent : r.innerText) || "").trim();
+    }).filter(Boolean);
+  }
+  async function onNewTaskRow(key) {
+    const selDeadline = Date.now() + SELECT_WAIT_MS;
+    while (currentKey() !== key && Date.now() < selDeadline) await sleep(200);
+    if (currentKey() !== key) return;
+    const cfg = await getConfig().catch(() => null);
+    if (!cfg || !cfg.titleGen || cfg.titleGen.enabled !== true) return;
+    const sessId = sessIdOf2(key);
+    if (!sessId || attempted.has(sessId)) return;
+    attempted.add(sessId);
+    let texts = [];
+    const msgDeadline = Date.now() + MSG_WAIT_MS;
+    while (Date.now() < msgDeadline) {
+      texts = userTexts();
+      if (texts.length) break;
+      await sleep(400);
+    }
+    if (!texts.length) return;
+    let assistantSeen = false;
+    const convObserver = new MutationObserver((muts) => {
+      if (currentKey() !== key) return;
+      for (const m of muts) {
+        const t2 = m.type === "characterData" ? m.target.parentElement : m.target;
+        if (t2 instanceof Element && t2.closest(USER_ROW)) continue;
+        for (const n of [t2, ...m.addedNodes]) {
+          if (n instanceof Element && n.closest && n.closest(CONV2)) {
+            assistantSeen = true;
+            return;
+          }
+        }
+      }
+    });
+    convObserver.observe(document.body, { childList: true, subtree: true, characterData: true });
+    const startAt = Date.now();
+    let lastCount = texts.length;
+    let lastChange = Date.now();
+    try {
+      while (Date.now() - startAt < COLLECT_MAX_MS) {
+        await sleep(500);
+        if (currentKey() !== key) {
+          lastChange = Date.now();
+          continue;
+        }
+        texts = userTexts();
+        if (texts.length !== lastCount) {
+          lastCount = texts.length;
+          lastChange = Date.now();
+        }
+        if (assistantSeen) break;
+        if (Date.now() - lastChange >= QUIET_FALLBACK_MS) break;
+      }
+    } finally {
+      convObserver.disconnect();
+    }
+    if (!texts.length) return;
+    const res = await rpc("/title-gen/run", { method: "POST", body: { sessId, text: texts.join("\n") } }).catch(() => null);
+    if (res && res.ok && res.written && res.title) {
+      setRowTitle(key, res.title);
+      void refreshPinnedTitles();
+    }
+  }
+  function scanForNewRows() {
+    for (const el of document.querySelectorAll("[data-task-item-key]")) {
+      const key = el.getAttribute("data-task-item-key") || "";
+      if (!key || knownKeys.has(key)) continue;
+      knownKeys.add(key);
+      void onNewTaskRow(key);
+    }
+  }
+  var TASK_SEL2 = "[data-task-item-key]";
+  var inTaskRow3 = (node) => !!(node instanceof Element && node.closest && node.closest(TASK_SEL2));
+  function taskRowMutations3(muts) {
+    for (const m of muts) {
+      if (m.type === "attributes") {
+        if (inTaskRow3(m.target)) return true;
+      } else if (m.type === "characterData") {
+        if (m.target.parentElement && inTaskRow3(m.target.parentElement)) return true;
+      } else if (inTaskRow3(m.target)) {
+        return true;
+      } else {
+        for (const n of m.addedNodes) {
+          if (n instanceof Element && (n.matches(TASK_SEL2) || !!n.querySelector(TASK_SEL2))) return true;
+        }
+      }
+    }
+    return false;
+  }
+  var scanDebounce3 = 0;
+  function scheduleScan3() {
+    if (scanDebounce3) return;
+    scanDebounce3 = setTimeout(() => {
+      scanDebounce3 = 0;
+      scanForNewRows();
+    }, SCAN_DEBOUNCE_MS3);
+  }
+  function startTitleGen() {
+    if (installed3 || typeof document === "undefined") return;
+    installed3 = true;
+    scanForNewRows();
+    new MutationObserver((muts) => {
+      if (taskRowMutations3(muts)) scheduleScan3();
+    }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"], characterData: true });
+    setInterval(() => {
+      if (!document.hidden) scanForNewRows();
+    }, SCAN_FALLBACK_MS3);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) scanForNewRows();
+    });
+  }
+
+  // src/inject/features/pinned-expand.js
+  var installed4 = false;
   var keepCollapsed = false;
   var CONFIG_POLL_MIN_MS = 5e3;
   var CONFIG_POLL_MAX_MS = 6e4;
@@ -5487,8 +5907,8 @@
     }, pollMs);
   }
   function startPinnedExpandSuppression() {
-    if (installed3 || typeof document === "undefined") return;
-    installed3 = true;
+    if (installed4 || typeof document === "undefined") return;
+    installed4 = true;
     void refreshConfig();
     pollConfig();
     document.addEventListener("visibilitychange", () => {
@@ -5566,11 +5986,11 @@
     return String(s).replace(/(["\\\]])/g, "\\$1");
   }
 
-  // ../../../../../../../tmp/zpro-cleanbuild/src/inject/features/ws-running.js
-  var installed4 = false;
+  // src/inject/features/ws-running.js
+  var installed5 = false;
   var enabled3 = true;
-  var SCAN_DEBOUNCE_MS3 = 150;
-  var SCAN_FALLBACK_MS3 = 5e3;
+  var SCAN_DEBOUNCE_MS4 = 150;
+  var SCAN_FALLBACK_MS4 = 5e3;
   var PEEK_FIRST_MS = 2e4;
   var PEEK_REPEAT_MS = 6e4;
   var PEEK_SETTLE_MS = 160;
@@ -5578,7 +5998,7 @@
   var PEEK_UNMOUNT_WAIT_MS = 800;
   var CONFIG_POLL_MIN_MS2 = 5e3;
   var CONFIG_POLL_MAX_MS2 = 6e4;
-  var TASK_SEL2 = "[data-task-item-key]";
+  var TASK_SEL3 = "[data-task-item-key]";
   var WS_SEL = '[data-testid^="workspace-item-"]';
   var runningByWs = /* @__PURE__ */ new Map();
   var peekTimers = /* @__PURE__ */ new Map();
@@ -5601,10 +6021,10 @@
     return [...holder.children].some((c) => c.tagName === "svg" && (c.getAttribute("class") || "").includes("lucide-loader"));
   }
   function domRowsOf(ws) {
-    return [...document.querySelectorAll(TASK_SEL2)].filter((e) => workspaceOf2(e.getAttribute("data-task-item-key") || "") === ws);
+    return [...document.querySelectorAll(TASK_SEL3)].filter((e) => workspaceOf2(e.getAttribute("data-task-item-key") || "") === ws);
   }
   function currentTaskRow2() {
-    for (const el of document.querySelectorAll(TASK_SEL2)) {
+    for (const el of document.querySelectorAll(TASK_SEL3)) {
       if ((el.className + "").includes("bg-selected")) return el;
     }
     return null;
@@ -5620,12 +6040,12 @@
     const backKey = cur ? cur.getAttribute("data-task-item-key") : "";
     synthClick(head);
     if (!backKey) return;
-    const back = cur && cur.isConnected ? cur : document.querySelector(`${TASK_SEL2}[data-task-item-key="${CSS.escape(backKey)}"]`);
+    const back = cur && cur.isConnected ? cur : document.querySelector(`${TASK_SEL3}[data-task-item-key="${CSS.escape(backKey)}"]`);
     if (back) synthClick(back);
   }
   function scan3() {
     wsWithRows = /* @__PURE__ */ new Set();
-    for (const el of document.querySelectorAll(TASK_SEL2)) {
+    for (const el of document.querySelectorAll(TASK_SEL3)) {
       const key = el.getAttribute("data-task-item-key") || "";
       const ws = workspaceOf2(key);
       if (!ws) continue;
@@ -5651,8 +6071,8 @@
       if (m.type !== "childList") continue;
       for (const n of m.removedNodes) {
         if (!(n instanceof Element)) continue;
-        if (n.matches(TASK_SEL2)) removed.push(n);
-        else for (const r of n.querySelectorAll(TASK_SEL2)) removed.push(r);
+        if (n.matches(TASK_SEL3)) removed.push(n);
+        else for (const r of n.querySelectorAll(TASK_SEL3)) removed.push(r);
       }
     }
     if (!removed.length) return;
@@ -5835,7 +6255,7 @@
   var PEEK_EXEMPT_CLASS = "zcodepro-peek-exempt";
   var cssAttr = (v) => String(v).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
   function installPeekHider(ws) {
-    const rowSel3 = `${TASK_SEL2}[data-task-item-key^="${cssAttr(ws + ":")}"]`;
+    const rowSel3 = `${TASK_SEL3}[data-task-item-key^="${cssAttr(ws + ":")}"]`;
     for (const r of document.querySelectorAll(rowSel3)) r.classList.add(PEEK_EXEMPT_CLASS);
     const style = document.createElement("style");
     style.textContent = `${rowSel3}:not(.${PEEK_EXEMPT_CLASS}){display:none!important}`;
@@ -5847,7 +6267,7 @@
     for (const r of document.querySelectorAll("." + PEEK_EXEMPT_CLASS)) r.classList.remove(PEEK_EXEMPT_CLASS);
   }
   function waitForRowsGone(ws) {
-    const sel = `${TASK_SEL2}[data-task-item-key^="${cssAttr(ws + ":")}"]:not(.${PEEK_EXEMPT_CLASS})`;
+    const sel = `${TASK_SEL3}[data-task-item-key^="${cssAttr(ws + ":")}"]:not(.${PEEK_EXEMPT_CLASS})`;
     return new Promise((resolve) => {
       const t0 = Date.now();
       const timer = setInterval(() => {
@@ -5869,12 +6289,12 @@
   }
   function relevant(muts) {
     for (const m of muts) {
-      if (inSel(m.target, TASK_SEL2) || inSel(m.target, WS_SEL)) return true;
+      if (inSel(m.target, TASK_SEL3) || inSel(m.target, WS_SEL)) return true;
       for (const n of m.addedNodes) {
-        if (n instanceof Element && (n.matches(TASK_SEL2) || n.matches(WS_SEL) || n.querySelector(TASK_SEL2) || n.querySelector(WS_SEL))) return true;
+        if (n instanceof Element && (n.matches(TASK_SEL3) || n.matches(WS_SEL) || n.querySelector(TASK_SEL3) || n.querySelector(WS_SEL))) return true;
       }
       for (const n of m.removedNodes) {
-        if (n instanceof Element && (n.matches(TASK_SEL2) || n.matches(WS_SEL) || n.querySelector(TASK_SEL2))) return true;
+        if (n instanceof Element && (n.matches(TASK_SEL3) || n.matches(WS_SEL) || n.querySelector(TASK_SEL3))) return true;
       }
     }
     return false;
@@ -5905,27 +6325,27 @@
       pollConfig2();
     }, pollMs2);
   }
-  var scanDebounce3 = 0;
+  var scanDebounce4 = 0;
   function startWsRunningSpin() {
-    if (installed4 || typeof document === "undefined") return;
-    installed4 = true;
+    if (installed5 || typeof document === "undefined") return;
+    installed5 = true;
     void refreshConfig2();
     pollConfig2();
     const observer2 = new MutationObserver((muts) => {
       if (!relevant(muts)) return;
       handleRemovals(muts);
-      if (!scanDebounce3) {
-        scanDebounce3 = setTimeout(() => {
-          scanDebounce3 = 0;
+      if (!scanDebounce4) {
+        scanDebounce4 = setTimeout(() => {
+          scanDebounce4 = 0;
           scan3();
-        }, SCAN_DEBOUNCE_MS3);
+        }, SCAN_DEBOUNCE_MS4);
       }
     });
     observer2.observe(document.body, { childList: true, subtree: true });
     scan3();
     setInterval(() => {
       if (!document.hidden && enabled3) scan3();
-    }, SCAN_FALLBACK_MS3);
+    }, SCAN_FALLBACK_MS4);
     document.addEventListener("visibilitychange", () => {
       if (!document.hidden) scan3();
     });
@@ -5936,7 +6356,7 @@
     }, true);
   }
 
-  // ../../../../../../../tmp/zpro-cleanbuild/src/inject/features/idle-reclaim.js
+  // src/inject/features/idle-reclaim.js
   var CHECK_MS = 3e4;
   var WS_SEL2 = '[data-testid^="workspace-item-"]';
   var MIN_MINUTES = 1;
@@ -6086,10 +6506,10 @@
     setInterval(loop, CHECK_MS);
   }
 
-  // ../../../../../../../tmp/zpro-cleanbuild/src/inject/features/toolbar-icons.js
+  // src/inject/features/toolbar-icons.js
   var HIDE_CLASS = "zcodepro-tb-hidden";
   var SYNC_DEBOUNCE_MS = 150;
-  var SCAN_FALLBACK_MS4 = 5e3;
+  var SCAN_FALLBACK_MS5 = 5e3;
   var ROW_SEL = "[data-task-item-key]";
   var MENU_SEL = '[data-testid="task-new-button"], [data-testid="automations-open"], [data-testid="plugin-store-sidebar-open"], [data-slot="command"], [data-testid="desktop-top-nav-back"]';
   var enabled4 = true;
@@ -6275,18 +6695,18 @@
     }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "aria-pressed"] });
     setInterval(() => {
       if (!document.hidden) sync();
-    }, SCAN_FALLBACK_MS4);
+    }, SCAN_FALLBACK_MS5);
     document.addEventListener("visibilitychange", () => {
       if (!document.hidden) sync();
     });
   }
 
-  // ../../../../../../../tmp/zpro-cleanbuild/src/inject/features/pinned-collapse.js
+  // src/inject/features/pinned-collapse.js
   var COLLAPSED_CLASS = "zcodepro-pin-collapsed";
   var HEAD_CLASS = "zcodepro-pin-head";
   var STORE_KEY = "zcodepro:pinned-collapsed";
   var SYNC_DEBOUNCE_MS2 = 300;
-  var SCAN_FALLBACK_MS5 = 5e3;
+  var SCAN_FALLBACK_MS6 = 5e3;
   var enabled5 = true;
   var syncTimer2 = 0;
   function findPinnedHeader() {
@@ -6405,13 +6825,13 @@
     }).observe(document.body, { childList: true, subtree: true });
     setInterval(() => {
       if (!document.hidden) sync2();
-    }, SCAN_FALLBACK_MS5);
+    }, SCAN_FALLBACK_MS6);
     document.addEventListener("visibilitychange", () => {
       if (!document.hidden) sync2();
     });
   }
 
-  // ../../../../../../../tmp/zpro-cleanbuild/src/inject/features/plugin-updates.js
+  // src/inject/features/plugin-updates.js
   var NOTIFIED_KEY = "zcodepro-plugin-updates-notified";
   async function startPluginUpdateCheck() {
     const status = await rpc("/plugins/status");
@@ -6439,7 +6859,7 @@
     showToast(L.pluginsUpdatesAvailable.replaceAll("{n}", String(status.updates.length)), "info");
   }
 
-  // ../../../../../../../tmp/zpro-cleanbuild/src/inject/index.js
+  // src/inject/index.js
   (function zcodeproInject() {
     if (typeof window === "undefined") return;
     if (window.__zcodeproInjected) {
@@ -6484,6 +6904,10 @@
       }
       try {
         startTitleLock();
+      } catch {
+      }
+      try {
+        startTitleGen();
       } catch {
       }
       try {
