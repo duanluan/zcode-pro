@@ -707,6 +707,14 @@ export function ensureStyle() {
     }
     /* 原侧栏菜单整体隐藏（toolbar-icons 开启时） */
     .zcodepro-tb-hidden { display: none !important; }
+    /* 原生顶栏新建任务按钮（文件查看等子页展开的那个）：常驻 DOM、靠动画容器
+       在 w-7/w-0 间切换显隐。功能开启期间整体钉死收起态——新建入口统一由我们
+       的按钮行提供，也就不再需要随子页进出动态显隐自己的新建按钮 */
+    .zcodepro-tb-hidden-native div[class*="transition-[opacity,width]"] {
+      width: 0 !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
     /* 已置顶分区可折叠（pinned-collapse.js）：标题整行可点，折叠时藏起任务列表，
        chevron 旋向与“项目”分区一致（收起指向右侧） */
     .zcodepro-pin-head {

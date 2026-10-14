@@ -103,6 +103,9 @@ function rebuild() {
   menu.classList.add(HIDE_CLASS);
   origs = next;
   rowEl?.remove();
+  // 原生顶栏新建按钮（文件子页会展开的那个）钉死收起：新建入口统一由我们
+  // 的行提供，省去随子页进出显隐自己按钮的同步
+  navRow.classList.add('zcodepro-tb-hidden-native');
   const L = t();
   const mk = (kind, orig, nameSel, fallback) => h('button', {
     type: 'button',
@@ -129,7 +132,15 @@ function rebuild() {
   const pIcon = iconOf(next.plugin);
   if (pIcon) pluginBtn.append(pIcon);
   rowEl = h('div', { class: 'zcodepro-tb-row' }, newBtn, searchBtn, autoBtn, pluginBtn);
-  navRow.append(rowEl);
+  // 插在容器内“更新”按钮之前（实测容器子序：侧栏切换/后退/前进/原生新建
+  // 容器/更新按钮）。更新按钮无 testid，按绿色胶囊的 bg-success 样式类定位
+  //（实测当前主题；老主题为 bg-emerald，一并匹配），找不到退回末尾追加——
+  // 更新按钮只在有新版本时出现。容器内追加/前插都是框架长期容忍的位置，
+  // 不要插到容器外侧（React 重渲染会把外侧插入点挤漂移）
+  const updBtn = [...navRow.querySelectorAll('button')]
+    .find((b) => /bg-(success|emerald)/.test(b.className || ''));
+  if (updBtn) updBtn.before(rowEl);
+  else navRow.append(rowEl);
   return true;
 }
 
@@ -171,14 +182,32 @@ function sync() {
   if (sidebarCollapsed() || sidebarTooNarrow()) {
     if (rowEl) rowEl.style.display = 'none';
     menu.classList.remove(HIDE_CLASS);
+    // 这两种形态藏起我们的整行：原生新建按钮要放出来（去掉钉死类），
+    // 否则收起侧栏时顶栏没有任何新建入口
+    document.querySelectorAll('.zcodepro-tb-hidden-native').forEach((el) => el.classList.remove('zcodepro-tb-hidden-native'));
     return;
   }
+  // 旧引用是否全部仍可用；不可用时先试重建，重建未就绪（React 分批挂载，
+  // 菜单/导航容器还没上屏）则保留现有行原样等待重试——若在这里提前把旧行
+  // 拆掉，重试成功前图标会整行消失，只能等兜底轮询补上（表现为返回会话后
+  // 图标迟两三秒才回来）
   const alive = origs && origs.menu === menu
     && origs.newTask.isConnected && origs.search.isConnected
     && origs.auto.isConnected && origs.plugin.isConnected
     && rowEl && rowEl.isConnected;
-  if (!alive && !rebuild()) return;
-  // 界面重渲染可能整体重写容器的 class，隐藏类兜底重加
+  if (!alive && !rebuild()) {
+    // 菜单在而原节点断连：界面正在换节点，行先藏着等重试。观察器监听菜单
+    // 挂载、命中即恢复（150ms 去抖）；万一变动被滤掉，这里再排短程重试
+    // 兜底，不依赖 5 秒轮询
+    if (rowEl) rowEl.style.display = 'none';
+    setTimeout(scheduleSync, 400);
+    setTimeout(scheduleSync, 1200);
+    return;
+  }
+  // 界面重渲染可能整体重写容器的 class，隐藏类兜底重加；钉死原生新建按钮的
+  // 类同理（收起分支会摘掉它，展开回来若节点仍活着不会触发 rebuild，须在此补）
+  const navRow = document.querySelector('[data-testid="desktop-top-nav-back"]')?.parentElement;
+  if (navRow) navRow.classList.add('zcodepro-tb-hidden-native');
   menu.classList.add(HIDE_CLASS);
   if (rowEl) rowEl.style.display = '';
   syncActive();
@@ -219,7 +248,12 @@ function relevantMutations(muts) {
 function teardown() {
   rowEl?.remove();
   rowEl = null;
-  if (origs) { origs.menu.classList.remove(HIDE_CLASS); origs = null; }
+  if (origs) {
+    origs.menu.classList.remove(HIDE_CLASS);
+    // 恢复原生子页新建按钮（功能关闭时不再钉死）
+    document.querySelectorAll('.zcodepro-tb-hidden-native').forEach((el) => el.classList.remove('zcodepro-tb-hidden-native'));
+    origs = null;
+  }
 }
 
 async function refreshConfig() {

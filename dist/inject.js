@@ -1601,6 +1601,14 @@
     }
     /* \u539F\u4FA7\u680F\u83DC\u5355\u6574\u4F53\u9690\u85CF\uFF08toolbar-icons \u5F00\u542F\u65F6\uFF09 */
     .zcodepro-tb-hidden { display: none !important; }
+    /* \u539F\u751F\u9876\u680F\u65B0\u5EFA\u4EFB\u52A1\u6309\u94AE\uFF08\u6587\u4EF6\u67E5\u770B\u7B49\u5B50\u9875\u5C55\u5F00\u7684\u90A3\u4E2A\uFF09\uFF1A\u5E38\u9A7B DOM\u3001\u9760\u52A8\u753B\u5BB9\u5668
+       \u5728 w-7/w-0 \u95F4\u5207\u6362\u663E\u9690\u3002\u529F\u80FD\u5F00\u542F\u671F\u95F4\u6574\u4F53\u9489\u6B7B\u6536\u8D77\u6001\u2014\u2014\u65B0\u5EFA\u5165\u53E3\u7EDF\u4E00\u7531\u6211\u4EEC
+       \u7684\u6309\u94AE\u884C\u63D0\u4F9B\uFF0C\u4E5F\u5C31\u4E0D\u518D\u9700\u8981\u968F\u5B50\u9875\u8FDB\u51FA\u52A8\u6001\u663E\u9690\u81EA\u5DF1\u7684\u65B0\u5EFA\u6309\u94AE */
+    .zcodepro-tb-hidden-native div[class*="transition-[opacity,width]"] {
+      width: 0 !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
     /* \u5DF2\u7F6E\u9876\u5206\u533A\u53EF\u6298\u53E0\uFF08pinned-collapse.js\uFF09\uFF1A\u6807\u9898\u6574\u884C\u53EF\u70B9\uFF0C\u6298\u53E0\u65F6\u85CF\u8D77\u4EFB\u52A1\u5217\u8868\uFF0C
        chevron \u65CB\u5411\u4E0E\u201C\u9879\u76EE\u201D\u5206\u533A\u4E00\u81F4\uFF08\u6536\u8D77\u6307\u5411\u53F3\u4FA7\uFF09 */
     .zcodepro-pin-head {
@@ -6599,6 +6607,7 @@
     menu.classList.add(HIDE_CLASS);
     origs = next;
     rowEl?.remove();
+    navRow.classList.add("zcodepro-tb-hidden-native");
     const L = t();
     const mk = (kind, orig, nameSel, fallback) => h("button", {
       type: "button",
@@ -6624,7 +6633,9 @@
     const pIcon = iconOf(next.plugin);
     if (pIcon) pluginBtn.append(pIcon);
     rowEl = h("div", { class: "zcodepro-tb-row" }, newBtn, searchBtn, autoBtn, pluginBtn);
-    navRow.append(rowEl);
+    const updBtn = [...navRow.querySelectorAll("button")].find((b) => /bg-(success|emerald)/.test(b.className || ""));
+    if (updBtn) updBtn.before(rowEl);
+    else navRow.append(rowEl);
     return true;
   }
   function sidebarCollapsed() {
@@ -6654,10 +6665,18 @@
     if (sidebarCollapsed() || sidebarTooNarrow()) {
       if (rowEl) rowEl.style.display = "none";
       menu.classList.remove(HIDE_CLASS);
+      document.querySelectorAll(".zcodepro-tb-hidden-native").forEach((el) => el.classList.remove("zcodepro-tb-hidden-native"));
       return;
     }
     const alive = origs && origs.menu === menu && origs.newTask.isConnected && origs.search.isConnected && origs.auto.isConnected && origs.plugin.isConnected && rowEl && rowEl.isConnected;
-    if (!alive && !rebuild()) return;
+    if (!alive && !rebuild()) {
+      if (rowEl) rowEl.style.display = "none";
+      setTimeout(scheduleSync, 400);
+      setTimeout(scheduleSync, 1200);
+      return;
+    }
+    const navRow = document.querySelector('[data-testid="desktop-top-nav-back"]')?.parentElement;
+    if (navRow) navRow.classList.add("zcodepro-tb-hidden-native");
     menu.classList.add(HIDE_CLASS);
     if (rowEl) rowEl.style.display = "";
     syncActive();
@@ -6693,6 +6712,7 @@
     rowEl = null;
     if (origs) {
       origs.menu.classList.remove(HIDE_CLASS);
+      document.querySelectorAll(".zcodepro-tb-hidden-native").forEach((el) => el.classList.remove("zcodepro-tb-hidden-native"));
       origs = null;
     }
   }
