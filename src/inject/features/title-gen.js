@@ -111,7 +111,16 @@ async function onNewTaskRow(key) {
   } finally { convObserver.disconnect(); }
   if (!texts.length) return;
 
-  const res = await rpc('/title-gen/run', { method: 'POST', body: { sessId, text: texts.join('\n') } }).catch(() => null);
+  // 失败静默但重试（模型调用偶发失败不应让本次会话永远失去标题）：5 秒一次
+  // 错开瞬时抖动；20 秒一次兜住“会话刚建的几秒内索引模型信息未写定”
+  //（实测新会话 8 秒时解析到的模型不存在，稍后即正常）
+  const callTitleGen = () => rpc('/title-gen/run', { method: 'POST', body: { sessId, text: texts.join('\n') } }).catch(() => null);
+  let res = await callTitleGen();
+  for (const delay of [5000, 20000]) {
+    if (res && res.ok) break;
+    await sleep(delay);
+    res = await callTitleGen();
+  }
   // written=false 常见于用户已抢先手动重命名——尊重手动命名，不提示
   if (res && res.ok && res.written && res.title) {
     setRowTitle(key, res.title);

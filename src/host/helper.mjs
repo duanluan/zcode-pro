@@ -4,13 +4,13 @@
 
 import { createServer } from 'node:http';
 import { execFile, spawn, spawnSync } from 'node:child_process';
-import { chmodSync, copyFileSync, createWriteStream, existsSync, mkdirSync, readdirSync, readFileSync, readlinkSync, realpathSync, renameSync, rmSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
+import { appendFileSync, chmodSync, copyFileSync, createWriteStream, existsSync, mkdirSync, readdirSync, readFileSync, readlinkSync, realpathSync, renameSync, rmSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { mkdtemp } from 'node:fs/promises'; // 注意：fs 的 mkdtemp 是回调版，await 它会把 undefined 当回调
 import { basename, delimiter, dirname, isAbsolute, join, resolve, sep } from 'node:path';
 import { homedir, tmpdir } from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { readSettings, writeSettingsAtomic, remapSettingsPaths, isProjectOpenInTabs } from './settings.mjs';
-import { taskIndexPath, probeTaskIndexWritable, remapTaskIndexPaths, taskIndexDriverAvailable, listOverriddenTitles, listTaskWorkspaceMap, setTaskTitleIfNotOverridden, getTaskProviderModel } from './taskIndex.mjs';
+import { taskIndexPath, probeTaskIndexWritable, remapTaskIndexPaths, taskIndexDriverAvailable, listOverriddenTitles, listTaskWorkspaceMap, setTaskTitleIfNotOverridden, setCustomSessionTitle, isTaskTitleOverridden, reconcileCustomTitles, getTaskProviderModel } from './taskIndex.mjs';
 import { pickFolderSystem } from './pickFolder.mjs';
 import { reorderWorkspaceTasks, reorderGroupMembers } from './taskOrder.mjs';
 import { webdavRequest, webdavPutWithMkcol, webdavHttpText, parseWebdavListing, findCurl } from './webdav.mjs';
@@ -104,6 +104,7 @@ export function defaultConfig() {
     //（用会话当前模型）；prompt 留空 = 内置默认提示词
     titleGen: {
       enabled: false,
+      customWritten: {},
       provider: 'session',
       model: 'glm-5.3-flash',
       prompt: '',
@@ -247,6 +248,20 @@ function proxyEnv(extra = {}, scope = 'deps') {
 // fetch 兜底路径不认代理环境变量）
 function proxyUrlFor(scope) {
   return activeProxyScopes[scope] ? activeProxyUrl : '';
+}
+
+// 智能起名诊断日志：追加到 <dataRoot>/zcodepro.log（与启动诊断同文件），超 512KB
+// 轮转 .old。起名过程注入侧静默（失败不打扰用户），出问题时靠这里回查
+let titleGenLogRotated = false;
+function titleGenLog(dataRoot, line) {
+  try {
+    const file = join(dataRoot, 'zcodepro.log');
+    if (!titleGenLogRotated && existsSync(file) && statSync(file).size > 512 * 1024) {
+      renameSync(file, file + '.old');
+      titleGenLogRotated = true;
+    }
+    appendFileSync(file, `[${new Date().toISOString()}] title-gen ${line}\n`);
+  } catch { /* 日志失败不影响功能 */ }
 }
 
 export function startHelper({ port, token, dataRoot, state, agentsFile = defaultAgentsFile() }) {
@@ -421,6 +436,13 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
       // 注入侧据此把被自动标题覆盖的侧栏行钉回重命名值；响应带开关，
       // 注入侧按需拉取这一个端点即可（无轮询）
       if (req.method === 'GET' && url.pathname === '/pinned-titles') {
+        // 先自动校正：桌面端打开会话时会把运行时缓存的旧标题写回任务索引（实测），
+        // 对我们写过且 CLI custom 仍是所写标题的会话，把索引改回来再下发
+        const config0 = loadConfig(configFile);
+        if (config0.titleGen.customWritten && Object.keys(config0.titleGen.customWritten).length) {
+          const repaired = await reconcileCustomTitles(dataRoot, config0.titleGen.customWritten);
+          if (repaired.length) titleGenLog(dataRoot, `reconciled sess=${repaired.map((s) => s.slice(5, 13)).join(',')}`);
+        }
         const r = await listOverriddenTitles(dataRoot);
         if (r.error) {
           json(res, 500, { ok: false, code: r.code, error: r.error });
@@ -491,9 +513,43 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
           return;
         }
         const sessId = typeof body?.sessId === 'string' && /^sess_[A-Za-z0-9._-]+$/.test(body.sessId) ? body.sessId : '';
-        const title = await generateTitleWith(cfg, text, dataRoot, sessId);
+        let title;
+        try {
+          title = await generateTitleWith(cfg, text, dataRoot, sessId);
+        } catch (err) {
+          titleGenLog(dataRoot, `generate-failed sess=${sessId.slice(0, 13)} err=${err?.message || err}`);
+          throw err; // 交给外层统一 500
+        }
         let written = false;
+        let store = ''; // CLI 会话库写入结果：'' 成功 | skipped 原因 | 'error'
         if (sessId && body.test !== true) {
+          // 已被手动重命名（或前次起名已写过）就整体跳过——手动重命名永远优先，
+          // 也避免起名晚到的 CLI 写入盖掉用户的 custom 标题
+          if (await isTaskTitleOverridden(dataRoot, sessId)) {
+            json(res, 200, { ok: true, title, written: false, store: 'skipped: overridden' });
+            return;
+          }
+          // 双写，顺序不能反：先写 CLI 会话库（title_source=custom，权威层——
+          // 官方自动起名看到 custom 会放弃，桌面同步器会把 custom 标题带着
+          // overridden=1 送回任务索引），再写任务索引（展示层，立即上屏）。
+          // 只写任务索引时，官方运行时排队的自动标题会在几秒后把它覆盖（实测）。
+          // CLI 库不可写（旧版无 title_source 列 / 无该会话行）不阻断：退回
+          // 单写任务索引的旧行为；任务索引随后失败也不回滚 CLI——同步器会补
+          for (let attempt = 0; ; attempt++) {
+            try {
+              const r = await setCustomSessionTitle(dataRoot, sessId, title);
+              store = r.written ? '' : (r.skipped || 'skipped');
+              break;
+            } catch (err) {
+              if (err.code === 'index-busy' && attempt < 2) {
+                await new Promise((r) => setTimeout(r, 1200));
+                continue;
+              }
+              store = 'error: ' + (err?.message || err);
+              titleGenLog(dataRoot, `cli-store-error sess=${sessId.slice(0, 13)} err=${err?.message || err}`);
+              break;
+            }
+          }
           // 写库撞上宿主写入时稍候重试（起名不急这几秒）
           for (let attempt = 0; ; attempt++) {
             try {
@@ -505,12 +561,19 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
                 await new Promise((r) => setTimeout(r, 1200));
                 continue;
               }
+              titleGenLog(dataRoot, `index-error sess=${sessId.slice(0, 13)} err=${err?.message || err}`);
               json(res, 500, { ok: false, code: err.code || 'index-error', error: err.message });
               return;
             }
           }
         }
-        json(res, 200, { ok: true, title, written });
+        // CLI 库写成功了才登记回查记录（reconcileCustomTitles 只认这些记录校正）
+        if (sessId && store === '') {
+          const c = loadConfig(configFile);
+          c.titleGen.customWritten = { ...(c.titleGen.customWritten || {}), [sessId]: { title, at: Date.now() } };
+          saveConfig(configFile, c);
+        }
+        json(res, 200, { ok: true, title, written, store });
         return;
       }
       // —— zcode-vision 插件（图片视觉代理）：设置弹窗“视觉代理”标签页读写 ————
@@ -1146,6 +1209,18 @@ function mergeTitleGenConfig(saved) {
   // 旧版配置的 'cli'（登录账号单独成模式）统一迁移为 'session'：
   // 登录账号的套餐已在供应商列表里，跟随会话即覆盖原语义
   const provider = typeof s.provider === 'string' ? s.provider.trim().slice(0, 200) : d.provider;
+  // customWritten：起名功能写过的 { sessId → { title, at } }，自动校正只认这些
+  // 记录（见 reconcileCustomTitles）。只收合法会话 id 与短字符串，超 7 天/500 条的丢弃
+  const written = {};
+  const cutoff = Date.now() - 7 * 24 * 3600 * 1000;
+  let kept = 0;
+  for (const [k, v] of Object.entries((s.customWritten && typeof s.customWritten === 'object' && !Array.isArray(s.customWritten)) ? s.customWritten : {})) {
+    if (kept >= 500 || !/^sess_[A-Za-z0-9._-]+$/.test(k)) continue;
+    if (!v || typeof v !== 'object' || typeof v.title !== 'string' || v.title.length > 200) continue;
+    if (!Number.isFinite(v.at) || v.at < cutoff) continue;
+    written[k] = { title: v.title, at: v.at };
+    kept++;
+  }
   return {
     enabled: s.enabled === true,
     provider: provider === 'cli' ? 'session' : provider,
@@ -1154,6 +1229,7 @@ function mergeTitleGenConfig(saved) {
     baseUrl: typeof s.baseUrl === 'string' ? s.baseUrl.trim().slice(0, 500) : d.baseUrl,
     apiKey: typeof s.apiKey === 'string' ? s.apiKey.trim().slice(0, 500) : d.apiKey,
     format: s.format === 'openai' ? 'openai' : s.format === 'anthropic' ? 'anthropic' : '',
+    customWritten: written,
   };
 }
 
@@ -2014,7 +2090,7 @@ async function callAnthropicText(baseUrl, apiKey, model, content) {
       body: JSON.stringify({ model, max_tokens: 2048, messages: [{ role: 'user', content }] }),
     });
     const body = await resp.text();
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${body.slice(0, 300)}`);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status} [model=${model}]: ${body.slice(0, 300)}`);
     const doc = JSON.parse(body);
     const text = Array.isArray(doc.content)
       ? doc.content.filter((b) => b && b.type === 'text').map((b) => b.text || '').join('') : '';
@@ -2040,7 +2116,7 @@ async function callOpenAiText(baseUrl, apiKey, model, content) {
       body: JSON.stringify({ model, max_tokens: 2048, messages: [{ role: 'user', content }] }),
     });
     const body = await resp.text();
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${body.slice(0, 300)}`);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status} [model=${model}]: ${body.slice(0, 300)}`);
     const doc = JSON.parse(body);
     const text = doc.choices?.[0]?.message?.content || '';
     if (typeof text !== 'string' || !text.trim()) throw new Error('响应中没有文本内容');
@@ -2060,7 +2136,12 @@ async function callOpenAiText(baseUrl, apiKey, model, content) {
 export async function generateTitleWith(cfg, rawText, dataRoot = '', sessId = '') {
   const text = String(rawText || '').trim().replace(/\s+/g, ' ').slice(0, TITLE_GEN_MAX_TEXT);
   const prompt = (cfg.prompt && cfg.prompt.trim()) || titleGenDefaultPrompt();
-  const userContent = `${prompt}\n\n会话的用户消息：\n${text}`;
+  // 注入当前日期（上海时区）：起名模型是无状态的，自定义提示词里要求
+  // “MMDD 取对话创建日期”时它无从得知，只能留字面量 MMDD
+  const now = new Date(Date.now() + 8 * 3600 * 1000);
+  const pad = (n) => String(n).padStart(2, '0');
+  const dateLine = `当前日期（Asia/Shanghai）：${now.getUTCFullYear()}-${pad(now.getUTCMonth() + 1)}-${pad(now.getUTCDate())}（MMDD 即 ${pad(now.getUTCMonth() + 1)}${pad(now.getUTCDate())}）`;
+  const userContent = `${prompt}\n\n${dateLine}\n\n会话的用户消息：\n${text}`;
   const providerId = (cfg.provider || '').trim();
   const model = (cfg.model || '').trim();
   const conn = await resolveTitleGenConnection(cfg, providerId, model, dataRoot, sessId);
@@ -2108,12 +2189,19 @@ async function resolveTitleGenConnection(cfg, providerId, model, dataRoot, sessI
 }
 
 // 清洗模型输出：去思考块/代码围栏/首尾引号/序号/末尾标点，取首个非空行并限长。
-// 模型可能沿用官方起名的习惯回 JSON 对象，此时取其 title 字段。导出以便测试
+// 模型可能沿用官方起名的习惯回 JSON 对象，此时取其 title 字段。自定义提示词常让
+// 模型“先说明再给标题”（如“无法直接修改会话标题……建议手动设置：”后另起一行
+// 【MMDD|类型|主题】），此时首个非空行是说明而非标题——优先取独立成行的
+// 【】/[] 包裹标题行（允许行首 markdown 标题符）。导出以便测试
 export function cleanGeneratedTitle(text) {
   let t = String(text || '').replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
   // 整段包在代码围栏里时先去掉围栏标记（先取行会把“```json”当成标题内容）
   t = t.replace(/^```[a-zA-Z]*\s*\n?/, '').replace(/\n?```\s*$/, '').trim();
-  let line = t.split(/\r?\n/).map((s) => s.trim()).find(Boolean) || '';
+  const lines = t.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+  // 标题行判定前剥掉 markdown 外壳（## 标题符、**加粗**、*斜体*、_下划线_、~~删除线~~）
+  const unwrap = (s) => s.replace(/^#{1,4}\s*/, '').replace(/^[*_~]+/, '').replace(/[*_~]+$/, '').trim();
+  const bracketed = lines.find((s) => /^(?:【[^】]{1,60}】|\[[^\]\n]{1,60}\])$/.test(unwrap(s)));
+  let line = bracketed ? unwrap(bracketed) : (lines[0] || '');
   line = line.replace(/^```[a-zA-Z]*\s*/, '').replace(/```\s*$/, '');
   try {
     const doc = JSON.parse(line);

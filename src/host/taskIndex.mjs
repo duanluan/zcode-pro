@@ -206,6 +206,28 @@ export async function listOverriddenTitles(dataRoot) {
   return { titles };
 }
 
+// 智能起名的前置判定：会话是否已被手动重命名（或已被起名写过）。双写前先查它，
+// 已重命名就整体跳过——避免起名晚到的写入盖掉用户的 custom 标题。读取失败按
+// 未重命名处理（后续写入自带原子守卫兜底）
+export async function isTaskTitleOverridden(dataRoot, sessId) {
+  const dbFile = taskIndexPath(dataRoot);
+  if (!existsSync(dbFile)) return false;
+  const driver = await loadDriver();
+  if (!driver) return false;
+  try {
+    if (driver.kind === 'node') {
+      const db = new driver.DatabaseSync(dbFile, { readOnly: true });
+      try {
+        const r = db.prepare('SELECT title_overridden FROM tasks WHERE task_id = ? AND deleted = 0').get(sessId);
+        return r?.title_overridden === 1;
+      } finally { db.close(); }
+    }
+    const esc = (v) => "'" + String(v).replace(/'/g, "''") + "'";
+    const r = runCli(dbFile, `SELECT title_overridden FROM tasks WHERE task_id = ${esc(sessId)} AND deleted = 0;`);
+    return /^1/m.test(r.stdout);
+  } catch { return false; }
+}
+
 // 智能起名写入：把生成标题按“手动重命名”存入索引（title_overridden = 1），
 // 之后官方自动标题不会再覆盖这条记录。仅在会话未删除、且从未被手动重命名过
 // （title_overridden = 0）时写入——手动重命名永远优先。返回 { written, title }；
@@ -266,10 +288,35 @@ function isBusyError(err) {
 // { providerId, modelId }；没有斜线时 providerId 退回 provider 列的值。
 // 会话不存在返回 null；读取失败按 null 处理（调用方换明确报错）
 export async function getTaskProviderModel(dataRoot, sessId) {
-  const dbFile = taskIndexPath(dataRoot);
-  if (!existsSync(dbFile)) return null;
   const driver = await loadDriver();
   if (!driver) return null;
+  const esc = (v) => "'" + String(v).replace(/'/g, "''") + "'";
+
+  // 优先读 CLI 会话库的 model_usage：首个 turn 开始时即写入，比任务索引的
+  // model 列早十几秒（任务索引由桌面同步器延迟写；新会话头十几秒里它还是
+  // 空值，起名第一次调用会因此解析到不存在的模型，实测 400 模型不存在）
+  const usageFile = join(dataRoot, 'cli', 'db', 'db.sqlite');
+  if (existsSync(usageFile)) {
+    try {
+      if (driver.kind === 'node') {
+        const db = new driver.DatabaseSync(usageFile, { readOnly: true });
+        try {
+          const r = db.prepare(
+            "SELECT provider_id, model_id FROM model_usage WHERE session_id = ? AND provider_id IS NOT NULL AND provider_id != '' ORDER BY started_at DESC LIMIT 1"
+          ).get(sessId);
+          if (r && r.model_id) return { providerId: r.provider_id, modelId: r.model_id };
+        } finally { db.close(); }
+      } else {
+        const r = runCli(usageFile,
+          `SELECT coalesce(json_object('provider_id', provider_id, 'model_id', model_id), 'null') FROM (SELECT provider_id, model_id FROM model_usage WHERE session_id = ${esc(sessId)} AND provider_id IS NOT NULL AND provider_id != '' ORDER BY started_at DESC LIMIT 1);`);
+        const parsed = JSON.parse(r.stdout.trim() || 'null');
+        if (parsed && parsed.model_id) return { providerId: parsed.provider_id, modelId: parsed.model_id };
+      }
+    } catch { /* 表不存在（旧版 CLI）等：走任务索引兜底 */ }
+  }
+
+  const dbFile = taskIndexPath(dataRoot);
+  if (!existsSync(dbFile)) return null;
   let row = null;
   try {
     if (driver.kind === 'node') {
@@ -279,7 +326,6 @@ export async function getTaskProviderModel(dataRoot, sessId) {
         row = db.prepare('SELECT provider, model FROM tasks WHERE task_id = ? AND deleted = 0').get(sessId) || null;
       } finally { db.close(); }
     } else {
-      const esc = (v) => "'" + String(v).replace(/'/g, "''") + "'";
       const r = runCli(dbFile,
         `SELECT coalesce(json_object('provider', provider, 'model', model), 'null') FROM tasks WHERE task_id = ${esc(sessId)} AND deleted = 0;`);
       const parsed = JSON.parse((r.stdout.trim() || 'null'));
@@ -335,4 +381,133 @@ function runCli(dbFile, script) {
   if (r.error) throw r.error;
   if (r.status !== 0) throw new Error('sqlite3 CLI 执行失败: ' + (r.stderr || r.stdout || ('exit ' + r.status)));
   return r;
+}
+
+// CLI 会话库（~/.zcode/cli/db/db.sqlite）的会话标题权威写入：title + title_source=
+// 'custom'（官方 setCustomSessionTitle 同款语义）。custom 后官方运行时彻底知情：
+// 自动起名写回后的自动校正：桌面端打开会话时会把运行时内存缓存的旧标题写回
+// 任务索引（实测点开会话的瞬间发生，运行时不知道我们直写过 CLI 库），索引里的
+// 标题因此被改回旧值。CLI 库的 custom 标题才是权威——对“我们写过、且 CLI 标题
+// 仍等于我们所写”的会话，索引标题若不同就改回 CLI 值。只认自己写过的记录：
+// 官方手动改名（renameTask）两库同步更新不会分歧；其 v4 同步失败时索引比 CLI 新
+// （历史会话场景），不认记录就绝不会误回滚用户的手动改名。
+// writtenMap: { sessId → { title, at } }；返回本次校正的会话数（失败静默，下次再试）
+export async function reconcileCustomTitles(dataRoot, writtenMap) {
+  const repaired = [];
+  if (!writtenMap || typeof writtenMap !== 'object') return repaired;
+  const driver = await loadDriver();
+  if (!driver) return repaired;
+  const esc = (v) => "'" + String(v).replace(/'/g, "''") + "'";
+  const cliFile = join(dataRoot, 'cli', 'db', 'db.sqlite');
+  const idxFile = taskIndexPath(dataRoot);
+  if (!existsSync(cliFile) || !existsSync(idxFile)) return repaired;
+
+  const readCli = async (sessId) => {
+    if (driver.kind === 'node') {
+      const db = new driver.DatabaseSync(cliFile, { readOnly: true });
+      try {
+        return db.prepare("SELECT title, title_source FROM session WHERE id = ?").get(sessId) || null;
+      } finally { db.close(); }
+    }
+    const r = runCli(cliFile, `SELECT coalesce(json_object('title', title, 'title_source', title_source), 'null') FROM session WHERE id = ${esc(sessId)};`);
+    const parsed = JSON.parse(r.stdout.trim() || 'null');
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  };
+
+  for (const [sessId, rec] of Object.entries(writtenMap)) {
+    if (!/^sess_[A-Za-z0-9._-]+$/.test(sessId) || !rec || typeof rec.title !== 'string') continue;
+    let cli;
+    try { cli = await readCli(sessId); } catch { continue; }
+    // CLI 已不是我们所写的 custom 标题：别人改过（手动改名/官方），不碰
+    if (!cli || cli.title_source !== 'custom' || cli.title !== rec.title) continue;
+    try {
+      if (driver.kind === 'node') {
+        const db = new driver.DatabaseSync(idxFile);
+        try {
+          db.exec(`PRAGMA busy_timeout = ${BUSY_TIMEOUT_MS}`);
+          db.exec('BEGIN IMMEDIATE');
+          try {
+            const r = db.prepare(
+              'UPDATE tasks SET title = ? WHERE task_id = ? AND deleted = 0 AND title_overridden = 1 AND title != ?'
+            ).run(rec.title, sessId, rec.title);
+            db.exec('COMMIT');
+            if (r.changes > 0) repaired.push(sessId);
+          } catch (err) {
+            try { db.exec('ROLLBACK'); } catch { /* 已回滚 */ }
+            throw err;
+          }
+        } finally { db.close(); }
+      } else {
+        const r = runCli(idxFile,
+          'BEGIN IMMEDIATE;\n'
+          + `UPDATE tasks SET title = ${esc(rec.title)} WHERE task_id = ${esc(sessId)} AND deleted = 0 AND title_overridden = 1 AND title != ${esc(rec.title)};\n`
+          + 'SELECT changes();\nCOMMIT;');
+        if (Number(r.stdout.trim()) > 0) repaired.push(sessId);
+      }
+    } catch { /* 占用等：下次再校正 */ }
+  }
+  return repaired;
+}
+
+// 自动起名在写回前重读时看到 custom 会放弃（session-title.ts 的 custom_title 短路），
+// 桌面同步器（zcodeTaskIndexSyncer）会把 custom 标题带着 titleOverridden=1 写回
+// 任务索引——单写任务索引被官方排队的自动标题覆盖的竞态（实测 14 秒后覆盖）由此
+// 消除。time_title_updated/time_updated 与官方 updateSession 一致（title 变更即刷新，
+// time_updated 只增不减）；title_message_id 保留原值。旧版 CLI 库没有 title_source
+// 列时返回 skipped（缺 custom 语义，写了也守不住，退回单写任务索引的旧行为）。
+// 库被占用时抛 index-busy（与任务索引写入同款重试语义）。
+export async function setCustomSessionTitle(dataRoot, sessId, title) {
+  const dbFile = join(dataRoot, 'cli', 'db', 'db.sqlite');
+  if (!existsSync(dbFile)) return { written: false, skipped: 'no-cli-db' };
+  const driver = await loadDriver();
+  if (!driver) {
+    const err = new Error('缺少 SQLite 支持（需要 Node ≥23.4 或 sqlite3 命令）');
+    err.code = 'index-error';
+    throw err;
+  }
+  try {
+    if (driver.kind === 'node') {
+      const db = new driver.DatabaseSync(dbFile);
+      try {
+        const cols = db.prepare("PRAGMA table_info('session')").all();
+        if (!cols.some((c) => c.name === 'title_source')) return { written: false, skipped: 'no-title-source' };
+        db.exec(`PRAGMA busy_timeout = ${BUSY_TIMEOUT_MS}`);
+        db.exec('BEGIN IMMEDIATE');
+        try {
+          const now = Date.now();
+          const r = db.prepare(
+            "UPDATE session SET title = ?, title_source = 'custom', time_title_updated = ?, time_updated = max(time_updated, ?) WHERE id = ?"
+          ).run(title, now, now, sessId);
+          db.exec('COMMIT');
+          return { written: r.changes > 0, skipped: r.changes > 0 ? '' : 'no-session-row' };
+        } catch (err) {
+          try { db.exec('ROLLBACK'); } catch { /* 已回滚/连接失效 */ }
+          throw err;
+        }
+      } finally {
+        db.close();
+      }
+    }
+    const esc = (v) => "'" + String(v).replace(/'/g, "''") + "'";
+    const cols = runCli(dbFile, "PRAGMA table_info('session');").stdout;
+    if (!/title_source/.test(cols)) return { written: false, skipped: 'no-title-source' };
+    const now = Date.now();
+    const r = runCli(dbFile,
+      'BEGIN IMMEDIATE;\n'
+      + `UPDATE session SET title = ${esc(title)}, title_source = 'custom',`
+      + ` time_title_updated = ${now}, time_updated = max(time_updated, ${now})`
+      + ` WHERE id = ${esc(sessId)};\n`
+      + 'SELECT changes();\nCOMMIT;');
+    const changed = Number(r.stdout.trim()) > 0;
+    return { written: changed, skipped: changed ? '' : 'no-session-row' };
+  } catch (err) {
+    if (isBusyError(err)) {
+      const e = new Error('CLI 会话库正被占用（ZCode 可能正在写入）');
+      e.code = 'index-busy';
+      throw e;
+    }
+    const e = new Error('写入 CLI 会话标题失败: ' + (err?.message || err));
+    e.code = 'index-error';
+    throw e;
+  }
 }

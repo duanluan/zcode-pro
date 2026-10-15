@@ -5936,7 +5936,13 @@
       convObserver.disconnect();
     }
     if (!texts.length) return;
-    const res = await rpc("/title-gen/run", { method: "POST", body: { sessId, text: texts.join("\n") } }).catch(() => null);
+    const callTitleGen = () => rpc("/title-gen/run", { method: "POST", body: { sessId, text: texts.join("\n") } }).catch(() => null);
+    let res = await callTitleGen();
+    for (const delay of [5e3, 2e4]) {
+      if (res && res.ok) break;
+      await sleep(delay);
+      res = await callTitleGen();
+    }
     if (res && res.ok && res.written && res.title) {
       setRowTitle(key, res.title);
       void refreshPinnedTitles();
