@@ -17,11 +17,15 @@ import { runSetup } from './setup.mjs';
 const here = dirname(fileURLToPath(import.meta.url));
 const INJECT_BUNDLE = resolve(here, '..', '..', 'dist', 'inject.js');
 
-// Windows 控制台中文乱码适配：输出为 UTF-8 字节，旧版 conhost/PowerShell 的默认
-// 代码页（936/GBK）按 GBK 解码会显示乱码。检测到真实控制台且非 UTF-8 代码页时
-// 切到 65001——只影响当前控制台会话（重开终端即恢复），重定向/非交互不干预。
+// Windows 控制台中文乱码适配：输出为 UTF-8 字节，旧版 conhost/cmd 的默认代码页
+//（936/GBK）按 GBK 解码会显示乱码。检测到非 UTF-8 代码页时切到 65001——只影响
+// 当前控制台会话（重开终端即恢复）。不能用 stdout.isTTY 单独作前提：npm 全局
+// 入口（bin/zcode-pro.mjs）spawn ZCode 运行时跑 cli.mjs，子进程 stdout 经
+// stdio:'inherit' 是管道（isTTY=false），但控制台乱码照样发生（0.18/0.19 用户
+// 实拍）；此时 stdin 仍连着终端，故用 stdout 或 stdin 任一 isTTY 判定。真正的
+// 重定向场景（stdout 与 stdin 都不是 TTY）不干预。
 // 放在模块顶层：cli.mjs 经 import main.mjs 进入，setup 等子命令的输出同样受益。
-if (process.platform === 'win32' && process.stdout.isTTY) {
+if (process.platform === 'win32' && (process.stdout.isTTY || process.stdin.isTTY)) {
   try {
     const cp = execSync('chcp.com', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], windowsHide: true }).match(/(\d+)/)?.[1];
     if (cp && cp !== '65001') execSync('chcp.com 65001', { stdio: 'ignore', windowsHide: true });

@@ -43,10 +43,10 @@ find_zcode_binary() {
 # 找不到 ZCode 可执行文件时才退回系统 node。
 ZCODE_BIN=$(find_zcode_binary) || {
   if command -v node >/dev/null 2>&1; then
-    exec node "$ENTRY" "$@"
+    exec node --no-warnings "$ENTRY" "$@"
   fi
   echo "[zcodepro] 未找到 node，也未找到 ZCode 可执行文件。请安装 Node.js >= 22 或设置 ZCODEPRO_ZCODE_PATH。" >&2
   exit 1
 }
 # 用 ZCode 内置的 Node 运行时执行启动器（ELECTRON_RUN_AS_NODE 使其表现为纯 Node）
-ELECTRON_RUN_AS_NODE=1 exec "$ZCODE_BIN" "$ENTRY" "$@"
+ELECTRON_RUN_AS_NODE=1 exec "$ZCODE_BIN" --no-warnings "$ENTRY" "$@"

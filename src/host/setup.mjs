@@ -291,17 +291,17 @@ function plistContent(hasIcon) {
 
 const shortcutItem = {
   id: 'desktop-shortcut',
-  title: '快捷方式“ZCode Pro”（应用菜单/开始菜单，图标复用 ZCode）',
+  title: 'Shortcut "ZCode Pro" (app/start menu, icon reuses ZCode)',
   supported: (plat) => SUPPORTED.includes(plat),
 
   install(plat, opts = {}) {
     const cmd = commandInPath(plat);
     if (!cmd) {
-      throw new Error('未在 PATH 中找到 zcode-pro 命令，无法创建快捷方式；请确认安装方式后重试。');
+      throw new Error('zcode-pro command not found in PATH, cannot create shortcut; check your install and retry');
     }
     if (!sameInstall(cmd, plat)) {
-      throw new Error(`PATH 中的 zcode-pro（${cmd}）不属于当前运行的这份安装，` +
-        '为避免快捷方式指向旧版本已跳过；请用那份安装自己的方式管理快捷方式。');
+      throw new Error(`the zcode-pro in PATH (${cmd}) is not part of this installation, ` +
+        'skipped so the shortcut will not point at an old version; manage shortcuts with that installation instead');
     }
     if (plat === 'linux') return this.installLinux(cmd, opts);
     if (plat === 'win32') return this.installWindows(cmd, opts);
@@ -312,7 +312,7 @@ const shortcutItem = {
     // 系统级（AUR 等）已有同名条目时不再建用户级：desktop 文件 id 相同时用户级
     // 会遮蔽系统级（项目既有约定），残留后表现为菜单一直运行另一份
     if (existsSync('/usr/share/applications/zcode-pro.desktop')) {
-      return { skipped: '检测到系统级 ZCode Pro 快捷方式（AUR 等已安装），用户级条目会遮蔽它，已跳过' };
+      return { skipped: 'system-level shortcut detected (e.g. AUR); a user entry would shadow it, skipped' };
     }
     const appsDir = applicationsDir();
     const target = join(appsDir, DESKTOP_FILE);
@@ -320,21 +320,21 @@ const shortcutItem = {
     if (existsSync(target)) {
       const cur = readFileSync(target, 'utf-8');
       if (!cur.includes(SETUP_MARK)) {
-        return { skipped: `${target} 已存在且非 setup 创建（如 install.sh），未覆盖` };
+        return { skipped: `${target} exists and was not created by setup (e.g. install.sh), not overwritten` };
       }
       // 早期版本写过 0644 的条目：即使内容无需重写也补上执行位（原因见 writeDesktopEntry）
       chmodSync(target, 0o755);
       const exec = (cur.match(/^Exec=(.+)$/m) || [])[1] || '';
       if (exec.includes(cmd)) {
-        parts.push('应用菜单条目已存在且指向当前命令，无需重复创建');
+        parts.push('app-menu entry already exists and points to the current command, nothing to do');
       } else {
         writeDesktopEntry(target, cmd);
-        parts.push(`已更新 ${target}（Exec=${cmd}）`);
+        parts.push(`updated ${target} (Exec=${cmd})`);
       }
     } else {
       mkdirSync(appsDir, { recursive: true });
       writeDesktopEntry(target, cmd);
-      parts.push(`已写入 ${target}（Exec=${cmd}）`);
+      parts.push(`written ${target} (Exec=${cmd})`);
     }
     try { execFileSync('update-desktop-database', [appsDir], { stdio: 'ignore' }); } catch { /* 无该命令时忽略 */ }
     // 桌面条目独立判断（不因菜单条目幂等而短路）
@@ -347,13 +347,13 @@ const shortcutItem = {
         // GNOME 的桌面（Nautilus）额外要求 trusted 元数据才显示“允许启动”；
         // 其他环境无 gio / 写不进元数据时忽略
         try { execFileSync('gio', ['set', dTarget, 'metadata::trusted', 'true'], { stdio: 'ignore' }); } catch { /* 非 GNOME 忽略 */ }
-        parts.push(`桌面 ${dTarget}`);
+        parts.push(`desktop ${dTarget}`);
       } else {
-        parts.push('桌面已存在非 setup 创建的条目，未覆盖');
+        parts.push('desktop entry exists and was not created by setup, not overwritten');
       }
     }
-    if (parts.length === 1 && parts[0].startsWith('应用菜单条目已存在')) return { skipped: parts[0] };
-    return { detail: parts.join('；') };
+    if (parts.length === 1 && parts[0].startsWith('app-menu entry already exists')) return { skipped: parts[0] };
+    return { detail: parts.join('; ') };
   },
 
   installWindows(cmd, opts = {}) {
@@ -367,9 +367,9 @@ const shortcutItem = {
     const plan = windowsShortcutPlan(cmd, !!opts.desktop, wshOk, !menuForeign);
     if (menuForeign && (!opts.desktop || deskForeign)) {
       return { skipped: [
-        menuForeign ? `已存在其他方式创建的 ${plan.lnkPath}，未覆盖` : '',
-        deskForeign ? `桌面 ${deskPath} 已存在其他方式创建的条目，未覆盖` : '',
-      ].filter(Boolean).join('；') };
+        menuForeign ? `${plan.lnkPath} exists (created elsewhere), not overwritten` : '',
+        deskForeign ? `desktop ${deskPath} exists (created elsewhere), not overwritten` : '',
+      ].filter(Boolean).join('; ') };
     }
     if (wshOk) {
       mkdirSync(plan.vbsDir, { recursive: true });
@@ -377,14 +377,14 @@ const shortcutItem = {
     }
     runPowerShell(plan.psScript);
     const how = wshOk
-      ? `经 ${plan.vbsPath} 静默启动`
-      : '本机 WSH 异常，经 cmd 最小化启动（启动时会短暂闪烁控制台窗口）';
+      ? `silent launch via ${plan.vbsPath}`
+      : 'WSH unavailable on this machine; minimized cmd launch (console flashes briefly on start)';
     const parts = [];
     parts.push(menuForeign
-      ? `开始菜单 ${plan.lnkPath} 已存在其他方式创建的条目，未覆盖`
-      : `已创建 ${plan.lnkPath}`);
-    if (opts.desktop) parts.push(deskForeign ? `桌面 ${deskPath} 已存在其他方式创建的条目，未覆盖` : '已创建桌面快捷方式');
-    return { detail: `${parts.join('；')}（${how}）` };
+      ? `start menu ${plan.lnkPath} exists (created elsewhere), not overwritten`
+      : `created ${plan.lnkPath}`);
+    if (opts.desktop) parts.push(deskForeign ? `desktop ${deskPath} exists (created elsewhere), not overwritten` : 'desktop shortcut created');
+    return { detail: `${parts.join('; ')} (${how})` };
   },
 
   installMac(cmd, opts = {}) {
@@ -392,7 +392,7 @@ const shortcutItem = {
     const contents = join(app, 'Contents');
     const marker = join(contents, 'zcodepro-setup-marker');
     if (existsSync(app) && !existsSync(marker)) {
-      return { skipped: `${app} 已存在且非 setup 创建，未覆盖` };
+      return { skipped: `${app} exists and was not created by setup, not overwritten` };
     }
     let iconCopied = false;
     for (const src of [join('/', 'Applications', 'ZCode.app', 'Contents', 'Resources', 'app.icns'),
@@ -411,15 +411,15 @@ const shortcutItem = {
     chmodSync(launcher, 0o755);
     writeFileSync(join(contents, 'Info.plist'), plistContent(iconCopied));
     writeFileSync(marker, '');
-    let detail = `已创建 ${app}（启动器指向 ${cmd}${iconCopied ? '，图标已复制' : ''}）`;
+    let detail = `created ${app} (launcher -> ${cmd}${iconCopied ? ', icon copied' : ''})`;
     if (opts.desktop) {
       const link = macDesktopLink();
       if (existsSync(link)) {
-        detail += '；桌面已存在同名入口，未覆盖';
+        detail += '; desktop entry with the same name exists, not overwritten';
       } else {
         try {
           symlinkSync(app, link);
-          detail += `；桌面 ${link}`;
+          detail += `; desktop ${link}`;
         } catch { /* 建链接失败仅省略桌面入口 */ }
       }
     }
@@ -445,16 +445,16 @@ const shortcutItem = {
       rmSync(dTarget);
       removed.push(dTarget);
     }
-    if (!removed.length) return { skipped: '未发现 setup 创建的快捷方式' };
+    if (!removed.length) return { skipped: 'no setup-created shortcuts found' };
     try { execFileSync('update-desktop-database', [applicationsDir()], { stdio: 'ignore' }); } catch { /* 无该命令时忽略 */ }
-    return { detail: `已移除 ${removed.join('、')}` };
+    return { detail: `removed ${removed.join(', ')}` };
   },
 
   uninstallWindows() {
     const paths = windowsPaths();
     const hadVbs = existsSync(paths.vbsPath);
     const hadLnk = existsSync(paths.lnkPath);
-    if (!hadVbs && !hadLnk) return { skipped: '未发现 setup 创建的快捷方式' };
+    if (!hadVbs && !hadLnk) return { skipped: 'no setup-created shortcuts found' };
     // .lnk 可能已被 install.ps1 等重建并指向它自己：只有 Arguments 带本功能归属
     // 标记才删；校验失败也保留 .lnk（宁可漏删不误删）
     let lnkRemoved = false;
@@ -488,29 +488,29 @@ const shortcutItem = {
           vbsCleaned = true;
         } catch {
           vbsCleaned = !existsSync(paths.vbsPath);
-          if (!vbsCleaned) console.error(`  （${paths.vbsDir} 删除失败，可能被占用，可稍后手动删除）`);
+          if (!vbsCleaned) console.error(`  (${paths.vbsDir} could not be deleted (may be in use); remove it manually later)`);
         }
       }
     }
     const parts = [];
     if (hadLnk) {
-      parts.push(lnkRemoved ? '开始菜单/桌面快捷方式' : verified ? '快捷方式已非本功能创建，未删除' : '快捷方式归属校验失败，未删除 .lnk');
+      parts.push(lnkRemoved ? 'start-menu/desktop shortcut' : verified ? 'shortcut not created by setup, kept' : 'shortcut ownership check failed, .lnk kept');
     }
-    if (hadVbs) parts.push(vbsCleaned ? '生成的启动脚本' : '启动脚本（删除失败）');
-    return { detail: `已移除：${parts.join('；')}` };
+    if (hadVbs) parts.push(vbsCleaned ? 'generated launcher script' : 'launcher script (delete failed)');
+    return { detail: `removed: ${parts.join(', ')}` };
   },
 
   uninstallMac() {
     const app = macAppBundle();
     const marker = join(app, 'Contents', 'zcodepro-setup-marker');
-    if (!existsSync(marker)) return { skipped: '未发现 setup 创建的应用包' };
+    if (!existsSync(marker)) return { skipped: 'no setup-created app bundle found' };
     // setup --desktop 建的桌面入口一并清理（只删指向本应用包的链接）
     const link = macDesktopLink();
     try {
       if (existsSync(link) && realpathSync(link) === realpathSync(app)) rmSync(link);
     } catch { /* 链接失效则忽略 */ }
     rmSync(app, { recursive: true, force: true });
-    return { detail: `已移除 ${app}` };
+    return { detail: `removed ${app}` };
   },
 };
 
@@ -532,22 +532,25 @@ function rmSyncWithRetry(target, tries = 4) {
 const items = [shortcutItem];
 
 export async function runSetup({ uninstall = false, platform: plat = platform(), desktop = false } = {}) {
-  console.log(`[zcodepro] setup ${uninstall ? '卸载' : '安装'}本机集成${desktop && !uninstall ? '（含桌面）' : ''}：`);
+  // 输出全用 ASCII 英文：setup 常在 GBK 代码页的 cmd/PowerShell 里跑，中文经
+  // 管道输出时极易乱码（chcp 适配也不是所有入口都来得及生效）；ASCII 文案
+  // 在任何代码页下都稳定显示
+  console.log(`[zcodepro] setup ${uninstall ? 'remove' : 'install'} local integration${desktop && !uninstall ? ' (with desktop)' : ''}:`);
   let failed = 0;
   for (const item of items) {
     if (!item.supported(plat)) {
-      console.log(`  · ${item.title}：当前平台（${plat}）暂不支持，跳过`);
+      console.log(`  - ${item.title}: not supported on ${plat}, skipped`);
       continue;
     }
     try {
       const res = uninstall ? item.uninstall(plat) : item.install(plat, { desktop });
-      if (res && res.skipped) console.log(`  · ${item.title}：${res.skipped}`);
-      else console.log(`  ✓ ${item.title}：${res && res.detail ? res.detail : '完成'}`);
+      if (res && res.skipped) console.log(`  - ${item.title}: ${res.skipped}`);
+      else console.log(`  [OK] ${item.title}: ${res && res.detail ? res.detail : 'done'}`);
     } catch (err) {
       failed++;
-      console.error(`  ✗ ${item.title}：${err?.message || err}`);
+      console.error(`  [FAIL] ${item.title}: ${err?.message || err}`);
     }
   }
-  console.log(uninstall ? '' : '  撤销：zcode-pro setup --uninstall');
+  console.log(uninstall ? '' : '  undo: zcode-pro setup --uninstall');
   if (failed) process.exitCode = 1;
 }

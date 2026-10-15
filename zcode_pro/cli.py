@@ -69,10 +69,10 @@ def main() -> int:
     if zcode_bin and _runtime_ok(zcode_bin):
         # 用 ZCode 内置的 Node 运行时执行启动器（ELECTRON_RUN_AS_NODE 使其表现为纯 Node）
         env = dict(os.environ, ELECTRON_RUN_AS_NODE="1")
-        return subprocess.run([zcode_bin, str(CLI_MJS), *sys.argv[1:]], env=env).returncode
+        return subprocess.run([zcode_bin, "--no-warnings", str(CLI_MJS), *sys.argv[1:]], env=env).returncode
     node_bin = shutil.which("node")
     if node_bin:
-        return subprocess.run([node_bin, str(CLI_MJS), *sys.argv[1:]]).returncode
+        return subprocess.run([node_bin, "--no-warnings", str(CLI_MJS), *sys.argv[1:]]).returncode
     print(
         "[zcodepro] 未找到 node，也未找到 ZCode 可执行文件。请安装 Node.js >= 22 或设置 ZCODEPRO_ZCODE_PATH。",
         file=sys.stderr,

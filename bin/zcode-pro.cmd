@@ -8,7 +8,7 @@ set "ENTRY=%APP_DIR%\cli.mjs"
 
 where node >nul 2>nul
 if %errorlevel%==0 (
-  node "%ENTRY%" %*
+  node --no-warnings "%ENTRY%" %*
   exit /b %errorlevel%
 )
 
@@ -36,13 +36,13 @@ if not exist "%ZCODE_BIN%" for /f "tokens=2*" %%A in (
 ) do if not defined ZCODEPRO_UNINST_DIR if exist "%%~dpBZCode.exe" set "ZCODEPRO_UNINST_DIR=%%~dpB"
 if defined ZCODEPRO_UNINST_DIR set "ZCODE_BIN=%ZCODEPRO_UNINST_DIR%ZCode.exe"
 if not exist "%ZCODE_BIN%" (
-  echo [zcodepro] 未找到 node，也未找到 ZCode 可执行文件。请安装 Node.js ^>= 22 或设置 ZCODEPRO_ZCODE_PATH。 1>&2
+  echo [zcodepro] neither node nor ZCode executable found. Install Node.js ^>= 22 or set ZCODEPRO_ZCODE_PATH. 1>&2
   rem 快捷方式静默启动时看不到控制台输出，同步落盘诊断日志（issue #1）；日志超 512KB 轮转
   if not exist "%USERPROFILE%\.zcode" mkdir "%USERPROFILE%\.zcode" >nul 2>nul
   for %%I in ("%USERPROFILE%\.zcode\zcodepro.log") do if exist "%%~I" if %%~zI GTR 524288 move /y "%%~I" "%%~dpnI.log.old" >nul 2>nul
-  echo [%DATE% %TIME%] 未找到 node 与 ZCode 可执行文件 >> "%USERPROFILE%\.zcode\zcodepro.log"
+  echo [%DATE% %TIME%] neither node nor ZCode executable found >> "%USERPROFILE%\.zcode\zcodepro.log"
   exit /b 1
 )
 set "ELECTRON_RUN_AS_NODE=1"
-"%ZCODE_BIN%" "%ENTRY%" %*
+"%ZCODE_BIN%" --no-warnings "%ENTRY%" %*
 exit /b %errorlevel%
