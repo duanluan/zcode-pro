@@ -29,7 +29,7 @@ export function startTaskOrderWatcher() {
     if (!row || row.getAttribute('data-task-item-key') === dragKey) return;
     e.preventDefault();
     if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
-    // 实时预览：把拖动行移动到目标行前/后（拖动期间 React 不重渲染；落库后刷新重建）
+    // 实时预览：把拖动行移动到目标行前/后（拖动期间 React 不重渲染；写入数据库后刷新重建）
     const rect = row.getBoundingClientRect();
     const before = e.clientY < rect.top + rect.height / 2;
     const src = [...row.parentElement.querySelectorAll('[data-task-item-key]')]

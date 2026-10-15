@@ -145,7 +145,7 @@ function handleRemovals(muts) {
     })
     .filter(Boolean);
   if (!infos.length) return;
-  // 展开态判定等本批渲染全部落地后再做（aria-expanded 可能与行移除分两次提交）
+  // 展开态判定等本批渲染全部完成后再做（aria-expanded 可能与行移除分两次提交）
   setTimeout(() => {
     for (const info of infos) {
       const row = findWsRow(info.ws);

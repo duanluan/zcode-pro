@@ -1735,7 +1735,7 @@ export async function scanIdleBusy(paths, dataRoot) {
   return SCAN_OFF;
 }
 
-// Linux：/proc 直读（comm 定位 CLI、cwd 定位项目、task/<pid>/children 拿子进程）
+// Linux：直接读取 /proc（comm 定位 CLI、cwd 定位项目、task/<pid>/children 拿子进程）
 function scanIdleBusyLinux(paths) {
   let pids;
   try { pids = readdirSync('/proc').filter((d) => /^\d+$/.test(d)); }

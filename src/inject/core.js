@@ -903,7 +903,7 @@ export function observeRadixPopups(onPopup) {
     }
     // 兜底：直接观察 role=menu 的 content。延迟一帧再回调——Radix 偶尔分两帧渲染
     // （先挂 menu 容器、下一帧才填菜单项），立即回调时菜单项为空，调用方找不到
-    // 锚点项就永远漏注入（菜单项填入不会再产生 role=menu 节点添加事件）
+    // 参照的菜单项就永远漏注入（菜单项填入不会再产生 role=menu 节点添加事件）
     if (node.getAttribute && node.getAttribute('role') === 'menu' && !seen.has(node)) {
       seen.add(node);
       requestAnimationFrame(() => {
