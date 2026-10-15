@@ -11,7 +11,10 @@
 //   用户刚完成的重命名（新名先上屏、写库在毫秒级）此时表已更新成新名，
 //   不会把新名改回旧名；拉表失败则本轮不干预（缓存可能过时）；
 // - 行内有输入框（正在重命名）不干预；回写后再复核一次，纠正数据库写入
-//   导致的误回写。
+//   导致的误回写；
+// - 右键“重命名任务”的弹窗预填应用内部状态里的标题（被自动标题覆盖过的
+//   会话即旧名），在弹窗里直接点确认会把旧名写回成手动重命名、撤销锁定——
+//   点中重命名菜单项后把预填值换成锁定名兜住这个口子（见 prefillRenameDialog）。
 // 扫描事件驱动（任务行相关变动去抖 150ms；characterData 必须订阅——React
 // 改标题文本走 nodeValue，只产生 characterData 变动）+ 低频兜底轮询。
 import { rpc } from '../core.js';
@@ -216,17 +219,72 @@ export function refreshPinnedTitles() {
   return fetchPinned().then((m) => { if (m) scan(); });
 }
 
+// —— 重命名弹窗预填锁定名 ——
+// 官方“重命名任务”弹窗（[role=dialog] 内的输入框）预填应用内部状态里的标题，
+// 被自动标题覆盖过的会话即旧名；用户在弹窗里不做修改直接确认，会把旧名当成
+// 手动重命名写库、悄悄撤销锁定。右键任务行记下会话、点到“重命名”菜单项后才
+// 武装预填（右键菜单里“分组”“反馈问题”等也会弹输入框，只按右键窗口判定会
+// 误写它们）；且只改已有预填值的输入框——官方重命名弹窗必带当前标题，反馈、
+// 新建分组这类空白输入框不碰
+const RENAME_CTX_VALID_MS = 15000; // 点中重命名菜单项到弹窗出现的有效窗口
+let renameCtx = null;              // { key, at, armed } 最近右键的任务行
+const renamePrefilled = new WeakSet(); // 已预填过的输入框，不重复处理、不与输入争抢
+
+// 原位写值并让 React 受控输入接住：直接 el.value = x 不派发事件，框架状态
+// 会把值改回原样；用原型 setter 写入再派发 input 事件（实测有效）
+function setNativeValue(el, text) {
+  if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
+    Object.getOwnPropertyDescriptor(el.constructor.prototype, 'value').set.call(el, text);
+  } else {
+    el.textContent = text;
+  }
+  el.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+function prefillRenameDialog() {
+  if (!renameCtx || !renameCtx.armed || Date.now() - renameCtx.at > RENAME_CTX_VALID_MS) { renameCtx = null; return; }
+  if (!enabled || !pinned) return;
+  const want = pinned.get(sessIdOf(renameCtx.key));
+  if (want === undefined) return; // 该会话没重命名过：弹窗显示的就是官方值，不动
+  for (const el of document.querySelectorAll('[role="dialog"] input, [role="dialog"] textarea, [role="dialog"] [contenteditable="true"]')) {
+    if (renamePrefilled.has(el) || !el.getClientRects().length) continue;
+    if (el.closest(TASK_SEL) || el.closest('.zcodepro-overlay')) continue;
+    const cur = String((el.value ?? el.textContent) ?? '').trim();
+    if (!cur) continue; // 空白输入框不是重命名弹窗（反馈/新建分组等），不碰
+    renamePrefilled.add(el);
+    if (cur !== String(want).trim()) setNativeValue(el, String(want));
+    renameCtx = null; // 一次重命名只预填最先出现的非空输入框
+    return;
+  }
+}
+
 export function startTitleLock() {
   if (installed || typeof document === 'undefined') return;
   installed = true;
   void bootstrap();
 
   new MutationObserver((muts) => {
+    if (renameCtx) prefillRenameDialog();
     if (!taskRowMutations(muts)) return;
     refreshMapSoon();
     scheduleScan();
   })
     .observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'], characterData: true });
+
+  // 右键记下目标会话（捕获阶段，菜单未弹出前）；点中“重命名”菜单项才武装预填
+  //（从点菜单项起重新计有效窗口）。右键空白处则清掉，避免误改无关弹窗
+  document.addEventListener('contextmenu', (e) => {
+    const row = e.target instanceof Element && e.target.closest(TASK_SEL);
+    renameCtx = row ? { key: row.getAttribute('data-task-item-key') || '', at: 0, armed: false } : null;
+  }, true);
+  document.addEventListener('click', (e) => {
+    if (!renameCtx || renameCtx.armed) return;
+    const item = e.target instanceof Element && e.target.closest('[role="menuitem"], [data-radix-collection-item]');
+    if (item && /重命名|rename/i.test(item.textContent || '')) {
+      renameCtx.armed = true;
+      renameCtx.at = Date.now();
+    }
+  }, true);
 
   // 启动期取表失败（helper 未就绪/索引暂不可读）时退避重试，成功即停
   scheduleBootRetry();

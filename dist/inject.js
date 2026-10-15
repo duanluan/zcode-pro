@@ -5775,15 +5775,58 @@
       if (m) scan2();
     });
   }
+  var RENAME_CTX_VALID_MS = 15e3;
+  var renameCtx = null;
+  var renamePrefilled = /* @__PURE__ */ new WeakSet();
+  function setNativeValue(el, text) {
+    if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
+      Object.getOwnPropertyDescriptor(el.constructor.prototype, "value").set.call(el, text);
+    } else {
+      el.textContent = text;
+    }
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+  function prefillRenameDialog() {
+    if (!renameCtx || !renameCtx.armed || Date.now() - renameCtx.at > RENAME_CTX_VALID_MS) {
+      renameCtx = null;
+      return;
+    }
+    if (!enabled2 || !pinned) return;
+    const want = pinned.get(sessIdOf(renameCtx.key));
+    if (want === void 0) return;
+    for (const el of document.querySelectorAll('[role="dialog"] input, [role="dialog"] textarea, [role="dialog"] [contenteditable="true"]')) {
+      if (renamePrefilled.has(el) || !el.getClientRects().length) continue;
+      if (el.closest(TASK_SEL) || el.closest(".zcodepro-overlay")) continue;
+      const cur = String(el.value ?? el.textContent ?? "").trim();
+      if (!cur) continue;
+      renamePrefilled.add(el);
+      if (cur !== String(want).trim()) setNativeValue(el, String(want));
+      renameCtx = null;
+      return;
+    }
+  }
   function startTitleLock() {
     if (installed2 || typeof document === "undefined") return;
     installed2 = true;
     void bootstrap();
     new MutationObserver((muts) => {
+      if (renameCtx) prefillRenameDialog();
       if (!taskRowMutations2(muts)) return;
       refreshMapSoon();
       scheduleScan2();
     }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"], characterData: true });
+    document.addEventListener("contextmenu", (e) => {
+      const row = e.target instanceof Element && e.target.closest(TASK_SEL);
+      renameCtx = row ? { key: row.getAttribute("data-task-item-key") || "", at: 0, armed: false } : null;
+    }, true);
+    document.addEventListener("click", (e) => {
+      if (!renameCtx || renameCtx.armed) return;
+      const item = e.target instanceof Element && e.target.closest('[role="menuitem"], [data-radix-collection-item]');
+      if (item && /重命名|rename/i.test(item.textContent || "")) {
+        renameCtx.armed = true;
+        renameCtx.at = Date.now();
+      }
+    }, true);
     scheduleBootRetry();
     setInterval(() => {
       if (!document.hidden) scan2();
