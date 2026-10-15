@@ -140,7 +140,7 @@ function buildCss(styles) {
   }
   const tlh = styles.thinkingLineHeight;
   if (typeof tlh === 'number' && Number.isFinite(tlh) && tlh >= 0.8) {
-    // 「思考行高」管“已工作/工作中 N 秒”过程视图的行距（读取/编辑/查阅/终端等
+    // “思考行高”管“已工作/工作中 N 秒”过程视图的行距（读取/编辑/查阅/终端等
     // 条目行、流式思考预览，默认 1.5）：行高挂在历史内容容器上由各行继承；
     // 过程里的叙述正文走 .space-y-4（回答行高，选择器更具体压过这里的继承）。
     // 单独展开的“思考·持续了 N 秒”块内内容不在此设置范围内

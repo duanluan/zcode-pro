@@ -1,5 +1,5 @@
 // zcode-pro setup：本机集成设置入口（npm / pip 等包管理器安装不写系统目录，
-// 需要菜单入口等集成时显式运行本子命令）。按「设置项」组织（id / 标题 /
+// 需要菜单入口等集成时显式运行本子命令）。按“设置项”组织（id / 标题 /
 // install / uninstall），以后新增设置项往 items 里加即可。
 // setup 不依赖 ZCode 运行，在 main.run 里先于 ZCode 定位处理。
 //

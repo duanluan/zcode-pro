@@ -59,12 +59,16 @@
     proxyScopeSyncDesc: "WebDAV \u4E0A\u4F20\u4E0E\u4E0B\u8F7D\u8D70\u4EE3\u7406\u3002\u9ED8\u8BA4\u5173\u95ED\uFF1A\u575A\u679C\u4E91\u7B49\u56FD\u5185\u7F51\u76D8\u76F4\u8FDE\u5373\u53EF\uFF0C\u4EE3\u7406\u505C\u4E86\u540C\u6B65\u4F1A\u8DDF\u7740\u5931\u8D25\u3002",
     tabSync: "\u540C\u6B65",
     tabDebug: "\u8C03\u8BD5",
-    syncDesc: "\u624B\u52A8\u628A ZCode Pro \u8BBE\u7F6E\u4E0E\u6A21\u578B\u8BBE\u7F6E\u5907\u4EFD\u5230 WebDAV\uFF0C\u6216\u5728\u65B0\u7535\u8111\u4E0A\u6062\u590D\u3002\u4E24\u9879\u5404\u81EA\u72EC\u7ACB\u6210\u6587\u4EF6\uFF0C\u53EF\u53EA\u4E0A\u4F20\u6216\u53EA\u8986\u76D6\u5176\u4E2D\u4E00\u9879\uFF1B\u6BCF\u6B21\u4E0A\u4F20\u4F1A\u989D\u5916\u4FDD\u7559\u4E00\u4EFD\u5E26\u65F6\u95F4\u6233\u7684\u5386\u53F2\u7248\u672C\uFF0C\u4E0B\u8F7D\u65F6\u4EFB\u9009\u4E00\u4E2A\u7248\u672C\u6062\u590D\uFF1B\u4EC5\u5728\u70B9\u51FB\u6309\u94AE\u65F6\u4F20\u8F93\uFF0C\u4E0D\u505A\u81EA\u52A8\u540C\u6B65\u3002",
+    syncDesc: "\u624B\u52A8\u628A ZCode Pro \u8BBE\u7F6E\u4E0E\u6A21\u578B\u8BBE\u7F6E\u5907\u4EFD\u5230 WebDAV\uFF0C\u6216\u5728\u65B0\u7535\u8111\u4E0A\u6062\u590D\u3002\u4E24\u9879\u5404\u81EA\u72EC\u7ACB\u6210\u6587\u4EF6\uFF0C\u53EF\u53EA\u4E0A\u4F20\u6216\u53EA\u8986\u76D6\u5176\u4E2D\u4E00\u9879\uFF1B\u6BCF\u6B21\u4E0A\u4F20\u4F1A\u989D\u5916\u4FDD\u7559\u4E00\u4EFD\u5E26\u65F6\u95F4\u6233\u7684\u5386\u53F2\u7248\u672C\uFF08\u4FDD\u7559\u591A\u5C11\u4E2A\u89C1\u201C\u5386\u53F2\u7248\u672C\u201D\u4E00\u884C\uFF0C\u4E0A\u4F20\u540E\u81EA\u52A8\u5220\u9664\u8D85\u51FA\u7684\u6700\u65E7\u7248\u672C\uFF09\uFF0C\u4E0B\u8F7D\u65F6\u4EFB\u9009\u4E00\u4E2A\u7248\u672C\u6062\u590D\uFF1B\u4EC5\u5728\u70B9\u51FB\u6309\u94AE\u65F6\u4F20\u8F93\uFF0C\u4E0D\u505A\u81EA\u52A8\u540C\u6B65\u3002",
     syncUrlPlaceholder: "https://dav.jianguoyun.com/dav/",
     syncDir: "\u4E0A\u4F20\u76EE\u5F55",
     syncDirPlaceholder: "zcode-pro",
     syncLogin: "\u767B\u5F55",
     syncPassword: "\u5BC6\u7801",
+    syncHistoryLimit: "\u5386\u53F2\u7248\u672C",
+    syncHistoryLimitUnit: "\u4E2A",
+    syncHistoryLimitHint: "\u4E91\u7AEF\u6700\u591A\u4FDD\u7559\u6700\u8FD1\u51E0\u6B21\u4E0A\u4F20\u7559\u4E0B\u7684\u5386\u53F2\u7248\u672C\uFF0C\u4E0A\u4F20\u6210\u529F\u540E\u81EA\u52A8\u5220\u9664\u66F4\u65E9\u7684\uFF1B\u56FA\u5B9A\u540D\u6700\u65B0\u7248\u4E0D\u53D7\u5F71\u54CD\uFF1B0 = \u4E0D\u4FDD\u7559\u5386\u53F2\u7248\u672C",
+    syncPruned: "\u5DF2\u6E05\u7406 {n} \u4E2A\u66F4\u65E9\u7684\u5386\u53F2\u7248\u672C",
     syncSave: "\u4FDD\u5B58",
     syncSaved: "\u540C\u6B65\u914D\u7F6E\u5DF2\u4FDD\u5B58",
     syncFormHint: "\u540C\u6B65\u6587\u4EF6\u5B58\u5230\u201C\u4E0A\u4F20\u76EE\u5F55\u201D\uFF08\u9ED8\u8BA4 zcode-pro\uFF0C\u53EF\u591A\u7EA7\uFF0C\u81EA\u52A8\u521B\u5EFA\uFF09\uFF1Azcodepro.json \u4E0E model.json \u59CB\u7EC8\u662F\u6700\u65B0\u4E00\u7248\uFF0C\u65C1\u8FB9\u53E6\u4FDD\u7559\u5E26\u65F6\u95F4\u6233\u7684\u5386\u53F2\u7248\u672C\u3002",
@@ -85,8 +89,8 @@
     syncConfirmTitle: "\u4ECE\u4E91\u7AEF\u4E0B\u8F7D",
     syncConfirmDesc: "\u5C06\u7528\u6240\u9009\u6587\u4EF6\u8986\u76D6\u672C\u673A\u5BF9\u5E94\u7684\u4E00\u9879\uFF08\u8986\u76D6\u524D\u4F1A\u5728\u539F\u6587\u4EF6\u65C1\u7559\u4E0B .zcodepro-backup \u5907\u4EFD\uFF09\uFF1B\u672C\u673A\u7684\u540C\u6B65\u914D\u7F6E\u4E0E\u767B\u5F55\u51ED\u636E\u4E0D\u53D7\u5F71\u54CD\u3002\u6A21\u578B\u8BBE\u7F6E\u6062\u590D\u540E\u5EFA\u8BAE\u91CD\u542F ZCode \u751F\u6548\u3002\u786E\u8BA4\u5BFC\u5165\uFF1F",
     syncConfirmGo: "\u786E\u8BA4\u5BFC\u5165",
-    syncPickDesc: "\u56FA\u5B9A\u540D\u6587\u4EF6\u59CB\u7EC8\u662F\u6700\u65B0\u4E00\u7248\uFF0C\u5E26\u65F6\u95F4\u6233\u7684\u662F\u6BCF\u6B21\u4E0A\u4F20\u7559\u4E0B\u7684\u5386\u53F2\u7248\u672C\uFF1B\u300C\u5BFC\u5165\u300D\u7528\u6240\u9009\u6587\u4EF6\u8986\u76D6\u672C\u673A\u5BF9\u5E94\u7684\u4E00\u9879\u3002",
-    syncVerDeleteLatestNote: "\u6CE8\u610F\uFF1A\u8FD9\u662F\u201C\u6700\u65B0\u201D\u6587\u4EF6\uFF0C\u65E7\u7248 zcode-pro \u7684\u300C\u4ECE\u4E91\u7AEF\u4E0B\u8F7D\u300D\u4F9D\u8D56\u5B83\uFF0C\u5220\u9664\u540E\u65E7\u7248\u673A\u5668\u5C06\u65E0\u6CD5\u4E0B\u8F7D\uFF1B\u5E26\u65F6\u95F4\u6233\u7684\u5386\u53F2\u7248\u672C\u4E0D\u53D7\u5F71\u54CD\u3002",
+    syncPickDesc: "\u56FA\u5B9A\u540D\u6587\u4EF6\u59CB\u7EC8\u662F\u6700\u65B0\u4E00\u7248\uFF0C\u5E26\u65F6\u95F4\u6233\u7684\u662F\u6BCF\u6B21\u4E0A\u4F20\u7559\u4E0B\u7684\u5386\u53F2\u7248\u672C\uFF1B\u201C\u5BFC\u5165\u201D\u7528\u6240\u9009\u6587\u4EF6\u8986\u76D6\u672C\u673A\u5BF9\u5E94\u7684\u4E00\u9879\u3002",
+    syncVerDeleteLatestNote: "\u6CE8\u610F\uFF1A\u8FD9\u662F\u201C\u6700\u65B0\u201D\u6587\u4EF6\uFF0C\u65E7\u7248 zcode-pro \u7684\u201C\u4ECE\u4E91\u7AEF\u4E0B\u8F7D\u201D\u4F9D\u8D56\u5B83\uFF0C\u5220\u9664\u540E\u65E7\u7248\u673A\u5668\u5C06\u65E0\u6CD5\u4E0B\u8F7D\uFF1B\u5E26\u65F6\u95F4\u6233\u7684\u5386\u53F2\u7248\u672C\u4E0D\u53D7\u5F71\u54CD\u3002",
     syncHint: "\u540C\u6B65\u767B\u5F55\u51ED\u636E\u4EC5\u4FDD\u5B58\u5728\u672C\u673A zcodepro.json\uFF1B\u6A21\u578B\u8BBE\u7F6E\u5305\u542B\u81EA\u5B9A\u4E49\u4F9B\u5E94\u5546\u7684 API Key\uFF0C\u53EA\u4F1A\u4E0A\u4F20\u5230\u4F60\u81EA\u5DF1\u7684 WebDAV\u3002",
     syncTest: "\u6D4B\u8BD5",
     syncTesting: "\u6D4B\u8BD5\u4E2D\u2026",
@@ -110,8 +114,8 @@
     syncVerDeleted: "\u5DF2\u5220\u9664\u4E91\u7AEF\u5907\u4EFD",
     syncVerSaved: "\u5DF2\u4FDD\u5B58\u5230",
     devMode: "\u5F00\u53D1\u6A21\u5F0F",
-    devModeRowDesc: "\u5F00\u542F\u540E\u51FA\u73B0\u300C\u91CD\u8F7D ZCode Pro\u300D\u6309\u94AE\uFF1B\u4E5F\u53EF\u7ED9\u542F\u52A8\u5668\u8BBE\u73AF\u5883\u53D8\u91CF ZCODEPRO_DEV=1 \u542F\u7528\u3002\u6B64\u6807\u7B7E\u9875\u4EC5\u5728\u5F00\u53D1\u6A21\u5F0F\u751F\u6548\u65F6\u663E\u793A\u3002",
-    devModeDesc: "\u5F00\u53D1\u8C03\u8BD5\u7528\uFF1A\u6539\u5B8C zcode-pro \u4EE3\u7801\u540E\u4E0D\u5FC5\u91CD\u542F ZCode\uFF0C\u70B9\u300C\u91CD\u8F7D ZCode Pro\u300D\u5373\u53EF\u52A0\u8F7D\u65B0\u4EE3\u7801\u3002\u6D41\u7A0B\u4E3A\u81EA\u52A8\u6784\u5EFA\uFF08\u9700\u5728\u6E90\u7801\u76EE\u5F55\u8FD0\u884C\uFF09\u2192 \u4EE5\u65B0\u8FDB\u7A0B\u91CD\u542F ZCode Pro\uFF08\u672C\u5730\u52A9\u624B\u4E0E\u6CE8\u5165\u811A\u672C\u90FD\u6362\u65B0\uFF09\u2192 \u6240\u6709 ZCode \u7A97\u53E3\u81EA\u52A8\u5237\u65B0\u5E76\u91CD\u65B0\u6CE8\u5165\uFF1BZCode \u672C\u4F53\u4E0E\u5DF2\u6253\u5F00\u7684\u4F1A\u8BDD\u4E0D\u53D7\u5F71\u54CD\u3002",
+    devModeRowDesc: "\u5F00\u542F\u540E\u51FA\u73B0\u201C\u91CD\u8F7D ZCode Pro\u201D\u6309\u94AE\uFF1B\u4E5F\u53EF\u7ED9\u542F\u52A8\u5668\u8BBE\u73AF\u5883\u53D8\u91CF ZCODEPRO_DEV=1 \u542F\u7528\u3002\u6B64\u6807\u7B7E\u9875\u4EC5\u5728\u5F00\u53D1\u6A21\u5F0F\u751F\u6548\u65F6\u663E\u793A\u3002",
+    devModeDesc: "\u5F00\u53D1\u8C03\u8BD5\u7528\uFF1A\u6539\u5B8C zcode-pro \u4EE3\u7801\u540E\u4E0D\u5FC5\u91CD\u542F ZCode\uFF0C\u70B9\u201C\u91CD\u8F7D ZCode Pro\u201D\u5373\u53EF\u52A0\u8F7D\u65B0\u4EE3\u7801\u3002\u6D41\u7A0B\u4E3A\u81EA\u52A8\u6784\u5EFA\uFF08\u9700\u5728\u6E90\u7801\u76EE\u5F55\u8FD0\u884C\uFF09\u2192 \u4EE5\u65B0\u8FDB\u7A0B\u91CD\u542F ZCode Pro\uFF08\u672C\u5730\u52A9\u624B\u4E0E\u6CE8\u5165\u811A\u672C\u90FD\u6362\u65B0\uFF09\u2192 \u6240\u6709 ZCode \u7A97\u53E3\u81EA\u52A8\u5237\u65B0\u5E76\u91CD\u65B0\u6CE8\u5165\uFF1BZCode \u672C\u4F53\u4E0E\u5DF2\u6253\u5F00\u7684\u4F1A\u8BDD\u4E0D\u53D7\u5F71\u54CD\u3002",
     devReload: "\u91CD\u8F7D ZCode Pro",
     devReloading: "\u91CD\u8F7D\u4E2D\u2026",
     devReloadDesc: "\u70B9\u51FB\u540E\u7EA6 2-3 \u79D2\u5185\u6240\u6709 ZCode \u7A97\u53E3\u81EA\u52A8\u5237\u65B0\u4E00\u6B21\u5E76\u52A0\u8F7D\u65B0\u811A\u672C\u3002",
@@ -132,7 +136,7 @@
     lineHeightName: "\u56DE\u7B54\u884C\u9AD8",
     lineHeightDesc: "\u56DE\u7B54\u6B63\u6587\u7684\u884C\u9AD8\uFF08\u500D\u6570\uFF09\u3002",
     thinkingLineHeightName: "\u601D\u8003\u884C\u9AD8",
-    thinkingLineHeightDesc: "\u300C\u5DF2\u5DE5\u4F5C/\u5DE5\u4F5C\u4E2D\u300D\u8FC7\u7A0B\u8BB0\u5F55\uFF08\u8BFB\u53D6/\u7F16\u8F91/\u67E5\u9605/\u7EC8\u7AEF\u6761\u76EE\u4E0E\u601D\u8003\u5185\u5BB9\uFF09\u7684\u884C\u9AD8\uFF08\u500D\u6570\uFF09\u3002",
+    thinkingLineHeightDesc: "\u201C\u5DF2\u5DE5\u4F5C/\u5DE5\u4F5C\u4E2D\u201D\u8FC7\u7A0B\u8BB0\u5F55\uFF08\u8BFB\u53D6/\u7F16\u8F91/\u67E5\u9605/\u7EC8\u7AEF\u6761\u76EE\u4E0E\u601D\u8003\u5185\u5BB9\uFF09\u7684\u884C\u9AD8\uFF08\u500D\u6570\uFF09\u3002",
     userLineHeightName: "\u63D0\u95EE\u884C\u9AD8",
     userLineHeightDesc: "\u63D0\u95EE\u5185\u5BB9\u7684\u884C\u9AD8\uFF08\u500D\u6570\uFF09\u3002",
     contentWidthName: "\u5185\u5BB9\u5BBD\u5EA6",
@@ -420,12 +424,16 @@
     proxyScopeSyncDesc: "WebDAV upload and download go through the proxy. Off by default: domestic WebDAV providers work fine direct, and a stopped proxy breaks sync.",
     tabSync: "Sync",
     tabDebug: "Debug",
-    syncDesc: "Manually back up ZCode Pro settings and model settings to WebDAV, or restore them on a new computer. The two items are stored as separate files, so you can upload or overwrite either one alone; every upload also keeps a timestamped history version and download lets you pick any of them. Data moves only when you click, never automatically.",
+    syncDesc: 'Manually back up ZCode Pro settings and model settings to WebDAV, or restore them on a new computer. The two items are stored as separate files, so you can upload or overwrite either one alone; every upload also keeps a timestamped history version (how many to keep is set in the "History" row; older ones are removed automatically after upload) and download lets you pick any of them. Data moves only when you click, never automatically.',
     syncUrlPlaceholder: "https://dav.example.com/dav/",
-    syncDir: "\u4E0A\u4F20\u76EE\u5F55",
+    syncDir: "Folder",
     syncDirPlaceholder: "zcode-pro",
     syncLogin: "Login",
     syncPassword: "Password",
+    syncHistoryLimit: "History",
+    syncHistoryLimitUnit: "versions",
+    syncHistoryLimitHint: "How many recent uploads keep their history versions on the server; older ones are removed automatically after a successful upload. The fixed-name latest file is never removed. 0 = keep no history versions.",
+    syncPruned: "removed {n} older history versions",
     syncSave: "Save",
     syncSaved: "Sync settings saved.",
     syncFormHint: "Sync files go inside the folder (default zcode-pro, multi-level allowed, created automatically): zcodepro.json and model.json are always the latest version; timestamped history versions are kept alongside.",
@@ -3654,17 +3662,34 @@
           )
         );
         const savedSync = config.sync && typeof config.sync === "object" ? config.sync : { url: "", dir: "zcode-pro", login: "", password: "", include: { zcodepro: true, model: true }, lastPushAt: null, lastPullAt: null };
-        const syncInputCls = "h-8 w-full rounded-lg border border-border bg-input px-2.5 text-ui-sm text-foreground outline-none transition-shadow placeholder:text-foreground-subtle focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40";
+        const syncInputBase = "h-8 rounded-lg border border-border bg-input px-2.5 text-ui-sm text-foreground outline-none transition-shadow placeholder:text-foreground-subtle focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40";
+        const syncInputCls = syncInputBase + " w-full";
+        const syncLabel = (text) => h("span", { class: "w-20 shrink-0 text-ui-sm font-medium text-foreground" }, text);
         const syncFormRow = (labelText, node) => h(
           "div",
           { class: "flex items-center gap-3 px-2 py-1.5" },
-          h("span", { class: "w-20 shrink-0 text-ui-sm font-medium text-foreground" }, labelText),
+          syncLabel(labelText),
           node
         );
         const syncUrlInput = h("input", { type: "text", value: savedSync.url || "", placeholder: L.syncUrlPlaceholder, spellcheck: "false", autocomplete: "off", class: syncInputCls + " min-w-0 flex-1" });
         const syncDirInput = h("input", { type: "text", value: savedSync.dir || "zcode-pro", placeholder: L.syncDirPlaceholder, spellcheck: "false", autocomplete: "off", class: syncInputCls + " min-w-0 flex-1" });
         const syncLoginInput = h("input", { type: "text", value: savedSync.login || "", spellcheck: "false", autocomplete: "off", class: syncInputCls + " min-w-0 flex-1" });
         const syncPasswordInput = h("input", { type: "password", value: savedSync.password || "", autocomplete: "new-password", class: syncInputCls + " min-w-0 flex-1" });
+        const syncHistoryInput = h("input", {
+          type: "number",
+          min: "0",
+          max: "100",
+          step: "1",
+          value: Number.isInteger(savedSync.historyLimit) ? savedSync.historyLimit : 10,
+          title: L.syncHistoryLimitHint,
+          class: syncInputBase + " w-20 shrink-0 text-center"
+        });
+        const syncHistoryValue = () => {
+          const s = syncHistoryInput.value.trim();
+          if (!s) return 10;
+          const n = Number(s);
+          return Number.isFinite(n) ? Math.min(100, Math.max(0, Math.round(n))) : 10;
+        };
         let syncFormOriginal = null;
         const syncSaveBtn = btnSmall(L.syncSave, () => {
           void saveSyncForm();
@@ -3673,15 +3698,16 @@
           url: syncUrlInput.value.trim(),
           dir: syncDirInput.value.trim(),
           login: syncLoginInput.value.trim(),
-          password: syncPasswordInput.value
+          password: syncPasswordInput.value,
+          historyLimit: syncHistoryValue()
         });
         const syncCheckDirty = () => {
           const c = syncFormValues();
-          syncSaveBtn.disabled = c.url === syncFormOriginal.url && c.dir === syncFormOriginal.dir && c.login === syncFormOriginal.login && c.password === syncFormOriginal.password;
+          syncSaveBtn.disabled = c.url === syncFormOriginal.url && c.dir === syncFormOriginal.dir && c.login === syncFormOriginal.login && c.password === syncFormOriginal.password && c.historyLimit === syncFormOriginal.historyLimit;
         };
         syncFormOriginal = syncFormValues();
         syncSaveBtn.disabled = true;
-        for (const el of [syncUrlInput, syncDirInput, syncLoginInput, syncPasswordInput]) {
+        for (const el of [syncUrlInput, syncDirInput, syncLoginInput, syncPasswordInput, syncHistoryInput]) {
           el.addEventListener("input", syncCheckDirty);
         }
         const saveSyncForm = async () => {
@@ -3692,12 +3718,14 @@
               url: res.sync.url,
               dir: res.sync.dir,
               login: res.sync.login,
-              password: res.sync.password
+              password: res.sync.password,
+              historyLimit: Number.isInteger(res.sync.historyLimit) ? res.sync.historyLimit : 10
             };
             syncUrlInput.value = res.sync.url;
             syncDirInput.value = res.sync.dir;
             syncLoginInput.value = res.sync.login;
             syncPasswordInput.value = res.sync.password;
+            syncHistoryInput.value = syncFormOriginal.historyLimit;
             showToast(L.syncSaved);
           } else {
             showToast(L.failed + ": " + errText(res), "error");
@@ -3993,7 +4021,7 @@
             return;
           }
           renderSyncStatus(res.sync || {});
-          showToast(L.syncUploaded, "success");
+          showToast(res.pruned ? L.syncUploaded + (isZhLocale() ? "\uFF1B" : "; ") + L.syncPruned.replace("{n}", res.pruned) : L.syncUploaded, "success");
         };
         paneSync.append(
           h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.syncDesc),
@@ -4001,12 +4029,27 @@
             "div",
             { class: "mt-3 rounded-xl border border-border p-1" },
             syncFormRow("URL", syncUrlInput),
-            syncFormRow(L.syncDir, syncDirInput),
-            syncFormRow(L.syncLogin, syncLoginInput),
-            syncFormRow(L.syncPassword, syncPasswordInput),
+            // 登录与密码一行、上传目录与历史版本一行：短字段成对排，少占纵向空间
             h(
               "div",
-              { class: "flex items-start justify-between gap-2 px-2 py-1.5" },
+              { class: "flex items-center gap-3 px-2 py-1.5" },
+              syncLabel(L.syncLogin),
+              syncLoginInput,
+              syncLabel(L.syncPassword),
+              syncPasswordInput
+            ),
+            h(
+              "div",
+              { class: "flex items-center gap-3 px-2 py-1.5" },
+              syncLabel(L.syncDir),
+              syncDirInput,
+              syncLabel(L.syncHistoryLimit),
+              syncHistoryInput,
+              h("span", { class: "shrink-0 text-ui-xs text-foreground-subtle" }, L.syncHistoryLimitUnit)
+            ),
+            h(
+              "div",
+              { class: "flex items-center justify-between gap-2 px-2 py-1.5" },
               h(
                 "div",
                 { class: "min-w-0" },
@@ -4288,7 +4331,7 @@
               "div",
               { class: "mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2" },
               // 供应商与模型走 provider-fields 共用逻辑：跟随会话时模型下拉为
-              // 全部供应商模型汇总，具体供应商为其模型列表；已删 id 标注「已删除」
+              // 全部供应商模型汇总，具体供应商为其模型列表；已删 id 标注“已删除”
               field(L.visionUseProvider, comboField(
                 p.useProvider || "",
                 providerOptionsOf(titleGenProviders, L),
@@ -4299,7 +4342,7 @@
                 },
                 { placeholder: L.titleGenProviderSession, staleLabel: L.titleGenProviderDeleted }
               )),
-              // 跟随会话时模型下拉头部有「跟随当前会话当前模型」（值为空，
+              // 跟随会话时模型下拉头部有“跟随当前会话当前模型”（值为空，
               // 插件 ≥1.6.1 在调用时解析为会话当前模型）；具体供应商为其模型列表
               field(L.visionModel, comboField(
                 p.model || "",

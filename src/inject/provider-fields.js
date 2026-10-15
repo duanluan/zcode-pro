@@ -2,13 +2,13 @@
 // 设置面板共用，后续其他面板直接复用这里的组件与规则。供应商取值约定：
 // - ''：不跟随（自填接口地址 + API Key + 协议直连）；
 // - 'session'：跟随当前会话（连接由会话侧解析，不存地址密钥）；
-// - 其余：供应商 id；已删的 id 保留为「已删除」选项，调用方靠保存的地址/
+// - 其余：供应商 id；已删的 id 保留为“已删除”选项，调用方靠保存的地址/
 //   密钥副本继续直连。
 import { h } from './core.js';
 
 export const PROVIDER_FIELD_CLS = 'h-8 w-full rounded-lg border border-border bg-input px-2.5 text-ui-sm text-foreground outline-none transition-shadow placeholder:text-foreground-subtle focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40';
 
-// 「下拉 + 手输」组合（供应商与模型选择共用）：下拉选择列表项，也可以直接
+// “下拉 + 手输”组合（供应商与模型选择共用）：下拉选择列表项，也可以直接
 // 输入；当前值不在列表里（条目被删或手输 id）时保留为带 staleLabel 标注的
 // 选项，不清空、不跳值；当前值为空时插入一个 emptyLabel 空选项，避免下拉框
 // 假装选中第一项而配置里其实没选

@@ -118,14 +118,16 @@ export function defaultConfig() {
     // 软件（headroom 与 rtk）的安装、检查更新与升级；sync = WebDAV 同步。同步默认
     // 关闭——坚果云等国内网盘通常直连即可，代理停了同步会跟着失败
     proxyScopes: { plugins: true, deps: true, sync: false },
-    // 开发模式（设置弹窗“调试”标签页）：开启后出现「重载」按钮，可在不重启
+    // 开发模式（设置弹窗“调试”标签页）：开启后出现“重载”按钮，可在不重启
     // ZCode 的情况下加载新代码（构建 → 换新启动器进程 → 各窗口自动刷新重注入）
     devMode: false,
     // 设置同步（设置弹窗“同步”标签页，交互参考 Tampermonkey 的手动同步）：
     // 仅 WebDAV、仅在点击按钮时传输（type 字段预留多后端扩展，当前恒为 webdav）。
     // url 为 WebDAV 服务器地址；dir 为其下的上传目录（默认 zcode-pro，避免直接
     // 写进网盘根目录）；include 选择同步内容；凭据只存本机、不同步出去；
-    // lastPushAt/lastPullAt 只记录本机操作时间。
+    // lastPushAt/lastPullAt 只记录本机操作时间；historyLimit 为云端历史版本保留
+    // 个数（同一次上传的各组文件算一个，上传成功后自动删除更早的；0 = 不留历史，
+    // 只有固定名最新版）。
     sync: {
       type: 'webdav',
       url: '',
@@ -133,6 +135,7 @@ export function defaultConfig() {
       login: '',
       password: '',
       include: { zcodepro: true, model: true },
+      historyLimit: 10,
       lastPushAt: null,
       lastPullAt: null,
     },
@@ -910,7 +913,7 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
           json(res, r.status || 500, { ok: false, code: r.code || 'sync-run', error: r.error });
           return;
         }
-        json(res, 200, { ok: true, direction, applied: r.applied, sync: loadConfig(configFile).sync });
+        json(res, 200, { ok: true, direction, applied: r.applied, ...(typeof r.pruned === 'number' ? { pruned: r.pruned } : {}), sync: loadConfig(configFile).sync });
         return;
       }
       // —— 同步连通性测试（“测试”按钮）：用表单当前值逐步验证（可先测再存），不写入配置文件 ——
@@ -1076,7 +1079,7 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
               if (r.ok) updated += 1;
             } else if (!p.installed && only) {
               // 安装只走单插件入口（name 指定＝各面板的安装卡）：
-              // 全量「检查并更新」/启动自动更新只升级已装插件——卸载必须被尊重，
+              // 全量“检查并更新”/启动自动更新只升级已装插件——卸载必须被尊重，
               // 未装插件一律由用户在各 tab 显式点安装
               const r = await runZcodeCli(['plugins', 'install', `${p.name}@${ZCODE_PLUGINS_MARKETPLACE}`], 120000);
               steps.push({ step: `install ${p.name}`, ok: r.ok, output: r.output });
@@ -1179,13 +1182,16 @@ function mergeSyncConfig(saved) {
     login: typeof saved.login === 'string' ? saved.login.slice(0, 300) : '',
     password: typeof saved.password === 'string' ? saved.password.slice(0, 300) : '',
     include: { zcodepro: inc.zcodepro !== false, model: inc.model !== false },
+    historyLimit: Number.isInteger(saved.historyLimit) && saved.historyLimit >= 0 && saved.historyLimit <= 100
+      ? saved.historyLimit : d.historyLimit,
     lastPushAt: Number.isFinite(saved.lastPushAt) ? saved.lastPushAt : null,
     lastPullAt: Number.isFinite(saved.lastPullAt) ? saved.lastPullAt : null,
   };
 }
 
 // POST /sync 表单校验：url/login/password/dir 全量替换（dir 缺省时不动已有值）。
-// URL 必填，指向 WebDAV 服务器（可含路径前缀）；dir 为其下的上传目录，可多级
+// URL 必填，指向 WebDAV 服务器（可含路径前缀）；dir 为其下的上传目录，可多级；
+// historyLimit 可选（缺省时不动已有值），0–100 的整数
 function validateSyncForm(raw) {
   const url = typeof raw.url === 'string' ? raw.url.trim() : '';
   const login = typeof raw.login === 'string' ? raw.login.trim() : '';
@@ -1205,6 +1211,12 @@ function validateSyncForm(raw) {
       }
     }
     out.dir = dir;
+  }
+  if (raw.historyLimit !== undefined && raw.historyLimit !== null) {
+    if (!Number.isInteger(raw.historyLimit) || raw.historyLimit < 0 || raw.historyLimit > 100) {
+      return { error: '历史版本保留个数需为 0–100 的整数' };
+    }
+    out.historyLimit = raw.historyLimit;
   }
   return { sync: out };
 }
@@ -1299,8 +1311,10 @@ async function runSettingsSync({ direction, dataRoot, configFile, config, proxyU
 // 上传：每组独立一个云端文件（zcodepro.json / model.json，始终最新一版），勾选几组
 // 写几个；写前预读云端内容，别名与本机的合并后再写（合并规则见 mergeAliases），
 // 其余内容整份覆盖。同一份内容再写一个带时间戳的历史版本文件，供下载时任选版本
-// 恢复（旧版 zcode-pro 仍读固定名）
+// 恢复（旧版 zcode-pro 仍读固定名）；历史版本最多保留 historyLimit 个（同一时间戳
+// 的各组文件算一个），上传成功后自动删除更早的
 async function runSyncPush({ dataRoot, configFile, config, sync, proxyUrl }) {
+  const keep = Number.isInteger(sync.historyLimit) ? sync.historyLimit : defaultConfig().sync.historyLimit;
   const docs = {};
   if (sync.include.zcodepro) {
     // sync（本机的同步配置与凭据）与 version（本机 helper 版本）不外发
@@ -1345,10 +1359,13 @@ async function runSyncPush({ dataRoot, configFile, config, sync, proxyUrl }) {
       if (put.httpCode < 200 || put.httpCode >= 300) {
         return { code: 'sync-request', status: 502, error: webdavHttpText(put.httpCode) };
       }
-      const putVersion = await putUrl(syncVersionName(kind, stamp));
-      if (!putVersion.ok) return { code: 'sync-request', status: 502, error: putVersion.error };
-      if (putVersion.httpCode < 200 || putVersion.httpCode >= 300) {
-        return { code: 'sync-request', status: 502, error: webdavHttpText(putVersion.httpCode) };
+      // 历史版本只在保留个数 > 0 时写（0 = 只留固定名最新版，由上传后清理收尾）
+      if (keep > 0) {
+        const putVersion = await putUrl(syncVersionName(kind, stamp));
+        if (!putVersion.ok) return { code: 'sync-request', status: 502, error: putVersion.error };
+        if (putVersion.httpCode < 200 || putVersion.httpCode >= 300) {
+          return { code: 'sync-request', status: 502, error: webdavHttpText(putVersion.httpCode) };
+        }
       }
       pushed.push(kind);
     }
@@ -1357,7 +1374,9 @@ async function runSyncPush({ dataRoot, configFile, config, sync, proxyUrl }) {
   }
   sync.lastPushAt = Date.now();
   saveConfig(configFile, config);
-  return { applied: pushed };
+  // 上传成功后清理超出保留个数的旧历史版本（best-effort，失败不影响上传结果）
+  const pruned = await pruneSyncHistory(sync, proxyUrl, keep);
+  return { applied: pushed, pruned };
 }
 
 // 下载：把云端所选组应用到本机（各组独立文件，勾选几组读几组，可只覆盖模型设置）。
@@ -1498,6 +1517,39 @@ async function listSyncVersions(sync, proxyUrl) {
     .map((e) => ({ name: e.name, size: e.size, lastModified: e.lastModified }));
   files.sort((a, b) => ((b.lastModified || 0) - (a.lastModified || 0)) || b.name.localeCompare(a.name));
   return { files };
+}
+
+// 从云端文件名列表选出待删除的历史版本（导出以便测试脚本直接驱动）：带时间戳的
+// 文件按时间戳段分组——同一次上传的各组文件共用一个时间戳，算“一个”；时间戳
+// 段定宽零填充，字典序即时间序。保留最近 keep 个，返回更早的各组文件名；
+// 固定名（zcodepro.json / model.json）和不相干的文件名不会出现在结果里
+export function syncHistoryStaleNames(names, keep) {
+  const groups = new Map();
+  for (const name of names) {
+    const ts = (String(name).match(/^(?:zcodepro|model)(-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z)\.json$/) || [])[1];
+    if (!ts) continue;
+    if (!groups.has(ts)) groups.set(ts, []);
+    groups.get(ts).push(name);
+  }
+  // 时间戳段按新 → 旧排，slice(keep) 剩下的即超出保留个数的更早各组
+  return [...groups.keys()].sort((a, b) => b.localeCompare(a)).slice(Math.max(0, keep)).flatMap((ts) => groups.get(ts));
+}
+
+// 上传后清理云端目录里超出保留个数的历史版本：列出文件，删掉 syncHistoryStaleNames
+// 归出的旧文件。best-effort——列目录或单个删除失败只跳过（下次上传再清），不抛错；
+// 返回本次删掉的文件数
+async function pruneSyncHistory(sync, proxyUrl, keep) {
+  const list = await listSyncVersions(sync, proxyUrl);
+  if (list.error) return 0;
+  const stale = syncHistoryStaleNames(list.files.map((f) => f.name), keep);
+  let removed = 0;
+  for (const name of stale) {
+    const r = await webdavRequest({ method: 'DELETE', url: syncFileUrlByName(sync, name), login: sync.login, password: sync.password, proxyUrl, timeoutMs: 30000 });
+    if (!r.ok) continue; // 网络失败：跳过该文件
+    if (r.httpCode !== 404 && (r.httpCode < 200 || r.httpCode >= 300)) continue; // 404 = 已不在，视为已清
+    removed++;
+  }
+  return removed;
 }
 
 // 别名表清洗（同步下载用）：只收 路径字符串 → 短字符串 的条目，数量限幅
@@ -1794,7 +1846,7 @@ function sanitizeFontStack(v) {
   return s;
 }
 
-// 视觉代理「跟随供应商」下拉取数：与智能起名共用同一套供应商列表和过滤规则
+// 视觉代理“跟随供应商”下拉取数：与智能起名共用同一套供应商列表和过滤规则
 //（见 listTitleGenProviders），只回 id/名称/别名，不含密钥。
 // 导出以便测试脚本直接驱动。
 export function listVisionProviders() {
@@ -1853,7 +1905,7 @@ const TITLE_GEN_TIMEOUT_MS = 60000; // 单次模型调用超时（与官方起�
 //（coding-plan 与 start-plan 都叫 "Coding Plan"），界面里按套餐类型显示。
 // coding-plan 的个人/团队是动态的：从桌面设置（v2/setting.json 的
 // providerFamilyConnectionSelections）读当前登录的连接方式（kind 含
-// individual → 个人、team → 团队），读不到时退回「个人/团队」
+// individual → 个人、team → 团队），读不到时退回“个人/团队”
 function codingPlanKindByFamily() {
   const s = readJsonFile(join(homedir(), '.zcode', 'v2', 'setting.json'));
   const sel = (s && s.providerFamilyConnectionSelections && typeof s.providerFamilyConnectionSelections === 'object')
@@ -2059,7 +2111,7 @@ async function resolveTitleGenConnection(cfg, providerId, model, dataRoot, sessI
 // 模型可能沿用官方起名的习惯回 JSON 对象，此时取其 title 字段。导出以便测试
 export function cleanGeneratedTitle(text) {
   let t = String(text || '').replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
-  // 整段包在代码围栏里时先去掉围栏标记（先取行会把「```json」当成标题内容）
+  // 整段包在代码围栏里时先去掉围栏标记（先取行会把“```json”当成标题内容）
   t = t.replace(/^```[a-zA-Z]*\s*\n?/, '').replace(/\n?```\s*$/, '').trim();
   let line = t.split(/\r?\n/).map((s) => s.trim()).find(Boolean) || '';
   line = line.replace(/^```[a-zA-Z]*\s*/, '').replace(/```\s*$/, '');
@@ -2411,7 +2463,7 @@ async function ensureUserPathEntry(dir) {
 }
 
 // 在插件缓存里找市场插件的钩子脚本：只认 installed_plugins.json 登记的 installPath。
-// 不能按目录扫描：卸载只删「当前指向」的版本目录，缓存里的历史版本目录会残留
+// 不能按目录扫描：卸载只删“当前指向”的版本目录，缓存里的历史版本目录会残留
 // （升级留旧版、GitHub/本地源先后装过等），扫目录会把已卸载的插件误判为已装，
 // 面板就不显示安装卡了。本地开发流（install-plugin-local.sh）同样会更新安装记录，兼容。
 // 注意只认正式市场 duanluan-zcode-plugins：本地临时市场（如 duanluan-local）装的副本不在查找范围，
@@ -2430,7 +2482,7 @@ function findVisionHook() {
   return findMarketplaceHook('zcode-vision', join('hooks', 'vision-hook.mjs'));
 }
 
-// 读市场插件在 installed_plugins.json 里登记的版本（面板信息卡显示「插件 x.y.z」用）
+// 读市场插件在 installed_plugins.json 里登记的版本（面板信息卡显示“插件 x.y.z”用）
 function installedPluginVersion(pluginName) {
   const installedRaw = readJsonFile(join(cliPluginsDir(), 'installed_plugins.json'));
   const rec = (installedRaw?.plugins || []).find((p) => p?.name === pluginName && p?.marketplace === ZCODE_PLUGINS_MARKETPLACE);

@@ -25,7 +25,7 @@ function makeUpgradeControls({ endpoint, metaRefresh, idleText }) {
   const hasIdle = () => typeof idleText === 'function';
   const setState = (text, kind = '') => {
     const shown = text || (hasIdle() ? (idleText() || '') : '');
-    // 「 · 」前缀：与前面的版本行无缝拼成「插件 x · rtk y · 状态/路径」一行；
+    // “ · ”前缀：与前面的版本行直接拼成“插件 x · rtk y · 状态/路径”一行；
     // 错误信息不加前缀——它是独立提示，拼在版本行后会读成版本的一部分
     state.textContent = shown ? (kind === 'error' ? shown : ` · ${shown}`) : '';
     state.className = 'min-w-0 flex-1 truncate text-left text-ui-xs/relaxed '
@@ -618,7 +618,7 @@ export function openSettingsDialog() {
           agentsSaveBtn.disabled = false;
         }
       };
-      // “行为”标签页：二级标签切换「全局提示词 / 任务名」。全局提示词编辑
+      // “行为”标签页：二级标签切换“全局提示词 / 任务名”。全局提示词编辑
       // ~/.zcode/AGENTS.md；任务名（智能起名）面板复用 paneTitleGen（原本是
       // 一级标签页，收进来后不再单独出现在顶部标签栏）
       const agentsPromptPane = h('div', { class: 'mt-4' });
@@ -681,7 +681,7 @@ export function openSettingsDialog() {
       const proxyTestBtn = btnSmall(L.proxyTest, () => { void runProxyTest(); }, 'shrink-0');
       const runProxyTest = async () => {
         if (proxyTesting) return;
-        // 空地址不发请求（等网络超时才报「检测失败」的体验太差），立即提示
+        // 空地址不发请求（等网络超时才报“检测失败”的体验太差），立即提示
         if (!proxyInput.value.trim()) {
           proxyTestState.className = 'mt-2 text-ui-xs/relaxed text-amber-500';
           proxyTestState.textContent = L.proxyTestEmpty;
@@ -799,19 +799,37 @@ export function openSettingsDialog() {
       // “同步”：把 ZCode Pro 设置与模型设置手动备份到 WebDAV / 从 WebDAV 恢复
       // （交互参考 Tampermonkey：URL/登录/密码 + 手动触发，无自动同步）。仅 WebDAV
       // 一种后端且本就只在点击时传输，不设“类型/禁用”下拉。表单显式保存（旁有
-      // 「测试」用当前表单值验证连通）；同步内容开关即时保存；下载先弹云端版本
+      // “测试”用当前表单值验证连通）；同步内容开关即时保存；下载先弹云端版本
       // 列表（固定名 = 最新 + 带时间戳的历史），任选一个导入，导入会覆盖本机、
       // 先弹二次确认
       const savedSync = (config.sync && typeof config.sync === 'object') ? config.sync
         : { url: '', dir: 'zcode-pro', login: '', password: '', include: { zcodepro: true, model: true }, lastPushAt: null, lastPullAt: null };
-      const syncInputCls = 'h-8 w-full rounded-lg border border-border bg-input px-2.5 text-ui-sm text-foreground outline-none transition-shadow placeholder:text-foreground-subtle focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40';
+      // 宽度分开拼：定宽控件（历史版本数字框）不能带 w-full——与 w-20 同用时
+      // w-full 在样式表里靠后、会胜出，把整行撑爆
+      const syncInputBase = 'h-8 rounded-lg border border-border bg-input px-2.5 text-ui-sm text-foreground outline-none transition-shadow placeholder:text-foreground-subtle focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40';
+      const syncInputCls = syncInputBase + ' w-full';
+      const syncLabel = (text) => h('span', { class: 'w-20 shrink-0 text-ui-sm font-medium text-foreground' }, text);
       const syncFormRow = (labelText, node) => h('div', { class: 'flex items-center gap-3 px-2 py-1.5' },
-        h('span', { class: 'w-20 shrink-0 text-ui-sm font-medium text-foreground' }, labelText), node);
+        syncLabel(labelText), node);
       const syncUrlInput = h('input', { type: 'text', value: savedSync.url || '', placeholder: L.syncUrlPlaceholder, spellcheck: 'false', autocomplete: 'off', class: syncInputCls + ' min-w-0 flex-1' });
       // 上传目录：拼在 URL 之后的文件夹（默认 zcode-pro，避免直接写进网盘根目录），可多级
       const syncDirInput = h('input', { type: 'text', value: savedSync.dir || 'zcode-pro', placeholder: L.syncDirPlaceholder, spellcheck: 'false', autocomplete: 'off', class: syncInputCls + ' min-w-0 flex-1' });
       const syncLoginInput = h('input', { type: 'text', value: savedSync.login || '', spellcheck: 'false', autocomplete: 'off', class: syncInputCls + ' min-w-0 flex-1' });
       const syncPasswordInput = h('input', { type: 'password', value: savedSync.password || '', autocomplete: 'new-password', class: syncInputCls + ' min-w-0 flex-1' });
+      // 历史版本保留个数：上传成功后自动删除云端更早的历史版本（固定名最新版不受
+      // 影响）；0 = 不留历史版本。非法输入按默认 10 提交（服务端还会再校验）
+      const syncHistoryInput = h('input', {
+        type: 'number', min: '0', max: '100', step: '1',
+        value: Number.isInteger(savedSync.historyLimit) ? savedSync.historyLimit : 10,
+        title: L.syncHistoryLimitHint, class: syncInputBase + ' w-20 shrink-0 text-center',
+      });
+      const syncHistoryValue = () => {
+        // 清空按默认 10 提交，不当成 0——0 会清掉云端全部历史版，误清空代价太大
+        const s = syncHistoryInput.value.trim();
+        if (!s) return 10;
+        const n = Number(s);
+        return Number.isFinite(n) ? Math.min(100, Math.max(0, Math.round(n))) : 10;
+      };
       let syncFormOriginal = null;
       const syncSaveBtn = btnSmall(L.syncSave, () => { void saveSyncForm(); }, 'shrink-0', 'primary');
       const syncFormValues = () => ({
@@ -819,15 +837,17 @@ export function openSettingsDialog() {
         dir: syncDirInput.value.trim(),
         login: syncLoginInput.value.trim(),
         password: syncPasswordInput.value,
+        historyLimit: syncHistoryValue(),
       });
       const syncCheckDirty = () => {
         const c = syncFormValues();
         syncSaveBtn.disabled = c.url === syncFormOriginal.url && c.dir === syncFormOriginal.dir
-          && c.login === syncFormOriginal.login && c.password === syncFormOriginal.password;
+          && c.login === syncFormOriginal.login && c.password === syncFormOriginal.password
+          && c.historyLimit === syncFormOriginal.historyLimit;
       };
       syncFormOriginal = syncFormValues();
       syncSaveBtn.disabled = true;
-      for (const el of [syncUrlInput, syncDirInput, syncLoginInput, syncPasswordInput]) {
+      for (const el of [syncUrlInput, syncDirInput, syncLoginInput, syncPasswordInput, syncHistoryInput]) {
         el.addEventListener('input', syncCheckDirty);
       }
       const saveSyncForm = async () => {
@@ -838,18 +858,20 @@ export function openSettingsDialog() {
             url: res.sync.url,
             dir: res.sync.dir,
             login: res.sync.login, password: res.sync.password,
+            historyLimit: Number.isInteger(res.sync.historyLimit) ? res.sync.historyLimit : 10,
           };
           syncUrlInput.value = res.sync.url;
           syncDirInput.value = res.sync.dir;
           syncLoginInput.value = res.sync.login;
           syncPasswordInput.value = res.sync.password;
+          syncHistoryInput.value = syncFormOriginal.historyLimit;
           showToast(L.syncSaved);
         } else {
           showToast(L.failed + ': ' + errText(res), 'error');
           syncCheckDirty();
         }
       };
-      // 「测试」：用表单当前值（先测再存）验证 WebDAV：连接与凭据 → 上传目录
+      // “测试”：用表单当前值（先测再存）验证 WebDAV：连接与凭据 → 上传目录
       // （缺则自动建，等同上传时的行为）→ 文件列表；结果仿“代理”标签页的检测，
       // 一行显示各步耗时与云端备份文件数
       const syncTestState = h('p', { class: 'mt-2 text-ui-xs/relaxed text-foreground-subtle' });
@@ -933,7 +955,7 @@ export function openSettingsDialog() {
       renderSyncStatus(savedSync);
       const syncUploadBtn = btnSmall(L.syncUpload, () => { void runSyncPush(); }, 'shrink-0', 'primary');
       const syncDownloadBtn = btnSmall(L.syncDownload, () => { openSyncVersionPicker(); }, 'shrink-0');
-      // 「从云端下载」先弹版本列表（备份管理器的样子）：列出云端目录里的备份文件
+      // “从云端下载”先弹版本列表（备份管理器的样子）：列出云端目录里的备份文件
       // （固定名 = 最新一版 + 带时间戳的历史），每行可导入到本机 / 从云端删除 /
       // 另存到本机磁盘；导入按文件名前缀决定覆盖哪一项，不受“同步内容”勾选影响
       const openSyncVersionPicker = () => {
@@ -1116,16 +1138,21 @@ export function openSettingsDialog() {
           return;
         }
         renderSyncStatus(res.sync || {});
-        showToast(L.syncUploaded, 'success');
+        showToast(res.pruned ? L.syncUploaded + (isZhLocale() ? '；' : '; ') + L.syncPruned.replace('{n}', res.pruned) : L.syncUploaded, 'success');
       };
       paneSync.append(
         h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.syncDesc),
         h('div', { class: 'mt-3 rounded-xl border border-border p-1' },
           syncFormRow('URL', syncUrlInput),
-          syncFormRow(L.syncDir, syncDirInput),
-          syncFormRow(L.syncLogin, syncLoginInput),
-          syncFormRow(L.syncPassword, syncPasswordInput),
-          h('div', { class: 'flex items-start justify-between gap-2 px-2 py-1.5' },
+          // 登录与密码一行、上传目录与历史版本一行：短字段成对排，少占纵向空间
+          h('div', { class: 'flex items-center gap-3 px-2 py-1.5' },
+            syncLabel(L.syncLogin), syncLoginInput,
+            syncLabel(L.syncPassword), syncPasswordInput),
+          h('div', { class: 'flex items-center gap-3 px-2 py-1.5' },
+            syncLabel(L.syncDir), syncDirInput,
+            syncLabel(L.syncHistoryLimit), syncHistoryInput,
+            h('span', { class: 'shrink-0 text-ui-xs text-foreground-subtle' }, L.syncHistoryLimitUnit)),
+          h('div', { class: 'flex items-center justify-between gap-2 px-2 py-1.5' },
             h('div', { class: 'min-w-0' },
               h('p', { class: 'text-ui-xs/relaxed text-foreground-subtle' }, L.syncFormHint),
               syncRecLine),
@@ -1257,7 +1284,7 @@ export function openSettingsDialog() {
         }
         // 插件未装优先显示安装卡——判断只看钩子（visionRes.hook），与配置文件是否存在无关：
         // 配置是钩子消费的，没钩子就没功能；老用户卸载插件后 ~/.zcode/zcode-vision.json 仍在，
-        // 若按配置存在与否分流会误入完整配置界面而毫无「未安装」提示
+        // 若按配置存在与否分流会误入完整配置界面而毫无“未安装”提示
         if (!visionRes.hook) {
           paneVision.replaceChildren(
             h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.visionDesc),
@@ -1347,18 +1374,18 @@ export function openSettingsDialog() {
           ),
           h('div', { class: 'mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2' },
             // 供应商与模型走 provider-fields 共用逻辑：跟随会话时模型下拉为
-            // 全部供应商模型汇总，具体供应商为其模型列表；已删 id 标注「已删除」
+            // 全部供应商模型汇总，具体供应商为其模型列表；已删 id 标注“已删除”
             field(L.visionUseProvider, comboField(p.useProvider || '',
               providerOptionsOf(titleGenProviders, L),
               (v, src) => {
                 p.useProvider = v;
                 saveVisionSoon();
                 // 下拉切换后重渲染整个面板：模型下拉选项随新供应商变化，接口
-                // 地址/API Key 字段按「不跟随或供应商已删才显示」重新显隐
+                // 地址/API Key 字段按“不跟随或供应商已删才显示”重新显隐
                 if (src === 'select') renderVision();
               },
               { placeholder: L.titleGenProviderSession, staleLabel: L.titleGenProviderDeleted })),
-            // 跟随会话时模型下拉头部有「跟随当前会话当前模型」（值为空，
+            // 跟随会话时模型下拉头部有“跟随当前会话当前模型”（值为空，
             // 插件 ≥1.6.1 在调用时解析为会话当前模型）；具体供应商为其模型列表
             field(L.visionModel, comboField(p.model || '',
               modelOptionsOf(p.useProvider, titleGenProviders, {
@@ -2069,7 +2096,7 @@ export function openSettingsDialog() {
           h('span', { class: 'mb-1 block text-ui-xs font-medium text-foreground-subtle' }, labelText), node);
         // 供应商 / 模型 / 地址密钥共用 provider-fields 的规则（详见该模块说明）。
         // 换供应商后重渲染：模型下拉换成新供应商的模型、地址字段按模式显隐；
-        // 手动输入过的模型保留（不在新列表里时显示为「手动输入」项，是否改选
+        // 手动输入过的模型保留（不在新列表里时显示为“手动输入”项，是否改选
         // 由用户决定）
         const showInlineConn = isManualConn(titleGenCfg.provider, titleGenProviders);
         const providerCombo = comboField(
@@ -2117,7 +2144,7 @@ export function openSettingsDialog() {
           field(L.titleGenBaseUrl, textIn(titleGenCfg.baseUrl, (v) => { titleGenCfg.baseUrl = v; saveTitleGenSoon(); }, { placeholder: 'https://…' })),
           field(L.titleGenApiKey, textIn(titleGenCfg.apiKey, (v) => { titleGenCfg.apiKey = v; saveTitleGenSoon(); }, { type: 'password' })),
           field(L.titleGenFormat, formatSel));
-        // 提示词：留空 = 内置默认；「查看默认提示词」把默认值载入编辑框供修改
+        // 提示词：留空 = 内置默认；“查看默认提示词”把默认值载入编辑框供修改
         const promptArea = h('textarea', {
           class: 'zcodepro-textarea zcodepro-textarea-sm', rows: '8',
           placeholder: L.titleGenPromptPlaceholder,
