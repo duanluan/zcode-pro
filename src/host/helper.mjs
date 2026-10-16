@@ -4,10 +4,11 @@
 
 import { createServer } from 'node:http';
 import { execFile, spawn, spawnSync } from 'node:child_process';
+import { createDecipheriv, createHash } from 'node:crypto';
 import { appendFileSync, chmodSync, copyFileSync, createWriteStream, existsSync, mkdirSync, readdirSync, readFileSync, readlinkSync, realpathSync, renameSync, rmSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { mkdtemp } from 'node:fs/promises'; // 注意：fs 的 mkdtemp 是回调版，await 它会把 undefined 当回调
 import { basename, delimiter, dirname, isAbsolute, join, resolve, sep } from 'node:path';
-import { homedir, tmpdir } from 'node:os';
+import { homedir, tmpdir, userInfo } from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { readSettings, writeSettingsAtomic, remapSettingsPaths, isProjectOpenInTabs } from './settings.mjs';
 import { taskIndexPath, probeTaskIndexWritable, remapTaskIndexPaths, taskIndexDriverAvailable, listOverriddenTitles, listTaskWorkspaceMap, setTaskTitleIfNotOverridden, setCustomSessionTitle, isTaskTitleOverridden, reconcileCustomTitles, getTaskProviderModel } from './taskIndex.mjs';
@@ -2153,6 +2154,125 @@ export async function generateTitleWith(cfg, rawText, dataRoot = '', sessId = ''
   return title;
 }
 
+// 供应商 id 的匹配归一化（导出以便测试）：会话索引里登录账号供应商带 account:
+// 前缀（如 account:bigmodel-individual-coding-plan），供应商列表里同名条目带
+// builtin: 前缀（builtin:bigmodel-coding-plan），个人/团队是同一端点——剥前缀、
+// 抹掉 individual/team 差异后按同一家匹配
+export function normalizeProviderIdForMatch(id) {
+  return String(id || '')
+    .replace(/^(account|builtin):/, '')
+    .replace(/-(individual|team)-/, '-');
+}
+
+// —— 登录账号供应商（Coding Plan）直连凭据的换取 ——
+// Coding Plan 的直连密钥不是静态保存的，官方桌面/CLI 用 OAuth access_token
+// 实时换“项目 token”。这里复刻同款流程（协议读自官方 project-access-token-
+// client.ts），让只登录、从未配置过供应商的机器也能直连起名：
+// ① 解密 v2/credentials.json 里的 oauth:<family>:access_token——加密格式
+//    enc:v1:<iv>.<authTag>.<cipher>（AES-256-GCM），密钥推导与官方
+//    credential-cipher.ts 一致（ZCODE_CREDENTIAL_SECRET 环境变量优先，否则
+//    sha256("zcode-credential-fallback:平台:主目录:用户名")），同机同用户可解；
+// ② GET getCustomerInfo 定位个人（非团队）项目——优先名称含“默认机构/
+//    默认项目”的条目，否则取第一个；
+// ③ 在项目的 api_keys 里找官方建的 zcode-api-key（没有则创建）；
+// ④ POST …/access_tokens 换项目 token（临期前进程内缓存复用）。
+// 管理接口的鉴权：bigmodel 用原始 token、zai 带 Bearer 前缀；签发接口两家
+// 都用 Bearer——与官方实现一致
+const ACCOUNT_FAMILY_BASE = {
+  bigmodel: { manageOrigin: 'https://bigmodel.cn', apiBase: 'https://open.bigmodel.cn/api/anthropic' },
+  zai: { manageOrigin: 'https://api.z.ai', apiBase: 'https://api.z.ai/api/anthropic' },
+};
+const accountTokenCache = new Map(); // family → { token, expiresAt }
+
+// 解密 credentials.json 的 enc:v1: 值（非加密值原样返回；失败返回空串）
+export function decryptCredentialValue(value) {
+  const s = String(value || '');
+  if (!s.startsWith('enc:v1:')) return s;
+  const [ivRaw, tagRaw, ctRaw] = s.slice('enc:v1:'.length).split('.');
+  if (!ivRaw || !tagRaw || !ctRaw) return '';
+  try {
+    const secret = (process.env.ZCODE_CREDENTIAL_SECRET || '').trim()
+      || `zcode-credential-fallback:${process.platform}:${homedir()}:${userInfo().username}`;
+    const key = createHash('sha256').update(secret).digest();
+    const d = createDecipheriv('aes-256-gcm', key, Buffer.from(ivRaw, 'base64url'));
+    d.setAuthTag(Buffer.from(tagRaw, 'base64url'));
+    return Buffer.concat([d.update(Buffer.from(ctRaw, 'base64url')), d.final()]).toString('utf8');
+  } catch { return ''; }
+}
+
+// 换取登录账号的项目 token；成功返回 { token, apiBase, expiresAt }
+export async function exchangeAccountProjectToken(family, dataRoot) {
+  const conf = ACCOUNT_FAMILY_BASE[family];
+  if (!conf) throw new Error(`不支持的供应商族 ${family}`);
+  const cached = accountTokenCache.get(family);
+  if (cached && Date.now() < cached.expiresAt - 5 * 60 * 1000) {
+    return { token: cached.token, apiBase: conf.apiBase, expiresAt: cached.expiresAt };
+  }
+  const creds = readJsonFile(join(dataRoot, 'v2', 'credentials.json'));
+  const loginToken = (creds && typeof creds === 'object')
+    ? decryptCredentialValue(creds[`oauth:${family}:access_token`]) : '';
+  if (!loginToken) throw new Error(`credentials.json 里没有可解的 ${family} 登录令牌（未登录或已过期）`);
+
+  // BIGMODEL_API_BASE_URL：官方同款测试环境覆盖，顺带让协议可注入测试
+  const origin = (family === 'bigmodel' && (process.env.BIGMODEL_API_BASE_URL || '').trim())
+    || conf.manageOrigin;
+  // 管理接口沿用旧鉴权格式（bigmodel 原始 token / zai Bearer）；签发接口用 Bearer
+  const manageHeaders = {
+    'content-type': 'application/json',
+    authorization: family === 'zai' ? `Bearer ${loginToken}` : loginToken,
+  };
+  const api = async (path, init = {}) => {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 20000);
+    try {
+      const resp = await fetch(origin + path, { ...init, signal: ctrl.signal, headers: manageHeaders });
+      const doc = await resp.json().catch(() => null);
+      const data = (doc && [200, 0, '200', '0'].includes(doc.code)) ? doc.data : null;
+      if (data === null) throw new Error(`接口 ${path} 返回异常（${resp.status}）`);
+      return data;
+    } finally { clearTimeout(timer); }
+  };
+
+  // ① 客户信息 → ② 定位个人项目（projectType "2" 是团队项目，个人密钥不能挂在团队下）
+  const cust = await api('/api/biz/customer/getCustomerInfo');
+  const orgs = (Array.isArray(cust?.organizations) ? cust.organizations : [])
+    .map((o) => ({ id: String(o?.organizationId || '').trim(), name: String(o?.organizationName || ''),
+      projects: (Array.isArray(o?.projects) ? o.projects : [])
+        .filter((p) => String(p?.projectType ?? '').trim() !== '2' && String(p?.projectId || '').trim()) }));
+  const org = orgs.find((o) => o.id && o.projects.length && o.name.includes('默认机构')) || orgs.find((o) => o.id && o.projects.length);
+  const project = org && (org.projects.find((p) => String(p?.projectName || '').includes('默认项目')) || org.projects[0]);
+  if (!org || !project) throw new Error('账号下没有可用的个人项目（未订阅 Coding Plan？）');
+
+  // ③ 找官方建的 zcode-api-key，没有就建一个
+  const keysUrl = `/api/biz/v1/organization/${encodeURIComponent(org.id)}/projects/${encodeURIComponent(project.projectId)}/api_keys`;
+  const keys = await api(keysUrl);
+  const keyEntry = (Array.isArray(keys) ? keys : []).find((k) => k && typeof k === 'object' && k.name === 'zcode-api-key')
+    || await api(keysUrl, { method: 'POST', body: JSON.stringify({ name: 'zcode-api-key', usageScene: 1 }) });
+  const apiKeyId = keyEntry && String(keyEntry.apiKey || '').trim();
+  if (!apiKeyId) throw new Error('未能定位 Coding Plan 的 API Key');
+
+  // ④ 签发项目 token（此接口用 Bearer 鉴权；超时与 api() 同款）
+  const issueCtrl = new AbortController();
+  const issueTimer = setTimeout(() => issueCtrl.abort(), 20000);
+  let issueResp;
+  try {
+    issueResp = await fetch(`${origin}${keysUrl}/${encodeURIComponent(apiKeyId)}/access_tokens`, {
+      method: 'POST',
+      signal: issueCtrl.signal,
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${loginToken}` },
+      body: JSON.stringify({ clientType: 'zcode', clientVersion: VERSION }),
+    });
+  } finally { clearTimeout(issueTimer); }
+  const issue = await issueResp.json().catch(() => null);
+  const issueData = (issue && [200, 0, '200', '0'].includes(issue.code)) ? issue.data : null;
+  if (!issueData) throw new Error(`签发项目 token 失败（${issueResp.status}）`);
+  // enable 语义与官方一致：旧版接口不回该字段（实测回的是同义的 enabled），
+  // 缺失视为开启，仅显式 false 才算未开启
+  if (issueData.enable === false || !issueData.accessToken) throw new Error('项目 token 未开启（enable=false）');
+  accountTokenCache.set(family, { token: issueData.accessToken, expiresAt: Number(issueData.expiresAt) || 0 });
+  return { token: issueData.accessToken, apiBase: conf.apiBase, expiresAt: Number(issueData.expiresAt) || 0 };
+}
+
 // 直连前的连接解析（见 generateTitleWith 的取值说明）；解析不出抛明确错误
 async function resolveTitleGenConnection(cfg, providerId, model, dataRoot, sessId) {
   if (providerId === 'session') {
@@ -2161,8 +2281,36 @@ async function resolveTitleGenConnection(cfg, providerId, model, dataRoot, sessI
     }
     const task = await getTaskProviderModel(dataRoot, sessId);
     if (!task || !task.providerId) throw new Error('索引中查不到该会话的供应商信息');
-    const entry = listTitleGenProviders().find((p) => p.id === task.providerId);
-    if (!entry) throw new Error(`会话供应商 ${task.providerId} 无法在会话外直连（无密钥或协议未知）`);
+    const list = listTitleGenProviders();
+    const entry = list.find((p) => p.id === task.providerId)
+      || list.find((p) => normalizeProviderIdForMatch(p.id) === normalizeProviderIdForMatch(task.providerId));
+    if (!entry) {
+      // 登录账号供应商：本机没有物化密钥表（从未保存过供应商配置的机器不生成
+      // v2/config.json）时按官方同款流程换取项目 token 直连（见下方实现）
+      if (task.providerId.startsWith('account:')) {
+        if (/start-plan/.test(task.providerId)) {
+          throw new Error('会话用的是 Start Plan 登录供应商，暂不支持自动直连：请在此改选具体供应商或不跟随（自填地址）');
+        }
+        const family = task.providerId.includes(':zai') ? 'zai' : 'bigmodel';
+        let accountConn;
+        try {
+          accountConn = await exchangeAccountProjectToken(family, dataRoot);
+        } catch (err) {
+          throw new Error(`登录账号供应商取直连密钥失败（${err?.message || err}）：请在 ZCode 里重新登录，或在此改选具体供应商 / 不跟随`);
+        }
+        const useAccountModel = model || task.modelId;
+        if (!useAccountModel) throw new Error('未能确定会话当前模型，请手动填写模型');
+        return {
+          format: 'anthropic',
+          baseUrl: accountConn.apiBase,
+          apiKey: accountConn.token,
+          // 官方目录的模型名是大写 GLM- 前缀；会话索引里可能是小写（不同供应商
+          // 记法不一），登录端点按目录写法规整
+          model: /^glm-\d/.test(useAccountModel) ? useAccountModel.replace(/^glm/, 'GLM') : useAccountModel,
+        };
+      }
+      throw new Error(`会话供应商 ${task.providerId} 无法在会话外直连（无密钥或协议未知）`);
+    }
     const useModel = model || task.modelId;
     if (!useModel) throw new Error('未能确定会话当前模型，请手动填写模型');
     return { format: entry.format, baseUrl: entry.baseUrl, apiKey: entry.apiKey, model: useModel };
