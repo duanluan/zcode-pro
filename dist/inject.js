@@ -59,6 +59,7 @@
     proxyScopeSyncDesc: "WebDAV \u4E0A\u4F20\u4E0E\u4E0B\u8F7D\u8D70\u4EE3\u7406\u3002\u9ED8\u8BA4\u5173\u95ED\uFF1A\u575A\u679C\u4E91\u7B49\u56FD\u5185\u7F51\u76D8\u76F4\u8FDE\u5373\u53EF\uFF0C\u4EE3\u7406\u505C\u4E86\u540C\u6B65\u4F1A\u8DDF\u7740\u5931\u8D25\u3002",
     tabSync: "\u540C\u6B65",
     tabDebug: "\u8C03\u8BD5",
+    testNoSessionHint: "\u9009\u62E9\u201C\u8DDF\u968F\u5F53\u524D\u4F1A\u8BDD[\u5F53\u524D\u6A21\u578B]\u201D\u65F6\uFF0C\u9009\u62E9\u4E0A\u6B21\u4F1A\u8BDD\u4E2D\u4F7F\u7528\u7684\u4F9B\u5E94\u5546[\u6A21\u578B]",
     syncDesc: "\u624B\u52A8\u628A ZCode Pro \u8BBE\u7F6E\u4E0E\u6A21\u578B\u8BBE\u7F6E\u5907\u4EFD\u5230 WebDAV\uFF0C\u6216\u5728\u65B0\u7535\u8111\u4E0A\u6062\u590D\u3002\u4E24\u9879\u5404\u81EA\u72EC\u7ACB\u6210\u6587\u4EF6\uFF0C\u53EF\u53EA\u4E0A\u4F20\u6216\u53EA\u8986\u76D6\u5176\u4E2D\u4E00\u9879\uFF1B\u6BCF\u6B21\u4E0A\u4F20\u4F1A\u989D\u5916\u4FDD\u7559\u4E00\u4EFD\u5E26\u65F6\u95F4\u6233\u7684\u5386\u53F2\u7248\u672C\uFF08\u4FDD\u7559\u591A\u5C11\u4E2A\u89C1\u201C\u5386\u53F2\u7248\u672C\u201D\u4E00\u884C\uFF0C\u4E0A\u4F20\u540E\u81EA\u52A8\u5220\u9664\u8D85\u51FA\u7684\u6700\u65E7\u7248\u672C\uFF09\uFF0C\u4E0B\u8F7D\u65F6\u4EFB\u9009\u4E00\u4E2A\u7248\u672C\u6062\u590D\uFF1B\u4EC5\u5728\u70B9\u51FB\u6309\u94AE\u65F6\u4F20\u8F93\uFF0C\u4E0D\u505A\u81EA\u52A8\u540C\u6B65\u3002",
     syncUrlPlaceholder: "https://dav.jianguoyun.com/dav/",
     syncDir: "\u4E0A\u4F20\u76EE\u5F55",
@@ -254,11 +255,10 @@
     visionSkipMinutes: "\u8DF3\u8FC7\u5206\u949F\u6570",
     visionSkipMinutesHint: "\u8DF3\u8FC7\u591A\u4E45\u540E\u81EA\u52A8\u6062\u590D\u5C1D\u8BD5\uFF1B\u671F\u95F4\u4EFB\u4E00\u6B21\u6210\u529F\u5373\u6E05\u96F6\u8BA1\u6570",
     visionResetChain: "\u6062\u590D\u9ED8\u8BA4\u94FE",
-    visionResetChainConfirm: "\u5C06\u94FE\u6A21\u5F0F\u4E0E\u4EE3\u7406\u5217\u8868\u6062\u590D\u4E3A\u9ED8\u8BA4\u4E24\u7EA7\uFF08glm-session \u2192 glm-flash\uFF09\uFF0C\u5F53\u524D\u5BF9\u4EE3\u7406\u7684\u4FEE\u6539\u4F1A\u4E22\u5931\u3002\u7EE7\u7EED\uFF1F",
-    visionBaseUrl: "\u63A5\u53E3\u5730\u5740 baseUrl",
+    visionResetChainConfirm: "\u5C06\u94FE\u6A21\u5F0F\u4E0E\u4EE3\u7406\u5217\u8868\u6062\u590D\u4E3A\u9ED8\u8BA4\u5355\u7EA7\uFF08session\uFF1A\u8DDF\u968F\u4F1A\u8BDD\u4E0E\u5176\u5F53\u524D\u6A21\u578B\uFF09\uFF0C\u5F53\u524D\u5BF9\u4EE3\u7406\u7684\u4FEE\u6539\u4F1A\u4E22\u5931\u3002\u7EE7\u7EED\uFF1F",
+    visionBaseUrl: "\u63A5\u53E3\u5730\u5740",
     visionModel: "\u6A21\u578B",
     visionApiKey: "API Key",
-    visionApiKeyHint: "\u7559\u7A7A\u81EA\u52A8\u53D6 GLM \u8BA2\u9605 key",
     visionPrompt: "\u8BC6\u522B\u63D0\u793A\u8BCD\uFF08pipeline \u540E\u7EED\u6B65\u53EF\u7528 {prev} \u5F15\u7528\u4E0A\u4E00\u6B65\uFF09",
     visionTest: "\u6D4B\u8BD5",
     visionTesting: "\u6D4B\u8BD5\u4E2D\u2026",
@@ -424,6 +424,7 @@
     proxyScopeSyncDesc: "WebDAV upload and download go through the proxy. Off by default: domestic WebDAV providers work fine direct, and a stopped proxy breaks sync.",
     tabSync: "Sync",
     tabDebug: "Debug",
+    testNoSessionHint: "With \u201Cfollow current session [current model]\u201D selected, the provider [model] of the last session is used.",
     syncDesc: 'Manually back up ZCode Pro settings and model settings to WebDAV, or restore them on a new computer. The two items are stored as separate files, so you can upload or overwrite either one alone; every upload also keeps a timestamped history version (how many to keep is set in the "History" row; older ones are removed automatically after upload) and download lets you pick any of them. Data moves only when you click, never automatically.',
     syncUrlPlaceholder: "https://dav.example.com/dav/",
     syncDir: "Folder",
@@ -619,11 +620,10 @@
     visionSkipMinutes: "Skip minutes",
     visionSkipMinutesHint: "How long a skipped proxy rests before being retried; any success resets the counter",
     visionResetChain: "Reset default chain",
-    visionResetChainConfirm: "Reset chain mode and the proxy list to the default 2-level chain (glm-session \u2192 glm-flash)? Current proxy edits will be lost. Continue?",
-    visionBaseUrl: "Base URL",
+    visionResetChainConfirm: "Reset chain mode and the proxy list to the default single-level chain (session: follow session and its current model)? Current proxy edits will be lost. Continue?",
+    visionBaseUrl: "API URL",
     visionModel: "Model",
     visionApiKey: "API Key",
-    visionApiKeyHint: "Leave empty to reuse the GLM subscription key",
     visionPrompt: "Recognition prompt ({prev} = previous step in pipeline)",
     visionTest: "Test",
     visionTesting: "Testing\u2026",
@@ -4126,16 +4126,15 @@
         const VISION_DEFAULT_CFG = {
           enabled: true,
           chainMode: "fallback",
-          chain: ["glm-session", "glm-flash"],
+          chain: ["session"],
           proxies: [
-            { name: "glm-session", useProvider: "session", model: "glm-5.3-flash", prompt: VISION_DEFAULT_PROMPT },
-            { name: "glm-flash", baseUrl: "https://open.bigmodel.cn/api/anthropic", model: "glm-5.3-flash", apiKey: "", format: "anthropic", prompt: VISION_DEFAULT_PROMPT }
+            { name: "session", useProvider: "session", model: "", prompt: VISION_DEFAULT_PROMPT }
           ],
           pollMs: 3e3,
           apiTimeoutMs: 12e4,
           // 视觉上游冷启动可能近 2 分钟，与插件 DEFAULT_CONFIG 一致
           compressThresholdKB: 1024,
-          skipAfterFailures: 4,
+          skipAfterFailures: 2,
           skipMinutes: 30,
           forceIntercept: true
         };
@@ -4279,26 +4278,22 @@
               n
             );
           };
-          const cards = visionCfg.proxies.map((p, i) => h(
-            "div",
-            { class: "mt-2 rounded-xl border border-border p-2" },
-            h(
+          const cards = visionCfg.proxies.map((p, i) => {
+            const manualConnCard = isManualConn(p.useProvider, titleGenProviders) ? [h(
               "div",
-              { class: "flex flex-wrap items-center gap-2" },
-              h("span", { class: "shrink-0 rounded-md bg-surface px-1.5 py-0.5 text-ui-xs tabular-nums text-foreground-subtle" }, String(i + 1)),
-              // 名称输入框用 flex-1 占剩余宽度，与序号同行；textIn 的 w-full 会把序号挤成单独一行
-              (() => {
-                const n = h("input", { type: "text", value: p.name || "", placeholder: L.visionName, class: visionInputCls + " min-w-0 flex-1" });
-                n.addEventListener("input", () => {
-                  p.name = n.value;
-                  saveVisionSoon();
-                });
-                return n;
-              })(),
-              (() => {
+              { class: "mt-2 grid grid-cols-1 gap-2 rounded-xl border border-border p-2 sm:grid-cols-3" },
+              field(L.visionBaseUrl, textIn(p.baseUrl, (v) => {
+                p.baseUrl = v;
+                saveVisionSoon();
+              })),
+              field(L.visionApiKey, textIn(p.apiKey, (v) => {
+                p.apiKey = v;
+                saveVisionSoon();
+              }, { type: "password" })),
+              field(L.titleGenFormat, (() => {
                 const sel = h(
                   "select",
-                  { class: "h-7 shrink-0 rounded-lg border border-border bg-input px-1.5 text-ui-xs text-foreground outline-none" },
+                  { class: "h-8 w-full rounded-lg border border-border bg-input px-2 text-ui-sm text-foreground outline-none" },
                   h("option", { value: "anthropic" }, "anthropic"),
                   h("option", { value: "openai" }, "openai")
                 );
@@ -4308,78 +4303,85 @@
                   void persistVision();
                 });
                 return sel;
-              })(),
-              smallBtn(L.visionMoveUp, () => {
-                if (i <= 0) return;
-                visionCfg.proxies.splice(i - 1, 0, visionCfg.proxies.splice(i, 1)[0]);
-                void persistVision();
-                renderVision();
-              }, i === 0 ? "pointer-events-none opacity-40" : ""),
-              smallBtn(L.visionMoveDown, () => {
-                if (i >= visionCfg.proxies.length - 1) return;
-                visionCfg.proxies.splice(i + 1, 0, visionCfg.proxies.splice(i, 1)[0]);
-                void persistVision();
-                renderVision();
-              }, i === visionCfg.proxies.length - 1 ? "pointer-events-none opacity-40" : ""),
-              smallBtn(L.visionRemove, () => {
-                visionCfg.proxies.splice(i, 1);
-                void persistVision();
-                renderVision();
-              })
-            ),
-            h(
-              "div",
-              { class: "mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2" },
-              // 供应商与模型走 provider-fields 共用逻辑：跟随会话时模型下拉为
-              // 全部供应商模型汇总，具体供应商为其模型列表；已删 id 标注“已删除”
-              field(L.visionUseProvider, comboField(
-                p.useProvider || "",
-                providerOptionsOf(titleGenProviders, L),
-                (v, src) => {
-                  p.useProvider = v;
+              })())
+            )] : [];
+            return h("div", { class: "mt-2 rounded-xl border border-border p-2" }, [
+              h(
+                "div",
+                { class: "flex flex-wrap items-center gap-2" },
+                h("span", { class: "shrink-0 rounded-md bg-surface px-1.5 py-0.5 text-ui-xs tabular-nums text-foreground-subtle" }, String(i + 1)),
+                // 名称输入框用 flex-1 占剩余宽度，与序号同行；textIn 的 w-full 会把序号挤成单独一行
+                (() => {
+                  const n = h("input", { type: "text", value: p.name || "", placeholder: L.visionName, class: visionInputCls + " min-w-0 flex-1" });
+                  n.addEventListener("input", () => {
+                    p.name = n.value;
+                    saveVisionSoon();
+                  });
+                  return n;
+                })(),
+                smallBtn(L.visionMoveUp, () => {
+                  if (i <= 0) return;
+                  visionCfg.proxies.splice(i - 1, 0, visionCfg.proxies.splice(i, 1)[0]);
+                  void persistVision();
+                  renderVision();
+                }, i === 0 ? "pointer-events-none opacity-40" : ""),
+                smallBtn(L.visionMoveDown, () => {
+                  if (i >= visionCfg.proxies.length - 1) return;
+                  visionCfg.proxies.splice(i + 1, 0, visionCfg.proxies.splice(i, 1)[0]);
+                  void persistVision();
+                  renderVision();
+                }, i === visionCfg.proxies.length - 1 ? "pointer-events-none opacity-40" : ""),
+                smallBtn(L.visionRemove, () => {
+                  visionCfg.proxies.splice(i, 1);
+                  void persistVision();
+                  renderVision();
+                })
+              ),
+              h(
+                "div",
+                { class: "mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2" },
+                // 供应商与模型走 provider-fields 共用逻辑：跟随会话时模型下拉为
+                // 全部供应商模型汇总，具体供应商为其模型列表；已删 id 标注“已删除”
+                field(L.visionUseProvider, comboField(
+                  p.useProvider || "",
+                  providerOptionsOf(titleGenProviders, L),
+                  (v, src) => {
+                    p.useProvider = v;
+                    saveVisionSoon();
+                    if (src === "select") renderVision();
+                  },
+                  { placeholder: L.titleGenProviderSession, staleLabel: L.titleGenProviderDeleted }
+                )),
+                // 跟随会话时模型下拉头部有“跟随当前会话当前模型”（值为空，
+                // 插件 ≥1.6.1 在调用时解析为会话当前模型）；具体供应商为其模型列表
+                field(L.visionModel, comboField(
+                  p.model || "",
+                  modelOptionsOf(p.useProvider, titleGenProviders, {
+                    followSession: (p.useProvider || "").trim() === "session",
+                    followSessionLabel: L.titleGenModelFollowSession
+                  }),
+                  (v) => {
+                    p.model = v;
+                    saveVisionSoon();
+                  },
+                  {
+                    placeholder: modelPlaceholderOf(p.useProvider, L),
+                    emptyLabel: (p.useProvider || "").trim() === "session" ? L.titleGenModelFollowSession : L.titleGenModelEmpty
+                  }
+                ))
+              ),
+              ...manualConnCard,
+              (() => {
+                const n = h("textarea", { class: "zcodepro-textarea zcodepro-textarea-sm", rows: "3", placeholder: L.visionPrompt });
+                n.value = p.prompt || "";
+                n.addEventListener("input", () => {
+                  p.prompt = n.value;
                   saveVisionSoon();
-                  if (src === "select") renderVision();
-                },
-                { placeholder: L.titleGenProviderSession, staleLabel: L.titleGenProviderDeleted }
-              )),
-              // 跟随会话时模型下拉头部有“跟随当前会话当前模型”（值为空，
-              // 插件 ≥1.6.1 在调用时解析为会话当前模型）；具体供应商为其模型列表
-              field(L.visionModel, comboField(
-                p.model || "",
-                modelOptionsOf(p.useProvider, titleGenProviders, {
-                  followSession: (p.useProvider || "").trim() === "session",
-                  followSessionLabel: L.titleGenModelFollowSession
-                }),
-                (v) => {
-                  p.model = v;
-                  saveVisionSoon();
-                },
-                {
-                  placeholder: modelPlaceholderOf(p.useProvider, L),
-                  emptyLabel: (p.useProvider || "").trim() === "session" ? L.titleGenModelFollowSession : L.titleGenModelEmpty
-                }
-              )),
-              ...isManualConn(p.useProvider, titleGenProviders) ? [
-                field(L.visionBaseUrl, textIn(p.baseUrl, (v) => {
-                  p.baseUrl = v;
-                  saveVisionSoon();
-                })),
-                field(L.visionApiKey + " \xB7 " + L.visionApiKeyHint, textIn(p.apiKey, (v) => {
-                  p.apiKey = v;
-                  saveVisionSoon();
-                }, { type: "password" }))
-              ] : []
-            ),
-            (() => {
-              const n = h("textarea", { class: "zcodepro-textarea zcodepro-textarea-sm", rows: "3", placeholder: L.visionPrompt });
-              n.value = p.prompt || "";
-              n.addEventListener("input", () => {
-                p.prompt = n.value;
-                saveVisionSoon();
-              });
-              return field(L.visionPrompt, n);
-            })()
-          ));
+                });
+                return field(L.visionPrompt, n);
+              })()
+            ]);
+          });
           let testBtn;
           testBtn = smallBtn(L.visionTest, async () => {
             testBtn.disabled = true;
@@ -4390,7 +4392,6 @@
             testBtn.disabled = false;
             testBtn.textContent = L.visionTest;
             visionTestPre.textContent = res.output || res.error || "";
-            if (!res.ok) showToast(L.visionTestFailed + ": " + errText(res), "error");
           });
           paneVision.replaceChildren(
             h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.visionDesc),
@@ -4455,7 +4456,7 @@
                   n
                 );
               })(),
-              numIn(visionCfg.skipAfterFailures, { min: 0, dflt: 4, title: L.visionSkipAfterFailuresHint, label: L.visionSkipAfterFailures, commit: (v) => {
+              numIn(visionCfg.skipAfterFailures, { min: 0, dflt: 2, title: L.visionSkipAfterFailuresHint, label: L.visionSkipAfterFailures, commit: (v) => {
                 visionCfg.skipAfterFailures = v;
               } }),
               numIn(visionCfg.skipMinutes, { min: 1, dflt: 30, title: L.visionSkipMinutesHint, label: L.visionSkipMinutes, commit: (v) => {
@@ -4470,7 +4471,7 @@
                 "div",
                 { class: "flex items-center gap-1.5" },
                 smallBtn("+ " + L.visionAddProxy, () => {
-                  visionCfg.proxies.push({ name: "", baseUrl: "https://open.bigmodel.cn/api/anthropic", model: "glm-5.3-flash", apiKey: "", format: "anthropic", prompt: "" });
+                  visionCfg.proxies.push({ name: "", baseUrl: "https://open.bigmodel.cn/api/anthropic", model: "glm-5.3-flash", apiKey: "", format: "anthropic", prompt: VISION_DEFAULT_PROMPT });
                   renderVision();
                 }),
                 smallBtn(L.visionResetChain, () => {
@@ -4481,7 +4482,12 @@
                   renderVision();
                 })
               ),
-              testBtn
+              h(
+                "div",
+                { class: "flex min-w-0 items-center justify-end gap-2" },
+                h("span", { class: "min-w-0 text-right text-ui-xs/relaxed text-foreground-subtle" }, L.testNoSessionHint),
+                testBtn
+              )
             ),
             visionTestPre
           );
@@ -5231,11 +5237,9 @@
             testBtn.textContent = L.titleGenTest;
             if (res && res.ok) {
               testState.textContent = L.titleGenTestOk + res.title;
-              showToast(res.title, "success");
             } else {
               testState.textContent = res && errText(res) || L.titleGenTestFailed;
               testState.className = "min-w-0 flex-1 truncate text-ui-xs/relaxed text-destructive";
-              showToast(L.titleGenTestFailed + ": " + (res ? errText(res) : ""), "error");
             }
           }, "shrink-0");
           paneTitleGen.replaceChildren(
@@ -5275,12 +5279,18 @@
               ),
               promptArea
             ),
-            // 测试
+            // 测试（两行：输入框整行；说明 + 按钮一行。结果只显示在本区下方，
+            // 不弹窗；从没对话过时的引导见 testState 错误文案）
             h(
               "div",
-              { class: "mt-2 flex items-center gap-2 rounded-xl border border-border p-2" },
+              { class: "mt-2 rounded-xl border border-border p-2" },
               sampleInput,
-              testBtn
+              h(
+                "div",
+                { class: "mt-2 flex items-center justify-between gap-2" },
+                h("span", { class: "min-w-0 text-ui-xs/relaxed text-foreground-subtle" }, L.testNoSessionHint),
+                testBtn
+              )
             ),
             testState
           );

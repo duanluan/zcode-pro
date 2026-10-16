@@ -286,7 +286,9 @@ function isBusyError(err) {
 // 读某会话记录的模型信息（智能起名“跟随当前会话”用）。model 列存
 // “<供应商id>/<模型id>”（如 be0a90cb…/glm-5.3），拆开后返回
 // { providerId, modelId }；没有斜线时 providerId 退回 provider 列的值。
-// 会话不存在返回 null；读取失败按 null 处理（调用方换明确报错）
+// 会话不存在返回 null；读取失败按 null 处理（调用方换明确报错）。
+// sessId 为空 = 取最近更新的会话（设置面板的测试按钮没有会话上下文，
+// 与视觉代理的测试同款语义）
 export async function getTaskProviderModel(dataRoot, sessId) {
   const driver = await loadDriver();
   if (!driver) return null;
@@ -296,7 +298,7 @@ export async function getTaskProviderModel(dataRoot, sessId) {
   // model 列早十几秒（任务索引由桌面同步器延迟写；新会话头十几秒里它还是
   // 空值，起名第一次调用会因此解析到不存在的模型，实测 400 模型不存在）
   const usageFile = join(dataRoot, 'cli', 'db', 'db.sqlite');
-  if (existsSync(usageFile)) {
+  if (existsSync(usageFile) && sessId) {
     try {
       if (driver.kind === 'node') {
         const db = new driver.DatabaseSync(usageFile, { readOnly: true });
@@ -318,16 +320,19 @@ export async function getTaskProviderModel(dataRoot, sessId) {
   const dbFile = taskIndexPath(dataRoot);
   if (!existsSync(dbFile)) return null;
   let row = null;
+  const where = sessId
+    ? `WHERE task_id = ${esc(sessId)} AND deleted = 0`
+    : 'WHERE deleted = 0 AND model != \'\' ORDER BY updated_at DESC LIMIT 1';
   try {
     if (driver.kind === 'node') {
       const db = new driver.DatabaseSync(dbFile);
       try {
         db.exec(`PRAGMA busy_timeout = ${BUSY_TIMEOUT_MS}`);
-        row = db.prepare('SELECT provider, model FROM tasks WHERE task_id = ? AND deleted = 0').get(sessId) || null;
+        row = db.prepare(`SELECT provider, model FROM tasks ${where}`).get() || null;
       } finally { db.close(); }
     } else {
       const r = runCli(dbFile,
-        `SELECT coalesce(json_object('provider', provider, 'model', model), 'null') FROM tasks WHERE task_id = ${esc(sessId)} AND deleted = 0;`);
+        `SELECT coalesce(json_object('provider', provider, 'model', model), 'null') FROM (SELECT provider, model FROM tasks ${where});`);
       const parsed = JSON.parse((r.stdout.trim() || 'null'));
       row = parsed && typeof parsed === 'object' ? parsed : null;
     }

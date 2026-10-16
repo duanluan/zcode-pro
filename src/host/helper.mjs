@@ -2276,11 +2276,13 @@ export async function exchangeAccountProjectToken(family, dataRoot) {
 // 直连前的连接解析（见 generateTitleWith 的取值说明）；解析不出抛明确错误
 async function resolveTitleGenConnection(cfg, providerId, model, dataRoot, sessId) {
   if (providerId === 'session') {
-    if (!sessId || !dataRoot) {
-      throw new Error('跟随当前会话需要会话信息（测试按钮请选择具体供应商或“不跟随”）');
+    if (!dataRoot) throw new Error('跟随当前会话需要会话信息');
+    // sessId 为空（设置面板测试按钮，没有会话上下文）时取任务索引里最近更新
+    // 的会话——与视觉代理测试按钮同款语义
+    const task = await getTaskProviderModel(dataRoot, sessId || '');
+    if (!task || !task.providerId) {
+      throw new Error(sessId ? '索引中查不到该会话的供应商信息' : '任务索引里没有会话记录（“跟随当前会话”取上次会话的供应商/模型）：先在任意会话里发过消息，或改选具体供应商再测试');
     }
-    const task = await getTaskProviderModel(dataRoot, sessId);
-    if (!task || !task.providerId) throw new Error('索引中查不到该会话的供应商信息');
     const list = listTitleGenProviders();
     const entry = list.find((p) => p.id === task.providerId)
       || list.find((p) => normalizeProviderIdForMatch(p.id) === normalizeProviderIdForMatch(task.providerId));
@@ -2384,7 +2386,7 @@ export function validateVisionConfig(raw) {
     apiTimeoutMs: clampInt(raw.apiTimeoutMs, 1000, 600000, 120000),
     compressThresholdKB: clampInt(raw.compressThresholdKB, 0, 102400, 1024),
     // 连续失败跳过（0 = 不跳过）；跳过时长（分钟）
-    skipAfterFailures: clampInt(raw.skipAfterFailures, 0, 100, 4),
+    skipAfterFailures: clampInt(raw.skipAfterFailures, 0, 100, 2),
     skipMinutes: clampInt(raw.skipMinutes, 1, 10080, 30),
     // 主模型能看图时是否也拦截识别（false = 跳过；flash 主模型始终不触发，见插件）
     forceIntercept: raw.forceIntercept !== false,

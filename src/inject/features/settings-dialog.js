@@ -1210,21 +1210,21 @@ export function openSettingsDialog() {
       // “视觉代理”：编辑 ~/.zcode/zcode-vision.json（zcode-vision 插件与 /vision-* 命令共用同一文件）。
       // 代理列表顺序即执行链；结构性改动（开关/模式/排序/删增）即时保存，文本输入防抖保存。
       // 注意：保存时链按全部代理重建——若用 /vision-chain 配过子集链，会被这里覆盖（两套入口语义如此，面板以列表为准）。
-      // 默认两级链与 zcode-vision 插件 DEFAULT_CONFIG 保持一致：glm-session（跟随会话）→ glm-flash（GLM 订阅直连）。
+      // 默认单级链与 zcode-vision 插件 DEFAULT_CONFIG 保持一致：session（跟随会话供应商、
+      // 模型留空=会话当前模型）。需要兜底级可手动加 GLM 订阅直连。
       // 赠送额度级 trust-build 暂不进默认：ZCode 网关不放行无人值守调用（ADR-0002）。
       const VISION_DEFAULT_PROMPT = '请详细描述这张图片的全部内容。若是界面或图表截图，请先把所有错误、警告、异常状态逐字引用出来（含完整原文），再描述整体布局、文字与关键数据。';
       const VISION_DEFAULT_CFG = {
         enabled: true,
         chainMode: 'fallback',
-        chain: ['glm-session', 'glm-flash'],
+        chain: ['session'],
         proxies: [
-          { name: 'glm-session', useProvider: 'session', model: 'glm-5.3-flash', prompt: VISION_DEFAULT_PROMPT },
-          { name: 'glm-flash', baseUrl: 'https://open.bigmodel.cn/api/anthropic', model: 'glm-5.3-flash', apiKey: '', format: 'anthropic', prompt: VISION_DEFAULT_PROMPT },
+          { name: 'session', useProvider: 'session', model: '', prompt: VISION_DEFAULT_PROMPT },
         ],
         pollMs: 3000,
         apiTimeoutMs: 120000, // 视觉上游冷启动可能近 2 分钟，与插件 DEFAULT_CONFIG 一致
         compressThresholdKB: 1024,
-        skipAfterFailures: 4,
+        skipAfterFailures: 2,
         skipMinutes: 30,
         forceIntercept: true,
       };
@@ -1343,7 +1343,23 @@ export function openSettingsDialog() {
         };
         // 接口地址 / API Key 是否显示走 provider-fields 的共用规则
         //（isManualConn：不跟随或供应商已删才显示，连接其余由跟随对象负责）
-        const cards = visionCfg.proxies.map((p, i) => h('div', { class: 'mt-2 rounded-xl border border-border p-2' },
+        const cards = visionCfg.proxies.map((p, i) => {
+          // 不跟随（或供应商已删）才显示的手动连接行：接口地址 + API Key + 协议
+          // 三栏一行（与智能起名同款）；协议跟随供应商解析，平时不显示
+          const manualConnCard = isManualConn(p.useProvider, titleGenProviders)
+            ? [h('div', { class: 'mt-2 grid grid-cols-1 gap-2 rounded-xl border border-border p-2 sm:grid-cols-3' },
+              field(L.visionBaseUrl, textIn(p.baseUrl, (v) => { p.baseUrl = v; saveVisionSoon(); })),
+              field(L.visionApiKey, textIn(p.apiKey, (v) => { p.apiKey = v; saveVisionSoon(); }, { type: 'password' })),
+              field(L.titleGenFormat, (() => {
+                const sel = h('select', { class: 'h-8 w-full rounded-lg border border-border bg-input px-2 text-ui-sm text-foreground outline-none' },
+                  h('option', { value: 'anthropic' }, 'anthropic'),
+                  h('option', { value: 'openai' }, 'openai'));
+                sel.value = p.format === 'openai' ? 'openai' : 'anthropic';
+                sel.addEventListener('change', () => { p.format = sel.value; void persistVision(); });
+                return sel;
+              })()))]
+            : [];
+          return h('div', { class: 'mt-2 rounded-xl border border-border p-2' }, [
           h('div', { class: 'flex flex-wrap items-center gap-2' },
             h('span', { class: 'shrink-0 rounded-md bg-surface px-1.5 py-0.5 text-ui-xs tabular-nums text-foreground-subtle' }, String(i + 1)),
             // 名称输入框用 flex-1 占剩余宽度，与序号同行；textIn 的 w-full 会把序号挤成单独一行
@@ -1351,14 +1367,6 @@ export function openSettingsDialog() {
               const n = h('input', { type: 'text', value: p.name || '', placeholder: L.visionName, class: visionInputCls + ' min-w-0 flex-1' });
               n.addEventListener('input', () => { p.name = n.value; saveVisionSoon(); });
               return n;
-            })(),
-            (() => {
-              const sel = h('select', { class: 'h-7 shrink-0 rounded-lg border border-border bg-input px-1.5 text-ui-xs text-foreground outline-none' },
-                h('option', { value: 'anthropic' }, 'anthropic'),
-                h('option', { value: 'openai' }, 'openai'));
-              sel.value = p.format === 'openai' ? 'openai' : 'anthropic';
-              sel.addEventListener('change', () => { p.format = sel.value; void persistVision(); });
-              return sel;
             })(),
             smallBtn(L.visionMoveUp, () => {
               if (i <= 0) return;
@@ -1398,18 +1406,16 @@ export function openSettingsDialog() {
                 emptyLabel: (p.useProvider || '').trim() === 'session'
                   ? L.titleGenModelFollowSession : L.titleGenModelEmpty,
               })),
-            ...(isManualConn(p.useProvider, titleGenProviders) ? [
-              field(L.visionBaseUrl, textIn(p.baseUrl, (v) => { p.baseUrl = v; saveVisionSoon(); })),
-              field(L.visionApiKey + ' · ' + L.visionApiKeyHint, textIn(p.apiKey, (v) => { p.apiKey = v; saveVisionSoon(); }, { type: 'password' })),
-            ] : []),
           ),
+          ...manualConnCard,
           (() => {
             const n = h('textarea', { class: 'zcodepro-textarea zcodepro-textarea-sm', rows: '3', placeholder: L.visionPrompt });
             n.value = p.prompt || '';
             n.addEventListener('input', () => { p.prompt = n.value; saveVisionSoon(); });
             return field(L.visionPrompt, n);
           })(),
-        ));
+          ]);
+        });
         let testBtn;
         testBtn = smallBtn(L.visionTest, async () => {
           testBtn.disabled = true;
@@ -1420,7 +1426,6 @@ export function openSettingsDialog() {
           testBtn.disabled = false;
           testBtn.textContent = L.visionTest;
           visionTestPre.textContent = res.output || res.error || '';
-          if (!res.ok) showToast(L.visionTestFailed + ': ' + errText(res), 'error');
         });
         paneVision.replaceChildren(
           h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.visionDesc),
@@ -1461,7 +1466,7 @@ export function openSettingsDialog() {
               return h('label', { class: 'flex shrink-0 items-center gap-1.5', title: L.visionCompressKBHint },
                 h('span', { class: 'text-ui-xs font-medium text-foreground-subtle' }, L.visionCompressKB), n);
             })(),
-            numIn(visionCfg.skipAfterFailures, { min: 0, dflt: 4, title: L.visionSkipAfterFailuresHint, label: L.visionSkipAfterFailures, commit: (v) => { visionCfg.skipAfterFailures = v; } }),
+            numIn(visionCfg.skipAfterFailures, { min: 0, dflt: 2, title: L.visionSkipAfterFailuresHint, label: L.visionSkipAfterFailures, commit: (v) => { visionCfg.skipAfterFailures = v; } }),
             numIn(visionCfg.skipMinutes, { min: 1, dflt: 30, title: L.visionSkipMinutesHint, label: L.visionSkipMinutes, commit: (v) => { visionCfg.skipMinutes = v; } }),
           ),
           ...cards,
@@ -1469,7 +1474,7 @@ export function openSettingsDialog() {
             h('div', { class: 'flex items-center gap-1.5' },
               smallBtn('+ ' + L.visionAddProxy, () => {
                 // 名称留空时 helper 校验会拒绝保存；等用户输入名称后防抖保存
-                visionCfg.proxies.push({ name: '', baseUrl: 'https://open.bigmodel.cn/api/anthropic', model: 'glm-5.3-flash', apiKey: '', format: 'anthropic', prompt: '' });
+                visionCfg.proxies.push({ name: '', baseUrl: 'https://open.bigmodel.cn/api/anthropic', model: 'glm-5.3-flash', apiKey: '', format: 'anthropic', prompt: VISION_DEFAULT_PROMPT });
                 renderVision();
               }),
               smallBtn(L.visionResetChain, () => {
@@ -1479,7 +1484,9 @@ export function openSettingsDialog() {
                 void persistVision();
                 renderVision();
               })),
-            testBtn),
+            h('div', { class: 'flex min-w-0 items-center justify-end gap-2' },
+              h('span', { class: 'min-w-0 text-right text-ui-xs/relaxed text-foreground-subtle' }, L.testNoSessionHint),
+              testBtn)),
           visionTestPre,
         );
       };
@@ -2174,11 +2181,9 @@ export function openSettingsDialog() {
           testBtn.textContent = L.titleGenTest;
           if (res && res.ok) {
             testState.textContent = L.titleGenTestOk + res.title;
-            showToast(res.title, 'success');
           } else {
             testState.textContent = (res && errText(res)) || L.titleGenTestFailed;
             testState.className = 'min-w-0 flex-1 truncate text-ui-xs/relaxed text-destructive';
-            showToast(L.titleGenTestFailed + ': ' + (res ? errText(res) : ''), 'error');
           }
         }, 'shrink-0');
         paneTitleGen.replaceChildren(
@@ -2206,9 +2211,13 @@ export function openSettingsDialog() {
                 promptArea.focus();
               })),
             promptArea),
-          // 测试
-          h('div', { class: 'mt-2 flex items-center gap-2 rounded-xl border border-border p-2' },
-            sampleInput, testBtn),
+          // 测试（两行：输入框整行；说明 + 按钮一行。结果只显示在本区下方，
+          // 不弹窗；从没对话过时的引导见 testState 错误文案）
+          h('div', { class: 'mt-2 rounded-xl border border-border p-2' },
+            sampleInput,
+            h('div', { class: 'mt-2 flex items-center justify-between gap-2' },
+              h('span', { class: 'min-w-0 text-ui-xs/relaxed text-foreground-subtle' }, L.testNoSessionHint),
+              testBtn)),
           testState,
         );
       };
