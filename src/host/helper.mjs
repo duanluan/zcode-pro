@@ -17,7 +17,7 @@ import { reorderWorkspaceTasks, reorderGroupMembers } from './taskOrder.mjs';
 import { webdavRequest, webdavPutWithMkcol, webdavHttpText, parseWebdavListing, findCurl } from './webdav.mjs';
 import { resolveZcodeExecutable } from './paths.mjs';
 
-const VERSION = '0.20.1';
+const VERSION = '0.20.2';
 
 // 全局提示词固定在用户主目录：官方加载器按 HOME/USERPROFILE 拼 .zcode/AGENTS.md，
 // 不读 ZCODE_DATA_BASE_DIR（数据根迁走时全局指令仍在原位）。
@@ -2006,6 +2006,17 @@ function titleGenProviderDisplayName(id, name, planKinds = {}) {
   return (name && String(name).trim()) || id;
 }
 
+// headroom 压缩路由（/hr-join）注册表：供应商接入后 baseUrl 统一指向 127.0.0.1:8787，
+// 地址不再带协议线索，真实格式（anthropic/openai）记录在 ~/.zcode/headroom.json 的
+// providers 里；按供应商 id 查，查不到返回空串。同一查表逻辑在 zcode-plugins 的
+// vision-lib.mjs（headroomFormatOf）与 hr-join 接入规则各有一份，改 providers
+// 结构时三处同改
+function headroomFormatOf(headroomProviders, providerId) {
+  const hit = (headroomProviders || []).find((p) => p && p.id === providerId);
+  const f = String(hit?.format || '').toLowerCase();
+  return f === 'anthropic' || f === 'openai' ? f : '';
+}
+
 // 供应商条目（智能起名与视觉代理共用），列表范围与 ZCode 界面的供应商列表
 // 保持一致：
 // - 内置套餐（builtin:*）：有地址、密钥才列出（无密钥的 helper 无法在会话外
@@ -2014,13 +2025,16 @@ function titleGenProviderDisplayName(id, name, planKinds = {}) {
 //   自定义列表就来自它），provider 表里不在其中的残留条目（已弃用的中转等）
 //   不列出；
 // - 协议：api.type / kind 缺失时按地址推断（含 anthropic → anthropic，含
-//   openai 或以 /v\d 结尾 → openai），两个都推不出才放弃该条目。
+//   openai 或以 /v\d 结尾 → openai）；地址推不出（典型：指向 headroom 压缩路由
+//   127.0.0.1:8787）时查上面的注册表，仍没有才放弃该条目。
 // 两张来源表同 id 合并（模型并集、原始名收进别名）。models 为该供应商的
 // 可选模型（下拉用，可为空）。导出以便测试
 export function listTitleGenProviders() {
   const out = [];
   const byId = new Map();
   const planKinds = codingPlanKindByFamily();
+  // 注册表读一次，供下方各条目的协议判定兜底复用（文件不存在时为空数组）
+  const headroomProviders = (readJsonFile(join(homedir(), '.zcode', 'headroom.json')) || {}).providers || [];
   const add = (id, { name, aliases = [], kind, baseUrl, apiKey, models = [] }) => {
     baseUrl = typeof baseUrl === 'string' ? baseUrl.trim() : '';
     apiKey = typeof apiKey === 'string' ? apiKey.trim() : '';
@@ -2028,6 +2042,7 @@ export function listTitleGenProviders() {
     let format = /anthropic/i.test(String(kind)) ? 'anthropic' : /openai/i.test(String(kind)) ? 'openai' : '';
     if (!format) format = /anthropic/i.test(baseUrl) ? 'anthropic'
       : (/openai/i.test(baseUrl) || /\/v\d+$/.test(baseUrl)) ? 'openai' : '';
+    if (!format) format = headroomFormatOf(headroomProviders, id);
     if (!format) return;
     models = models.filter(Boolean);
     const known = byId.get(id);
