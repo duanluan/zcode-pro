@@ -54,6 +54,31 @@ function userTexts() {
     .filter(Boolean);
 }
 
+// 会话区当前的助手回答文本（最后一条，截头去尾）：链接占比高的提问场景下，
+// 用户消息里几乎只有 URL，起名模型无从概括；首轮回答必然复述了真实任务。
+// URL 正则与 linkDominant 共用一份（排除 CJK 字符作边界，中文紧随链接不被吞）
+const URL_RE = /https?:\/\/[^\s\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]+/g;
+function assistantText() {
+  // 只取非流式中的回答——流式里的半截文本不是完整任务描述；取最后一条
+  // 完整的（等待窗口内若已有多轮，最新回答最能概括任务）
+  const els = [...document.querySelectorAll('[class*="@md/conversation"] [class*="assistant-row"]')]
+    .filter((e) => !e.querySelector('[data-is-streaming]'));
+  const last = els[els.length - 1];
+  if (!last) return '';
+  const text = (last.innerText || '').replace(URL_RE, '').trim();
+  return text.slice(0, 600);
+}
+
+// 提问文本是否“链接为主”（去链接后剩余内容不足三分之一）——决定要不要
+// 把助手回答补充进取名素材
+function linkDominant(t) {
+  const raw = t.replace(/\s+/g, '');
+  if (!raw) return true;
+  // URL 结束边界不能只用 \S：中文紧随链接时会被一并吞掉（“链接和说明”被整段删）
+  const stripped = raw.replace(URL_RE, '');
+  return stripped.length < raw.length / 3;
+}
+
 async function onNewTaskRow(key) {
   // 新任务行创建时选中标记可能晚一拍；短暂等待它成为当前会话，
   // 期间没选中（其他入口建的任务）就不处理
@@ -110,6 +135,22 @@ async function onNewTaskRow(key) {
     }
   } finally { convObserver.disconnect(); }
   if (!texts.length) return;
+
+  // 链接为主的提问（如“实现 <链接> 需求”）对起名模型无从概括：等首轮回答
+  // 落定，把回答摘要（去链接、截断）一并作为素材。最多等 60 秒——回答太慢
+  // 或没触发识别时按原素材走，不因此丢标题
+  if (linkDominant(texts.join('\n'))) {
+    const deadline = Date.now() + 60000;
+    while (Date.now() < deadline) {
+      await sleep(2000);
+      if (currentKey() !== key) continue;
+      const a = assistantText();
+      if (a && a.length > 80) {
+        texts.push(`（首轮回答摘要）${a}`);
+        break;
+      }
+    }
+  }
 
   // 失败静默但重试（模型调用偶发失败不应让本次会话永远失去标题）：5 秒一次
   // 错开瞬时抖动；20 秒一次兜住“会话刚建的几秒内索引模型信息未写定”

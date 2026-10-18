@@ -5892,6 +5892,20 @@
       return ((el ? el.textContent : r.innerText) || "").trim();
     }).filter(Boolean);
   }
+  var URL_RE = /https?:\/\/[^\s\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]+/g;
+  function assistantText() {
+    const els = [...document.querySelectorAll('[class*="@md/conversation"] [class*="assistant-row"]')].filter((e) => !e.querySelector("[data-is-streaming]"));
+    const last = els[els.length - 1];
+    if (!last) return "";
+    const text = (last.innerText || "").replace(URL_RE, "").trim();
+    return text.slice(0, 600);
+  }
+  function linkDominant(t2) {
+    const raw = t2.replace(/\s+/g, "");
+    if (!raw) return true;
+    const stripped = raw.replace(URL_RE, "");
+    return stripped.length < raw.length / 3;
+  }
   async function onNewTaskRow(key) {
     const selDeadline = Date.now() + SELECT_WAIT_MS;
     while (currentKey() !== key && Date.now() < selDeadline) await sleep(200);
@@ -5946,6 +5960,18 @@
       convObserver.disconnect();
     }
     if (!texts.length) return;
+    if (linkDominant(texts.join("\n"))) {
+      const deadline = Date.now() + 6e4;
+      while (Date.now() < deadline) {
+        await sleep(2e3);
+        if (currentKey() !== key) continue;
+        const a = assistantText();
+        if (a && a.length > 80) {
+          texts.push(`\uFF08\u9996\u8F6E\u56DE\u7B54\u6458\u8981\uFF09${a}`);
+          break;
+        }
+      }
+    }
     const callTitleGen = () => rpc("/title-gen/run", { method: "POST", body: { sessId, text: texts.join("\n") } }).catch(() => null);
     let res = await callTitleGen();
     for (const delay of [5e3, 2e4]) {
