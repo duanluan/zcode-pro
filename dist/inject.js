@@ -5626,6 +5626,7 @@
   var REVERIFY_MS = 3e3;
   var MAP_REFRESH_MS = 6e4;
   var installed2 = false;
+  var seenRows = /* @__PURE__ */ new WeakSet();
   var enabled2 = true;
   var pinned = null;
   var resolved = false;
@@ -5682,7 +5683,17 @@
     if (first && !walker.nextNode()) first.nodeValue = text;
     else el.textContent = text;
   }
-  function scheduleEnforce(key) {
+  function scheduleEnforce(key, { immediate = false } = {}) {
+    if (immediate) {
+      if (enabled2 && pinned) {
+        const want = pinned.get(sessIdOf(key));
+        if (want !== void 0) {
+          for (const item of findRows(key)) {
+            for (const el of titleElsOf(item)) writeTitle(el, want);
+          }
+        }
+      }
+    }
     if (pendingKeys.has(key)) return;
     pendingKeys.add(key);
     setTimeout(() => {
@@ -5718,7 +5729,13 @@
     if (!enabled2 || !pinned || pinned.size === 0) return;
     for (const item of document.querySelectorAll(TASK_SEL)) {
       const key = isMismatch(item);
-      if (key) scheduleEnforce(key);
+      if (!key) {
+        seenRows.add(item);
+        continue;
+      }
+      const fresh = !seenRows.has(item);
+      seenRows.add(item);
+      scheduleEnforce(key, { immediate: fresh });
     }
   }
   var inTaskRow2 = (node) => !!(node instanceof Element && node.closest && node.closest(TASK_SEL));

@@ -28,6 +28,7 @@ const REVERIFY_MS = 3000;        // 回写后的再复核：纠正数据库写�
 const MAP_REFRESH_MS = 60000;    // 任务行变动后至多一次的延迟表刷新：让新重命名会话进入锁定范围
 
 let installed = false;
+const seenRows = new WeakSet(); // 已见过的任务行；新上屏的行立即钉回（不等复核）
 let enabled = true;       // titleLock 开关（/pinned-titles 响应带来）
 let pinned = null;        // Map(task_id → 重命名标题)；null = 尚未取到/功能关闭
 let resolved = false;     // 首次成功通信（无论开关状态）后不再重试启动拉取
@@ -100,7 +101,19 @@ function writeTitle(el, text) {
 }
 
 // 失配 → 排期复核；到期后行可能已被 React 重挂载，按键重新定位
-function scheduleEnforce(key) {
+function scheduleEnforce(key, { immediate = false } = {}) {
+  if (immediate) {
+    // 新上屏的行（项目展开/滚动复现）带着旧名出现，用户此刻正看着列表——
+    // 立即用缓存表钉回，不等复核（编辑中的行不会到这：isMismatch 已排除 input）
+    if (enabled && pinned) {
+      const want = pinned.get(sessIdOf(key));
+      if (want !== undefined) {
+        for (const item of findRows(key)) {
+          for (const el of titleElsOf(item)) writeTitle(el, want);
+        }
+      }
+    }
+  }
   if (pendingKeys.has(key)) return;
   pendingKeys.add(key);
   setTimeout(() => {
@@ -138,7 +151,12 @@ function scan() {
   if (!enabled || !pinned || pinned.size === 0) return;
   for (const item of document.querySelectorAll(TASK_SEL)) {
     const key = isMismatch(item);
-    if (key) scheduleEnforce(key);
+    if (!key) { seenRows.add(item); continue; }
+    // 新上屏的失配行立即钉回（项目展开时旧名闪现 1 秒+，用户不知道点哪个）；
+    // 已在屏上的失配走原路径（复核后写，避免把刚提交的重命名改回旧名）
+    const fresh = !seenRows.has(item);
+    seenRows.add(item);
+    scheduleEnforce(key, { immediate: fresh });
   }
 }
 

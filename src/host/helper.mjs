@@ -324,6 +324,11 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
           current.devMode = body.devMode;
         }
         if (body && typeof body === 'object' && body.features && typeof body.features === 'object') {
+          // 会话名锁定开关的每次变化都落日志：它被意外关闭两次（页面里是关、
+          // 配置文件是开，来源不明），有记录才能查到是谁改的
+          if (typeof body.features.titleLock === 'boolean' && body.features.titleLock !== (loadConfig(configFile).features.titleLock !== false)) {
+            titleGenLog(dataRoot, `titleLock ${body.features.titleLock ? 'on' : 'off'}（此前为 ${!body.features.titleLock ? 'on' : 'off'}）`);
+          }
           applyFeaturesPartial(current.features, body.features);
         }
         if (body && typeof body === 'object' && typeof body.idleReclaimMinutes === 'number' && Number.isFinite(body.idleReclaimMinutes)) {
