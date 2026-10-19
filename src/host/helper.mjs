@@ -3061,7 +3061,8 @@ async function runHeadroomHook(args, timeoutMs = 30000) {
   });
 }
 
-// 解析 ensure-proxy.sh status 输出为结构化字段（字段名以脚本 hr_status 的输出为准）。
+// 解析 ensure-proxy(.sh/.mjs) status 输出为结构化字段（字段名以脚本 hr_status 的输出为准；
+// headroom 插件 1.3.0+ 多实例模式由 hr-multi 输出同名字段，另附 instance: 行）。
 // 导出以便测试脚本直接驱动。
 export function parseHeadroomStatus(text) {
   const raw = String(text || '');
@@ -3071,15 +3072,23 @@ export function parseHeadroomStatus(text) {
   };
   const proxy = line('proxy') || '';
   const ps = line('power-save-auto-cpu') || '';
+  // 多实例模式的实例行：instance: <端口> <格式> <上游> <up|down> <供应商列表>
+  const instances = [];
+  for (const m of raw.matchAll(/^instance: (\d+) (\S+) (\S+) (up|down) ?(.*)$/gm)) {
+    instances.push({ port: Number(m[1]), format: m[2], upstream: m[3], up: m[4] === 'up', providers: m[5] || '' });
+  }
   return {
     up: /^up\b/.test(proxy),
     port: Number(/(\d+)\)?$/.exec(proxy)?.[1]) || null,
     managed: line('managed-by-plugin'),
+    multi: instances.length > 0 || /^instances: \d+$/m.test(raw),
+    instances,
     backend: line('current-backend'),
     desiredBackend: line('desired-backend'),
     powerMode: line('power-mode'),
     saverDetect: line('saver-detect'),
-    watcherRunning: /^watcher: running/m.test(raw),
+    // watcher 行存在才是真状态；多实例模式不输出该行时为 null（面板显示 —）
+    watcherRunning: /^watcher: /m.test(raw) ? /^watcher: running/m.test(raw) : null,
     saverHint: (raw.split('\n').find((l) => l.startsWith('注意：')) || '').trim() || null,
     powerSaveMode: (/^(battery|saver|off)/.exec(ps) || [])[1] || null,
     watchInterval: Number(/\(interval (\d+)s\)/.exec(ps)?.[1]) || null,

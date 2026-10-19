@@ -305,6 +305,8 @@
     hrUsageNone: "\u5F53\u524D\u6CA1\u6709\u8D70 headroom \u7684\u4F9B\u5E94\u5546\uFF0C\u672A\u5207\u6362",
     headroomLoadFailed: "\u8BFB\u53D6 Headroom \u914D\u7F6E\u5931\u8D25",
     headroomStatusTitle: "\u8FD0\u884C\u72B6\u6001",
+    hrInstRunning: "\u8FD0\u884C\u4E2D",
+    hrInstStopped: "\u672A\u8FD0\u884C",
     headroomStatusLoadFailed: "\u8BFB\u53D6\u8FD0\u884C\u72B6\u6001\u5931\u8D25",
     headroomProxyUp: "\u4EE3\u7406\u8FD0\u884C\u4E2D",
     headroomProxyDown: "\u4EE3\u7406\u672A\u8FD0\u884C",
@@ -670,6 +672,8 @@
     hrUsageNone: "No providers route through headroom; nothing changed",
     headroomLoadFailed: "Failed to load the Headroom config",
     headroomStatusTitle: "Status",
+    hrInstRunning: "running",
+    hrInstStopped: "down",
     headroomStatusLoadFailed: "Failed to load the status",
     headroomProxyUp: "Proxy running",
     headroomProxyDown: "Proxy down",
@@ -4868,6 +4872,7 @@
             h("span", { class: "text-ui-sm text-foreground-subtle/70" }, "\u2026")
           );
           const hrFacts = h("div", { class: "mt-1.5 grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-3" });
+          const hrInstList = h("div", { class: "mt-1.5 space-y-1", style: "display:none" });
           const hrHintLine = h("p", { class: "mt-1.5 text-ui-xs/relaxed text-amber-500", style: "display:none" });
           const hrRefresh = async () => {
             const res = await rpc("/headroom/status");
@@ -4876,6 +4881,8 @@
                 h("span", { class: "text-ui-sm text-destructive" }, L.headroomStatusLoadFailed + ": " + errText(res))
               );
               hrFacts.replaceChildren();
+              hrInstList.replaceChildren();
+              hrInstList.style.display = "none";
               hrHintLine.style.display = "none";
               return;
             }
@@ -4895,9 +4902,23 @@
               fact(L.headroomCurrentBackend, hrDevLabel(s.backend)),
               fact(L.headroomDesiredBackend, hrDevLabel(s.desiredBackend)),
               fact(L.headroomPowerState, HR_PM[s.powerMode] || s.powerMode),
-              fact(L.headroomWatcher, s.watcherRunning ? L.headroomWatcherOn : L.headroomWatcherOff),
+              fact(L.headroomWatcher, s.watcherRunning == null ? "\u2014" : s.watcherRunning ? L.headroomWatcherOn : L.headroomWatcherOff),
               fact(L.headroomSaverDetect, HR_DETECT[s.saverDetect] || s.saverDetect)
             );
+            const insts = Array.isArray(s.instances) ? s.instances : [];
+            hrInstList.replaceChildren(...insts.map((it) => h(
+              "div",
+              { class: "flex min-w-0 items-center gap-2" },
+              h("span", { class: "shrink-0 font-mono text-ui-xs text-foreground-subtle" }, `:${it.port}`),
+              h(
+                "span",
+                { class: "min-w-0 flex-1 truncate text-ui-xs text-foreground-subtle", title: `${it.upstream} | ${it.providers}` },
+                `${it.format} \u2192 ${it.upstream}`
+              ),
+              h("span", { class: "max-w-[40%] shrink-0 truncate text-ui-xs text-foreground-subtle/70", title: it.providers }, it.providers),
+              h("span", { class: "shrink-0 text-ui-xs " + (it.up ? "text-emerald-600" : "text-destructive") }, it.up ? L.hrInstRunning : L.hrInstStopped)
+            )));
+            hrInstList.style.display = insts.length ? "" : "none";
             hrHintLine.textContent = s.saverHint || "";
             hrHintLine.style.display = s.saverHint ? "" : "none";
           };
@@ -5085,6 +5106,7 @@
               ),
               hrStatusLine,
               hrFacts,
+              hrInstList,
               hrHintLine
             ),
             h(

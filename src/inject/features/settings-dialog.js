@@ -1853,6 +1853,7 @@ export function openSettingsDialog() {
         const hrStatusLine = h('div', { class: 'flex items-center gap-2' },
           h('span', { class: 'text-ui-sm text-foreground-subtle/70' }, '…'));
         const hrFacts = h('div', { class: 'mt-1.5 grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-3' });
+        const hrInstList = h('div', { class: 'mt-1.5 space-y-1', style: 'display:none' });
         const hrHintLine = h('p', { class: 'mt-1.5 text-ui-xs/relaxed text-amber-500', style: 'display:none' });
         const hrRefresh = async () => {
           const res = await rpc('/headroom/status');
@@ -1860,6 +1861,8 @@ export function openSettingsDialog() {
             hrStatusLine.replaceChildren(
               h('span', { class: 'text-ui-sm text-destructive' }, L.headroomStatusLoadFailed + ': ' + errText(res)));
             hrFacts.replaceChildren();
+            hrInstList.replaceChildren();
+            hrInstList.style.display = 'none';
             hrHintLine.style.display = 'none';
             return;
           }
@@ -1876,9 +1879,18 @@ export function openSettingsDialog() {
             fact(L.headroomCurrentBackend, hrDevLabel(s.backend)),
             fact(L.headroomDesiredBackend, hrDevLabel(s.desiredBackend)),
             fact(L.headroomPowerState, HR_PM[s.powerMode] || s.powerMode),
-            fact(L.headroomWatcher, s.watcherRunning ? L.headroomWatcherOn : L.headroomWatcherOff),
+            fact(L.headroomWatcher, s.watcherRunning == null ? '—' : (s.watcherRunning ? L.headroomWatcherOn : L.headroomWatcherOff)),
             fact(L.headroomSaverDetect, HR_DETECT[s.saverDetect] || s.saverDetect),
           );
+          // 多实例模式：列出各压缩实例（端口/格式/上游/供应商）与运行状态
+          const insts = Array.isArray(s.instances) ? s.instances : [];
+          hrInstList.replaceChildren(...insts.map((it) => h('div', { class: 'flex min-w-0 items-center gap-2' },
+            h('span', { class: 'shrink-0 font-mono text-ui-xs text-foreground-subtle' }, `:${it.port}`),
+            h('span', { class: 'min-w-0 flex-1 truncate text-ui-xs text-foreground-subtle', title: `${it.upstream} | ${it.providers}` },
+              `${it.format} → ${it.upstream}`),
+            h('span', { class: 'max-w-[40%] shrink-0 truncate text-ui-xs text-foreground-subtle/70', title: it.providers }, it.providers),
+            h('span', { class: 'shrink-0 text-ui-xs ' + (it.up ? 'text-emerald-600' : 'text-destructive') }, it.up ? L.hrInstRunning : L.hrInstStopped))));
+          hrInstList.style.display = insts.length ? '' : 'none';
           hrHintLine.textContent = s.saverHint || '';
           hrHintLine.style.display = s.saverHint ? '' : 'none';
         };
@@ -2052,6 +2064,7 @@ export function openSettingsDialog() {
               h('div', { class: 'flex items-center gap-1.5' }, hrRefreshBtn, hrStartBtn, hrRestartBtn, hrStopBtn)),
             hrStatusLine,
             hrFacts,
+            hrInstList,
             hrHintLine),
           h('div', {
             class: 'mt-2 rounded-xl border border-border p-1',
