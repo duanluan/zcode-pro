@@ -41,7 +41,37 @@ function findWsRow(ws) {
   return findProjectRow(ws);
 }
 
-// 行首图标容器（旋转类的挂点）：
+// 折叠且运行中时，项目图标换成与任务行运行中同款的 loader（lucide 圆弧 +
+// 应用自带的 animate-spin 类，旋转速度与任务行完全一致）；结束后还原 folder。
+// React 重渲染会重建 folder svg，apply 周期（观察器 + 兜底轮询）会重新换上
+const LOADER_PATH = 'M21 12a9 9 0 1 1-6.219-8.56';
+function setRunningIcon(holder, on) {
+  if (!holder) return;
+  if (on) {
+    // folder 的隐藏由 CSS 完成（span.zcodepro-ws-running 类稳定，React 重建的
+    // folder 也会被规则罩住）；这里只负责确保 loader 在场
+    if (holder.querySelector(':scope > svg.zcodepro-ws-loader')) return;
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('fill', 'none');
+    svg.setAttribute('stroke', 'currentColor');
+    svg.setAttribute('stroke-width', '2');
+    svg.setAttribute('stroke-linecap', 'round');
+    svg.setAttribute('stroke-linejoin', 'round');
+    const orig0 = holder.querySelector(':scope > svg:not(.zcodepro-ws-loader)');
+    const base = orig0 ? (orig0.getAttribute('class') || '') : 'size-4';
+    svg.setAttribute('class', (base.replace(/lucide-folder[a-z-]*/g, '').trim() + ' animate-spin zcodepro-ws-loader').trim());
+    const path = document.createElementNS(ns, 'path');
+    path.setAttribute('d', LOADER_PATH);
+    svg.append(path);
+    holder.append(svg);
+  } else {
+    holder.querySelectorAll(':scope > svg.zcodepro-ws-loader').forEach((el) => el.remove());
+  }
+}
+
+// 行首图标容器（旋转图标的挂点）：
 // 旧结构：行.firstElementChild 里的 span；新结构：virtual-project-toggle 的首个 span（folder 图标容器）
 function iconHolderOf(row) {
   if (row.hasAttribute && row.hasAttribute('data-project-id')) {
@@ -249,9 +279,10 @@ function apply() {
     const head = wsHead(row);
     const collapsed = !head || head.getAttribute('aria-expanded') === 'false';
     const running = !!(enabled && collapsed && runningByWs.get(path) && runningByWs.get(path).size);
-    // 类挂在图标的外层 span 上：展开/收起时 React 会重建 svg，span 是稳定节点
+    // 换同款 loader 图标（类标记仅作调试/样式锚点）
     const icon = iconHolderOf(row);
-    if (icon) icon.classList.toggle('zcodepro-ws-running', running);
+    icon?.classList.toggle('zcodepro-ws-running', running);
+    setRunningIcon(icon, running);
   }
   // 侧栏里已不存在的项目清掉状态
   for (const ws of [...runningByWs.keys()]) if (!seen.has(ws)) runningByWs.delete(ws);

@@ -205,8 +205,8 @@
     titleGenTesting: "\u751F\u6210\u4E2D\u2026",
     titleGenTestOk: "\u751F\u6210\u7ED3\u679C\uFF1A",
     titleGenTestFailed: "\u751F\u6210\u5931\u8D25",
-    featureWsRunning: "\u6298\u53E0\u9879\u76EE\u8FD0\u884C\u63D0\u793A\uFF08\u5B9E\u9A8C\u6027\uFF09",
-    featureWsRunningDesc: "\u6298\u53E0\u7684\u9879\u76EE\u91CC\u4ECD\u6709\u4F1A\u8BDD\u5728\u8FD0\u884C\u65F6\uFF0C\u9879\u76EE\u56FE\u6807\u65CB\u8F6C\u63D0\u793A\uFF1B\u5168\u90E8\u7ED3\u675F\u6216\u5C55\u5F00\u9879\u76EE\u540E\u6062\u590D\u3002\u590D\u6838\u8FD0\u884C\u72B6\u6001\uFF1AZCode 3.16.1+ \u8D70\u5B98\u65B9\u63A5\u53E3\uFF0C\u754C\u9762\u65E0\u4EFB\u4F55\u8D77\u4F0F\uFF1B3.15.x \u6BCF 60 \u79D2\u5728\u540E\u53F0\u77ED\u6682\u5C55\u5F00\u8BE5\u9879\u76EE\u590D\u6838\u518D\u6536\u8D77\uFF0C\u4EC5\u9879\u76EE\u4F4D\u7F6E\u53EF\u80FD\u6709\u7EA6\u56DB\u5206\u4E4B\u4E00\u79D2\u7684\u8F7B\u5FAE\u9AD8\u5EA6\u8D77\u4F0F\u3002",
+    featureWsRunning: "\u6298\u53E0\u9879\u76EE\u8FD0\u884C\u63D0\u793A",
+    featureWsRunningDesc: "\u6298\u53E0\u7684\u9879\u76EE\u91CC\u4ECD\u6709\u4F1A\u8BDD\u5728\u8FD0\u884C\u65F6\uFF0C\u9879\u76EE\u56FE\u6807\u6362\u6210\u4E0E\u4EFB\u52A1\u8FD0\u884C\u4E2D\u540C\u6B3E\u7684\u52A0\u8F7D\u56FE\u6807\uFF0C\u5168\u90E8\u7ED3\u675F\u6216\u5C55\u5F00\u9879\u76EE\u540E\u6062\u590D\uFF1B3.16.1 \u4E4B\u524D\u6BCF 60 \u79D2\u4F1A\u5728\u540E\u53F0\u77ED\u6682\u5C55\u5F00\u9879\u76EE\u590D\u6838\u518D\u6536\u8D77\u3002",
     tabPerformance: "\u6027\u80FD",
     perfDesc: "ZCode \u4E3A\u6BCF\u4E2A\u6253\u5F00\u8FC7\u7684\u9879\u76EE\u5E38\u9A7B\u4E00\u4E2A\u4F1A\u8BDD\u8FDB\u7A0B\uFF0C\u5E94\u7528\u81EA\u8EAB\u4E0D\u4F1A\u56DE\u6536\uFF0C\u9879\u76EE\u591A\u4E86\u5185\u5B58\u5360\u7528\u5C31\u9AD8\u3002\u5F00\u542F\u540E\uFF0C\u957F\u65F6\u95F4\u672A\u4F7F\u7528\u4E14\u6CA1\u6709\u4EFB\u52A1\u5728\u8DD1\u7684\u9879\u76EE\u4F1A\u88AB\u81EA\u52A8\u91CA\u653E\uFF1A\u4F1A\u8BDD\u8BB0\u5F55\u4E0D\u53D7\u5F71\u54CD\uFF0C\u518D\u6B21\u6253\u5F00\u65F6\u81EA\u52A8\u6062\u590D\uFF0C\u4EC5\u9996\u6B21\u56DE\u590D\u6709\u51E0\u79D2\u7B49\u5F85\u3002\u6B63\u5728\u4F7F\u7528\u7684\u9879\u76EE\u3001\u8FD0\u884C\u4E2D\u7684\u4F1A\u8BDD\u4E0E\u540E\u53F0\u547D\u4EE4\u3001\u5B9A\u65F6\u4EFB\u52A1\u90FD\u4E0D\u4F1A\u88AB\u56DE\u6536\u3002\u540E\u53F0\u547D\u4EE4\u68C0\u6D4B\u4F9D\u8D56\u7CFB\u7EDF\u8FDB\u7A0B\u4FE1\u606F\uFF08Linux / macOS / Windows \u5404\u8D70\u7CFB\u7EDF\u81EA\u5E26\u5DE5\u5177\uFF09\uFF0C\u68C0\u6D4B\u4E0D\u53EF\u7528\u65F6\u529F\u80FD\u81EA\u52A8\u505C\u7528\u3002",
     featureIdleReclaim: "\u7A7A\u95F2\u9879\u76EE\u5185\u5B58\u56DE\u6536",
@@ -595,8 +595,8 @@
     titleGenTesting: "Generating\u2026",
     titleGenTestOk: "Result: ",
     titleGenTestFailed: "Generation failed",
-    featureWsRunning: "Running indicator on collapsed projects (experimental)",
-    featureWsRunningDesc: "Spins a collapsed project's icon while any of its sessions is still running; stops when they all finish or the project is expanded. Status recheck uses the official query on ZCode 3.16.1+ (no visual ripple); on 3.15.x the project is briefly re-expanded in the background every 60 s \u2014 rows stay hidden, with only a subtle quarter-second height ripple at the project.",
+    featureWsRunning: "Running indicator on collapsed projects",
+    featureWsRunningDesc: "Shows the same spinning loader icon as running tasks on a collapsed project while any of its sessions is still running; restores when they all finish or the project is expanded. Before ZCode 3.16.1 the project is briefly re-expanded in the background every 60 s to re-check.",
     tabPerformance: "Performance",
     perfDesc: "ZCode keeps a session process resident for every project you have opened and never reclaims it, so memory grows with projects. When enabled, projects unused for a while with nothing running release their memory automatically: sessions are untouched and reload when reopened, with a few seconds wait on the first reply. The project in use, running sessions, background commands and scheduled tasks are never reclaimed. Background-command detection reads system process info via built-in tools (Linux / macOS / Windows); when unavailable, the feature disables itself.",
     featureIdleReclaim: "Idle project memory reclaim",
@@ -1621,13 +1621,9 @@
     .zcodepro-imgmenu-item:hover {
       background-color: var(--color-accent, color-mix(in oklab, var(--color-foreground, #888) 10%, transparent));
     }
-    /* \u6298\u53E0\u9879\u76EE\u8FD0\u884C\u63D0\u793A\uFF08ws-running.js\uFF09\uFF1A\u9879\u76EE\u56FE\u6807\u65CB\u8F6C\u3002\u52A8\u753B\u7C7B\u6302\u5728\u56FE\u6807\u5916\u5C42\u7684
-       \u7A33\u5B9A span \u4E0A\uFF0C\u5C55\u5F00/\u6536\u8D77\u65F6\u5E94\u7528\u91CD\u5EFA svg \u4E5F\u4E0D\u53D7\u5F71\u54CD\uFF1B\u65F6\u957F\u4E0E\u5E94\u7528 loader \u4E00\u81F4 */
-    @keyframes zcodepro-ws-spin { to { transform: rotate(360deg); } }
-    span.zcodepro-ws-running > svg {
-      animation: zcodepro-ws-spin 1s linear infinite;
-      transform-origin: center;
-    }
+    /* \u6298\u53E0\u9879\u76EE\u8FD0\u884C\u63D0\u793A\uFF1Afolder \u56FE\u6807\u8BA9\u4F4D\u7ED9 loader\uFF08loader \u7531\u811A\u672C\u63D2\u5165\uFF0C
+       folder \u53EF\u80FD\u88AB React \u968F\u65F6\u91CD\u5EFA\uFF0C\u9760\u7C7B\u9009\u62E9\u5668\u7EDF\u4E00\u9690\u85CF\uFF0C\u540E\u4EE3\u5199\u6CD5\u517C\u5BB9\u5305\u88C5\u5C42\uFF09 */
+    span.zcodepro-ws-running svg:not(.zcodepro-ws-loader) { display: none !important; }
     /* \u65E0\u611F\u63A2\u67E5\u671F\u95F4\u76D6\u5728\u9879\u76EE\u884C\u4E0A\u7684\u51BB\u7ED3\u514B\u9686\uFF1A\u56FA\u5B9A\u5B9A\u4F4D\u3001\u4E0D\u54CD\u5E94\u6307\u9488 */
     .zcodepro-ws-frozen {
       position: fixed;
@@ -1741,7 +1737,7 @@
     }
     .zcodepro-pin-head:hover .zcodepro-pin-chevron svg { opacity: 1; }
     .zcodepro-pin-collapsed .zcodepro-pin-chevron svg { transform: rotate(-90deg); }
-    .zcodepro-pin-collapsed > ul { display: none !important; }
+    .zcodepro-pin-collapsed > :is(ul, div):has(li[data-task-item-key]) { display: none !important; }
     /* \u6298\u53E0\u540E\u53BB\u6389\u6807\u9898\u81EA\u5E26\u7684\u5E95\u90E8\u7559\u767D\uFF0C\u4E0E\u4E0B\u4E00\u5206\u533A\u7684\u95F4\u9694\u548C\u5176\u4ED6\u5206\u533A\u8282\u594F\u4E00\u81F4 */
     .zcodepro-pin-collapsed .zcodepro-pin-head { padding-bottom: 0; }
   `));
@@ -3813,6 +3809,31 @@
           h("span", { class: "text-foreground-subtle/70" }, `${health.version} \xB7 ${HELPER_URL}`)
         );
         const rows = h("div", { class: "divide-y divide-border rounded-xl border border-border" });
+        const pluginsStatusLine = h("span", { class: "max-w-40 truncate text-ui-xs/relaxed text-foreground-subtle" }, "\u2026");
+        const pluginsBtn = btnSmall(L.pluginsCheckNow, () => {
+          void runPluginsUpdate();
+        });
+        const runPluginsUpdate = async () => {
+          pluginsBtn.disabled = true;
+          pluginsStatusLine.textContent = L.pluginsUpdating;
+          const res = await rpc("/plugins/update", { method: "POST", body: {} });
+          pluginsBtn.disabled = false;
+          if (!res.ok) {
+            pluginsStatusLine.textContent = "";
+            showToast(L.pluginsUpdateFailed + ": " + errText(res), "error");
+            return;
+          }
+          pluginsStatusLine.textContent = res.updated > 0 ? L.pluginsUpdatedDone.replaceAll("{n}", String(res.updated)) : L.pluginsUpToDate;
+          showToast(pluginsStatusLine.textContent, "success");
+        };
+        void (async () => {
+          const res = await rpc("/plugins/status");
+          if (!res.ok) {
+            pluginsStatusLine.textContent = "";
+            return;
+          }
+          pluginsStatusLine.textContent = (res.updates || []).length > 0 ? L.pluginsUpdatesFound.replaceAll("{n}", String(res.updates.length)) : L.pluginsUpToDate;
+        })();
         const refreshRows = () => {
           const f = config.features || {};
           rows.replaceChildren(
@@ -3862,7 +3883,7 @@
               const next = !(f.autoUpdatePlugins === true);
               if (await setFeature("autoUpdatePlugins", next)) f.autoUpdatePlugins = next;
               refreshRows();
-            })
+            }, h("div", { class: "flex items-center gap-2" }, pluginsStatusLine, pluginsBtn))
           );
         };
         refreshRows();
@@ -3913,64 +3934,10 @@
           )
         );
         let activeTab = "features";
-        const pluginsStatusLine = h("span", { class: "text-ui-xs/relaxed text-foreground-subtle" }, "\u2026");
-        const pluginsBtn = btnSmall(L.pluginsCheckNow, () => {
-          void runPluginsUpdate();
-        });
-        const runPluginsUpdate = async () => {
-          pluginsBtn.disabled = true;
-          pluginsStatusLine.textContent = L.pluginsUpdating;
-          const res = await rpc("/plugins/update", { method: "POST", body: {} });
-          pluginsBtn.disabled = false;
-          if (!res.ok) {
-            pluginsStatusLine.textContent = "";
-            showToast(L.pluginsUpdateFailed + ": " + errText(res), "error");
-            return;
-          }
-          pluginsStatusLine.textContent = res.updated > 0 ? L.pluginsUpdatedDone.replaceAll("{n}", String(res.updated)) : L.pluginsUpToDate;
-          showToast(pluginsStatusLine.textContent, "success");
-        };
-        void (async () => {
-          const res = await rpc("/plugins/status");
-          if (!res.ok) {
-            pluginsStatusLine.textContent = "";
-            return;
-          }
-          pluginsStatusLine.textContent = (res.updates || []).length > 0 ? L.pluginsUpdatesFound.replaceAll("{n}", String(res.updates.length)) : L.pluginsUpToDate;
-        })();
-        const PLUGINS_REPO_URL = "https://github.com/duanluan/zcode-plugins";
-        const repoName = "zcode-plugins";
-        const titleParts = L.pluginsUpdateTitle.split(repoName);
-        const pluginsTitle = h("div", { class: "truncate text-ui-sm font-medium text-foreground" });
-        if (titleParts.length === 2 && typeof window.zcode?.openExternal === "function") {
-          pluginsTitle.append(
-            titleParts[0],
-            h("span", {
-              class: "cursor-pointer underline-offset-4 hover:underline",
-              title: PLUGINS_REPO_URL,
-              onClick: () => openExternal(PLUGINS_REPO_URL)
-            }, repoName),
-            titleParts[1]
-          );
-        } else {
-          pluginsTitle.append(L.pluginsUpdateTitle);
-        }
-        const pluginsCard = h(
-          "div",
-          { class: "mt-3 flex items-center justify-between gap-2 rounded-xl border border-border p-2" },
-          h(
-            "div",
-            { class: "min-w-0" },
-            pluginsTitle,
-            h("div", { class: "mt-0.5 truncate text-ui-xs/relaxed text-foreground-subtle" }, pluginsStatusLine)
-          ),
-          pluginsBtn
-        );
         const paneFeatures = h(
           "div",
           { role: "tabpanel", class: "mt-4" },
           h("div", {}, rows),
-          pluginsCard,
           communityCards
         );
         const paneStyles = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
@@ -6845,6 +6812,30 @@
   function findWsRow(ws) {
     return findProjectRow(ws);
   }
+  var LOADER_PATH = "M21 12a9 9 0 1 1-6.219-8.56";
+  function setRunningIcon(holder, on) {
+    if (!holder) return;
+    if (on) {
+      if (holder.querySelector(":scope > svg.zcodepro-ws-loader")) return;
+      const ns = "http://www.w3.org/2000/svg";
+      const svg = document.createElementNS(ns, "svg");
+      svg.setAttribute("viewBox", "0 0 24 24");
+      svg.setAttribute("fill", "none");
+      svg.setAttribute("stroke", "currentColor");
+      svg.setAttribute("stroke-width", "2");
+      svg.setAttribute("stroke-linecap", "round");
+      svg.setAttribute("stroke-linejoin", "round");
+      const orig0 = holder.querySelector(":scope > svg:not(.zcodepro-ws-loader)");
+      const base = orig0 ? orig0.getAttribute("class") || "" : "size-4";
+      svg.setAttribute("class", (base.replace(/lucide-folder[a-z-]*/g, "").trim() + " animate-spin zcodepro-ws-loader").trim());
+      const path = document.createElementNS(ns, "path");
+      path.setAttribute("d", LOADER_PATH);
+      svg.append(path);
+      holder.append(svg);
+    } else {
+      holder.querySelectorAll(":scope > svg.zcodepro-ws-loader").forEach((el) => el.remove());
+    }
+  }
   function iconHolderOf(row) {
     if (row.hasAttribute && row.hasAttribute("data-project-id")) {
       const toggle2 = row.querySelector('[data-testid="virtual-project-toggle"]');
@@ -7012,7 +7003,8 @@
       const collapsed = !head || head.getAttribute("aria-expanded") === "false";
       const running = !!(enabled3 && collapsed && runningByWs.get(path) && runningByWs.get(path).size);
       const icon = iconHolderOf(row);
-      if (icon) icon.classList.toggle("zcodepro-ws-running", running);
+      icon?.classList.toggle("zcodepro-ws-running", running);
+      setRunningIcon(icon, running);
     }
     for (const ws of [...runningByWs.keys()]) if (!seen.has(ws)) runningByWs.delete(ws);
   }

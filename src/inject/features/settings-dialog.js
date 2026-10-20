@@ -237,6 +237,31 @@ export function openSettingsDialog() {
       );
 
       const rows = h('div', { class: 'divide-y divide-border rounded-xl border border-border' });
+      const pluginsStatusLine = h('span', { class: 'max-w-40 truncate text-ui-xs/relaxed text-foreground-subtle' }, '…');
+      const pluginsBtn = btnSmall(L.pluginsCheckNow, () => { void runPluginsUpdate(); });
+      const runPluginsUpdate = async () => {
+        pluginsBtn.disabled = true;
+        pluginsStatusLine.textContent = L.pluginsUpdating;
+        const res = await rpc('/plugins/update', { method: 'POST', body: {} });
+        pluginsBtn.disabled = false;
+        if (!res.ok) {
+          pluginsStatusLine.textContent = '';
+          showToast(L.pluginsUpdateFailed + ': ' + errText(res), 'error');
+          return;
+        }
+        pluginsStatusLine.textContent = res.updated > 0
+          ? L.pluginsUpdatedDone.replaceAll('{n}', String(res.updated))
+          : L.pluginsUpToDate;
+        showToast(pluginsStatusLine.textContent, 'success');
+      };
+      void (async () => {
+        const res = await rpc('/plugins/status');
+        if (!res.ok) { pluginsStatusLine.textContent = ''; return; }
+        pluginsStatusLine.textContent = (res.updates || []).length > 0
+          ? L.pluginsUpdatesFound.replaceAll('{n}', String(res.updates.length))
+          : L.pluginsUpToDate;
+      })();
+
       const refreshRows = () => {
         const f = config.features || {};
         rows.replaceChildren(
@@ -289,7 +314,7 @@ export function openSettingsDialog() {
             const next = !(f.autoUpdatePlugins === true);
             if (await setFeature('autoUpdatePlugins', next)) f.autoUpdatePlugins = next;
             refreshRows();
-          }),
+          }, h('div', { class: 'flex items-center gap-2' }, pluginsStatusLine, pluginsBtn)),
         );
       };
       refreshRows();
@@ -332,54 +357,9 @@ export function openSettingsDialog() {
       let activeTab = 'features';
       // 插件更新卡片：显示 duanluan-zcode-plugins 市场状态，一键更新（helper /plugins/* 端点）；
       // 状态异步加载，打开弹窗不等待
-      const pluginsStatusLine = h('span', { class: 'text-ui-xs/relaxed text-foreground-subtle' }, '…');
-      const pluginsBtn = btnSmall(L.pluginsCheckNow, () => { void runPluginsUpdate(); });
-      const runPluginsUpdate = async () => {
-        pluginsBtn.disabled = true;
-        pluginsStatusLine.textContent = L.pluginsUpdating;
-        const res = await rpc('/plugins/update', { method: 'POST', body: {} });
-        pluginsBtn.disabled = false;
-        if (!res.ok) {
-          pluginsStatusLine.textContent = '';
-          showToast(L.pluginsUpdateFailed + ': ' + errText(res), 'error');
-          return;
-        }
-        pluginsStatusLine.textContent = res.updated > 0
-          ? L.pluginsUpdatedDone.replaceAll('{n}', String(res.updated))
-          : L.pluginsUpToDate;
-        showToast(pluginsStatusLine.textContent, 'success');
-      };
-      void (async () => {
-        const res = await rpc('/plugins/status');
-        if (!res.ok) { pluginsStatusLine.textContent = ''; return; }
-        pluginsStatusLine.textContent = (res.updates || []).length > 0
-          ? L.pluginsUpdatesFound.replaceAll('{n}', String(res.updates.length))
-          : L.pluginsUpToDate;
-      })();
-      // 标题中的 zcode-plugins 可点击跳转插件市场仓库（依赖宿主 openExternal 打开系统浏览器）
-      const PLUGINS_REPO_URL = 'https://github.com/duanluan/zcode-plugins';
-      const repoName = 'zcode-plugins';
-      const titleParts = L.pluginsUpdateTitle.split(repoName);
-      const pluginsTitle = h('div', { class: 'truncate text-ui-sm font-medium text-foreground' });
-      if (titleParts.length === 2 && typeof window.zcode?.openExternal === 'function') {
-        pluginsTitle.append(titleParts[0],
-          h('span', {
-            class: 'cursor-pointer underline-offset-4 hover:underline',
-            title: PLUGINS_REPO_URL,
-            onClick: () => openExternal(PLUGINS_REPO_URL),
-          }, repoName),
-          titleParts[1]);
-      } else {
-        pluginsTitle.append(L.pluginsUpdateTitle);
-      }
-      const pluginsCard = h('div', { class: 'mt-3 flex items-center justify-between gap-2 rounded-xl border border-border p-2' },
-        h('div', { class: 'min-w-0' },
-          pluginsTitle,
-          h('div', { class: 'mt-0.5 truncate text-ui-xs/relaxed text-foreground-subtle' }, pluginsStatusLine)),
-        pluginsBtn);
+
       const paneFeatures = h('div', { role: 'tabpanel', class: 'mt-4' },
         h('div', {}, rows),
-        pluginsCard,
         communityCards,
       );
       const paneStyles = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });

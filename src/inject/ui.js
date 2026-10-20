@@ -636,13 +636,9 @@ export function ensureStyle() {
     .zcodepro-imgmenu-item:hover {
       background-color: var(--color-accent, color-mix(in oklab, var(--color-foreground, #888) 10%, transparent));
     }
-    /* 折叠项目运行提示（ws-running.js）：项目图标旋转。动画类挂在图标外层的
-       稳定 span 上，展开/收起时应用重建 svg 也不受影响；时长与应用 loader 一致 */
-    @keyframes zcodepro-ws-spin { to { transform: rotate(360deg); } }
-    span.zcodepro-ws-running > svg {
-      animation: zcodepro-ws-spin 1s linear infinite;
-      transform-origin: center;
-    }
+    /* 折叠项目运行提示：folder 图标让位给 loader（loader 由脚本插入，
+       folder 可能被 React 随时重建，靠类选择器统一隐藏，后代写法兼容包装层） */
+    span.zcodepro-ws-running svg:not(.zcodepro-ws-loader) { display: none !important; }
     /* 无感探查期间盖在项目行上的冻结克隆：固定定位、不响应指针 */
     .zcodepro-ws-frozen {
       position: fixed;
@@ -756,7 +752,7 @@ export function ensureStyle() {
     }
     .zcodepro-pin-head:hover .zcodepro-pin-chevron svg { opacity: 1; }
     .zcodepro-pin-collapsed .zcodepro-pin-chevron svg { transform: rotate(-90deg); }
-    .zcodepro-pin-collapsed > ul { display: none !important; }
+    .zcodepro-pin-collapsed > :is(ul, div):has(li[data-task-item-key]) { display: none !important; }
     /* 折叠后去掉标题自带的底部留白，与下一分区的间隔和其他分区节奏一致 */
     .zcodepro-pin-collapsed .zcodepro-pin-head { padding-bottom: 0; }
   `));
