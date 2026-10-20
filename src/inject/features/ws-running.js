@@ -210,8 +210,15 @@ function toggleNavSafe(head) {
 
 // —— 状态维护 ——
 
+// 见过的项目路径（任务行在场时记录）：“项目”分区折叠后 section 全部卸载，
+// 分区头运行判定只能靠 runningByWs（权威复核维护，不依赖 DOM）+ 此缓存
+const knownPaths = new Set();
 function scan() {
   wsWithRows = new Set();
+  for (const row of document.querySelectorAll(WS_SEL())) {
+    const p = rowPath(row);
+    if (p) knownPaths.add(p);
+  }
   for (const el of document.querySelectorAll(TASK_SEL)) {
     const key = el.getAttribute('data-task-item-key') || '';
     const ws = workspaceOf(key);
@@ -319,13 +326,36 @@ function applySectionSpin() {
   }
   for (const { head, cont } of sectionHeads()) {
     const running = !!cont.querySelector('li[data-task-item-key] svg[class*="lucide-loader"]');
+    // “任务”分区与“已置顶”标题：展开时任务行的 loader 直接可见，头部不再重复
+    // 提示，仅在分区折叠时挂。“项目”分区头（容器含项目行 section）不受此限——
+    // 折叠的单个项目仍由项目行的权威复核提示。
+    const isProjectHead = !!cont.querySelector('section[data-project-id]');
+    let expanded = true;
+    if (!isProjectHead) {
+      if (head.tagName === 'BUTTON') expanded = head.getAttribute('aria-expanded') !== 'false';
+      else {
+        // 已置顶标题（h3）：其折叠是藏起任务列表，按列表实际显示判定
+        const list = head.nextElementSibling;
+        expanded = !list || list.offsetHeight > 0;
+      }
+    }
+    // “项目”分区折叠后 section 全部卸载，DOM 检测失效：改看权威复核维护的
+    // runningByWs（knownPaths 缓存了折叠前见过的项目路径）
+    let effRunning = running;
+    if (isProjectHead && !running) {
+      for (const p of knownPaths) {
+        const set = runningByWs.get(p);
+        if (set && set.size) { effRunning = true; break; }
+      }
+    }
+    const want = effRunning && (!isProjectHead ? !expanded : true);
     const existing = head.querySelector(':scope > .' + SEC_SPIN_CLASS);
-    if (running && !existing) {
+    if (want && !existing) {
       const span = document.createElement('span');
       span.className = 'flex size-4 shrink-0 items-center justify-center ' + SEC_SPIN_CLASS;
       span.append(makeLoaderSvg('size-4'));
       head.prepend(span);
-    } else if (!running && existing) {
+    } else if (!want && existing) {
       existing.remove();
     }
   }
