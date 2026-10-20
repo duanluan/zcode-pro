@@ -1,5 +1,7 @@
 // 侧栏菜单并入顶栏：侧边栏顶部的“新建任务 / 搜索 / 自动化 / 插件市场”四项
 // 收成顶部导航栏（后退/前进旁）的四个图标按钮，原菜单区域整体隐藏。
+// 双结构（findParts）：≤3.15.x 四项同在一个菜单容器；3.16.1 起新建任务/自动化/
+// 插件市场在 sidebar-primary-navigation、搜索独立在 sidebar-search-toolbar，两处都隐藏。
 // 悬停显示名称（带快捷键的项照带快捷键），按钮点亮表示对应界面正打开：
 // 自动化/插件市场跟随原按钮的 aria-pressed，搜索跟随命令面板是否在场，
 // 新建任务跟随“当前无选中会话”（即处于新建任务视图）。状态都从应用现状推导，
@@ -7,7 +9,7 @@
 //（display:none 不影响事件派发，已实测），原生行为全部保留。
 // 不移动应用的任何节点（避免与界面框架自身的增删冲突），自有按钮行追加在
 // 导航按钮容器末尾——框架不排斥外来子节点；界面重渲染换新节点后由观察器重建。
-import { h, t, getConfig } from '../core.js';
+import { h, t, getConfig, isNewProjectSidebar } from '../core.js';
 import { ensureStyle } from '../ui.js';
 
 const HIDE_CLASS = 'zcodepro-tb-hidden';
@@ -16,31 +18,45 @@ const SCAN_FALLBACK_MS = 5000;  // 兜底轮询周期：仅补观察器覆盖不
 
 // 会话行（识别当前有无选中会话 → 新建任务态）
 const ROW_SEL = '[data-task-item-key]';
-// 与本功能相关的新增/删除节点：菜单四项、命令面板、顶栏导航按钮
+// 与本功能相关的新增/删除节点：菜单各项、命令面板、顶栏导航按钮
+//（sidebar-search-open 是 3.16.1 新结构的搜索入口）
 const MENU_SEL = '[data-testid="task-new-button"], [data-testid="automations-open"],'
-  + ' [data-testid="plugin-store-sidebar-open"], [data-slot="command"],'
-  + ' [data-testid="desktop-top-nav-back"]';
+  + ' [data-testid="plugin-store-sidebar-open"], [data-testid="sidebar-search-open"],'
+  + ' [data-slot="command"], [data-testid="desktop-top-nav-back"]';
 
 let enabled = true;   // 配置开关（features.toolbarIcons !== false）
 let rowEl = null;     // 顶栏自有按钮行
-let origs = null;     // { menu, newTask, search, auto, plugin } 原元素引用
+let origs = null;     // { hideEls, newTask, search, auto, plugin } 原元素引用
 let syncTimer = 0;
 let widthObserver = null;     // 监听侧栏宽度变化（拖分隔条/缩放窗口）
 let widthObserved = null;
 
-function findMenu() {
-  const nt = document.querySelector('[data-testid="task-new-button"]');
-  const menu = nt?.parentElement;
-  return menu && menu.querySelector('[data-testid="automations-open"]') ? menu : null;
-}
-
-function originalsOf(menu) {
-  const newTask = menu.querySelector('[data-testid="task-new-button"]');
-  // 搜索按钮没有 testid，按 lucide-search 图标识别（快捷键文案随平台/语言变，不作依据）
-  const search = newTask && menu.querySelector('button [class*="lucide-search"]')?.closest('button');
-  const auto = menu.querySelector('[data-testid="automations-open"]');
-  const plugin = menu.querySelector('[data-testid="plugin-store-sidebar-open"]');
-  return newTask && search && auto && plugin ? { menu, newTask, search, auto, plugin } : null;
+// 找四项原按钮与要隐藏的容器。双结构：
+// - 旧（≤3.15.x）：四项同在一个菜单容器（task-new-button 的父级，验证含
+//   automations-open），隐藏该容器；搜索按钮无 testid，按 lucide-search 图标识别
+// - 新（3.16.1 起）：新建任务/自动化/插件市场在 sidebar-primary-navigation，
+//   搜索独立在 sidebar-search-toolbar，两处容器都隐藏
+function findParts() {
+  const newTask = document.querySelector('[data-testid="task-new-button"]');
+  if (!newTask) return null;
+  if (!isNewProjectSidebar()) {
+    const menu = newTask.parentElement;
+    if (!menu || !menu.querySelector('[data-testid="automations-open"]')) return null;
+    const search = menu.querySelector('button [class*="lucide-search"]')?.closest('button');
+    const auto = menu.querySelector('[data-testid="automations-open"]');
+    const plugin = menu.querySelector('[data-testid="plugin-store-sidebar-open"]');
+    return (search && auto && plugin) ? { newTask, search, auto, plugin, hideEls: [menu] } : null;
+  }
+  const search = document.querySelector('[data-testid="sidebar-search-open"]');
+  const auto = document.querySelector('[data-testid="automations-open"]');
+  const plugin = document.querySelector('[data-testid="plugin-store-sidebar-open"]');
+  if (!search || !auto || !plugin) return null;
+  const hideEls = [...new Set([
+    newTask.closest('[data-testid="sidebar-primary-navigation"]'),
+    auto.closest('[data-testid="sidebar-primary-navigation"]'),
+    search.closest('[data-testid="sidebar-search-toolbar"]'),
+  ])].filter(Boolean);
+  return hideEls.length ? { newTask, search, auto, plugin, hideEls } : null;
 }
 
 // 名称从原按钮提取（跟随界面语言）；提取不到再回退词典
@@ -93,15 +109,15 @@ function syncActive() {
 }
 
 function rebuild() {
-  const menu = findMenu();
-  if (!menu) return false;
-  const next = originalsOf(menu);
+  const parts = findParts();
   const navRow = document.querySelector('[data-testid="desktop-top-nav-back"]')?.parentElement;
-  if (!next || !navRow) return false;
-  // 界面重渲染换了新节点：给旧菜单摘掉隐藏类，新菜单藏起来
-  if (origs && origs.menu !== menu) origs.menu.classList.remove(HIDE_CLASS);
-  menu.classList.add(HIDE_CLASS);
-  origs = next;
+  if (!parts || !navRow) return false;
+  // 界面重渲染换了新节点：给旧容器摘掉隐藏类，新容器藏起来
+  if (origs && origs.hideEls[0] !== parts.hideEls[0]) {
+    for (const el of origs.hideEls) el.classList.remove(HIDE_CLASS);
+  }
+  for (const el of parts.hideEls) el.classList.add(HIDE_CLASS);
+  origs = parts;
   rowEl?.remove();
   // 原生顶栏新建按钮（文件子页会展开的那个）钉死收起：新建入口统一由我们
   // 的行提供，省去随子页进出显隐自己按钮的同步
@@ -119,17 +135,17 @@ function rebuild() {
       setTimeout(syncActive, 150);
     },
   });
-  const newBtn = mk('newTask', next.newTask, 'span.truncate', L.tbNewTask);
-  const icon = iconOf(next.newTask);
+  const newBtn = mk('newTask', parts.newTask, 'span.truncate', L.tbNewTask);
+  const icon = iconOf(parts.newTask);
   if (icon) newBtn.append(icon);
-  const searchBtn = mk('search', next.search, 'span.truncate', L.tbSearch);
-  const sIcon = iconOf(next.search);
+  const searchBtn = mk('search', parts.search, 'span.truncate', L.tbSearch);
+  const sIcon = iconOf(parts.search);
   if (sIcon) searchBtn.append(sIcon);
-  const autoBtn = mk('auto', next.auto, null, L.tbAutomations);
-  const aIcon = iconOf(next.auto);
+  const autoBtn = mk('auto', parts.auto, null, L.tbAutomations);
+  const aIcon = iconOf(parts.auto);
   if (aIcon) autoBtn.append(aIcon);
-  const pluginBtn = mk('plugin', next.plugin, null, L.tbPluginStore);
-  const pIcon = iconOf(next.plugin);
+  const pluginBtn = mk('plugin', parts.plugin, null, L.tbPluginStore);
+  const pIcon = iconOf(parts.plugin);
   if (pIcon) pluginBtn.append(pIcon);
   rowEl = h('div', { class: 'zcodepro-tb-row' }, newBtn, searchBtn, autoBtn, pluginBtn);
   // 插在容器内“更新”按钮之前（实测容器子序：侧栏切换/后退/前进/原生新建
@@ -159,7 +175,9 @@ function sidebarCollapsed() {
 // 任何入口都不丢。宽度取侧栏滚动容器（侧栏打开时始终在场）
 const NARROW_SIDEBAR_PX = 260;
 function sidebarTooNarrow() {
-  const scroll = document.querySelector('.flex.flex-1.min-h-0.flex-col.gap-3.overflow-y-auto');
+  // 旧结构的侧栏滚动容器（3.15.x）与新结构的（3.16.1 起，类名组合不同）都认
+  const scroll = document.querySelector('.flex.flex-1.min-h-0.flex-col.gap-3.overflow-y-auto')
+    || document.querySelector('aside .min-h-0.flex-1.overflow-y-auto');
   if (!scroll) return false;
   // 顺带盯住宽度变化（容器重建后换目标重新观察）
   if (!widthObserver) widthObserver = new ResizeObserver(() => scheduleSync());
@@ -173,25 +191,25 @@ function sidebarTooNarrow() {
 
 function sync() {
   if (!enabled) return;
-  const menu = findMenu();
+  const parts = findParts();
   // 侧栏收起/未渲染/过窄：藏起图标行。过窄时还原原生菜单（收起时菜单本就不可见）
-  if (!menu) {
+  if (!parts) {
     if (rowEl) rowEl.style.display = 'none';
     return;
   }
   if (sidebarCollapsed() || sidebarTooNarrow()) {
     if (rowEl) rowEl.style.display = 'none';
-    menu.classList.remove(HIDE_CLASS);
+    for (const el of parts.hideEls) el.classList.remove(HIDE_CLASS);
     // 这两种形态藏起我们的整行：原生新建按钮要放出来（去掉钉死类），
     // 否则收起侧栏时顶栏没有任何新建入口
     document.querySelectorAll('.zcodepro-tb-hidden-native').forEach((el) => el.classList.remove('zcodepro-tb-hidden-native'));
     return;
   }
   // 旧引用是否全部仍可用；不可用时先试重建，重建未就绪（React 分批挂载，
-  // 菜单/导航容器还没上屏）则保留现有行原样等待重试——若在这里提前把旧行
+  // 菜单/导航容器还没上屏）则保留现有的行原样等待重试——若在这里提前把旧行
   // 拆掉，重试成功前图标会整行消失，只能等兜底轮询补上（表现为返回会话后
   // 图标迟两三秒才回来）
-  const alive = origs && origs.menu === menu
+  const alive = origs && origs.hideEls[0] === parts.hideEls[0]
     && origs.newTask.isConnected && origs.search.isConnected
     && origs.auto.isConnected && origs.plugin.isConnected
     && rowEl && rowEl.isConnected;
@@ -208,7 +226,7 @@ function sync() {
   // 类同理（收起分支会摘掉它，展开回来若节点仍活着不会触发 rebuild，须在此补）
   const navRow = document.querySelector('[data-testid="desktop-top-nav-back"]')?.parentElement;
   if (navRow) navRow.classList.add('zcodepro-tb-hidden-native');
-  menu.classList.add(HIDE_CLASS);
+  for (const el of parts.hideEls) el.classList.add(HIDE_CLASS);
   if (rowEl) rowEl.style.display = '';
   syncActive();
 }
@@ -249,7 +267,7 @@ function teardown() {
   rowEl?.remove();
   rowEl = null;
   if (origs) {
-    origs.menu.classList.remove(HIDE_CLASS);
+    for (const el of origs.hideEls) el.classList.remove(HIDE_CLASS);
     // 恢复原生子页新建按钮（功能关闭时不再钉死）
     document.querySelectorAll('.zcodepro-tb-hidden-native').forEach((el) => el.classList.remove('zcodepro-tb-hidden-native'));
     origs = null;

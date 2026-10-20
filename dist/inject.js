@@ -7461,24 +7461,34 @@
   var SYNC_DEBOUNCE_MS = 150;
   var SCAN_FALLBACK_MS5 = 5e3;
   var ROW_SEL = "[data-task-item-key]";
-  var MENU_SEL = '[data-testid="task-new-button"], [data-testid="automations-open"], [data-testid="plugin-store-sidebar-open"], [data-slot="command"], [data-testid="desktop-top-nav-back"]';
+  var MENU_SEL = '[data-testid="task-new-button"], [data-testid="automations-open"], [data-testid="plugin-store-sidebar-open"], [data-testid="sidebar-search-open"], [data-slot="command"], [data-testid="desktop-top-nav-back"]';
   var enabled4 = true;
   var rowEl = null;
   var origs = null;
   var syncTimer = 0;
   var widthObserver = null;
   var widthObserved = null;
-  function findMenu() {
-    const nt = document.querySelector('[data-testid="task-new-button"]');
-    const menu = nt?.parentElement;
-    return menu && menu.querySelector('[data-testid="automations-open"]') ? menu : null;
-  }
-  function originalsOf(menu) {
-    const newTask = menu.querySelector('[data-testid="task-new-button"]');
-    const search = newTask && menu.querySelector('button [class*="lucide-search"]')?.closest("button");
-    const auto = menu.querySelector('[data-testid="automations-open"]');
-    const plugin = menu.querySelector('[data-testid="plugin-store-sidebar-open"]');
-    return newTask && search && auto && plugin ? { menu, newTask, search, auto, plugin } : null;
+  function findParts() {
+    const newTask = document.querySelector('[data-testid="task-new-button"]');
+    if (!newTask) return null;
+    if (!isNewProjectSidebar()) {
+      const menu = newTask.parentElement;
+      if (!menu || !menu.querySelector('[data-testid="automations-open"]')) return null;
+      const search2 = menu.querySelector('button [class*="lucide-search"]')?.closest("button");
+      const auto2 = menu.querySelector('[data-testid="automations-open"]');
+      const plugin2 = menu.querySelector('[data-testid="plugin-store-sidebar-open"]');
+      return search2 && auto2 && plugin2 ? { newTask, search: search2, auto: auto2, plugin: plugin2, hideEls: [menu] } : null;
+    }
+    const search = document.querySelector('[data-testid="sidebar-search-open"]');
+    const auto = document.querySelector('[data-testid="automations-open"]');
+    const plugin = document.querySelector('[data-testid="plugin-store-sidebar-open"]');
+    if (!search || !auto || !plugin) return null;
+    const hideEls = [.../* @__PURE__ */ new Set([
+      newTask.closest('[data-testid="sidebar-primary-navigation"]'),
+      auto.closest('[data-testid="sidebar-primary-navigation"]'),
+      search.closest('[data-testid="sidebar-search-toolbar"]')
+    ])].filter(Boolean);
+    return hideEls.length ? { newTask, search, auto, plugin, hideEls } : null;
   }
   function nameOf(orig, nameSel, fallback) {
     let name = nameSel && (orig.querySelector(nameSel)?.textContent || "").trim();
@@ -7522,14 +7532,14 @@
     setActive("plugin", plugin);
   }
   function rebuild() {
-    const menu = findMenu();
-    if (!menu) return false;
-    const next = originalsOf(menu);
+    const parts = findParts();
     const navRow = document.querySelector('[data-testid="desktop-top-nav-back"]')?.parentElement;
-    if (!next || !navRow) return false;
-    if (origs && origs.menu !== menu) origs.menu.classList.remove(HIDE_CLASS);
-    menu.classList.add(HIDE_CLASS);
-    origs = next;
+    if (!parts || !navRow) return false;
+    if (origs && origs.hideEls[0] !== parts.hideEls[0]) {
+      for (const el of origs.hideEls) el.classList.remove(HIDE_CLASS);
+    }
+    for (const el of parts.hideEls) el.classList.add(HIDE_CLASS);
+    origs = parts;
     rowEl?.remove();
     navRow.classList.add("zcodepro-tb-hidden-native");
     const L = t();
@@ -7544,17 +7554,17 @@
         setTimeout(syncActive, 150);
       }
     });
-    const newBtn = mk("newTask", next.newTask, "span.truncate", L.tbNewTask);
-    const icon = iconOf(next.newTask);
+    const newBtn = mk("newTask", parts.newTask, "span.truncate", L.tbNewTask);
+    const icon = iconOf(parts.newTask);
     if (icon) newBtn.append(icon);
-    const searchBtn = mk("search", next.search, "span.truncate", L.tbSearch);
-    const sIcon = iconOf(next.search);
+    const searchBtn = mk("search", parts.search, "span.truncate", L.tbSearch);
+    const sIcon = iconOf(parts.search);
     if (sIcon) searchBtn.append(sIcon);
-    const autoBtn = mk("auto", next.auto, null, L.tbAutomations);
-    const aIcon = iconOf(next.auto);
+    const autoBtn = mk("auto", parts.auto, null, L.tbAutomations);
+    const aIcon = iconOf(parts.auto);
     if (aIcon) autoBtn.append(aIcon);
-    const pluginBtn = mk("plugin", next.plugin, null, L.tbPluginStore);
-    const pIcon = iconOf(next.plugin);
+    const pluginBtn = mk("plugin", parts.plugin, null, L.tbPluginStore);
+    const pIcon = iconOf(parts.plugin);
     if (pIcon) pluginBtn.append(pIcon);
     rowEl = h("div", { class: "zcodepro-tb-row" }, newBtn, searchBtn, autoBtn, pluginBtn);
     const updBtn = [...navRow.querySelectorAll("button")].find((b) => /bg-(success|emerald)/.test(b.className || ""));
@@ -7569,7 +7579,7 @@
   }
   var NARROW_SIDEBAR_PX = 260;
   function sidebarTooNarrow() {
-    const scroll = document.querySelector(".flex.flex-1.min-h-0.flex-col.gap-3.overflow-y-auto");
+    const scroll = document.querySelector(".flex.flex-1.min-h-0.flex-col.gap-3.overflow-y-auto") || document.querySelector("aside .min-h-0.flex-1.overflow-y-auto");
     if (!scroll) return false;
     if (!widthObserver) widthObserver = new ResizeObserver(() => scheduleSync());
     if (widthObserved !== scroll) {
@@ -7581,18 +7591,18 @@
   }
   function sync() {
     if (!enabled4) return;
-    const menu = findMenu();
-    if (!menu) {
+    const parts = findParts();
+    if (!parts) {
       if (rowEl) rowEl.style.display = "none";
       return;
     }
     if (sidebarCollapsed() || sidebarTooNarrow()) {
       if (rowEl) rowEl.style.display = "none";
-      menu.classList.remove(HIDE_CLASS);
+      for (const el of parts.hideEls) el.classList.remove(HIDE_CLASS);
       document.querySelectorAll(".zcodepro-tb-hidden-native").forEach((el) => el.classList.remove("zcodepro-tb-hidden-native"));
       return;
     }
-    const alive = origs && origs.menu === menu && origs.newTask.isConnected && origs.search.isConnected && origs.auto.isConnected && origs.plugin.isConnected && rowEl && rowEl.isConnected;
+    const alive = origs && origs.hideEls[0] === parts.hideEls[0] && origs.newTask.isConnected && origs.search.isConnected && origs.auto.isConnected && origs.plugin.isConnected && rowEl && rowEl.isConnected;
     if (!alive && !rebuild()) {
       if (rowEl) rowEl.style.display = "none";
       setTimeout(scheduleSync, 400);
@@ -7601,7 +7611,7 @@
     }
     const navRow = document.querySelector('[data-testid="desktop-top-nav-back"]')?.parentElement;
     if (navRow) navRow.classList.add("zcodepro-tb-hidden-native");
-    menu.classList.add(HIDE_CLASS);
+    for (const el of parts.hideEls) el.classList.add(HIDE_CLASS);
     if (rowEl) rowEl.style.display = "";
     syncActive();
   }
@@ -7635,7 +7645,7 @@
     rowEl?.remove();
     rowEl = null;
     if (origs) {
-      origs.menu.classList.remove(HIDE_CLASS);
+      for (const el of origs.hideEls) el.classList.remove(HIDE_CLASS);
       document.querySelectorAll(".zcodepro-tb-hidden-native").forEach((el) => el.classList.remove("zcodepro-tb-hidden-native"));
       origs = null;
     }
