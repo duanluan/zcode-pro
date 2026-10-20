@@ -69,6 +69,66 @@ let wsWithRows = new Set();    // 最近一次扫描时仍有会话行在 DOM �
 
 // —— 工具 ——
 
+// 应用内部服务对象（含 zcodeTaskService.releaseWorkspacePreparation）：从 React
+// fiber 树上找持有它的组件（file-menu.js 同款取 fiber 的思路），找到后缓存
+let servicesRef = null;
+export function findServices() {
+  if (servicesRef) return servicesRef;
+  try {
+    const rootEl = document.getElementById('root');
+    const containerKey = rootEl && Object.keys(rootEl).find((k) => k.startsWith('__reactContainer$'));
+    if (!containerKey) return null;
+    const seen = new Set();
+    let found = null;
+    const scanObj = (o) => {
+      if (!o || typeof o !== 'object' || seen.has(o) || found) return;
+      seen.add(o);
+      const ts = o.zcodeTaskService;
+      if (ts && typeof ts === 'object' && typeof ts.releaseWorkspacePreparation === 'function') found = o;
+    };
+    let visited = 0;
+    const visit = (f) => {
+      if (!f || found || visited > 60000) return;
+      visited++;
+      for (const holder of [f.memoizedProps, f.memoizedState]) {
+        if (!holder || typeof holder !== 'object') continue;
+        scanObj(holder);
+        for (const v of Object.values(holder)) {
+          if (v && typeof v === 'object') scanObj(v);
+        }
+      }
+      visit(f.child);
+      visit(f.sibling);
+    };
+    visit(rootEl[containerKey]);
+    if (found) servicesRef = found;
+    return found;
+  } catch {
+    return null;
+  }
+}
+
+// 权威空闲判定：官方 zcodeTaskService.listActiveTaskIds 返回该工作区仍处非终态
+// （运行/创建/流式等）的会话，来自 CLI 实时活动集合——比侧栏 DOM 的 loader 可靠
+// （DOM 有“提交消息到 loader 渲染”与页面刷新后折叠项目的盲区，曾致误杀）。
+// workspacePath 的尾斜杠形式必须与订阅时一致（roots 两种都有），两种各查一次。
+// 返回 true=确认空闲、false=仍在运行、null=接口不可用或查询失败（按忙处理）
+export async function authoritativeIdle(ws) {
+  const services = findServices();
+  const ts = services && services.zcodeTaskService;
+  if (!ts || typeof ts.listActiveTaskIds !== 'function') return null;
+  try {
+    const base = String(ws).replace(/[\\/]+$/, '');
+    const a = await ts.listActiveTaskIds({ workspacePath: base });
+    const b = await ts.listActiveTaskIds({ workspacePath: base + '/' });
+    if (Array.isArray(a) && Array.isArray(b)) return a.length === 0 && b.length === 0;
+    return null;
+  } catch {
+    return null; // 方法不存在（≤3.15.x 的服务对象）或查询失败：一律按忙
+  }
+}
+
+
 function workspaceOf(key) {
   // 会话键格式 <workspace_path>:<sess_id>；sess 段固定以 "sess_" 开头，
   // 按它定位分隔符（Windows 盘符路径里也有冒号，不能按第一个 ':' 切）
@@ -230,6 +290,23 @@ function syncPeeks() {
 let peekChain = Promise.resolve();
 
 async function peek(ws, opts) {
+  // 折叠期间的周期复核（非 manual）优先走官方权威判定：不展开项目、没有
+  // “先展开再缩起”的高度起伏；接口不可用（≤3.15.x）时走原 DOM 无感探查
+  if (!opts?.manual) {
+    const auth = await authoritativeIdle(ws);
+    if (auth !== null) {
+      if (auth) {
+        runningByWs.delete(ws); // 空闲：熄灭旋转
+      } else {
+        let set = runningByWs.get(ws);
+        if (!set) { set = new Set(); runningByWs.set(ws, set); }
+        set.add(ws + ':active'); // 占位键：apply 只看集合大小
+        schedulePeek(ws, PEEK_REPEAT_MS);
+      }
+      apply();
+      return true;
+    }
+  }
   const run = () => peekInner(ws, opts);
   const p = peekChain.then(run, run);
   peekChain = p.catch(() => {});

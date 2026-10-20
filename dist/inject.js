@@ -206,7 +206,7 @@
     titleGenTestOk: "\u751F\u6210\u7ED3\u679C\uFF1A",
     titleGenTestFailed: "\u751F\u6210\u5931\u8D25",
     featureWsRunning: "\u6298\u53E0\u9879\u76EE\u8FD0\u884C\u63D0\u793A\uFF08\u5B9E\u9A8C\u6027\uFF09",
-    featureWsRunningDesc: "\u6298\u53E0\u7684\u9879\u76EE\u91CC\u4ECD\u6709\u4F1A\u8BDD\u5728\u8FD0\u884C\u65F6\uFF0C\u9879\u76EE\u56FE\u6807\u65CB\u8F6C\u63D0\u793A\uFF1B\u5168\u90E8\u7ED3\u675F\u6216\u5C55\u5F00\u9879\u76EE\u540E\u6062\u590D\u3002\u671F\u95F4\u6BCF 60 \u79D2\u5728\u540E\u53F0\u77ED\u6682\u5C55\u5F00\u8BE5\u9879\u76EE\u590D\u6838\u8FD0\u884C\u72B6\u6001\u518D\u6536\u8D77\uFF0C\u4F1A\u8BDD\u884C\u4E0D\u663E\u793A\uFF0C\u4EC5\u9879\u76EE\u4F4D\u7F6E\u53EF\u80FD\u6709\u7EA6\u56DB\u5206\u4E4B\u4E00\u79D2\u7684\u8F7B\u5FAE\u9AD8\u5EA6\u8D77\u4F0F\u3002",
+    featureWsRunningDesc: "\u6298\u53E0\u7684\u9879\u76EE\u91CC\u4ECD\u6709\u4F1A\u8BDD\u5728\u8FD0\u884C\u65F6\uFF0C\u9879\u76EE\u56FE\u6807\u65CB\u8F6C\u63D0\u793A\uFF1B\u5168\u90E8\u7ED3\u675F\u6216\u5C55\u5F00\u9879\u76EE\u540E\u6062\u590D\u3002\u590D\u6838\u8FD0\u884C\u72B6\u6001\uFF1AZCode 3.16.1+ \u8D70\u5B98\u65B9\u63A5\u53E3\uFF0C\u754C\u9762\u65E0\u4EFB\u4F55\u8D77\u4F0F\uFF1B3.15.x \u6BCF 60 \u79D2\u5728\u540E\u53F0\u77ED\u6682\u5C55\u5F00\u8BE5\u9879\u76EE\u590D\u6838\u518D\u6536\u8D77\uFF0C\u4EC5\u9879\u76EE\u4F4D\u7F6E\u53EF\u80FD\u6709\u7EA6\u56DB\u5206\u4E4B\u4E00\u79D2\u7684\u8F7B\u5FAE\u9AD8\u5EA6\u8D77\u4F0F\u3002",
     tabPerformance: "\u6027\u80FD",
     perfDesc: "ZCode \u4E3A\u6BCF\u4E2A\u6253\u5F00\u8FC7\u7684\u9879\u76EE\u5E38\u9A7B\u4E00\u4E2A\u4F1A\u8BDD\u8FDB\u7A0B\uFF0C\u5E94\u7528\u81EA\u8EAB\u4E0D\u4F1A\u56DE\u6536\uFF0C\u9879\u76EE\u591A\u4E86\u5185\u5B58\u5360\u7528\u5C31\u9AD8\u3002\u5F00\u542F\u540E\uFF0C\u957F\u65F6\u95F4\u672A\u4F7F\u7528\u4E14\u6CA1\u6709\u4EFB\u52A1\u5728\u8DD1\u7684\u9879\u76EE\u4F1A\u88AB\u81EA\u52A8\u91CA\u653E\uFF1A\u4F1A\u8BDD\u8BB0\u5F55\u4E0D\u53D7\u5F71\u54CD\uFF0C\u518D\u6B21\u6253\u5F00\u65F6\u81EA\u52A8\u6062\u590D\uFF0C\u4EC5\u9996\u6B21\u56DE\u590D\u6709\u51E0\u79D2\u7B49\u5F85\u3002\u6B63\u5728\u4F7F\u7528\u7684\u9879\u76EE\u3001\u8FD0\u884C\u4E2D\u7684\u4F1A\u8BDD\u4E0E\u540E\u53F0\u547D\u4EE4\u3001\u5B9A\u65F6\u4EFB\u52A1\u90FD\u4E0D\u4F1A\u88AB\u56DE\u6536\u3002\u540E\u53F0\u547D\u4EE4\u68C0\u6D4B\u4F9D\u8D56\u7CFB\u7EDF\u8FDB\u7A0B\u4FE1\u606F\uFF08Linux / macOS / Windows \u5404\u8D70\u7CFB\u7EDF\u81EA\u5E26\u5DE5\u5177\uFF09\uFF0C\u68C0\u6D4B\u4E0D\u53EF\u7528\u65F6\u529F\u80FD\u81EA\u52A8\u505C\u7528\u3002",
     featureIdleReclaim: "\u7A7A\u95F2\u9879\u76EE\u5185\u5B58\u56DE\u6536",
@@ -596,7 +596,7 @@
     titleGenTestOk: "Result: ",
     titleGenTestFailed: "Generation failed",
     featureWsRunning: "Running indicator on collapsed projects (experimental)",
-    featureWsRunningDesc: "Spins a collapsed project's icon while any of its sessions is still running; stops when they all finish or the project is expanded. While spinning, the project is briefly re-expanded in the background every 60 s to re-check and then collapsed \u2014 rows stay hidden, with only a subtle quarter-second height ripple at the project.",
+    featureWsRunningDesc: "Spins a collapsed project's icon while any of its sessions is still running; stops when they all finish or the project is expanded. Status recheck uses the official query on ZCode 3.16.1+ (no visual ripple); on 3.15.x the project is briefly re-expanded in the background every 60 s \u2014 rows stay hidden, with only a subtle quarter-second height ripple at the project.",
     tabPerformance: "Performance",
     perfDesc: "ZCode keeps a session process resident for every project you have opened and never reclaims it, so memory grows with projects. When enabled, projects unused for a while with nothing running release their memory automatically: sessions are untouched and reload when reopened, with a few seconds wait on the first reply. The project in use, running sessions, background commands and scheduled tasks are never reclaimed. Background-command detection reads system process info via built-in tools (Linux / macOS / Windows); when unavailable, the feature disables itself.",
     featureIdleReclaim: "Idle project memory reclaim",
@@ -6863,6 +6863,56 @@
   var activePeeks = /* @__PURE__ */ new Set();
   var peekedWs = /* @__PURE__ */ new Set();
   var wsWithRows = /* @__PURE__ */ new Set();
+  var servicesRef = null;
+  function findServices() {
+    if (servicesRef) return servicesRef;
+    try {
+      const rootEl = document.getElementById("root");
+      const containerKey = rootEl && Object.keys(rootEl).find((k) => k.startsWith("__reactContainer$"));
+      if (!containerKey) return null;
+      const seen = /* @__PURE__ */ new Set();
+      let found = null;
+      const scanObj = (o) => {
+        if (!o || typeof o !== "object" || seen.has(o) || found) return;
+        seen.add(o);
+        const ts = o.zcodeTaskService;
+        if (ts && typeof ts === "object" && typeof ts.releaseWorkspacePreparation === "function") found = o;
+      };
+      let visited = 0;
+      const visit = (f) => {
+        if (!f || found || visited > 6e4) return;
+        visited++;
+        for (const holder of [f.memoizedProps, f.memoizedState]) {
+          if (!holder || typeof holder !== "object") continue;
+          scanObj(holder);
+          for (const v of Object.values(holder)) {
+            if (v && typeof v === "object") scanObj(v);
+          }
+        }
+        visit(f.child);
+        visit(f.sibling);
+      };
+      visit(rootEl[containerKey]);
+      if (found) servicesRef = found;
+      return found;
+    } catch {
+      return null;
+    }
+  }
+  async function authoritativeIdle(ws) {
+    const services = findServices();
+    const ts = services && services.zcodeTaskService;
+    if (!ts || typeof ts.listActiveTaskIds !== "function") return null;
+    try {
+      const base = String(ws).replace(/[\\/]+$/, "");
+      const a = await ts.listActiveTaskIds({ workspacePath: base });
+      const b = await ts.listActiveTaskIds({ workspacePath: base + "/" });
+      if (Array.isArray(a) && Array.isArray(b)) return a.length === 0 && b.length === 0;
+      return null;
+    } catch {
+      return null;
+    }
+  }
   function workspaceOf2(key) {
     const i = key.indexOf(":sess_");
     return i > 0 ? key.slice(0, i) : key;
@@ -6997,6 +7047,24 @@
   }
   var peekChain = Promise.resolve();
   async function peek(ws, opts) {
+    if (!opts?.manual) {
+      const auth = await authoritativeIdle(ws);
+      if (auth !== null) {
+        if (auth) {
+          runningByWs.delete(ws);
+        } else {
+          let set = runningByWs.get(ws);
+          if (!set) {
+            set = /* @__PURE__ */ new Set();
+            runningByWs.set(ws, set);
+          }
+          set.add(ws + ":active");
+          schedulePeek(ws, PEEK_REPEAT_MS);
+        }
+        apply();
+        return true;
+      }
+    }
     const run = () => peekInner(ws, opts);
     const p = peekChain.then(run, run);
     peekChain = p.catch(() => {
@@ -7218,42 +7286,6 @@
   var scanDisabledLogged = false;
   var bootAt = Date.now();
   var startupSweepDone = false;
-  var servicesRef = null;
-  function findServices() {
-    if (servicesRef) return servicesRef;
-    try {
-      const rootEl = document.getElementById("root");
-      const containerKey = rootEl && Object.keys(rootEl).find((k) => k.startsWith("__reactContainer$"));
-      if (!containerKey) return null;
-      const seen = /* @__PURE__ */ new Set();
-      let found = null;
-      const scanObj = (o) => {
-        if (!o || typeof o !== "object" || seen.has(o) || found) return;
-        seen.add(o);
-        const ts = o.zcodeTaskService;
-        if (ts && typeof ts === "object" && typeof ts.releaseWorkspacePreparation === "function") found = o;
-      };
-      let visited = 0;
-      const visit = (f) => {
-        if (!f || found || visited > 6e4) return;
-        visited++;
-        for (const holder of [f.memoizedProps, f.memoizedState]) {
-          if (!holder || typeof holder !== "object") continue;
-          scanObj(holder);
-          for (const v of Object.values(holder)) {
-            if (v && typeof v === "object") scanObj(v);
-          }
-        }
-        visit(f.child);
-        visit(f.sibling);
-      };
-      visit(rootEl[containerKey]);
-      if (found) servicesRef = found;
-      return found;
-    } catch {
-      return null;
-    }
-  }
   async function sidebarWorkspaces() {
     const out = /* @__PURE__ */ new Set();
     const res = await rpc("/projects-v2").catch(() => null);
@@ -7279,20 +7311,6 @@
     } catch (err) {
       console.warn("[zcodepro] idle-reclaim: \u91CA\u653E\u5931\u8D25 " + ws, err);
       return false;
-    }
-  }
-  async function authoritativeIdle(ws) {
-    const services = findServices();
-    const ts = services && services.zcodeTaskService;
-    if (!ts || typeof ts.listActiveTaskIds !== "function") return null;
-    try {
-      const base = String(ws).replace(/[\\/]+$/, "");
-      const a = await ts.listActiveTaskIds({ workspacePath: base });
-      const b = await ts.listActiveTaskIds({ workspacePath: base + "/" });
-      if (Array.isArray(a) && Array.isArray(b)) return a.length === 0 && b.length === 0;
-      return null;
-    } catch {
-      return null;
     }
   }
   async function tryReclaim(ws, cooldownMs) {

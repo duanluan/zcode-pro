@@ -18,7 +18,7 @@
 // 尽快收一次，不受常规空闲时长限制——应用启动会为每个恢复的项目预热进程，这次
 // 回收专治启动瞬间的内存高峰）。
 import { rpc, getConfig } from '../core.js';
-import { wsRunningSnapshot, verifyWorkspaceNotRunning } from './ws-running.js';
+import { wsRunningSnapshot, verifyWorkspaceNotRunning, findServices, authoritativeIdle } from './ws-running.js';
 
 const CHECK_MS = 30_000;      // 巡检周期
 const MIN_MINUTES = 1;
@@ -30,44 +30,6 @@ let scanDisabledLogged = false;
 const bootAt = Date.now();     // 注入时刻 ≈ 应用启动时刻
 let startupSweepDone = false;  // 启动一次性回收是否已执行
 
-// 应用内部服务对象（含 zcodeTaskService.releaseWorkspacePreparation）：从 React
-// fiber 树上找持有它的组件（file-menu.js 同款取 fiber 的思路），找到后缓存
-let servicesRef = null;
-function findServices() {
-  if (servicesRef) return servicesRef;
-  try {
-    const rootEl = document.getElementById('root');
-    const containerKey = rootEl && Object.keys(rootEl).find((k) => k.startsWith('__reactContainer$'));
-    if (!containerKey) return null;
-    const seen = new Set();
-    let found = null;
-    const scanObj = (o) => {
-      if (!o || typeof o !== 'object' || seen.has(o) || found) return;
-      seen.add(o);
-      const ts = o.zcodeTaskService;
-      if (ts && typeof ts === 'object' && typeof ts.releaseWorkspacePreparation === 'function') found = o;
-    };
-    let visited = 0;
-    const visit = (f) => {
-      if (!f || found || visited > 60000) return;
-      visited++;
-      for (const holder of [f.memoizedProps, f.memoizedState]) {
-        if (!holder || typeof holder !== 'object') continue;
-        scanObj(holder);
-        for (const v of Object.values(holder)) {
-          if (v && typeof v === 'object') scanObj(v);
-        }
-      }
-      visit(f.child);
-      visit(f.sibling);
-    };
-    visit(rootEl[containerKey]);
-    if (found) servicesRef = found;
-    return found;
-  } catch {
-    return null;
-  }
-}
 
 // 项目清单改读 helper 的 /projects-v2（官方任务索引 projects/project_roots）：
 // 含多目录项目的每个目录（每个目录都可能有会话进程），且不依赖侧栏展开状态
@@ -101,25 +63,6 @@ async function reclaim(ws) {
   }
 }
 
-// 权威空闲判定：官方 zcodeTaskService.listActiveTaskIds 返回该工作区仍处非终态
-// （运行/创建/流式等）的会话，来自 CLI 实时活动集合——比侧栏 DOM 的 loader 可靠
-// （DOM 有“提交消息到 loader 渲染”与页面刷新后折叠项目的盲区，曾致误杀）。
-// workspacePath 的尾斜杠形式必须与订阅时一致（roots 两种都有），两种各查一次。
-// 返回 true=确认空闲、false=仍在运行、null=接口不可用或查询失败（按忙处理）
-async function authoritativeIdle(ws) {
-  const services = findServices();
-  const ts = services && services.zcodeTaskService;
-  if (!ts || typeof ts.listActiveTaskIds !== 'function') return null;
-  try {
-    const base = String(ws).replace(/[\\/]+$/, '');
-    const a = await ts.listActiveTaskIds({ workspacePath: base });
-    const b = await ts.listActiveTaskIds({ workspacePath: base + '/' });
-    if (Array.isArray(a) && Array.isArray(b)) return a.length === 0 && b.length === 0;
-    return null;
-  } catch {
-    return null; // 方法不存在（≤3.15.x 的服务对象）或查询失败：一律按忙
-  }
-}
 
 // 回收单个项目：回收前复核运行状态与当前归属，未通过则冷却后由后续周期重试
 async function tryReclaim(ws, cooldownMs) {
