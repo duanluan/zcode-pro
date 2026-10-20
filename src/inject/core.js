@@ -38,6 +38,39 @@ export async function getConfig(force = false) {
 }
 export function clearConfigCache() { configCache = { value: null, at: 0 }; }
 
+// —— ZCode 版本判断（按官方版本启用/停用功能）——
+// 版本来源：启动器从 app.asar 读出后写进 bootstrap（window.__ZCODEPRO__.zcodeVersion），
+// helper 的 /config 响应也附加同名字段。读不到时为空串，各判断保持旧行为。
+export function zcodeAppVersion() {
+  const v = liveBoot().zcodeVersion;
+  return typeof v === 'string' && v ? v : '';
+}
+
+export function zcodeVersionGte(version, major, minor, patch = 0) {
+  const m = String(version || '').match(/^(\d+)\.(\d+)\.(\d+)/);
+  if (!m) return false;
+  const a = Number(m[1]), b = Number(m[2]), c = Number(m[3]);
+  return a > major || (a === major && (b > minor || (b === minor && c >= patch)));
+}
+
+// 官方“编辑项目”（修改项目名称 + 多文件夹）自 3.16.1 起提供
+export function officialRenameSupported() {
+  return zcodeVersionGte(zcodeAppVersion(), 3, 16, 1);
+}
+
+// 新侧栏检测（3.16.1 起“虚拟项目”重构，workspace-item 系列节点已下线）：
+// 版本 >= 3.16.1，或页面出现 section[data-project-id] 项目行（覆盖版本读不到的
+// 构建）。一旦命中即记住——同一会话内侧栏不会退回旧结构。
+let newSidebarCached = false;
+export function isNewProjectSidebar() {
+  if (newSidebarCached) return true;
+  if (officialRenameSupported()) { newSidebarCached = true; return true; }
+  try {
+    if (document.querySelector('section[data-project-id]')) { newSidebarCached = true; return true; }
+  } catch { /* ignore */ }
+  return false;
+}
+
 const zh = {
   settingsTitle: 'ZCode Pro',
   tabFeatures: '功能',
@@ -225,6 +258,7 @@ const zh = {
   imageCopied: '图片已复制到剪贴板',
   imageCopyFailed: '复制图片失败',
   openFolderItem: '打开文件夹',
+  openFolderPrimary: '主目录',
   copyPathItem: '复制路径',
   pathCopied: '路径已复制到剪贴板',
   pathCopyFailed: '复制路径失败',
@@ -593,6 +627,7 @@ const en = {
   imageCopied: 'Image copied to the clipboard.',
   imageCopyFailed: 'Failed to copy the image.',
   openFolderItem: 'Open folder',
+  openFolderPrimary: 'primary',
   copyPathItem: 'Copy path',
   pathCopied: 'Path copied to the clipboard.',
   pathCopyFailed: 'Failed to copy the path.',

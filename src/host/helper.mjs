@@ -11,7 +11,7 @@ import { basename, delimiter, dirname, isAbsolute, join, resolve, sep } from 'no
 import { homedir, tmpdir, userInfo } from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { readSettings, writeSettingsAtomic, remapSettingsPaths, isProjectOpenInTabs } from './settings.mjs';
-import { taskIndexPath, probeTaskIndexWritable, remapTaskIndexPaths, taskIndexDriverAvailable, listOverriddenTitles, listTaskWorkspaceMap, setTaskTitleIfNotOverridden, setCustomSessionTitle, isTaskTitleOverridden, reconcileCustomTitles, getTaskProviderModel } from './taskIndex.mjs';
+import { taskIndexPath, probeTaskIndexWritable, remapTaskIndexPaths, taskIndexDriverAvailable, listOverriddenTitles, listTaskWorkspaceMap, setTaskTitleIfNotOverridden, setCustomSessionTitle, isTaskTitleOverridden, reconcileCustomTitles, getTaskProviderModel, listVirtualProjects } from './taskIndex.mjs';
 import { pickFolderSystem } from './pickFolder.mjs';
 import { reorderWorkspaceTasks, reorderGroupMembers } from './taskOrder.mjs';
 import { webdavRequest, webdavPutWithMkcol, webdavHttpText, parseWebdavListing, findCurl } from './webdav.mjs';
@@ -386,6 +386,16 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
       if (req.method === 'POST' && url.pathname === '/agents') {
         const body = await readBody(req);
         json(res, ...writeAgents(body, agentsFile));
+        return;
+      }
+      if (req.method === 'GET' && url.pathname === '/projects-v2') {
+        // 虚拟项目（3.16.1 起 projects/project_roots 表）：别名迁移弹窗用 roots
+        // 区分“目录已并入其他项目”与“项目已删除”。读不到时 available=false，
+        // 注入端降级为纯 DOM 检测
+        const data = await listVirtualProjects(dataRoot);
+        json(res, 200, data
+          ? { ok: true, available: true, ...data }
+          : { ok: true, available: false, projects: [], deletedRoots: [] });
         return;
       }
       if (req.method === 'GET' && url.pathname === '/projects') {

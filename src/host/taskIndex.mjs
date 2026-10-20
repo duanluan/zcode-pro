@@ -172,6 +172,63 @@ export async function remapTaskIndexPaths(dataRoot, oldPath, newPath) {
   }
 }
 
+// 虚拟项目清单（projects + project_roots，只读）：别名迁移弹窗用它判断每条别名的
+// 目标现状——路径是某项目的附加目录（3.16.1 多目录合并）还是已删除的项目。
+// 返回 { projects: [{ name, roots: [{ path, primary }] }], deletedRoots: [path] }；
+// 读不到（库缺失/无驱动/查询失败）返回 null，调用方降级为纯 DOM 检测
+export async function listVirtualProjects(dataRoot) {
+  const dbFile = taskIndexPath(dataRoot);
+  if (!existsSync(dbFile)) return null;
+  const driver = await loadDriver();
+  if (!driver) return null;
+  const SQL_ACTIVE = `SELECT p.project_id AS pid, p.name AS name, r.root_path AS path, r.is_primary, p.name_overridden
+    FROM projects p JOIN project_roots r ON r.project_id = p.project_id
+    WHERE p.deleted = 0 AND (p.host_id = 'local' OR p.host_id IS NULL)`;
+  const SQL_DELETED = `SELECT r.root_path AS path
+    FROM projects p JOIN project_roots r ON r.project_id = p.project_id
+    WHERE p.deleted = 1 AND (p.host_id = 'local' OR p.host_id IS NULL)`;
+  // CLI 驱动用制表符分隔行（项目名含引号/逗号都安全；名字含制表符的极端情况不处理）
+  const TAB = "char(9)";
+  try {
+    let activeRows;
+    let deletedRows;
+    if (driver.kind === 'node') {
+      const db = new driver.DatabaseSync(dbFile, { readOnly: true });
+      try {
+        activeRows = db.prepare(SQL_ACTIVE).all();
+        deletedRows = db.prepare(SQL_DELETED).all();
+      } finally { db.close(); }
+    } else {
+      const act = runCli(dbFile,
+        `SELECT p.project_id || ${TAB} || p.name || ${TAB} || r.root_path || ${TAB} || r.is_primary || ${TAB} || p.name_overridden${SQL_ACTIVE.slice(SQL_ACTIVE.indexOf(' FROM'))};`).stdout;
+      activeRows = act.split('\n').filter(Boolean).map((l) => {
+        const [pid, name, path, primary, overridden] = l.split('\t');
+        return { pid, name, path, primary, name_overridden: overridden };
+      });
+      const del = runCli(dbFile,
+        `SELECT r.root_path FROM projects p JOIN project_roots r ON r.project_id = p.project_id
+        WHERE p.deleted = 1 AND (p.host_id = 'local' OR p.host_id IS NULL);`).stdout;
+      deletedRows = del.split('\n').filter(Boolean).map((p) => ({ path: p }));
+    }
+    const byId = new Map();
+    for (const row of activeRows) {
+      const key = String(row.pid || row.name || '');
+      let proj = byId.get(key);
+      if (!proj) {
+        proj = { id: String(row.pid || ''), name: String(row.name || ''), roots: [], overridden: Number(row.name_overridden) === 1 };
+        byId.set(key, proj);
+      }
+      proj.roots.push({ path: String(row.path || ''), primary: Number(row.is_primary) === 1 });
+    }
+    return {
+      projects: [...byId.values()],
+      deletedRoots: deletedRows.map((r) => String(r.path || '')),
+    };
+  } catch {
+    return null;
+  }
+}
+
 // 已重命名会话的标题表：task_id → title（title_overridden = 1 且未删除）。
 // 只读单条 SELECT，不开事务；库不存在或没有 SQLite 支持时返回空表，
 // 调用方（会话名锁定）自然降级为不干预。

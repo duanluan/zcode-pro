@@ -10,6 +10,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomBytes } from 'node:crypto';
 import { resolveZcodeExecutable, resolveDataRootDir } from './paths.mjs';
+import { readZcodeVersion } from './version.mjs';
 import { CdpConnection, fetchBrowserWsUrl } from './cdp.mjs';
 import { startHelper } from './helper.mjs';
 import { runSetup } from './setup.mjs';
@@ -154,12 +155,12 @@ async function waitForCdp(port, timeoutMs) {
   return false;
 }
 
-async function buildInjectSource(token, helperPort, features) {
+async function buildInjectSource(token, helperPort, features, zcodeVersion) {
   if (!existsSync(INJECT_BUNDLE)) {
     throw new Error('缺少注入脚本 dist/inject.js，请先运行 npm run build');
   }
   const bundle = readFileSync(INJECT_BUNDLE, 'utf8');
-  const bootstrap = `window.__ZCODEPRO__={helperUrl:'http://127.0.0.1:${helperPort}',token:${JSON.stringify(token)},features:${JSON.stringify(features)}};`;
+  const bootstrap = `window.__ZCODEPRO__={helperUrl:'http://127.0.0.1:${helperPort}',token:${JSON.stringify(token)},features:${JSON.stringify(features)},zcodeVersion:${JSON.stringify(zcodeVersion || '')}};`;
   return bootstrap + '\n' + bundle;
 }
 
@@ -189,6 +190,8 @@ export async function run(argv) {
     throw err;
   }
   winLog(`启动: ZCode=${exe}, CDP 端口 ${args.cdpPort}`);
+  const zcodeVersion = readZcodeVersion(exe);
+  if (args.verbose) console.log(`[zcodepro] ZCode 版本: ${zcodeVersion || '未知（app.asar 读取失败）'}`);
   const dataRoot = resolveDataRootDir();
   const token = randomBytes(16).toString('hex');
   const state = { injectedPages: 0 };
@@ -220,7 +223,7 @@ export async function run(argv) {
   }
 
   // 2. 启动辅助服务
-  const server = await startHelper({ port: args.helperPort, token, dataRoot, state });
+  const server = await startHelper({ port: args.helperPort, token, dataRoot, state, zcodeVersion });
   console.log(`[zcodepro] 辅助服务已就绪: http://127.0.0.1:${args.helperPort} (数据目录 ${dataRoot})`);
 
   // 3. 连接 CDP 并注入（断线自动重连）
@@ -236,7 +239,7 @@ export async function run(argv) {
     server.close();
     process.exit(1);
   }
-  const source = await buildInjectSource(token, args.helperPort, healthRes.features || {});
+  const source = await buildInjectSource(token, args.helperPort, healthRes.features || {}, zcodeVersion);
 
   async function attachConnection() {
     const conn = new CdpConnection(await fetchBrowserWsUrl(args.cdpPort));

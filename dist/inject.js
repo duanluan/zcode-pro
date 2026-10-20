@@ -30,6 +30,35 @@
   function clearConfigCache() {
     configCache = { value: null, at: 0 };
   }
+  function zcodeAppVersion() {
+    const v = liveBoot().zcodeVersion;
+    return typeof v === "string" && v ? v : "";
+  }
+  function zcodeVersionGte(version, major, minor, patch = 0) {
+    const m = String(version || "").match(/^(\d+)\.(\d+)\.(\d+)/);
+    if (!m) return false;
+    const a = Number(m[1]), b = Number(m[2]), c = Number(m[3]);
+    return a > major || a === major && (b > minor || b === minor && c >= patch);
+  }
+  function officialRenameSupported() {
+    return zcodeVersionGte(zcodeAppVersion(), 3, 16, 1);
+  }
+  var newSidebarCached = false;
+  function isNewProjectSidebar() {
+    if (newSidebarCached) return true;
+    if (officialRenameSupported()) {
+      newSidebarCached = true;
+      return true;
+    }
+    try {
+      if (document.querySelector("section[data-project-id]")) {
+        newSidebarCached = true;
+        return true;
+      }
+    } catch {
+    }
+    return false;
+  }
   var zh = {
     settingsTitle: "ZCode Pro",
     tabFeatures: "\u529F\u80FD",
@@ -217,6 +246,7 @@
     imageCopied: "\u56FE\u7247\u5DF2\u590D\u5236\u5230\u526A\u8D34\u677F",
     imageCopyFailed: "\u590D\u5236\u56FE\u7247\u5931\u8D25",
     openFolderItem: "\u6253\u5F00\u6587\u4EF6\u5939",
+    openFolderPrimary: "\u4E3B\u76EE\u5F55",
     copyPathItem: "\u590D\u5236\u8DEF\u5F84",
     pathCopied: "\u8DEF\u5F84\u5DF2\u590D\u5236\u5230\u526A\u8D34\u677F",
     pathCopyFailed: "\u590D\u5236\u8DEF\u5F84\u5931\u8D25",
@@ -584,6 +614,7 @@
     imageCopied: "Image copied to the clipboard.",
     imageCopyFailed: "Failed to copy the image.",
     openFolderItem: "Open folder",
+    openFolderPrimary: "primary",
     copyPathItem: "Copy path",
     pathCopied: "Path copied to the clipboard.",
     pathCopyFailed: "Failed to copy the path.",
@@ -1655,6 +1686,76 @@
   `));
   }
 
+  // src/inject/features/copy-path.js
+  async function appendCopyPathItem(menu, anchorItem, project) {
+    if (menu.querySelector('[data-zcodepro-item="copy-path"]')) return;
+    const L = t();
+    const item = anchorItem.cloneNode(true);
+    item.removeAttribute("data-testid");
+    item.removeAttribute("data-highlighted");
+    item.setAttribute("data-zcodepro-item", "copy-path");
+    for (const child of [...item.childNodes]) child.remove();
+    const origIcon = anchorItem.querySelector("svg");
+    const iconClass = origIcon ? origIcon.getAttribute("class") : "h-3.5 w-3.5";
+    item.append(hCopyIcon(iconClass), document.createTextNode(L.copyPathItem));
+    item.addEventListener("mouseenter", () => {
+      for (const el of menu.querySelectorAll('[role="menuitem"]')) el.removeAttribute("data-highlighted");
+      item.setAttribute("data-highlighted", "");
+    });
+    item.addEventListener("mouseleave", () => item.removeAttribute("data-highlighted"));
+    item.addEventListener("click", () => {
+      closeRadixMenu(menu);
+      void copyText(project.path);
+    });
+    anchorItem.before(item);
+  }
+  async function copyText(text) {
+    const L = t();
+    if (await copyToClipboard(text)) showToast(L.pathCopied);
+    else showToast(L.pathCopyFailed, "error");
+  }
+  async function copyToClipboard(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      return copyViaHiddenInput(text);
+    }
+  }
+  function copyViaHiddenInput(text) {
+    try {
+      const input = h("input", { type: "text", style: "position:fixed;left:-9999px;top:0;opacity:0" });
+      input.value = text;
+      document.body.append(input);
+      input.select();
+      const ok = document.execCommand("copy");
+      input.remove();
+      return ok;
+    } catch {
+      return false;
+    }
+  }
+  function hCopyIcon(cls) {
+    const ns = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor");
+    svg.setAttribute("stroke-width", "2");
+    svg.setAttribute("stroke-linecap", "round");
+    svg.setAttribute("stroke-linejoin", "round");
+    svg.setAttribute("class", cls);
+    for (const d of [
+      "M8 8h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2Z",
+      "M4 16c-1.1 0-2-.9-2-2V4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2"
+    ]) {
+      const p = document.createElementNS(ns, "path");
+      p.setAttribute("d", d);
+      svg.append(p);
+    }
+    return svg;
+  }
+
   // src/inject/features/alias.js
   var norm = (p) => String(p || "").replace(/[\\/]+$/, "");
   var basenameOf = (p) => norm(p).split(/[\\/]/).pop() || "";
@@ -2057,76 +2158,6 @@
     return svg;
   }
 
-  // src/inject/features/copy-path.js
-  async function appendCopyPathItem(menu, anchorItem, project) {
-    if (menu.querySelector('[data-zcodepro-item="copy-path"]')) return;
-    const L = t();
-    const item = anchorItem.cloneNode(true);
-    item.removeAttribute("data-testid");
-    item.removeAttribute("data-highlighted");
-    item.setAttribute("data-zcodepro-item", "copy-path");
-    for (const child of [...item.childNodes]) child.remove();
-    const origIcon = anchorItem.querySelector("svg");
-    const iconClass = origIcon ? origIcon.getAttribute("class") : "h-3.5 w-3.5";
-    item.append(hCopyIcon(iconClass), document.createTextNode(L.copyPathItem));
-    item.addEventListener("mouseenter", () => {
-      for (const el of menu.querySelectorAll('[role="menuitem"]')) el.removeAttribute("data-highlighted");
-      item.setAttribute("data-highlighted", "");
-    });
-    item.addEventListener("mouseleave", () => item.removeAttribute("data-highlighted"));
-    item.addEventListener("click", () => {
-      closeRadixMenu(menu);
-      void copyText(project.path);
-    });
-    anchorItem.before(item);
-  }
-  async function copyText(text) {
-    const L = t();
-    if (await copyToClipboard(text)) showToast(L.pathCopied);
-    else showToast(L.pathCopyFailed, "error");
-  }
-  async function copyToClipboard(text) {
-    try {
-      await navigator.clipboard.writeText(text);
-      return true;
-    } catch {
-      return copyViaHiddenInput(text);
-    }
-  }
-  function copyViaHiddenInput(text) {
-    try {
-      const input = h("input", { type: "text", style: "position:fixed;left:-9999px;top:0;opacity:0" });
-      input.value = text;
-      document.body.append(input);
-      input.select();
-      const ok = document.execCommand("copy");
-      input.remove();
-      return ok;
-    } catch {
-      return false;
-    }
-  }
-  function hCopyIcon(cls) {
-    const ns = "http://www.w3.org/2000/svg";
-    const svg = document.createElementNS(ns, "svg");
-    svg.setAttribute("viewBox", "0 0 24 24");
-    svg.setAttribute("fill", "none");
-    svg.setAttribute("stroke", "currentColor");
-    svg.setAttribute("stroke-width", "2");
-    svg.setAttribute("stroke-linecap", "round");
-    svg.setAttribute("stroke-linejoin", "round");
-    svg.setAttribute("class", cls);
-    for (const d of [
-      "M8 8h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2Z",
-      "M4 16c-1.1 0-2-.9-2-2V4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2"
-    ]) {
-      const p = document.createElementNS(ns, "path");
-      p.setAttribute("d", d);
-      svg.append(p);
-    }
-    return svg;
-  }
-
   // src/inject/features/project-menu.js
   var REMOVE_TEXTS = ["\u79FB\u9664", "Remove"];
   function extractPathFromTestId2(testid) {
@@ -2135,12 +2166,17 @@
     m = testid.match(/[-:=,|]([A-Za-z]:\\.*)$/);
     return m ? m[1] : null;
   }
-  function basenameOf2(p) {
-    return String(p || "").replace(/[\\/]+$/, "").split(/[\\/]/).pop() || "";
+  function openMenuProjectRow() {
+    const trigger = document.querySelector(
+      '[data-testid="virtual-project-menu"][aria-expanded="true"], [data-testid="virtual-project-menu"][data-state="open"], [data-testid="virtual-project-row"][data-state="open"], [data-testid="virtual-project-row"][aria-expanded="true"]'
+    );
+    const row = trigger ? trigger.closest("section[data-project-id]") : null;
+    if (!row) return null;
+    const host = row.getAttribute("data-project-host");
+    return host === null || host === "local" ? row : null;
   }
   async function resolveProjectPath(removeItem) {
-    const testid = removeItem.getAttribute("data-testid") || "";
-    const extracted = extractPathFromTestId2(testid);
+    const extracted = extractPathFromTestId2(removeItem.getAttribute("data-testid") || "");
     if (!extracted) return null;
     const res = await rpc("/projects");
     if (res.ok && Array.isArray(res.projects)) {
@@ -2148,24 +2184,195 @@
       const hit = res.projects.find((p) => norm2(p.path) === norm2(extracted));
       if (hit) return hit;
     }
-    return { path: extracted, name: basenameOf2(extracted) };
+    return { path: extracted, name: String(extracted).replace(/[\\/]+$/, "").split(/[\\/]/).pop() || "" };
+  }
+  function cloneMenuItem(anchor, testid, label) {
+    const item = anchor.cloneNode(true);
+    item.removeAttribute("data-testid");
+    item.removeAttribute("data-highlighted");
+    item.removeAttribute("id");
+    item.setAttribute("data-zcodepro-item", testid);
+    for (const child of [...item.childNodes]) child.remove();
+    const origIcon = anchor.querySelector("svg");
+    const iconClass = origIcon ? origIcon.getAttribute("class") : "h-3.5 w-3.5";
+    const ns = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor");
+    svg.setAttribute("stroke-width", "2");
+    svg.setAttribute("stroke-linecap", "round");
+    svg.setAttribute("stroke-linejoin", "round");
+    svg.setAttribute("class", iconClass);
+    const p = document.createElementNS(ns, "path");
+    p.setAttribute("d", "M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z");
+    svg.append(p);
+    item.append(svg, document.createTextNode(label));
+    return item;
+  }
+  function wireHighlight(menu, item) {
+    item.addEventListener("mouseenter", () => {
+      for (const el of menu.querySelectorAll('[role="menuitem"]')) el.removeAttribute("data-highlighted");
+      item.setAttribute("data-highlighted", "");
+    });
+    item.addEventListener("mouseleave", () => item.removeAttribute("data-highlighted"));
+  }
+  function attachFolderHover(menu, item, roots) {
+    const L = t();
+    let sub = null;
+    let subHovered = false;
+    let hideTimer = 0;
+    let aliveTimer = 0;
+    const removeSub = () => {
+      clearTimeout(hideTimer);
+      clearInterval(aliveTimer);
+      sub?.remove();
+      sub = null;
+      subHovered = false;
+    };
+    const position = () => {
+      const rect = item.getBoundingClientRect();
+      sub.style.left = rect.right + "px";
+      sub.style.top = rect.top + "px";
+      const r = sub.getBoundingClientRect();
+      if (r.right > window.innerWidth - 8) {
+        sub.style.left = "";
+        sub.style.right = window.innerWidth - rect.left + "px";
+      }
+    };
+    const ensureSub = () => {
+      if (sub) {
+        position();
+        return;
+      }
+      sub = document.createElement("div");
+      sub.setAttribute("role", "menu");
+      sub.setAttribute("data-zcodepro-item", "open-folder-sub");
+      sub.className = "zcodepro-card flex flex-col gap-0.5 rounded-lg border border-border bg-menu p-1 text-ui-sm shadow-lg";
+      sub.style.cssText = "position:fixed;z-index:60;min-width:14rem;";
+      for (const root of roots) {
+        const base = String(root.path).replace(/[\\/]+$/, "").split(/[\\/]/).pop() || root.path;
+        const row = document.createElement("div");
+        row.setAttribute("role", "menuitem");
+        row.className = "flex cursor-pointer items-center gap-2 truncate rounded-md px-2 py-1.5 text-foreground transition-colors hover:bg-surface-hover";
+        row.title = root.path;
+        row.append(document.createTextNode(base + (root.primary ? ` \xB7 ${L.openFolderPrimary}` : "")));
+        row.addEventListener("click", () => {
+          try {
+            menu.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", code: "Escape", bubbles: true, cancelable: true }));
+          } catch {
+          }
+          removeSub();
+          void rpc("/open-folder", { method: "POST", body: { path: root.path } });
+        });
+        sub.append(row);
+      }
+      sub.addEventListener("mouseenter", () => {
+        subHovered = true;
+        clearTimeout(hideTimer);
+      });
+      sub.addEventListener("mouseleave", () => {
+        subHovered = false;
+        scheduleHide();
+      });
+      document.body.append(sub);
+      position();
+      aliveTimer = setInterval(() => {
+        if (!menu.isConnected) removeSub();
+      }, 400);
+    };
+    const scheduleHide = () => {
+      clearTimeout(hideTimer);
+      hideTimer = setTimeout(() => {
+        if (!subHovered) removeSub();
+      }, 300);
+    };
+    item.addEventListener("mouseenter", () => {
+      clearTimeout(hideTimer);
+      ensureSub();
+    });
+    item.addEventListener("mouseleave", scheduleHide);
+    item.addEventListener("click", () => {
+      clearTimeout(hideTimer);
+      ensureSub();
+    });
+  }
+  async function injectNewMenuItems(content, menuRow) {
+    const L = t();
+    const projectId = menuRow.getAttribute("data-project-id");
+    const editItem = content.querySelector('[data-testid="virtual-project-edit"]');
+    if (!editItem || !projectId) return;
+    if (content.querySelector("[data-zcodepro-item]")) return;
+    const config = await getConfig();
+    if (config.features && config.features.projectMenu === false) return;
+    const res = await rpc("/projects-v2");
+    if (!res.ok || !res.available) return;
+    const proj = (res.projects || []).find((p) => p.id === projectId);
+    if (!proj) return;
+    const roots = (proj.roots || []).slice().sort((a, b) => (b.primary ? 1 : 0) - (a.primary ? 1 : 0));
+    if (!roots.length) return;
+    const primary = roots.find((r) => r.primary) || roots[0];
+    const openItem = cloneMenuItem(editItem, "open-folder", L.openFolderItem);
+    wireHighlight(content, openItem);
+    if (roots.length === 1) {
+      openItem.addEventListener("click", () => {
+        try {
+          content.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", code: "Escape", bubbles: true, cancelable: true }));
+        } catch {
+        }
+        void rpc("/open-folder", { method: "POST", body: { path: primary.path } });
+      });
+    } else {
+      const ns = "http://www.w3.org/2000/svg";
+      const chev = document.createElementNS(ns, "svg");
+      chev.setAttribute("viewBox", "0 0 24 24");
+      chev.setAttribute("fill", "none");
+      chev.setAttribute("stroke", "currentColor");
+      chev.setAttribute("stroke-width", "2");
+      chev.setAttribute("stroke-linecap", "round");
+      chev.setAttribute("stroke-linejoin", "round");
+      chev.setAttribute("class", "ml-auto size-3.5 shrink-0 text-foreground-subtle");
+      const chevPath = document.createElementNS(ns, "path");
+      chevPath.setAttribute("d", "m9 18 6-6-6-6");
+      chev.append(chevPath);
+      openItem.append(chev);
+      attachFolderHover(content, openItem, roots);
+    }
+    editItem.after(openItem);
+    const copyItem = cloneMenuItem(editItem, "copy-path", L.copyPathItem);
+    wireHighlight(content, copyItem);
+    copyItem.addEventListener("click", () => {
+      try {
+        content.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", code: "Escape", bubbles: true, cancelable: true }));
+      } catch {
+      }
+      void copyToClipboard(primary.path).then((ok) => showToast(ok ? L.pathCopied : L.pathCopyFailed, ok ? void 0 : "error"));
+    });
+    openItem.after(copyItem);
   }
   function handleProjectMenu(content) {
-    if (content.querySelector('[data-zcodepro-item="alias"]')) return;
+    if (content.querySelector("[data-zcodepro-item]")) return;
     const items = itemsOf(content);
-    const removeItem = items.find(
+    const newUi = isNewProjectSidebar();
+    const menuRow = newUi ? openMenuProjectRow() : null;
+    const anchor = newUi ? items.find((el) => el.getAttribute("data-testid") === "virtual-project-edit") : items.find(
       (el) => el.hasAttribute("data-testid") && REMOVE_TEXTS.some((x) => itemText(el).startsWith(x))
     );
-    if (!removeItem) return;
+    if (!anchor) return;
+    if (newUi) {
+      if (!menuRow) return;
+      void injectNewMenuItems(content, menuRow);
+      return;
+    }
     void (async () => {
       const config = await getConfig();
       if (config.features && config.features.projectMenu === false) return;
-      const project = await resolveProjectPath(removeItem);
+      const project = await resolveProjectPath(anchor);
       if (!project) return;
-      appendAliasItem(content, removeItem, project);
-      appendRelocateItem(content, removeItem, project);
-      appendOpenFolderItem(content, removeItem, project);
-      appendCopyPathItem(content, removeItem, project);
+      appendAliasItem(content, anchor, project);
+      appendRelocateItem(content, anchor, project);
+      appendOpenFolderItem(content, anchor, project);
+      appendCopyPathItem(content, anchor, project);
     })();
   }
 
