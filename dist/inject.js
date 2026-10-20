@@ -205,7 +205,7 @@
     titleGenTesting: "\u751F\u6210\u4E2D\u2026",
     titleGenTestOk: "\u751F\u6210\u7ED3\u679C\uFF1A",
     titleGenTestFailed: "\u751F\u6210\u5931\u8D25",
-    featureWsRunning: "\u6298\u53E0\u8FD0\u884C\u4E2D\u63D0\u793A",
+    featureWsRunning: "\u6298\u53E0\u65F6\u4EFB\u52A1\u8FD0\u884C\u4E2D\u63D0\u793A",
     featureWsRunningDesc: "\u6709\u4F1A\u8BDD\u5728\u8FD0\u884C\u65F6\uFF0C\u6298\u53E0\u7684\u9879\u76EE\u4E0E\u201C\u4EFB\u52A1\u201D\u201C\u5DF2\u7F6E\u9876\u201D\u7B49\u5206\u533A\u5934\u663E\u793A\u4E0E\u4EFB\u52A1\u8FD0\u884C\u4E2D\u540C\u6B3E\u7684\u52A0\u8F7D\u56FE\u6807\uFF0C\u5168\u90E8\u7ED3\u675F\u540E\u6D88\u5931\uFF1B3.16.1 \u4E4B\u524D\u6BCF 60 \u79D2\u4F1A\u5728\u540E\u53F0\u77ED\u6682\u5C55\u5F00\u9879\u76EE\u590D\u6838\u518D\u6536\u8D77\u3002",
     tabPerformance: "\u6027\u80FD",
     perfDesc: "ZCode \u4E3A\u6BCF\u4E2A\u6253\u5F00\u8FC7\u7684\u9879\u76EE\u5E38\u9A7B\u4E00\u4E2A\u4F1A\u8BDD\u8FDB\u7A0B\uFF0C\u5E94\u7528\u81EA\u8EAB\u4E0D\u4F1A\u56DE\u6536\uFF0C\u9879\u76EE\u591A\u4E86\u5185\u5B58\u5360\u7528\u5C31\u9AD8\u3002\u5F00\u542F\u540E\uFF0C\u957F\u65F6\u95F4\u672A\u4F7F\u7528\u4E14\u6CA1\u6709\u4EFB\u52A1\u5728\u8DD1\u7684\u9879\u76EE\u4F1A\u88AB\u81EA\u52A8\u91CA\u653E\uFF1A\u4F1A\u8BDD\u8BB0\u5F55\u4E0D\u53D7\u5F71\u54CD\uFF0C\u518D\u6B21\u6253\u5F00\u65F6\u81EA\u52A8\u6062\u590D\uFF0C\u4EC5\u9996\u6B21\u56DE\u590D\u6709\u51E0\u79D2\u7B49\u5F85\u3002\u6B63\u5728\u4F7F\u7528\u7684\u9879\u76EE\u3001\u8FD0\u884C\u4E2D\u7684\u4F1A\u8BDD\u4E0E\u540E\u53F0\u547D\u4EE4\u3001\u5B9A\u65F6\u4EFB\u52A1\u90FD\u4E0D\u4F1A\u88AB\u56DE\u6536\u3002\u540E\u53F0\u547D\u4EE4\u68C0\u6D4B\u4F9D\u8D56\u7CFB\u7EDF\u8FDB\u7A0B\u4FE1\u606F\uFF08Linux / macOS / Windows \u5404\u8D70\u7CFB\u7EDF\u81EA\u5E26\u5DE5\u5177\uFF09\uFF0C\u68C0\u6D4B\u4E0D\u53EF\u7528\u65F6\u529F\u80FD\u81EA\u52A8\u505C\u7528\u3002",
@@ -595,7 +595,7 @@
     titleGenTesting: "Generating\u2026",
     titleGenTestOk: "Result: ",
     titleGenTestFailed: "Generation failed",
-    featureWsRunning: "Running indicator",
+    featureWsRunning: "Running indicator when collapsed",
     featureWsRunningDesc: "Shows the same spinning loader as running tasks on collapsed projects and on section headers (\u201CTasks\u201D, \u201CPinned\u201D) while any session is running; clears when they all finish. Before ZCode 3.16.1 the project is briefly re-expanded in the background every 60 s to re-check.",
     tabPerformance: "Performance",
     perfDesc: "ZCode keeps a session process resident for every project you have opened and never reclaims it, so memory grows with projects. When enabled, projects unused for a while with nothing running release their memory automatically: sessions are untouched and reload when reopened, with a few seconds wait on the first reply. The project in use, running sessions, background commands and scheduled tasks are never reclaimed. Background-command detection reads system process info via built-in tools (Linux / macOS / Windows); when unavailable, the feature disables itself.",
@@ -6812,9 +6812,26 @@
   function findWsRow(ws) {
     return findProjectRow(ws);
   }
-  var LOADER_PATH = "M21 12a9 9 0 1 1-6.219-8.56";
+  var LOADER_FALLBACK_PATHS = [
+    "M12 2v4",
+    "m16.2 7.8 2.9-2.9",
+    "M18 12h4",
+    "m19.8 16.2-2.9 2.9",
+    "M12 18v4",
+    "m7.8 19.8-2.9-2.9",
+    "M6 12H2",
+    "m4.2 7.8 2.9-2.9"
+  ];
   function makeLoaderSvg(baseClass) {
     const ns = "http://www.w3.org/2000/svg";
+    const proto = document.querySelector("svg.lucide-loader");
+    if (proto) {
+      const clone = proto.cloneNode(true);
+      const origClass = proto.getAttribute("class") || "";
+      const keep = origClass.split(/\s+/).filter((c) => /^(size-|text-)/.test(c)).join(" ");
+      clone.setAttribute("class", ((keep || baseClass) + " animate-spin zcodepro-ws-loader").trim());
+      return clone;
+    }
     const svg = document.createElementNS(ns, "svg");
     svg.setAttribute("viewBox", "0 0 24 24");
     svg.setAttribute("fill", "none");
@@ -6823,9 +6840,11 @@
     svg.setAttribute("stroke-linecap", "round");
     svg.setAttribute("stroke-linejoin", "round");
     svg.setAttribute("class", (baseClass + " animate-spin zcodepro-ws-loader").trim());
-    const path = document.createElementNS(ns, "path");
-    path.setAttribute("d", LOADER_PATH);
-    svg.append(path);
+    for (const d of LOADER_FALLBACK_PATHS) {
+      const path = document.createElementNS(ns, "path");
+      path.setAttribute("d", d);
+      svg.append(path);
+    }
     return svg;
   }
   function setRunningIcon(holder, on) {
@@ -6901,8 +6920,18 @@
       const base = String(ws).replace(/[\\/]+$/, "");
       const a = await ts.listActiveTaskIds({ workspacePath: base });
       const b = await ts.listActiveTaskIds({ workspacePath: base + "/" });
-      if (Array.isArray(a) && Array.isArray(b)) return a.length === 0 && b.length === 0;
-      return null;
+      const ids = [...Array.isArray(a) ? a : [], ...Array.isArray(b) ? b : []].map(String);
+      if (!Array.isArray(a) || !Array.isArray(b)) return null;
+      if (!ids.length) return true;
+      const st = await rpc("/task-statuses?ids=" + encodeURIComponent(ids.join(","))).catch(() => null);
+      const TERMINAL = /* @__PURE__ */ new Set(["completed", "error", "interrupted"]);
+      const live = (id) => {
+        const rec = st && st.ok && st.available ? st.statuses[id] : void 0;
+        if (rec === void 0) return true;
+        if (!TERMINAL.has(rec.status)) return true;
+        return Date.now() - rec.updatedAt < 3e5;
+      };
+      return !ids.some(live);
     } catch {
       return null;
     }
@@ -7004,13 +7033,24 @@
       seen.add(path);
       const head = wsHead(row);
       const collapsed = !head || head.getAttribute("aria-expanded") === "false";
-      const running = !!(enabled3 && collapsed && runningByWs.get(path) && runningByWs.get(path).size);
+      const domRunning = !!(runningByWs.get(path) && runningByWs.get(path).size);
+      const normP = (v) => String(v || "").replace(/[\\/]+$/, "");
+      const running = enabled3 && collapsed && (activeProjectPaths.size ? [...activeProjectPaths].some((p2) => normP(p2) === normP(path)) : domRunning);
       const icon = iconHolderOf(row);
       icon?.classList.toggle("zcodepro-ws-running", running);
       setRunningIcon(icon, running);
     }
     applySectionSpin();
     for (const ws of [...runningByWs.keys()]) if (!seen.has(ws)) runningByWs.delete(ws);
+  }
+  var headInfoCache = /* @__PURE__ */ new WeakMap();
+  var PROJECT_HEAD_TEXTS = /* @__PURE__ */ new Set(["\u9879\u76EE", "projects"]);
+  var TASK_HEAD_TEXTS = /* @__PURE__ */ new Set(["\u4EFB\u52A1", "tasks"]);
+  function kindFromHeadText(head) {
+    const text = (head.textContent || "").trim().toLowerCase();
+    if (PROJECT_HEAD_TEXTS.has(text)) return "project";
+    if (TASK_HEAD_TEXTS.has(text)) return "task";
+    return null;
   }
   function sectionHeads() {
     const heads = [];
@@ -7020,18 +7060,31 @@
     }
     for (const h3 of document.querySelectorAll("h3")) heads.push(h3);
     return heads.map((head) => {
+      const cached = headInfoCache.get(head);
+      if (cached) return { head, cont: cached.cont, kind: cached.kind };
+      const textKind = head.tagName === "BUTTON" ? kindFromHeadText(head) : "task";
       let cont = head.parentElement;
       while (cont && !cont.querySelector("li[data-task-item-key]") && cont !== document.body) cont = cont.parentElement;
-      if (!cont || cont === document.body) return null;
-      return { head, cont };
-    }).filter(Boolean);
+      const contOk = cont && cont !== document.body;
+      const kind = textKind || (contOk ? cont.querySelector("section[data-project-id]") ? "project" : "task" : null);
+      headInfoCache.set(head, { cont: contOk ? cont : null, kind });
+      return { head, cont: contOk ? cont : null, kind };
+    }).filter((x) => x.head);
   }
   var SEC_SPIN_CLASS = "zcodepro-ws-sec-spin";
   var anyActiveCache = { at: 0, value: null, busy: false };
+  var sectionActive = { task: false, project: false };
+  var activeProjectPaths = /* @__PURE__ */ new Set();
+  setInterval(() => {
+    if (!anyActiveCache.busy && Date.now() - anyActiveCache.at >= 1e4) globalAnyActive();
+  }, 1e4);
   function globalAnyActive() {
     if (anyActiveCache.value !== null && Date.now() - anyActiveCache.at < 1e4) return anyActiveCache.value;
     if (anyActiveCache.busy) return anyActiveCache.value === true;
     anyActiveCache.busy = true;
+    sectionActive.task = false;
+    sectionActive.project = false;
+    activeProjectPaths = /* @__PURE__ */ new Set();
     void (async () => {
       let hit = null;
       try {
@@ -7040,16 +7093,67 @@
         const ts = services && services.zcodeTaskService;
         if (res && res.ok && res.available && ts && typeof ts.listActiveTaskIds === "function") {
           hit = false;
+          const projPaths = /* @__PURE__ */ new Set();
           for (const proj of res.projects || []) {
-            const base = String(proj.roots && proj.roots[0] && proj.roots[0].path || "").replace(/[\\/]+$/, "");
-            if (!base) continue;
-            const a = await ts.listActiveTaskIds({ workspacePath: base });
-            const b = await ts.listActiveTaskIds({ workspacePath: base + "/" });
-            if (Array.isArray(a) && a.length || Array.isArray(b) && b.length) {
-              hit = true;
-              break;
+            for (const r of proj.roots || []) {
+              const b = String(r.path || "").replace(/[\\/]+$/, "");
+              if (b) projPaths.add(b);
             }
           }
+          const taskSidePaths = /* @__PURE__ */ new Set();
+          for (const el of document.querySelectorAll("[data-task-item-key]")) {
+            const sec = el.closest("section[data-project-id]");
+            if (sec) continue;
+            const k = el.getAttribute("data-task-item-key") || "";
+            const cut = k.lastIndexOf(":");
+            if (cut > 1) taskSidePaths.add(k.slice(0, cut).replace(/[\\/]+$/, ""));
+          }
+          const scanPaths = /* @__PURE__ */ new Set([...projPaths, ...taskSidePaths]);
+          const byKind = { task: /* @__PURE__ */ new Set(), project: /* @__PURE__ */ new Set() };
+          const byKindByPath = /* @__PURE__ */ new Map();
+          const rootToProject = /* @__PURE__ */ new Map();
+          const projectPaths = /* @__PURE__ */ new Map();
+          for (const proj of res.projects || []) {
+            const names = [];
+            for (const r of proj.roots || []) {
+              const b = String(r.path || "").replace(/[\\/]+$/, "");
+              if (b) {
+                rootToProject.set(b, proj.name);
+                names.push(b);
+              }
+            }
+            projectPaths.set(proj.name, names);
+          }
+          for (const base of scanPaths) {
+            const a = await ts.listActiveTaskIds({ workspacePath: base });
+            const b = await ts.listActiveTaskIds({ workspacePath: base + "/" });
+            const ids = [...Array.isArray(a) ? a : [], ...Array.isArray(b) ? b : []].map(String);
+            if (!ids.length) continue;
+            byKindByPath.set(base, ids);
+            const kind = projPaths.has(base) ? "project" : "task";
+            for (const id of ids) byKind[kind].add(id);
+          }
+          const allIds = [...byKind.task, ...byKind.project];
+          const st = allIds.length ? await rpc("/task-statuses?ids=" + encodeURIComponent(allIds.join(","))).catch(() => null) : null;
+          const TERMINAL = /* @__PURE__ */ new Set(["completed", "error", "interrupted"]);
+          const live = (id) => {
+            const rec = st && st.ok && st.available ? st.statuses[id] : void 0;
+            if (rec === void 0) return true;
+            if (!TERMINAL.has(rec.status)) return true;
+            return Date.now() - rec.updatedAt < 3e5;
+          };
+          activeProjectPaths = /* @__PURE__ */ new Set();
+          for (const [base, ids] of byKindByPath) {
+            if (!projPaths.has(base)) continue;
+            if (ids.some(live)) {
+              const projName = rootToProject.get(base);
+              if (projName) for (const p2 of projectPaths.get(projName) || []) activeProjectPaths.add(p2);
+            }
+          }
+          const taskDomRunning = !!document.querySelector('[data-task-item-key]:not(section[data-project-id] *) svg[class*="lucide-loader"]');
+          if (taskDomRunning && [...byKind.task].some(live)) sectionActive.task = true;
+          if ([...byKind.project].some(live)) sectionActive.project = true;
+          hit = sectionActive.task || sectionActive.project;
         }
       } catch {
       }
@@ -7064,15 +7168,17 @@
       document.querySelectorAll("." + SEC_SPIN_CLASS).forEach((el) => el.remove());
       return;
     }
-    for (const { head, cont } of sectionHeads()) {
-      const running = !!cont.querySelector('li[data-task-item-key] svg[class*="lucide-loader"]');
+    for (const { head, cont, kind } of sectionHeads()) {
+      const running = !!(cont && cont.querySelector('li[data-task-item-key] svg[class*="lucide-loader"]'));
       let expanded = true;
       if (head.tagName === "BUTTON") expanded = head.getAttribute("aria-expanded") !== "false";
       else {
         const list = head.nextElementSibling;
         expanded = !list || list.offsetHeight > 0;
       }
-      const want = !expanded && (running || globalAnyActive());
+      if (!kind) return;
+      const scoped = kind === "project" ? sectionActive.project : sectionActive.task;
+      const want = !expanded && scoped;
       const existing = head.querySelector(":scope > ." + SEC_SPIN_CLASS);
       if (want && !existing) {
         const span = document.createElement("span");
@@ -7528,6 +7634,7 @@
     else btn.removeAttribute("data-active");
     if (kind === "auto" || kind === "plugin") btn.setAttribute("aria-pressed", on ? "true" : "false");
   }
+  var lastSelectedKey = "";
   function syncActive() {
     if (!origs || !rowEl) return;
     const auto = origs.auto.getAttribute("aria-pressed") === "true";
@@ -7537,10 +7644,24 @@
     for (const el of document.querySelectorAll(ROW_SEL)) {
       if ((el.className + "").includes("bg-selected")) {
         selected = true;
+        lastSelectedKey = el.getAttribute("data-task-item-key") || lastSelectedKey;
         break;
       }
     }
-    setActive("newTask", !selected && !auto && !plugin);
+    let newTaskOn = false;
+    if (!selected && lastSelectedKey) {
+      const stillMounted = document.querySelector(`${ROW_SEL}[data-task-item-key="${CSS.escape(lastSelectedKey)}"]`);
+      if (stillMounted) {
+        newTaskOn = !auto && !plugin;
+        lastSelectedKey = "";
+      } else {
+        const btn = rowEl?.querySelector('[data-kind="newTask"]');
+        newTaskOn = btn ? btn.getAttribute("data-active") === "1" : false;
+      }
+    } else if (!selected) {
+      newTaskOn = !auto && !plugin;
+    }
+    setActive("newTask", newTaskOn);
     setActive("search", palette);
     setActive("auto", auto);
     setActive("plugin", plugin);

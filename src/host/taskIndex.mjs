@@ -220,10 +220,50 @@ export async function listVirtualProjects(dataRoot) {
       }
       proj.roots.push({ path: String(row.path || ''), primary: Number(row.is_primary) === 1 });
     }
+    // 全部出现过的任务工作区（含非项目工作区：draft/独立任务等，它们的任务
+    // 显示在侧栏“任务”分区）：供分区头运行判定把活跃任务按归属分类
+    let allPaths = [];
+    try {
+      if (driver.kind === 'node') {
+        const db = new driver.DatabaseSync(dbFile, { readOnly: true });
+        try { allPaths = db.prepare('SELECT DISTINCT workspace_path FROM tasks').all().map((r) => String(r.workspace_path || '')); } finally { db.close(); }
+      } else {
+        allPaths = runCli(dbFile, 'SELECT DISTINCT workspace_path FROM tasks;').stdout.split('\n').filter(Boolean);
+      }
+    } catch { /* 读不到就不带，调用方只有项目路径 */ }
     return {
       projects: [...byId.values()],
       deletedRoots: deletedRows.map((r) => String(r.path || '')),
+      allPaths,
     };
+  } catch {
+    return null;
+  }
+}
+
+// 批量查会话终态：task_id → task_status。分区头运行判定用它剔除官方 syncer
+// 卡滞的报告（会话已完成但内存态仍报活跃时，任务行 loader 会一直卡转）。
+// 读不到（库缺失/无驱动）返回 null，调用方按未确认处理
+export async function listTaskStatuses(dataRoot, ids) {
+  const out = {};
+  const dbFile = taskIndexPath(dataRoot);
+  if (!existsSync(dbFile)) return null;
+  const driver = await loadDriver();
+  if (!driver) return null;
+  const esc = (v) => "'" + String(v).replace(/'/g, "''") + "'";
+  const inList = ids.map((id) => esc(id)).join(', ');
+  const sql = `SELECT task_id, task_status, updated_at FROM tasks WHERE task_id IN (${inList})`;
+  try {
+    let rows;
+    if (driver.kind === 'node') {
+      const db = new driver.DatabaseSync(dbFile, { readOnly: true });
+      try { rows = db.prepare(sql).all(); } finally { db.close(); }
+    } else {
+      rows = runCli(dbFile, sql + ';').stdout.split('\n').filter(Boolean)
+        .map((l) => { const [id, st, at] = l.split('|'); return { task_id: id, task_status: st, updated_at: at }; });
+    }
+    for (const r of rows) out[String(r.task_id)] = { status: String(r.task_status || ''), updatedAt: Number(r.updated_at) || 0 };
+    return out;
   } catch {
     return null;
   }

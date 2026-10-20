@@ -44,9 +44,23 @@ function findWsRow(ws) {
 // 折叠且运行中时，项目图标换成与任务行运行中同款的 loader（lucide 圆弧 +
 // 应用自带的 animate-spin 类，旋转速度与任务行完全一致）；结束后还原 folder。
 // React 重渲染会重建 folder svg，apply 周期（观察器 + 兜底轮询）会重新换上
-const LOADER_PATH = 'M21 12a9 9 0 1 1-6.219-8.56';
+// 与任务行同款 loader：优先克隆页面上官方 loader 图标（形状/粗细/段数自动跟随
+// 应用版本），找不到再用内置的 lucide loader 多段短辐条图形（不是单圆弧）
+const LOADER_FALLBACK_PATHS = [
+  'M12 2v4', 'm16.2 7.8 2.9-2.9', 'M18 12h4', 'm19.8 16.2-2.9 2.9',
+  'M12 18v4', 'm7.8 19.8-2.9-2.9', 'M6 12H2', 'm4.2 7.8 2.9-2.9',
+];
 function makeLoaderSvg(baseClass) {
   const ns = 'http://www.w3.org/2000/svg';
+  const proto = document.querySelector('svg.lucide-loader');
+  if (proto) {
+    const clone = proto.cloneNode(true);
+    const origClass = proto.getAttribute('class') || '';
+    // 保留尺寸/颜色类，去掉官方动画（显隐由我们控制，animate 统一自己加）
+    const keep = origClass.split(/\s+/).filter((c) => /^(size-|text-)/.test(c)).join(' ');
+    clone.setAttribute('class', ((keep || baseClass) + ' animate-spin zcodepro-ws-loader').trim());
+    return clone;
+  }
   const svg = document.createElementNS(ns, 'svg');
   svg.setAttribute('viewBox', '0 0 24 24');
   svg.setAttribute('fill', 'none');
@@ -55,9 +69,11 @@ function makeLoaderSvg(baseClass) {
   svg.setAttribute('stroke-linecap', 'round');
   svg.setAttribute('stroke-linejoin', 'round');
   svg.setAttribute('class', (baseClass + ' animate-spin zcodepro-ws-loader').trim());
-  const path = document.createElementNS(ns, 'path');
-  path.setAttribute('d', LOADER_PATH);
-  svg.append(path);
+  for (const d of LOADER_FALLBACK_PATHS) {
+    const path = document.createElementNS(ns, 'path');
+    path.setAttribute('d', d);
+    svg.append(path);
+  }
   return svg;
 }
 function setRunningIcon(holder, on) {
@@ -154,8 +170,20 @@ export async function authoritativeIdle(ws) {
     const base = String(ws).replace(/[\\/]+$/, '');
     const a = await ts.listActiveTaskIds({ workspacePath: base });
     const b = await ts.listActiveTaskIds({ workspacePath: base + '/' });
-    if (Array.isArray(a) && Array.isArray(b)) return a.length === 0 && b.length === 0;
-    return null;
+    const ids = [...(Array.isArray(a) ? a : []), ...(Array.isArray(b) ? b : [])].map(String);
+    if (!Array.isArray(a) || !Array.isArray(b)) return null;
+    if (!ids.length) return true;
+    // 终态过滤与 globalAnyActive 同一判据：syncer 卡滞的已完成会话不算运行
+    //（DB status 终态且近 5 分钟无更新 = 卡滞；有更新 = 复活在跑）
+    const st = await rpc('/task-statuses?ids=' + encodeURIComponent(ids.join(','))).catch(() => null);
+    const TERMINAL = new Set(['completed', 'error', 'interrupted']);
+    const live = (id) => {
+      const rec = st && st.ok && st.available ? st.statuses[id] : undefined;
+      if (rec === undefined) return true;
+      if (!TERMINAL.has(rec.status)) return true;
+      return Date.now() - rec.updatedAt < 300_000;
+    };
+    return !ids.some(live);
   } catch {
     return null; // 方法不存在（≤3.15.x 的服务对象）或查询失败：一律按忙
   }
@@ -281,8 +309,13 @@ function apply() {
     seen.add(path);
     const head = wsHead(row);
     const collapsed = !head || head.getAttribute('aria-expanded') === 'false';
-    const running = !!(enabled && collapsed && runningByWs.get(path) && runningByWs.get(path).size);
-    // 换同款 loader 图标（类标记仅作调试/样式锚点）
+    // 折叠态优先权威扫描结果（多目录项目的行匹配在 DOM 侧不可靠）；
+    // 权威不可用（≤3.15.x）时回退 DOM 运行记录
+    const domRunning = !!(runningByWs.get(path) && runningByWs.get(path).size);
+    // 路径两侧都去尾分隔符再比（任务键前缀可能带尾斜杠，权威集合不带）
+    const normP = (v) => String(v || '').replace(/[\\/]+$/, '');
+    const running = enabled && collapsed && (activeProjectPaths.size ? [...activeProjectPaths].some((p2) => normP(p2) === normP(path)) : domRunning);
+    // 换同款 loader 图标（类标记仅用于 CSS 隐藏 folder）
     const icon = iconHolderOf(row);
     icon?.classList.toggle('zcodepro-ws-running', running);
     setRunningIcon(icon, running);
@@ -294,8 +327,25 @@ function apply() {
   for (const ws of [...runningByWs.keys()]) if (!seen.has(ws)) runningByWs.delete(ws);
 }
 
-// 分区头识别：官方分区头按钮（含 chevron svg）与“已置顶”标题（h3）；
-// 容器 = 头部向上最近的含任务行祖先
+// 分区头识别：官方分区头按钮（含 chevron svg）与“已置顶”标题（h3）。
+// 归属（project/task）与容器引用只在分区展开时解析一次并缓存（WeakMap）：
+// 分区折叠后其容器整体卸载，向上重解析会落到别的分区容器（如展开着的
+// “任务”分区），把“项目”头误判成 task——折叠期间一律用缓存的归属，
+// 不再重解析；React 重建头部元素时缓存失效，展开态会重新解析补上
+const headInfoCache = new WeakMap(); // head → { cont, kind }
+// 文本兜底：分区头按钮被界面重建且其分区正折叠（自有容器已卸载、无法结构
+// 解析）时，按分区名定归属——向外层猜会落到含项目行的容器，把“任务”头
+// 误判成“项目”（实测）。分区名跟随界面语言，zh/en 双语覆盖
+// 官方分区标题（i18n 键 project.projects / project.tasks 的实际文案，随界面
+// 语言）：zh 项目/任务、en Projects/Tasks。语言包再加语言时同步此处
+const PROJECT_HEAD_TEXTS = new Set(['项目', 'projects']);
+const TASK_HEAD_TEXTS = new Set(['任务', 'tasks']);
+function kindFromHeadText(head) {
+  const text = (head.textContent || '').trim().toLowerCase();
+  if (PROJECT_HEAD_TEXTS.has(text)) return 'project';
+  if (TASK_HEAD_TEXTS.has(text)) return 'task';
+  return null;
+}
 function sectionHeads() {
   const heads = [];
   for (const sv of document.querySelectorAll('svg[data-purpose-section-chevron]')) {
@@ -304,11 +354,18 @@ function sectionHeads() {
   }
   for (const h3 of document.querySelectorAll('h3')) heads.push(h3);
   return heads.map((head) => {
+    const cached = headInfoCache.get(head);
+    if (cached) return { head, cont: cached.cont, kind: cached.kind };
+    // 官方分区头（BUTTON）的归属以分区名为准（“项目”/“任务”是官方固定分区，
+    // 文本即真值）；结构解析只在文本不认识时兜底。已置顶标题（h3）恒属 task。
+    const textKind = head.tagName === 'BUTTON' ? kindFromHeadText(head) : 'task';
     let cont = head.parentElement;
     while (cont && !cont.querySelector('li[data-task-item-key]') && cont !== document.body) cont = cont.parentElement;
-    if (!cont || cont === document.body) return null;
-    return { head, cont };
-  }).filter(Boolean);
+    const contOk = cont && cont !== document.body;
+    const kind = textKind || (contOk ? (cont.querySelector('section[data-project-id]') ? 'project' : 'task') : null);
+    headInfoCache.set(head, { cont: contOk ? cont : null, kind });
+    return { head, cont: contOk ? cont : null, kind };
+  }).filter((x) => x.head);
 }
 
 const SEC_SPIN_CLASS = 'zcodepro-ws-sec-spin';
@@ -317,10 +374,23 @@ const SEC_SPIN_CLASS = 'zcodepro-ws-sec-spin';
 // 尾斜杠两种形式各查一次），任一非终态会话即“有任务在跑”。10 秒节流缓存；
 // 接口不可用（≤3.15.x）时无缓存，分区头退回 DOM 检测
 let anyActiveCache = { at: 0, value: null, busy: false };
+// 活跃按分区归属：task = “任务”分区（非项目工作区），project = “项目”分区
+const sectionActive = { task: false, project: false };
+// 权威扫描发现的有活跃任务的项目路径集合（全部 root）；项目行折叠态判定用
+let activeProjectPaths = new Set();
+// 周期复查：缓存到期就无条件重扫（不看当前值）——只在 true 时扫会有两个缺口：
+// 空闲后新任务启动无人触发（折叠分区头不亮）；任务结束但数据库完成状态尚未
+// 写入的过渡窗口里旧值一直被沿用。每 10 秒全量一次，扫描本身是内存级过滤
+setInterval(() => {
+  if (!anyActiveCache.busy && Date.now() - anyActiveCache.at >= 10_000) globalAnyActive();
+}, 10_000);
 function globalAnyActive() {
   if (anyActiveCache.value !== null && Date.now() - anyActiveCache.at < 10_000) return anyActiveCache.value;
   if (anyActiveCache.busy) return anyActiveCache.value === true;
   anyActiveCache.busy = true;
+  sectionActive.task = false;
+  sectionActive.project = false;
+  activeProjectPaths = new Set();
   void (async () => {
     let hit = null;
     try {
@@ -329,13 +399,78 @@ function globalAnyActive() {
       const ts = services && services.zcodeTaskService;
       if (res && res.ok && res.available && ts && typeof ts.listActiveTaskIds === 'function') {
         hit = false;
+        // 项目路径集合（任一 root）：活跃任务命中即属“项目”分区；非项目工作区
+        //（draft/独立任务）的活跃属“任务”分区——两个分区头分别提示
+        const projPaths = new Set();
         for (const proj of res.projects || []) {
-          const base = String((proj.roots && proj.roots[0] && proj.roots[0].path) || '').replace(/[\\/]+$/, '');
-          if (!base) continue;
+          for (const r of proj.roots || []) {
+            const b = String(r.path || '').replace(/[\\/]+$/, '');
+            if (b) projPaths.add(b);
+          }
+        }
+        // 非项目工作区清单收紧：任务索引的 workspace_path 含历史残留（旧机器/
+        // 已删目录），syncer 可能在其上误报活跃；只认“任务”分区实际会显示的——
+        // 即侧栏当前可见的任务行所在工作区（从 DOM 任务行键取，分区展开时可靠）
+        const taskSidePaths = new Set();
+        for (const el of document.querySelectorAll('[data-task-item-key]')) {
+          const sec = el.closest('section[data-project-id]');
+          if (sec) continue; // 项目内任务的运行由项目侧覆盖
+          const k = el.getAttribute('data-task-item-key') || '';
+          const cut = k.lastIndexOf(':');
+          if (cut > 1) taskSidePaths.add(k.slice(0, cut).replace(/[\\/]+$/, ''));
+        }
+        const scanPaths = new Set([...projPaths, ...taskSidePaths]);
+        const byKind = { task: new Set(), project: new Set() };
+        const byKindByPath = new Map(); // base → 活跃 id 数组
+        const rootToProject = new Map(); // root 路径 → 项目名
+        const projectPaths = new Map(); // 项目名 → 全部 root 路径
+        for (const proj of res.projects || []) {
+          const names = [];
+          for (const r of proj.roots || []) {
+            const b = String(r.path || '').replace(/[\\/]+$/, '');
+            if (b) { rootToProject.set(b, proj.name); names.push(b); }
+          }
+          projectPaths.set(proj.name, names);
+        }
+        for (const base of scanPaths) {
           const a = await ts.listActiveTaskIds({ workspacePath: base });
           const b = await ts.listActiveTaskIds({ workspacePath: base + '/' });
-          if ((Array.isArray(a) && a.length) || (Array.isArray(b) && b.length)) { hit = true; break; }
+          const ids = [...(Array.isArray(a) ? a : []), ...(Array.isArray(b) ? b : [])].map(String);
+          if (!ids.length) continue;
+          byKindByPath.set(base, ids);
+          const kind = projPaths.has(base) ? 'project' : 'task';
+          for (const id of ids) byKind[kind].add(id);
         }
+        const allIds = [...byKind.task, ...byKind.project];
+        // 终态过滤：官方 syncer 可能卡滞（已完成仍报活跃，任务行 loader 卡转），
+        // 到任务索引核对，已终态的不计
+        const st = allIds.length ? await rpc('/task-statuses?ids=' + encodeURIComponent(allIds.join(','))).catch(() => null) : null;
+        // 终态判据须加新近度：DB 的 status 是“最后结局”，会话被复活继续用时
+        // 不回滚（实测本会话 interrupted 后复跑）——终态但 updated_at 近 5 分钟内
+        // 有动静的按真活跃；长期不动的才是 syncer 卡滞误报
+        const TERMINAL = new Set(['completed', 'error', 'interrupted']);
+        const live = (id) => {
+          const rec = st && st.ok && st.available ? st.statuses[id] : undefined;
+          if (rec === undefined) return true;
+          if (!TERMINAL.has(rec.status)) return true;
+          return Date.now() - rec.updatedAt < 300_000;
+        };
+        // 活跃的项目路径集合（项目行折叠态判定用）：按 root→项目聚合，
+        // 该项目任一 root 上有活跃任务即记入
+        activeProjectPaths = new Set();
+        for (const [base, ids] of byKindByPath) {
+          if (!projPaths.has(base)) continue;
+          if (ids.some(live)) {
+            const projName = rootToProject.get(base);
+            if (projName) for (const p2 of projectPaths.get(projName) || []) activeProjectPaths.add(p2);
+          }
+        }
+        // 任务侧再加一道 DOM 确认：非项目任务行上必须真有 loader 在转——
+        // 侧栏显示的就是真相，syncer 报告的活跃（尤其历史残留工作区）不足为凭
+        const taskDomRunning = !!document.querySelector('[data-task-item-key]:not(section[data-project-id] *) svg[class*="lucide-loader"]');
+        if (taskDomRunning && [...byKind.task].some(live)) sectionActive.task = true;
+        if ([...byKind.project].some(live)) sectionActive.project = true;
+        hit = sectionActive.task || sectionActive.project;
       }
     } catch { /* 查询失败保持旧值 */ }
     if (hit !== null) anyActiveCache = { at: Date.now(), value: hit, busy: false };
@@ -349,14 +484,14 @@ function applySectionSpin() {
     document.querySelectorAll('.' + SEC_SPIN_CLASS).forEach((el) => el.remove());
     return;
   }
-  for (const { head, cont } of sectionHeads()) {
-    const running = !!cont.querySelector('li[data-task-item-key] svg[class*="lucide-loader"]');
+  for (const { head, cont, kind } of sectionHeads()) {
+    const running = !!(cont && cont.querySelector('li[data-task-item-key] svg[class*="lucide-loader"]'));
     // “任务”分区与“已置顶”标题：展开时任务行的 loader 直接可见，头部不再重复
     // 提示，仅在分区折叠时挂。“项目”分区头（容器含项目行 section）不受此限——
     // 折叠的单个项目仍由项目行的权威复核提示。
     // 仅分区折叠时显示：展开时任务行的 loader 直接可见，头部不重复。
-    // 分区折叠会把内容行全部卸载（DOM 检测失效），改看全局权威扫描
-    //（listActiveTaskIds 遍历全部项目，节流缓存）是否有任何任务在跑
+    // 分区折叠会把内容行全部卸载（DOM 检测失效），改看权威扫描按归属分类的活跃：
+    // “项目”分区头看项目侧，“任务”分区与“已置顶”标题看非项目工作区（draft 等）
     let expanded = true;
     if (head.tagName === 'BUTTON') expanded = head.getAttribute('aria-expanded') !== 'false';
     else {
@@ -364,7 +499,11 @@ function applySectionSpin() {
       const list = head.nextElementSibling;
       expanded = !list || list.offsetHeight > 0;
     }
-    const want = !expanded && (running || globalAnyActive());
+    if (!kind) return; // 折叠后解析不到归属且无缓存：跳过（不动现有图标）
+    const scoped = kind === 'project' ? sectionActive.project : sectionActive.task;
+    // 折叠态一律只信权威扫描：DOM 检测在折叠后不可靠（容器卸载后解析会落到
+    // 别的分区，多目录项目的行匹配也套不上），且权威扫描周期覆盖刷新
+    const want = !expanded && scoped;
     const existing = head.querySelector(':scope > .' + SEC_SPIN_CLASS);
     if (want && !existing) {
       const span = document.createElement('span');

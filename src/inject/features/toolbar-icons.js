@@ -90,6 +90,9 @@ function setActive(kind, on) {
   if (kind === 'auto' || kind === 'plugin') btn.setAttribute('aria-pressed', on ? 'true' : 'false');
 }
 
+// 上一次选中的会话行键：分区折叠会把任务行（含选中行）整体卸载，此时侧栏
+// “无选中行”不代表进入了新建视图（用户还在原会话里），不能据此点亮按钮
+let lastSelectedKey = '';
 function syncActive() {
   if (!origs || !rowEl) return;
   const auto = origs.auto.getAttribute('aria-pressed') === 'true';
@@ -98,11 +101,30 @@ function syncActive() {
   // 当前会话的识别方式与“会话快捷切换”一致（侧栏条目的 bg-selected 标记）
   let selected = false;
   for (const el of document.querySelectorAll(ROW_SEL)) {
-    if ((el.className + '').includes('bg-selected')) { selected = true; break; }
+    if ((el.className + '').includes('bg-selected')) {
+      selected = true;
+      lastSelectedKey = el.getAttribute('data-task-item-key') || lastSelectedKey;
+      break;
+    }
   }
   // 新建任务态 = 无选中会话且无面板打开（自动化/插件市场面板会清掉会话选中，
-  // 不排除的话那些面板打开时本按钮会跟着误亮；命令面板是浮层不遮挡底层视图，不排除）
-  setActive('newTask', !selected && !auto && !plugin);
+  // 不排除的话那些面板打开时本按钮会跟着误亮；命令面板是浮层不遮挡底层视图，不排除）。
+  // 无选中时分两种：上次选中的行仍在场（真的切到了新建视图）→ 点亮；
+  // 行不在场（所在分区折叠/卸载）→ 视图没变，保持按钮原状态
+  let newTaskOn = false;
+  if (!selected && lastSelectedKey) {
+    const stillMounted = document.querySelector(`${ROW_SEL}[data-task-item-key="${CSS.escape(lastSelectedKey)}"]`);
+    if (stillMounted) {
+      newTaskOn = !auto && !plugin;
+      lastSelectedKey = '';
+    } else {
+      const btn = rowEl?.querySelector('[data-kind="newTask"]');
+      newTaskOn = btn ? btn.getAttribute('data-active') === '1' : false; // 沿用当前显示
+    }
+  } else if (!selected) {
+    newTaskOn = !auto && !plugin;
+  }
+  setActive('newTask', newTaskOn);
   setActive('search', palette);
   setActive('auto', auto);
   setActive('plugin', plugin);
