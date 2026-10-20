@@ -105,7 +105,7 @@
     syncRecLink: "\u575A\u679C\u4E91 WebDAV",
     syncRecSuffix: "\uFF1A\u767B\u5F55\u4E0E\u5BC6\u7801\u586B\u201C\u5E94\u7528\u5BC6\u7801\u201D\uFF0C\u4E0D\u662F\u8D26\u53F7\u5BC6\u7801\u3002",
     syncIncludeZcp: "ZCode Pro \u8BBE\u7F6E",
-    syncIncludeZcpDesc: "\u529F\u80FD\u5F00\u5173\u3001\u6837\u5F0F\u8C03\u6574\u3001\u9879\u76EE\u522B\u540D\u4E0E\u4EE3\u7406\u8BBE\u7F6E\uFF1B\u540C\u6B65\u914D\u7F6E\u4E0E\u51ED\u636E\u672C\u8EAB\u4E0D\u53C2\u4E0E\u540C\u6B65\u3002",
+    syncIncludeZcpDesc: "\u529F\u80FD\u5F00\u5173\u3001\u6837\u5F0F\u8C03\u6574\u4E0E\u4EE3\u7406\u8BBE\u7F6E\uFF1B\u540C\u6B65\u914D\u7F6E\u4E0E\u51ED\u636E\u672C\u8EAB\u4E0D\u53C2\u4E0E\u540C\u6B65\u3002\u9879\u76EE\u522B\u540D\u4E0D\u540C\u6B65\uFF08\u5B98\u65B9\u5DF2\u652F\u6301\u6539\u9879\u76EE\u540D\uFF09\u3002",
     syncIncludeModel: "\u6A21\u578B\u8BBE\u7F6E",
     syncIncludeModelDesc: "\u81EA\u5B9A\u4E49\u4F9B\u5E94\u5546\u4E0E\u6A21\u578B\u914D\u7F6E\uFF08config.json \u4E0E provider_config.json\uFF0C\u542B API Key\uFF09\u3002\u8D26\u53F7\u767B\u5F55\u7684\u51ED\u636E\uFF08\u5982 BigModel \u8BA2\u9605\uFF09\u4E0D\u53C2\u4E0E\u540C\u6B65\uFF0C\u5404\u673A\u5668\u7528\u5404\u81EA\u8D26\u53F7\u767B\u5F55\u3002",
     syncUpload: "\u4E0A\u4F20\u5230\u4E91\u7AEF",
@@ -402,6 +402,30 @@
     aliasSaved: "\u522B\u540D\u5DF2\u66F4\u65B0",
     aliasCleared: "\u5DF2\u6062\u590D\u771F\u5B9E\u540D\u79F0",
     aliasHint: "\u78C1\u76D8\u76EE\u5F55\u540D\u4E0D\u53D8\uFF1A\u7EC8\u7AEF\u3001\u6587\u4EF6\u7BA1\u7406\u5668\u4E0E\u5176\u4ED6\u5F15\u7528\u771F\u5B9E\u8DEF\u5F84\u7684\u754C\u9762\u4ECD\u663E\u793A\u539F\u540D\u3002",
+    featureProjectMenuDescNew: "\u9879\u76EE\u201C\u66F4\u591A\u201D\u83DC\u5355\u4E2D\u7684\u5207\u6362\u6587\u4EF6\u5939\u3001\u6253\u5F00\u6587\u4EF6\u5939\u4E0E\u590D\u5236\u8DEF\u5F84\u3002\u5B98\u65B9\u5DF2\u652F\u6301\u4FEE\u6539\u9879\u76EE\u540D\u79F0\uFF08\u7F16\u8F91\u9879\u76EE\uFF09\uFF0C\u81EA\u5B9A\u4E49\u522B\u540D\u5DF2\u505C\u7528\u3002",
+    aliasMigrateTitle: "\u8FC1\u79FB\u9879\u76EE\u522B\u540D",
+    aliasMigrateDesc: "\u5F53\u524D ZCode \u5DF2\u652F\u6301\u4FEE\u6539\u9879\u76EE\u540D\u79F0\uFF08\u9879\u76EE\u201C\u66F4\u591A\u201D\u83DC\u5355 \u2192 \u7F16\u8F91\u9879\u76EE\uFF09\uFF0C\u81EA\u5B9A\u4E49\u522B\u540D\u529F\u80FD\u5DF2\u505C\u7528\u3002\u53EF\u628A\u5DF2\u4FDD\u5B58\u7684\u522B\u540D\u5199\u5165\u5B98\u65B9\u9879\u76EE\u540D\u79F0\uFF0C\u52FE\u9009\u8981\u8FC1\u79FB\u7684\u9879\u76EE\uFF1B\u8FC1\u79FB\u53EA\u6539\u9879\u76EE\u540D\u79F0\uFF0C\u78C1\u76D8\u76EE\u5F55\u4E0D\u53D7\u5F71\u54CD\u3002",
+    aliasMigrateItemHint: "\u8FC1\u79FB\u540E\u5C06\u4F5C\u4E3A\u9879\u76EE\u540D\u79F0\u4FDD\u5B58\uFF08\u53EF\u968F\u65F6\u5728\u201C\u7F16\u8F91\u9879\u76EE\u201D\u4E2D\u518D\u6539\uFF09\u3002\u4EC5\u65E0\u6807\u8BB0\u7684\u6761\u76EE\u53EF\u52FE\u9009\uFF1B\u5DF2\u8FC1\u79FB\u3001\u5DF2\u5E76\u5165\u3001\u9879\u76EE\u5DF2\u5220\u9664\u3001\u672C\u673A\u4E0D\u5B58\u5728\uFF08\u65E7\u673A\u5668\u8DEF\u5F84\uFF09\u4EE5\u53CA\u9879\u76EE\u5DF2\u91CD\u547D\u540D\u7684\u90FD\u4E0D\u53EF\u52FE\u9009\u2014\u2014\u8981\u6539\u8FD9\u4E9B\u9879\u76EE\u7684\u540D\u5B57\uFF0C\u76F4\u63A5\u7528\u9879\u76EE\u201C\u66F4\u591A\u201D\u83DC\u5355\u91CC\u7684\u201C\u7F16\u8F91\u9879\u76EE\u201D\u3002",
+    aliasMigrateStateDone: "\u5DF2\u8FC1\u79FB",
+    aliasMigrateStateMerged: "\u5DF2\u5E76\u5165\u300C{name}\u300D",
+    aliasMigrateStateDeleted: "\u9879\u76EE\u5DF2\u5220\u9664",
+    aliasMigrateStateMissing: "\u672C\u673A\u4E0D\u5B58\u5728",
+    aliasMigrateStateRenamed: "\u9879\u76EE\u5DF2\u91CD\u547D\u540D",
+    aliasMigrateDeadSummary: "\u5DF2\u5931\u6548 {n} \u6761\uFF08\u672C\u673A\u4E0D\u5B58\u5728 / \u9879\u76EE\u5DF2\u5220\u9664\uFF0C\u591A\u4E3A\u8BBE\u7F6E\u540C\u6B65\u5E26\u6765\u7684\u65E7\u673A\u5668\u8DEF\u5F84\uFF09",
+    aliasMigrateClearDead: "\u6E05\u9664\u5931\u6548\u6761\u76EE",
+    aliasMigrateDeadCleared: "\u5DF2\u6E05\u9664 {n} \u6761\u5931\u6548\u522B\u540D",
+    aliasMigrateDeadClearFailed: "\u90E8\u5206\u5931\u6548\u522B\u540D\u672A\u80FD\u6E05\u9664\uFF0C\u8BF7\u91CD\u8BD5",
+    aliasMigrateGo: "\u8FC1\u79FB\u6240\u9009",
+    aliasMigrateRunning: "\u8FC1\u79FB\u4E2D\u2026",
+    aliasMigrateProgress: "\u6B63\u5728\u8FC1\u79FB {i}/{n}\uFF1A{name}",
+    aliasMigrateStateFailed: "\u5931\u8D25",
+    aliasMigrateSkip: "\u6682\u4E0D\u8FC1\u79FB",
+    aliasMigrateDone: "\u5DF2\u8FC1\u79FB {n} \u4E2A\u522B\u540D",
+    aliasMigratePartial: "{n} \u4E2A\u5DF2\u8FC1\u79FB\uFF0C{m} \u4E2A\u672A\u6210\u529F\uFF1B\u672A\u6210\u529F\u7684\u53EF\u7A0D\u540E\u5728 ZCode Pro \u8BBE\u7F6E\u4E2D\u91CD\u8BD5",
+    aliasMigrateAllFailed: "\u522B\u540D\u8FC1\u79FB\u672A\u6210\u529F\uFF0C\u53EF\u7A0D\u540E\u5728 ZCode Pro \u8BBE\u7F6E\u4E2D\u91CD\u8BD5",
+    aliasMigrateCardName: "\u522B\u540D\u8FC1\u79FB",
+    aliasMigrateCardDesc: "\u5B98\u65B9\u5DF2\u652F\u6301\u4FEE\u6539\u9879\u76EE\u540D\u79F0\uFF0C\u8FD8\u6709 {n} \u4E2A\u81EA\u5B9A\u4E49\u522B\u540D\u672A\u8FC1\u79FB\u3002",
+    aliasMigrateRun: "\u8FC1\u79FB",
     taskOrderSaved: "\u987A\u5E8F\u5DF2\u66F4\u65B0",
     qqGroupTitle: "QQ \u7FA4\uFF1A428403354",
     qqGroupDesc: "\u95EE\u9898\u53CD\u9988\u4E0E\u4EA4\u6D41",
@@ -473,7 +497,7 @@
     syncRecLink: "Jianguoyun WebDAV",
     syncRecSuffix: " \u2014 use the app password, not your account password.",
     syncIncludeZcp: "ZCode Pro settings",
-    syncIncludeZcpDesc: "Feature toggles, style adjustments, project aliases and the proxy setting; the sync config and credentials themselves are never synced.",
+    syncIncludeZcpDesc: "Feature toggles, style adjustments and the proxy setting; the sync config and credentials themselves are never synced. Project aliases are not synced (renaming is built in now).",
     syncIncludeModel: "Model settings",
     syncIncludeModelDesc: "Custom providers and model config (config.json and provider_config.json, API keys included). Account sign-in credentials (e.g. the BigModel subscription) are not synced; each computer signs in with its own account.",
     syncUpload: "Upload",
@@ -770,6 +794,30 @@
     aliasSaved: "Alias updated.",
     aliasCleared: "Real name restored.",
     aliasHint: "The directory name on disk is unchanged: terminals, file managers and other path-based UI still show the real name.",
+    featureProjectMenuDescNew: 'Switch folder, open folder and copy path in the project "More" menu. Renaming is built in since ZCode 3.16.1 ("Edit project"), so the custom alias is retired.',
+    aliasMigrateTitle: "Migrate project aliases",
+    aliasMigrateDesc: 'This ZCode supports renaming projects (project "More" menu \u2192 Edit project), so the custom alias feature is retired. Write your saved aliases into the official project names by picking the projects below; only the project name changes, folders on disk are untouched.',
+    aliasMigrateItemHint: 'The alias becomes the project name (re-editable anytime via "Edit project"). Only unmarked entries can be checked; migrated, merged, deleted, not-on-this-machine and manually-renamed ones cannot \u2014 to rename those projects, use "Edit project" in the project "More" menu directly.',
+    aliasMigrateStateDone: "Migrated",
+    aliasMigrateStateMerged: 'Merged into "{name}"',
+    aliasMigrateStateDeleted: "Project deleted",
+    aliasMigrateStateMissing: "Not on this machine",
+    aliasMigrateStateRenamed: "Project renamed",
+    aliasMigrateDeadSummary: "{n} stale entries (not on this machine / project deleted \u2014 usually old-machine paths from settings sync)",
+    aliasMigrateClearDead: "Clear stale entries",
+    aliasMigrateDeadCleared: "Removed {n} stale alias(es)",
+    aliasMigrateDeadClearFailed: "Some stale aliases could not be removed; please retry",
+    aliasMigrateGo: "Migrate selected",
+    aliasMigrateRunning: "Migrating\u2026",
+    aliasMigrateProgress: "Migrating {i}/{n}: {name}",
+    aliasMigrateStateFailed: "Failed",
+    aliasMigrateSkip: "Not now",
+    aliasMigrateDone: "Migrated {n} alias(es)",
+    aliasMigratePartial: "{n} migrated, {m} failed; retry the rest later in ZCode Pro settings",
+    aliasMigrateAllFailed: "Alias migration failed; retry later in ZCode Pro settings",
+    aliasMigrateCardName: "Alias migration",
+    aliasMigrateCardDesc: "Project renaming is built in now; {n} custom alias(es) are not migrated yet.",
+    aliasMigrateRun: "Migrate",
     taskOrderSaved: "Order updated.",
     qqGroupTitle: "QQ group: 428403354",
     qqGroupDesc: "Feedback & discussion",
@@ -953,7 +1001,7 @@
   var overlayClassBare = "fixed inset-0 isolate z-50 flex items-center justify-center duration-100 p-4 platform-linux-desktop:top-12";
   var contentClass = "w-full sm:max-w-md rounded-2xl border-none bg-popover/98 p-5 text-ui-base/relaxed text-foreground ring-border shadow-2xl";
   var dialogStack = [];
-  function openDialog({ title, description, onMount, onClose, width = "sm:max-w-md", overlay = "dim", draggable = false, posKey = "", dismissOnOutside = true, bodyClass = "" }) {
+  function openDialog({ title, description, onMount, onClose, width = "sm:max-w-md", overlay = "dim", draggable = false, posKey = "", dismissOnOutside = true, bodyClass = "", closable = false }) {
     const L = t();
     const prevActive = document.activeElement;
     let cleanupDrag = null;
@@ -993,8 +1041,25 @@
       content.style.pointerEvents = "auto";
     }
     const titleEl = h("h2", { class: "text-lg font-semibold leading-none tracking-tight text-foreground" }, title);
-    content.append(
+    const titleRow = closable ? h(
+      "div",
+      { class: "flex items-start justify-between gap-2" },
       titleEl,
+      h("button", {
+        type: "button",
+        class: "zcodepro-close",
+        title: L.close,
+        "aria-label": L.close,
+        onMousedown: (e) => {
+          e.stopPropagation();
+        },
+        onClick: () => {
+          close();
+        }
+      }, "\u2715")
+    ) : titleEl;
+    content.append(
+      titleRow,
       ...description ? [h("p", { class: "mt-2 text-ui-sm/relaxed text-foreground-subtle" }, description)] : []
     );
     const body = h("div", { class: "zcodepro-dialog-body " + (bodyClass || "mt-4") });
@@ -1189,13 +1254,13 @@
   }
   function unitField({ value = null, fallback = { value: 100, unit: "%" }, step = { px: 10, "%": 1 }, onCommit }) {
     const RANGES = { px: [320, 3840], "%": [20, 100] };
-    const norm2 = (v) => {
+    const norm3 = (v) => {
       if (!v || !RANGES[v.unit]) return null;
       const [min, max] = RANGES[v.unit];
       const n = v.unit === "px" ? Math.round(v.value) : Math.round(v.value * 10) / 10;
       return Number.isFinite(n) ? { value: Math.min(max, Math.max(min, n)), unit: v.unit } : null;
     };
-    let current2 = norm2(value) || norm2(fallback) || { value: 100, unit: "%" };
+    let current2 = norm3(value) || norm3(fallback) || { value: 100, unit: "%" };
     const input = h("input", {
       type: "text",
       inputmode: "decimal",
@@ -1206,7 +1271,7 @@
       input.value = `${current2.value}${current2.unit}`;
     };
     const commit = (v) => {
-      const next = norm2(v);
+      const next = norm3(v);
       if (!next || next.value === current2.value && next.unit === current2.unit) {
         display();
         return;
@@ -1243,7 +1308,7 @@
     return {
       el: input,
       reset() {
-        current2 = norm2(fallback) || current2;
+        current2 = norm3(fallback) || current2;
         display();
       },
       get() {
@@ -1784,6 +1849,7 @@
     return false;
   }
   async function startAliasWatcher() {
+    if (isNewProjectSidebar()) return;
     await syncFromConfig();
     if (observer) return;
     observer = new MutationObserver((muts) => {
@@ -2180,8 +2246,8 @@
     if (!extracted) return null;
     const res = await rpc("/projects");
     if (res.ok && Array.isArray(res.projects)) {
-      const norm2 = (p) => String(p).replace(/[\\/]+$/, "");
-      const hit = res.projects.find((p) => norm2(p.path) === norm2(extracted));
+      const norm3 = (p) => String(p).replace(/[\\/]+$/, "");
+      const hit = res.projects.find((p) => norm3(p.path) === norm3(extracted));
       if (hit) return hit;
     }
     return { path: extracted, name: String(extracted).replace(/[\\/]+$/, "").split(/[\\/]/).pop() || "" };
@@ -2765,6 +2831,489 @@
     return v === "" || v !== "session" && !providers.some((p) => p.id === v);
   }
 
+  // src/inject/features/ws-rows.js
+  var norm2 = (p) => String(p || "").replace(/[\\/]+$/, "");
+  var NEW_ROW_SEL = "section[data-project-id]";
+  var OLD_ROW_SEL = '[data-testid^="workspace-item-"]';
+  var pathByProjectId = /* @__PURE__ */ new Map();
+  function projectRowSelector() {
+    return isNewProjectSidebar() ? NEW_ROW_SEL : OLD_ROW_SEL;
+  }
+  function projectRows(root = document) {
+    return [...root.querySelectorAll(projectRowSelector())];
+  }
+  function rowPath(row) {
+    if (!row) return null;
+    if (row.hasAttribute && row.hasAttribute("data-project-id")) {
+      const host = row.getAttribute("data-project-host");
+      if (host !== null && host !== "local") return null;
+      const id = row.getAttribute("data-project-id");
+      let found = null;
+      for (const el of row.querySelectorAll("[data-task-item-key]")) {
+        const key = el.getAttribute("data-task-item-key") || "";
+        const cut = key.lastIndexOf(":");
+        if (cut > 1) {
+          found = key.slice(0, cut);
+          break;
+        }
+      }
+      if (found) pathByProjectId.set(id, found);
+      return found || pathByProjectId.get(id) || null;
+    }
+    const testid = row.getAttribute && row.getAttribute("data-testid");
+    if (!testid || !testid.startsWith("workspace-item-")) return null;
+    return norm2(testid.slice("workspace-item-".length)) || null;
+  }
+  function findProjectRow(path) {
+    const want = norm2(path);
+    if (!want) return null;
+    for (const row of projectRows()) {
+      const p = rowPath(row);
+      if (p && norm2(p) === want) return row;
+    }
+    return null;
+  }
+
+  // src/inject/features/alias-migration.js
+  var sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  var basenameOf2 = (p) => String(p || "").replace(/[\\/]+$/, "").split(/[\\/]/).pop() || "";
+  function waitFor(getter, timeoutMs, step) {
+    const start = Date.now();
+    return new Promise((resolve, reject) => {
+      const tick2 = () => {
+        let v = null;
+        try {
+          v = getter();
+        } catch {
+        }
+        if (v) {
+          resolve(v);
+          return;
+        }
+        if (Date.now() - start >= timeoutMs) {
+          reject(new Error(step));
+          return;
+        }
+        setTimeout(tick2, 120);
+      };
+      tick2();
+    });
+  }
+  function setReactInputValue(input, value) {
+    const setter = Object.getOwnPropertyDescriptor(input.constructor.prototype, "value")?.set || Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
+    if (!setter) throw new Error("input-setter");
+    setter.call(input, value);
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+  function pressEscape() {
+    try {
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", code: "Escape", bubbles: true, cancelable: true }));
+    } catch {
+    }
+  }
+  async function markDismissed() {
+    await rpc("/config", { method: "POST", body: { migrations: { aliasRenameDismissed: true } } });
+    clearConfigCache();
+  }
+  var MIGRATE_LOCK_KEY = "zcodepro:alias-migrate-lock";
+  var MIGRATE_LOCK_MS = 5 * 6e4;
+  function migrateLockFresh() {
+    try {
+      const at = Number(localStorage.getItem(MIGRATE_LOCK_KEY));
+      return Number.isFinite(at) && Date.now() - at < MIGRATE_LOCK_MS;
+    } catch {
+      return false;
+    }
+  }
+  function touchMigrateLock() {
+    try {
+      localStorage.setItem(MIGRATE_LOCK_KEY, String(Date.now()));
+    } catch {
+    }
+  }
+  async function migrateOne(path, alias) {
+    if (document.querySelector('[data-testid="virtual-project-name"], [role="menu"]')) {
+      pressEscape();
+      await sleep(300);
+    }
+    let row = findProjectRow(path);
+    if (!row) {
+      const byName = [...document.querySelectorAll("section[data-project-id]")].filter((el) => {
+        const host = el.getAttribute("data-project-host");
+        return (host === null || host === "local") && el.getAttribute("data-project-name") === basenameOf2(path);
+      });
+      if (byName.length === 1) row = byName[0];
+    }
+    if (!row) throw new Error("project-row");
+    const projectId = row.getAttribute("data-project-id");
+    const rowById = () => document.querySelector(`section[data-project-id="${CSS.escape(projectId)}"]`);
+    try {
+      row.scrollIntoView({ block: "center" });
+    } catch {
+    }
+    const trigger = await waitFor(
+      () => rowById()?.querySelector('[data-testid="virtual-project-menu"]'),
+      4e3,
+      "menu-trigger"
+    );
+    trigger.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, cancelable: true, pointerId: 1, isPrimary: true, button: 0 }));
+    trigger.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, cancelable: true, pointerId: 1, isPrimary: true, button: 0 }));
+    trigger.click();
+    const menu = await waitFor(() => {
+      for (const m of document.querySelectorAll('[role="menu"]')) {
+        if (m.querySelector('[data-testid="virtual-project-edit"]')) return m;
+      }
+      return null;
+    }, 4e3, "menu-open");
+    menu.querySelector('[data-testid="virtual-project-edit"]').click();
+    const input = await waitFor(
+      () => document.querySelector('[data-testid="virtual-project-name"]'),
+      5e3,
+      "editor-open"
+    );
+    const wantName = alias.trim();
+    setReactInputValue(input, wantName);
+    const save = await waitFor(
+      () => {
+        const btn = document.querySelector('[data-testid="virtual-project-save"]');
+        return btn && !btn.disabled ? btn : null;
+      },
+      4e3,
+      "save-ready"
+    );
+    save.click();
+    await waitFor(() => {
+      const r = rowById();
+      return r && r.getAttribute("data-project-name") === wantName ? r : null;
+    }, 8e3, "name-updated");
+    await sleep(250);
+    if (document.querySelector('[data-testid="virtual-project-name"]')) pressEscape();
+    const res = await rpc("/project/alias", { method: "POST", body: { path, alias: "" } });
+    if (!res.ok) throw new Error("alias-clear");
+  }
+  async function classifyEntry(path, alias, db) {
+    const want = norm0(path);
+    if (db) {
+      let alsoDeleted = false;
+      for (const proj of db.projects || []) {
+        const hit = (proj.roots || []).find((r) => norm0(r.path) === want);
+        if (!hit) continue;
+        if (hit.primary) {
+          if (proj.name === alias) return { state: "done", note: "" };
+          return { state: "", note: "", overridden: !!proj.overridden };
+        }
+        alsoDeleted = (db.deletedRoots || []).some((p) => norm0(p) === want);
+        return { state: "merged", note: proj.name, alsoDeleted };
+      }
+      if ((db.deletedRoots || []).some((p) => norm0(p) === want)) return { state: "deleted", note: "" };
+      return { state: "missing", note: "" };
+    }
+    const localRows = [...document.querySelectorAll("section[data-project-id]")].filter((el) => {
+      const host = el.getAttribute("data-project-host");
+      return host === null || host === "local";
+    });
+    const byPath = localRows.find((el) => norm0(rowPath(el)) === want);
+    if (byPath) {
+      return (byPath.getAttribute("data-project-name") || "") === alias ? { state: "done", note: "" } : { state: "", note: "" };
+    }
+    const byName = localRows.filter((el) => el.getAttribute("data-project-name") === alias);
+    if (byName.length === 1) return { state: "done", note: "" };
+    for (const task of document.querySelectorAll("[data-task-item-key]")) {
+      const key = task.getAttribute("data-task-item-key") || "";
+      const cut = key.lastIndexOf(":");
+      if (cut <= 1 || norm0(key.slice(0, cut)) !== want) continue;
+      const owner = task.closest("section[data-project-id]");
+      const ownerName = owner ? owner.getAttribute("data-project-name") || "" : "";
+      if (ownerName) return { state: "merged", note: ownerName };
+    }
+    return { state: "missing", note: "" };
+  }
+  async function fetchProjectDb() {
+    const res = await rpc("/projects-v2");
+    return res.ok && res.available ? res : null;
+  }
+  var norm0 = (p) => String(p || "").replace(/[\\/]+$/, "");
+  function openMigrationDialog() {
+    ensureStyle();
+    const L = t();
+    let running = false;
+    let decided = false;
+    const decide = () => {
+      if (decided) return;
+      decided = true;
+      void markDismissed();
+    };
+    touchMigrateLock();
+    openDialog({
+      title: L.aliasMigrateTitle,
+      description: L.aliasMigrateDesc,
+      width: "sm:max-w-md",
+      // 迁移不可中途撤销且过程可见：点遮罩不关闭（防误触），右上角 ✕ 关闭
+      dismissOnOutside: false,
+      closable: true,
+      onClose: () => {
+        decide();
+        window.dispatchEvent(new CustomEvent("zcodepro:aliases-changed"));
+      },
+      onMount: ({ body, close }) => {
+        void (async () => {
+          const config = await getConfig(true);
+          const db = await fetchProjectDb();
+          const entries = [];
+          for (const [path, aliasRaw] of Object.entries(config.aliases || {})) {
+            const alias = String(aliasRaw || "").trim();
+            if (!alias) continue;
+            const cls = await classifyEntry(path, alias, db);
+            entries.push({
+              path,
+              alias,
+              checked: cls.state === "" && !cls.overridden,
+              state: cls.state,
+              note: cls.note || "",
+              overridden: !!cls.overridden,
+              alsoDeleted: !!cls.alsoDeleted
+            });
+          }
+          if (!entries.length) {
+            close();
+            return;
+          }
+          const badgesOf = (e) => {
+            const out = [];
+            if (e.state === "run") out.push({ text: L.aliasMigrateRunning, cls: "text-amber-500" });
+            if (e.state === "ok") out.push({ text: L.aliasMigrateStateDone, cls: "text-emerald-600" });
+            if (e.state === "fail") out.push({ text: L.aliasMigrateStateFailed, cls: "text-destructive" });
+            if (e.state === "done") out.push({ text: L.aliasMigrateStateDone, cls: "text-emerald-600" });
+            if (e.state === "merged") out.push({ text: L.aliasMigrateStateMerged.replace("{name}", e.note), cls: "text-amber-500" });
+            if (e.state === "deleted" || e.state === "merged" && e.alsoDeleted) out.push({ text: L.aliasMigrateStateDeleted, cls: "text-foreground-subtle/70" });
+            if (e.state === "missing") out.push({ text: L.aliasMigrateStateMissing, cls: "text-foreground-subtle/70" });
+            if (e.state === "" && e.overridden) out.push({ text: L.aliasMigrateStateRenamed, cls: "text-foreground-subtle/70" });
+            return out;
+          };
+          const progressEl = h("div", { class: "mb-1 text-ui-xs text-foreground-subtle", style: "display:none" });
+          const listEl = h("div", { class: "max-h-[50vh] space-y-1.5 overflow-y-auto" });
+          let deadOpen = false;
+          const renderList = () => {
+            const alive = entries.filter((e) => e.state !== "missing" && e.state !== "deleted");
+            const dead = entries.filter((e) => e.state === "missing" || e.state === "deleted");
+            const rowOf = (e, deadRow) => {
+              const cb = h("input", { type: "checkbox" });
+              cb.checked = e.checked;
+              cb.disabled = running || e.state !== "" && e.state !== "fail" || e.overridden;
+              cb.addEventListener("change", () => {
+                e.checked = cb.checked;
+              });
+              const badges = badgesOf(e);
+              const dim = deadRow || e.state !== "" && e.state !== "fail" && e.state !== "run" || e.overridden;
+              return h(
+                "label",
+                { class: "flex cursor-pointer items-start gap-2 rounded-lg p-2 transition-colors hover:bg-surface-hover" + (dim ? " opacity-60" : "") },
+                h("span", { class: "mt-0.5" }, cb),
+                h(
+                  "span",
+                  { class: "min-w-0 flex-1" },
+                  h("span", { class: "block truncate text-ui-sm font-medium text-foreground" }, e.alias),
+                  h("span", { class: "block truncate font-mono text-ui-xs text-foreground-subtle" }, e.path)
+                ),
+                ...badges.map((b) => h("span", { class: "shrink-0 self-center text-ui-xs " + b.cls }, b.text))
+              );
+            };
+            const parts = alive.map((e) => rowOf(e, false));
+            if (dead.length) {
+              const deadRows = h(
+                "div",
+                { class: "space-y-1", style: deadOpen ? "" : "display:none" },
+                ...dead.map((e) => rowOf(e, true))
+              );
+              const toggle2 = h("button", {
+                type: "button",
+                class: "flex w-full items-center gap-1 rounded-lg p-2 text-left text-ui-xs text-foreground-subtle transition-colors hover:bg-surface-hover",
+                onClick: () => {
+                  deadOpen = !deadOpen;
+                  renderList();
+                }
+              }, (deadOpen ? "\u25BE " : "\u25B8 ") + L.aliasMigrateDeadSummary.replace("{n}", String(dead.length)));
+              parts.push(toggle2, deadRows);
+            }
+            listEl.replaceChildren(...parts);
+          };
+          renderList();
+          const clearDead = async () => {
+            if (running) return;
+            const dead = entries.filter((e) => e.state === "missing" || e.state === "deleted");
+            if (!dead.length) return;
+            running = true;
+            goBtn.setAttribute("disabled", "true");
+            let ok = 0;
+            for (const e of dead) {
+              const r = await rpc("/project/alias", { method: "POST", body: { path: e.path, alias: "" } });
+              if (r.ok) {
+                ok++;
+                entries.splice(entries.indexOf(e), 1);
+              }
+            }
+            running = false;
+            goBtn.removeAttribute("disabled");
+            goBtn.textContent = L.aliasMigrateGo;
+            clearConfigCache();
+            renderList();
+            window.dispatchEvent(new CustomEvent("zcodepro:aliases-changed"));
+            if (ok === dead.length) showToast(L.aliasMigrateDeadCleared.replace("{n}", String(ok)));
+            else showToast(L.aliasMigrateDeadClearFailed, "error");
+          };
+          const goBtn = btnPrimary(L.aliasMigrateGo, () => {
+            void run();
+          }, "min-w-24");
+          const run = async () => {
+            if (running) return;
+            const todo = entries.filter((e) => e.checked);
+            if (!todo.length) return;
+            running = true;
+            goBtn.setAttribute("disabled", "true");
+            goBtn.textContent = L.aliasMigrateRunning;
+            let ok = 0;
+            const failed = [];
+            for (let i = 0; i < todo.length; i++) {
+              const e = todo[i];
+              progressEl.style.display = "";
+              progressEl.textContent = L.aliasMigrateProgress.replace("{i}", String(i + 1)).replace("{n}", String(todo.length)).replace("{name}", e.alias);
+              e.state = "run";
+              renderList();
+              try {
+                await migrateOne(e.path, e.alias);
+                e.state = "ok";
+                e.checked = false;
+                ok++;
+              } catch (err) {
+                console.warn("[zcodepro] alias-migrate: " + e.path + " \u5931\u8D25\u4E8E " + (err && err.message));
+                e.state = "fail";
+                failed.push(e);
+              }
+              renderList();
+            }
+            running = false;
+            progressEl.style.display = "none";
+            goBtn.removeAttribute("disabled");
+            goBtn.textContent = L.aliasMigrateGo;
+            decide();
+            close();
+            if (!failed.length) {
+              showToast(L.aliasMigrateDone.replace("{n}", String(ok)), "ok");
+            } else if (ok) {
+              showToast(L.aliasMigratePartial.replace("{n}", String(ok)).replace("{m}", String(failed.length)), "error");
+            } else {
+              showToast(L.aliasMigrateAllFailed, "error");
+            }
+          };
+          body.append(
+            progressEl,
+            listEl,
+            h("p", { class: "text-ui-xs/relaxed text-foreground-subtle" }, L.aliasMigrateItemHint),
+            (() => {
+              const footer = document.createElement("div");
+              footer.className = "mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end";
+              const hasDead = entries.some((e) => e.state === "missing" || e.state === "deleted");
+              if (hasDead) {
+                const clearBtn = btnSecondary(L.aliasMigrateClearDead, () => {
+                  void clearDead().then(() => {
+                    if (!entries.some((e) => e.state === "missing" || e.state === "deleted")) clearBtn.style.display = "none";
+                  });
+                });
+                footer.append(clearBtn);
+              }
+              footer.append(
+                btnSecondary(L.aliasMigrateSkip, () => {
+                  if (running) return;
+                  decide();
+                  close();
+                }),
+                goBtn
+              );
+              return footer;
+            })()
+          );
+        })();
+      }
+    });
+  }
+  function migrationCard() {
+    const L = t();
+    const card = h("div", {
+      class: "flex items-center gap-2 rounded-lg p-2",
+      "data-zcodepro-migration-card": ""
+    });
+    const render = (count) => {
+      card.replaceChildren(
+        h(
+          "div",
+          { class: "min-w-0 flex-1" },
+          h("div", { class: "text-ui-sm font-medium text-foreground" }, L.aliasMigrateCardName),
+          h(
+            "div",
+            { class: "mt-0.5 text-ui-xs/relaxed text-foreground-subtle" },
+            count === null ? "\u2026" : L.aliasMigrateCardDesc.replace("{n}", String(count))
+          )
+        ),
+        btnSmall(L.aliasMigrateRun, () => {
+          openMigrationDialog();
+        })
+      );
+    };
+    render(null);
+    const refresh = async () => {
+      const config = await getConfig(true);
+      const db = await fetchProjectDb();
+      let count = 0;
+      for (const [p, a] of Object.entries(config.aliases || {})) {
+        if (!String(a || "").trim()) continue;
+        const cls = await classifyEntry(p, String(a).trim(), db);
+        if (cls.state === "" && !cls.overridden) count++;
+      }
+      if (!count) {
+        card.remove();
+        return;
+      }
+      render(count);
+    };
+    const onAliasesChanged = () => {
+      if (!card.isConnected) {
+        window.removeEventListener("zcodepro:aliases-changed", onAliasesChanged);
+        return;
+      }
+      void refresh();
+    };
+    window.addEventListener("zcodepro:aliases-changed", onAliasesChanged);
+    void refresh();
+    return card;
+  }
+  function startAliasMigrationWatcher() {
+    if (!officialRenameSupported() && !isNewProjectSidebar()) return;
+    void (async () => {
+      try {
+        const config = await getConfig();
+        const hasAliases = Object.values(config.aliases || {}).some((a) => String(a || "").trim());
+        if (!hasAliases) return;
+        if (config.migrations && config.migrations.aliasRenameDismissed) return;
+        await waitFor(() => document.querySelector("section[data-project-id]"), 45e3, "sidebar");
+        let focused = false;
+        for (let i = 0; i < 600; i++) {
+          if (document.visibilityState === "visible" && document.hasFocus()) {
+            focused = true;
+            break;
+          }
+          await sleep(500);
+        }
+        if (!focused) return;
+        if (migrateLockFresh()) return;
+        await waitFor(() => document.querySelector(".zcodepro-overlay") ? null : true, 12e4, "dialog-busy");
+        const fresh = await getConfig(true);
+        const still = Object.values(fresh.aliases || {}).some((a) => String(a || "").trim());
+        if (still && !(fresh.migrations && fresh.migrations.aliasRenameDismissed)) openMigrationDialog();
+      } catch {
+      }
+    })();
+  }
+
   // src/inject/features/styles.js
   var STYLE_DEFAULTS = {
     rowGap: 20,
@@ -3264,7 +3813,8 @@
         const refreshRows = () => {
           const f = config.features || {};
           rows.replaceChildren(
-            settingRow(L.featureProjectMenu, L.featureProjectMenuDesc, f.projectMenu !== false, async () => {
+            ...isNewProjectSidebar() ? [migrationCard()] : [],
+            settingRow(L.featureProjectMenu, isNewProjectSidebar() ? L.featureProjectMenuDescNew : L.featureProjectMenuDesc, f.projectMenu !== false, async () => {
               const next = !(f.projectMenu !== false);
               if (await setFeature("projectMenu", next)) f.projectMenu = next;
               refreshRows();
@@ -6121,7 +6671,7 @@
   var installed3 = false;
   var knownKeys = /* @__PURE__ */ new Set();
   var attempted = /* @__PURE__ */ new Set();
-  var sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  var sleep2 = (ms) => new Promise((r) => setTimeout(r, ms));
   function sessIdOf2(key) {
     const i = key.indexOf(":sess_");
     return i > 0 ? key.slice(i + 1) : "";
@@ -6154,7 +6704,7 @@
   }
   async function onNewTaskRow(key) {
     const selDeadline = Date.now() + SELECT_WAIT_MS;
-    while (currentKey() !== key && Date.now() < selDeadline) await sleep(200);
+    while (currentKey() !== key && Date.now() < selDeadline) await sleep2(200);
     if (currentKey() !== key) return;
     const cfg = await getConfig().catch(() => null);
     if (!cfg || !cfg.titleGen || cfg.titleGen.enabled !== true) return;
@@ -6166,7 +6716,7 @@
     while (Date.now() < msgDeadline) {
       texts = userTexts();
       if (texts.length) break;
-      await sleep(400);
+      await sleep2(400);
     }
     if (!texts.length) return;
     let assistantSeen = false;
@@ -6189,7 +6739,7 @@
     let lastChange = Date.now();
     try {
       while (Date.now() - startAt < COLLECT_MAX_MS) {
-        await sleep(500);
+        await sleep2(500);
         if (currentKey() !== key) {
           lastChange = Date.now();
           continue;
@@ -6209,7 +6759,7 @@
     if (linkDominant(texts.join("\n"))) {
       const deadline = Date.now() + 6e4;
       while (Date.now() < deadline) {
-        await sleep(2e3);
+        await sleep2(2e3);
         if (currentKey() !== key) continue;
         const a = assistantText();
         if (a && a.length > 80) {
@@ -6222,7 +6772,7 @@
     let res = await callTitleGen();
     for (const delay of [5e3, 2e4]) {
       if (res && res.ok) break;
-      await sleep(delay);
+      await sleep2(delay);
       res = await callTitleGen();
     }
     if (res && res.ok && res.written && res.title) {
@@ -7304,6 +7854,10 @@
       });
       try {
         void startAliasWatcher();
+      } catch {
+      }
+      try {
+        startAliasMigrationWatcher();
       } catch {
       }
       try {

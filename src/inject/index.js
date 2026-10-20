@@ -7,6 +7,7 @@ import { handleFileMenu } from './features/file-menu.js';
 import { startImageMenu } from './features/image-menu.js';
 import { startSettingsEntry } from './features/settings-entry.js';
 import { startAliasWatcher } from './features/alias.js';
+import { startAliasMigrationWatcher } from './features/alias-migration.js';
 import { startTaskOrderWatcher } from './features/task-order.js';
 import { startSessionSwitch } from './features/session-switch.js';
 import { startTitleLock } from './features/title-lock.js';
@@ -48,6 +49,8 @@ import { ensureStyle } from './ui.js';
       try { handleFileMenu(content); } catch { /* ignore */ }
     });
     try { void startAliasWatcher(); } catch { /* ignore */ }
+    // 别名迁移弹窗（3.16.1+ 且仍有存量别名时才动作），内部自带等待与窗口聚焦判断
+    try { startAliasMigrationWatcher(); } catch { /* ignore */ }
     try { startTaskOrderWatcher(); } catch { /* ignore */ }
     try { startSessionSwitch(); } catch { /* ignore */ }
     try { startTitleLock(); } catch { /* ignore */ }

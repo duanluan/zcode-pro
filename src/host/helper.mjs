@@ -343,6 +343,14 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         if (body && typeof body === 'object' && body.titleGen && typeof body.titleGen === 'object') {
           current.titleGen = mergeTitleGenConfig({ ...current.titleGen, ...body.titleGen });
         }
+        // 一次性迁移标记（如别名迁移弹窗的“暂不迁移”）：按项合并，只接受布尔值
+        if (body && typeof body === 'object' && body.migrations && typeof body.migrations === 'object') {
+          const patch = {};
+          for (const [k, v] of Object.entries(body.migrations)) {
+            if (typeof v === 'boolean') patch[k] = v;
+          }
+          current.migrations = { ...(current.migrations || {}), ...patch };
+        }
         saveConfig(configFile, current);
         json(res, 200, { ok: true, config: current });
         return;
@@ -1401,16 +1409,17 @@ async function runSettingsSync({ direction, dataRoot, configFile, config, proxyU
 }
 
 // 上传：每组独立一个云端文件（zcodepro.json / model.json，始终最新一版），勾选几组
-// 写几个；写前预读云端内容，别名与本机的合并后再写（合并规则见 mergeAliases），
-// 其余内容整份覆盖。同一份内容再写一个带时间戳的历史版本文件，供下载时任选版本
-// 恢复（旧版 zcode-pro 仍读固定名）；历史版本最多保留 historyLimit 个（同一时间戳
-// 的各组文件算一个），上传成功后自动删除更早的
+// 写几个。aliases 不再上传——3.16.1 起别名功能已停用（官方“编辑项目”改名），
+// 且各机器项目路径不同，同步别名只会互相带来无效路径。同一份内容再写一个带
+// 时间戳的历史版本文件，供下载时任选版本恢复（旧版 zcode-pro 仍读固定名）；
+// 历史版本最多保留 historyLimit 个（同一时间戳的各组文件算一个），上传成功后
+// 自动删除更早的
 async function runSyncPush({ dataRoot, configFile, config, sync, proxyUrl }) {
   const keep = Number.isInteger(sync.historyLimit) ? sync.historyLimit : defaultConfig().sync.historyLimit;
   const docs = {};
   if (sync.include.zcodepro) {
-    // sync（本机的同步配置与凭据）与 version（本机 helper 版本）不外发
-    const { sync: _s, version: _v, ...rest } = config;
+    // sync（本机的同步配置与凭据）、version（本机 helper 版本）与 aliases 不外发
+    const { sync: _s, version: _v, aliases: _a, ...rest } = config;
     docs.zcodepro = rest;
   }
   if (sync.include.model) {
@@ -1434,11 +1443,6 @@ async function runSyncPush({ dataRoot, configFile, config, sync, proxyUrl }) {
     for (const kind of Object.keys(docs)) {
       const remote = await fetchSyncDoc(sync, proxyUrl, kind);
       if (remote.error) return remote;
-      // 别名先与云端合并：本机没配过的条目从云端带上，别让这次上传把别的机器配的别名顶掉
-      if (kind === 'zcodepro' && remote.doc) {
-        const remoteAliases = sanitizeAliases(remote.doc.data?.aliases);
-        if (remoteAliases) docs.zcodepro.aliases = mergeAliases(docs.zcodepro.aliases, remoteAliases);
-      }
       const doc = { app: 'zcode-pro', kind, format: 1, savedAt: stamp.toISOString(), data: docs[kind] };
       const docPath = join(dir, SYNC_FILES[kind]);
       writeFileSync(docPath, JSON.stringify(doc, null, 2), 'utf8');
@@ -1472,8 +1476,9 @@ async function runSyncPush({ dataRoot, configFile, config, sync, proxyUrl }) {
 }
 
 // 下载：把云端所选组应用到本机（各组独立文件，勾选几组读几组，可只覆盖模型设置）。
-// 覆盖前留 .zcodepro-backup 备份；zcodepro 组覆盖功能/样式/代理，别名与本机的
-// 合并（合并规则见 mergeAliases）；sync 配置与凭据始终保留本机的
+// 覆盖前留 .zcodepro-backup 备份；zcodepro 组覆盖功能/样式/代理，别名不受影响
+//（3.16.1 起别名已停用，且云端备份里的别名多是其他机器的路径）；sync 配置与
+// 凭据始终保留本机的
 async function runSyncPull({ dataRoot, configFile, config, sync, proxyUrl }) {
   // 先把勾选组的云端数据全部读到（任何一组读取失败都不动本机文件），再逐组应用
   const docs = {};
@@ -1491,8 +1496,9 @@ async function runSyncPull({ dataRoot, configFile, config, sync, proxyUrl }) {
 }
 
 // 把云端读到的各组数据落到本机（runSyncPull 与按文件的历史版本导入共用）：
-// zcodepro 组覆盖功能/样式/代理（sync 配置与凭据保留本机的），别名与本机的合并，
-// model 组覆盖 v2/config.json 的 provider 与 provider_config.json；覆盖前都留备份
+// zcodepro 组覆盖功能/样式/代理（sync 配置与凭据保留本机的），别名不导入
+//（云端备份可能出自别的机器，路径在本机无效），model 组覆盖 v2/config.json 的
+// provider 与 provider_config.json；覆盖前都留备份
 function applySyncDocs({ docs, dataRoot, configFile, config, sync }) {
   const applied = [];
   const backupFile = (p) => {
@@ -1509,10 +1515,8 @@ function applySyncDocs({ docs, dataRoot, configFile, config, sync }) {
     const next = loadConfig(configFile);
     applyFeaturesPartial(next.features, rz.features);
     next.styles = applyStylesPartial(next.styles, rz.styles);
-    // 别名与本机的合并（本机配过的优先），不再整份替换——各机器项目路径不同，
-    // 合并后两边的别名都在，谁也不会被对方的同步顶掉
-    const remoteAliases = sanitizeAliases(rz.aliases);
-    if (remoteAliases) next.aliases = mergeAliases(next.aliases, remoteAliases);
+    // 别名保持本机的原样：云端备份里的别名可能出自其他机器（路径在本机无效），
+    // 且 3.16.1 起别名功能已停用，不再导入
     if (typeof rz.proxy === 'string') {
       const v = rz.proxy.trim();
       if (v === '' || /^https?:\/\/\S+:\d+$/.test(v)) next.proxy = v;

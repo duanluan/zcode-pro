@@ -38,7 +38,7 @@ const contentClass = 'w-full sm:max-w-md rounded-2xl border-none bg-popover/98 p
 // Esc 只关最上层，避免一次 Esc 把两层一起关掉
 let dialogStack = [];
 
-export function openDialog({ title, description, onMount, onClose, width = 'sm:max-w-md', overlay = 'dim', draggable = false, posKey = '', dismissOnOutside = true, bodyClass = '' }) {
+export function openDialog({ title, description, onMount, onClose, width = 'sm:max-w-md', overlay = 'dim', draggable = false, posKey = '', dismissOnOutside = true, bodyClass = '', closable = false }) {
   const L = t();
   const prevActive = document.activeElement;
   let cleanupDrag = null;
@@ -72,8 +72,21 @@ export function openDialog({ title, description, onMount, onClose, width = 'sm:m
   }
 
   const titleEl = h('h2', { class: 'text-lg font-semibold leading-none tracking-tight text-foreground' }, title);
+  // closable：标题行右侧加 ✕（样式与设置弹窗的自绘关闭钮同款）；拖动把手仍是标题文字本身
+  const titleRow = closable
+    ? h('div', { class: 'flex items-start justify-between gap-2' },
+        titleEl,
+        h('button', {
+          type: 'button',
+          class: 'zcodepro-close',
+          title: L.close,
+          'aria-label': L.close,
+          onMousedown: (e) => { e.stopPropagation(); },
+          onClick: () => { close(); },
+        }, '✕'))
+    : titleEl;
   content.append(
-    titleEl,
+    titleRow,
     // 注意不能把 null 直接传给 append：DOM 会把 null 渲染成字面量 "null" 文本
     ...(description ? [h('p', { class: 'mt-2 text-ui-sm/relaxed text-foreground-subtle' }, description)] : [])
   );

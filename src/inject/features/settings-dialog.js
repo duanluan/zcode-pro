@@ -1,9 +1,10 @@
 // “ZCode Pro 增强设置”弹窗：功能开关 + 样式调整 + 运行状态。
 // 顶部标签页切换（视觉参考侧栏“分组/项目”切换）；配置写入 helper（~/.zcode/zcodepro.json）。
-import { h, t, rpc, getConfig, clearConfigCache, errText, HELPER_URL, isZhLocale } from '../core.js';
+import { h, t, rpc, getConfig, clearConfigCache, errText, HELPER_URL, isZhLocale, isNewProjectSidebar } from '../core.js';
 import { openDialog, dialogFooter, btnPrimary, btnSecondary, btnSmall, settingRow, ensureStyle, showToast, numberField, unitField } from '../ui.js';
 import { comboField, providerOptionsOf, modelOptionsOf, modelPlaceholderOf, isManualConn } from '../provider-fields.js';
 import { refreshAliases } from './alias.js';
+import { migrationCard } from './alias-migration.js';
 import { applyStyles, STYLE_DEFAULTS, showStyleHighlight, hideStyleHighlight } from './styles.js';
 import { copyToClipboard, hCopyIcon } from './copy-path.js';
 
@@ -239,7 +240,10 @@ export function openSettingsDialog() {
       const refreshRows = () => {
         const f = config.features || {};
         rows.replaceChildren(
-          settingRow(L.featureProjectMenu, L.featureProjectMenuDesc, f.projectMenu !== false, async () => {
+          // 3.16.1 起官方“编辑项目”支持修改名称：别名停用，此行只描述其余三项；
+          // 仍有存量别名时在最上方放迁移卡片（卡片自管移除，这里每次重建）
+          ...(isNewProjectSidebar() ? [migrationCard()] : []),
+          settingRow(L.featureProjectMenu, isNewProjectSidebar() ? L.featureProjectMenuDescNew : L.featureProjectMenuDesc, f.projectMenu !== false, async () => {
             const next = !(f.projectMenu !== false);
             if (await setFeature('projectMenu', next)) f.projectMenu = next;
             refreshRows();

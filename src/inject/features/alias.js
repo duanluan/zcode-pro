@@ -2,7 +2,7 @@
 // 存储：helper 的 zcodepro.json aliases 表（路径规范化无尾分隔符 → 名称）。
 // 渲染：侧边栏项目行有唯一文本叶子 div.min-w-0.truncate（逆向确认），
 // 按行 testid（workspace-item-<绝对路径>）查表替换；React 重渲染后由 MutationObserver 重新套用。
-import { h, t, rpc, getConfig, clearConfigCache, errText } from '../core.js';
+import { h, t, rpc, getConfig, clearConfigCache, errText, isNewProjectSidebar } from '../core.js';
 import { openDialog, dialogFooter, btnPrimary, btnSecondary, textInput, showToast, ensureStyle } from '../ui.js';
 
 const norm = (p) => String(p || '').replace(/[\\/]+$/, '');
@@ -40,6 +40,11 @@ function projectRowMutations(muts) {
 }
 
 export async function startAliasWatcher() {
+  // 3.16.1 起新侧栏为 section[data-project-id]，旧 testid 行已不存在；且官方
+  // “编辑项目”已支持修改名称。别名功能整体停用（菜单入口同步隐藏，见
+  // project-menu.js）：不再观察、不再替换侧栏文本；已保存的别名保留在配置里，
+  // 由 alias-migration.js 引导写入官方项目名称。
+  if (isNewProjectSidebar()) return;
   await syncFromConfig();
   if (observer) return;
   observer = new MutationObserver((muts) => { if (projectRowMutations(muts)) scheduleApply(); });
