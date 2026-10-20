@@ -45,27 +45,30 @@ function findWsRow(ws) {
 // 应用自带的 animate-spin 类，旋转速度与任务行完全一致）；结束后还原 folder。
 // React 重渲染会重建 folder svg，apply 周期（观察器 + 兜底轮询）会重新换上
 const LOADER_PATH = 'M21 12a9 9 0 1 1-6.219-8.56';
+function makeLoaderSvg(baseClass) {
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('fill', 'none');
+  svg.setAttribute('stroke', 'currentColor');
+  svg.setAttribute('stroke-width', '2');
+  svg.setAttribute('stroke-linecap', 'round');
+  svg.setAttribute('stroke-linejoin', 'round');
+  svg.setAttribute('class', (baseClass + ' animate-spin zcodepro-ws-loader').trim());
+  const path = document.createElementNS(ns, 'path');
+  path.setAttribute('d', LOADER_PATH);
+  svg.append(path);
+  return svg;
+}
 function setRunningIcon(holder, on) {
   if (!holder) return;
   if (on) {
     // folder 的隐藏由 CSS 完成（span.zcodepro-ws-running 类稳定，React 重建的
     // folder 也会被规则罩住）；这里只负责确保 loader 在场
     if (holder.querySelector(':scope > svg.zcodepro-ws-loader')) return;
-    const ns = 'http://www.w3.org/2000/svg';
-    const svg = document.createElementNS(ns, 'svg');
-    svg.setAttribute('viewBox', '0 0 24 24');
-    svg.setAttribute('fill', 'none');
-    svg.setAttribute('stroke', 'currentColor');
-    svg.setAttribute('stroke-width', '2');
-    svg.setAttribute('stroke-linecap', 'round');
-    svg.setAttribute('stroke-linejoin', 'round');
     const orig0 = holder.querySelector(':scope > svg:not(.zcodepro-ws-loader)');
-    const base = orig0 ? (orig0.getAttribute('class') || '') : 'size-4';
-    svg.setAttribute('class', (base.replace(/lucide-folder[a-z-]*/g, '').trim() + ' animate-spin zcodepro-ws-loader').trim());
-    const path = document.createElementNS(ns, 'path');
-    path.setAttribute('d', LOADER_PATH);
-    svg.append(path);
-    holder.append(svg);
+    const base = (orig0 ? (orig0.getAttribute('class') || '') : 'size-4').replace(/lucide-[a-z-]*/g, '').trim() || 'size-4';
+    holder.append(makeLoaderSvg(base));
   } else {
     holder.querySelectorAll(':scope > svg.zcodepro-ws-loader').forEach((el) => el.remove());
   }
@@ -284,8 +287,48 @@ function apply() {
     icon?.classList.toggle('zcodepro-ws-running', running);
     setRunningIcon(icon, running);
   }
+  // 分区头（“任务”“项目”官方分区按钮与“已置顶”标题）：分区内有任务在跑时
+  // 头部行首挂同款 loader（分区折叠后任务行不在场，检测不到自然熄灭）
+  applySectionSpin();
   // 侧栏里已不存在的项目清掉状态
   for (const ws of [...runningByWs.keys()]) if (!seen.has(ws)) runningByWs.delete(ws);
+}
+
+// 分区头识别：官方分区头按钮（含 chevron svg）与“已置顶”标题（h3）；
+// 容器 = 头部向上最近的含任务行祖先
+function sectionHeads() {
+  const heads = [];
+  for (const sv of document.querySelectorAll('svg[data-purpose-section-chevron]')) {
+    const btn = sv.closest('button');
+    if (btn) heads.push(btn);
+  }
+  for (const h3 of document.querySelectorAll('h3')) heads.push(h3);
+  return heads.map((head) => {
+    let cont = head.parentElement;
+    while (cont && !cont.querySelector('li[data-task-item-key]') && cont !== document.body) cont = cont.parentElement;
+    if (!cont || cont === document.body) return null;
+    return { head, cont };
+  }).filter(Boolean);
+}
+
+const SEC_SPIN_CLASS = 'zcodepro-ws-sec-spin';
+function applySectionSpin() {
+  if (!enabled) {
+    document.querySelectorAll('.' + SEC_SPIN_CLASS).forEach((el) => el.remove());
+    return;
+  }
+  for (const { head, cont } of sectionHeads()) {
+    const running = !!cont.querySelector('li[data-task-item-key] svg[class*="lucide-loader"]');
+    const existing = head.querySelector(':scope > .' + SEC_SPIN_CLASS);
+    if (running && !existing) {
+      const span = document.createElement('span');
+      span.className = 'flex size-4 shrink-0 items-center justify-center ' + SEC_SPIN_CLASS;
+      span.append(makeLoaderSvg('size-4'));
+      head.prepend(span);
+    } else if (!running && existing) {
+      existing.remove();
+    }
+  }
 }
 
 // —— 无感探查 ——

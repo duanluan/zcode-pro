@@ -205,8 +205,8 @@
     titleGenTesting: "\u751F\u6210\u4E2D\u2026",
     titleGenTestOk: "\u751F\u6210\u7ED3\u679C\uFF1A",
     titleGenTestFailed: "\u751F\u6210\u5931\u8D25",
-    featureWsRunning: "\u6298\u53E0\u9879\u76EE\u8FD0\u884C\u63D0\u793A",
-    featureWsRunningDesc: "\u6298\u53E0\u7684\u9879\u76EE\u91CC\u4ECD\u6709\u4F1A\u8BDD\u5728\u8FD0\u884C\u65F6\uFF0C\u9879\u76EE\u56FE\u6807\u6362\u6210\u4E0E\u4EFB\u52A1\u8FD0\u884C\u4E2D\u540C\u6B3E\u7684\u52A0\u8F7D\u56FE\u6807\uFF0C\u5168\u90E8\u7ED3\u675F\u6216\u5C55\u5F00\u9879\u76EE\u540E\u6062\u590D\uFF1B3.16.1 \u4E4B\u524D\u6BCF 60 \u79D2\u4F1A\u5728\u540E\u53F0\u77ED\u6682\u5C55\u5F00\u9879\u76EE\u590D\u6838\u518D\u6536\u8D77\u3002",
+    featureWsRunning: "\u6298\u53E0\u8FD0\u884C\u4E2D\u63D0\u793A",
+    featureWsRunningDesc: "\u6709\u4F1A\u8BDD\u5728\u8FD0\u884C\u65F6\uFF0C\u6298\u53E0\u7684\u9879\u76EE\u4E0E\u201C\u4EFB\u52A1\u201D\u201C\u5DF2\u7F6E\u9876\u201D\u7B49\u5206\u533A\u5934\u663E\u793A\u4E0E\u4EFB\u52A1\u8FD0\u884C\u4E2D\u540C\u6B3E\u7684\u52A0\u8F7D\u56FE\u6807\uFF0C\u5168\u90E8\u7ED3\u675F\u540E\u6D88\u5931\uFF1B3.16.1 \u4E4B\u524D\u6BCF 60 \u79D2\u4F1A\u5728\u540E\u53F0\u77ED\u6682\u5C55\u5F00\u9879\u76EE\u590D\u6838\u518D\u6536\u8D77\u3002",
     tabPerformance: "\u6027\u80FD",
     perfDesc: "ZCode \u4E3A\u6BCF\u4E2A\u6253\u5F00\u8FC7\u7684\u9879\u76EE\u5E38\u9A7B\u4E00\u4E2A\u4F1A\u8BDD\u8FDB\u7A0B\uFF0C\u5E94\u7528\u81EA\u8EAB\u4E0D\u4F1A\u56DE\u6536\uFF0C\u9879\u76EE\u591A\u4E86\u5185\u5B58\u5360\u7528\u5C31\u9AD8\u3002\u5F00\u542F\u540E\uFF0C\u957F\u65F6\u95F4\u672A\u4F7F\u7528\u4E14\u6CA1\u6709\u4EFB\u52A1\u5728\u8DD1\u7684\u9879\u76EE\u4F1A\u88AB\u81EA\u52A8\u91CA\u653E\uFF1A\u4F1A\u8BDD\u8BB0\u5F55\u4E0D\u53D7\u5F71\u54CD\uFF0C\u518D\u6B21\u6253\u5F00\u65F6\u81EA\u52A8\u6062\u590D\uFF0C\u4EC5\u9996\u6B21\u56DE\u590D\u6709\u51E0\u79D2\u7B49\u5F85\u3002\u6B63\u5728\u4F7F\u7528\u7684\u9879\u76EE\u3001\u8FD0\u884C\u4E2D\u7684\u4F1A\u8BDD\u4E0E\u540E\u53F0\u547D\u4EE4\u3001\u5B9A\u65F6\u4EFB\u52A1\u90FD\u4E0D\u4F1A\u88AB\u56DE\u6536\u3002\u540E\u53F0\u547D\u4EE4\u68C0\u6D4B\u4F9D\u8D56\u7CFB\u7EDF\u8FDB\u7A0B\u4FE1\u606F\uFF08Linux / macOS / Windows \u5404\u8D70\u7CFB\u7EDF\u81EA\u5E26\u5DE5\u5177\uFF09\uFF0C\u68C0\u6D4B\u4E0D\u53EF\u7528\u65F6\u529F\u80FD\u81EA\u52A8\u505C\u7528\u3002",
     featureIdleReclaim: "\u7A7A\u95F2\u9879\u76EE\u5185\u5B58\u56DE\u6536",
@@ -595,8 +595,8 @@
     titleGenTesting: "Generating\u2026",
     titleGenTestOk: "Result: ",
     titleGenTestFailed: "Generation failed",
-    featureWsRunning: "Running indicator on collapsed projects",
-    featureWsRunningDesc: "Shows the same spinning loader icon as running tasks on a collapsed project while any of its sessions is still running; restores when they all finish or the project is expanded. Before ZCode 3.16.1 the project is briefly re-expanded in the background every 60 s to re-check.",
+    featureWsRunning: "Running indicator",
+    featureWsRunningDesc: "Shows the same spinning loader as running tasks on collapsed projects and on section headers (\u201CTasks\u201D, \u201CPinned\u201D) while any session is running; clears when they all finish. Before ZCode 3.16.1 the project is briefly re-expanded in the background every 60 s to re-check.",
     tabPerformance: "Performance",
     perfDesc: "ZCode keeps a session process resident for every project you have opened and never reclaims it, so memory grows with projects. When enabled, projects unused for a while with nothing running release their memory automatically: sessions are untouched and reload when reopened, with a few seconds wait on the first reply. The project in use, running sessions, background commands and scheduled tasks are never reclaimed. Background-command detection reads system process info via built-in tools (Linux / macOS / Windows); when unavailable, the feature disables itself.",
     featureIdleReclaim: "Idle project memory reclaim",
@@ -6813,25 +6813,28 @@
     return findProjectRow(ws);
   }
   var LOADER_PATH = "M21 12a9 9 0 1 1-6.219-8.56";
+  function makeLoaderSvg(baseClass) {
+    const ns = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor");
+    svg.setAttribute("stroke-width", "2");
+    svg.setAttribute("stroke-linecap", "round");
+    svg.setAttribute("stroke-linejoin", "round");
+    svg.setAttribute("class", (baseClass + " animate-spin zcodepro-ws-loader").trim());
+    const path = document.createElementNS(ns, "path");
+    path.setAttribute("d", LOADER_PATH);
+    svg.append(path);
+    return svg;
+  }
   function setRunningIcon(holder, on) {
     if (!holder) return;
     if (on) {
       if (holder.querySelector(":scope > svg.zcodepro-ws-loader")) return;
-      const ns = "http://www.w3.org/2000/svg";
-      const svg = document.createElementNS(ns, "svg");
-      svg.setAttribute("viewBox", "0 0 24 24");
-      svg.setAttribute("fill", "none");
-      svg.setAttribute("stroke", "currentColor");
-      svg.setAttribute("stroke-width", "2");
-      svg.setAttribute("stroke-linecap", "round");
-      svg.setAttribute("stroke-linejoin", "round");
       const orig0 = holder.querySelector(":scope > svg:not(.zcodepro-ws-loader)");
-      const base = orig0 ? orig0.getAttribute("class") || "" : "size-4";
-      svg.setAttribute("class", (base.replace(/lucide-folder[a-z-]*/g, "").trim() + " animate-spin zcodepro-ws-loader").trim());
-      const path = document.createElementNS(ns, "path");
-      path.setAttribute("d", LOADER_PATH);
-      svg.append(path);
-      holder.append(svg);
+      const base = (orig0 ? orig0.getAttribute("class") || "" : "size-4").replace(/lucide-[a-z-]*/g, "").trim() || "size-4";
+      holder.append(makeLoaderSvg(base));
     } else {
       holder.querySelectorAll(":scope > svg.zcodepro-ws-loader").forEach((el) => el.remove());
     }
@@ -7006,7 +7009,41 @@
       icon?.classList.toggle("zcodepro-ws-running", running);
       setRunningIcon(icon, running);
     }
+    applySectionSpin();
     for (const ws of [...runningByWs.keys()]) if (!seen.has(ws)) runningByWs.delete(ws);
+  }
+  function sectionHeads() {
+    const heads = [];
+    for (const sv of document.querySelectorAll("svg[data-purpose-section-chevron]")) {
+      const btn = sv.closest("button");
+      if (btn) heads.push(btn);
+    }
+    for (const h3 of document.querySelectorAll("h3")) heads.push(h3);
+    return heads.map((head) => {
+      let cont = head.parentElement;
+      while (cont && !cont.querySelector("li[data-task-item-key]") && cont !== document.body) cont = cont.parentElement;
+      if (!cont || cont === document.body) return null;
+      return { head, cont };
+    }).filter(Boolean);
+  }
+  var SEC_SPIN_CLASS = "zcodepro-ws-sec-spin";
+  function applySectionSpin() {
+    if (!enabled3) {
+      document.querySelectorAll("." + SEC_SPIN_CLASS).forEach((el) => el.remove());
+      return;
+    }
+    for (const { head, cont } of sectionHeads()) {
+      const running = !!cont.querySelector('li[data-task-item-key] svg[class*="lucide-loader"]');
+      const existing = head.querySelector(":scope > ." + SEC_SPIN_CLASS);
+      if (running && !existing) {
+        const span = document.createElement("span");
+        span.className = "flex size-4 shrink-0 items-center justify-center " + SEC_SPIN_CLASS;
+        span.append(makeLoaderSvg("size-4"));
+        head.prepend(span);
+      } else if (!running && existing) {
+        existing.remove();
+      }
+    }
   }
   function schedulePeek(ws, delay) {
     clearTimeout(peekTimers.get(ws));
