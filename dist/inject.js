@@ -252,8 +252,6 @@
     pathCopyFailed: "\u590D\u5236\u8DEF\u5F84\u5931\u8D25",
     fileOpenDefault: "\u9ED8\u8BA4\u5E94\u7528\u6253\u5F00",
     fileReveal: "\u6253\u5F00\u6240\u5728\u76EE\u5F55",
-    featurePinnedExpand: "\u7F6E\u9876\u4F1A\u8BDD\u4FDD\u6301\u9879\u76EE\u6298\u53E0\uFF08\u5B9E\u9A8C\u6027\uFF09",
-    featurePinnedExpandDesc: "\u70B9\u51FB\u6298\u53E0\u9879\u76EE\u7684\u7F6E\u9876\u4F1A\u8BDD\u540E\u5C06\u5176\u4FDD\u6301\u6298\u53E0\u3002\u53D7\u9650\u4E8E\u5E94\u7528\u673A\u5236\uFF0C\u9879\u76EE\u4F1A\u5148\u77ED\u6682\u5C55\u5F00\u518D\u7F29\u8D77\u3002",
     featureAutoUpdatePlugins: "\u81EA\u52A8\u66F4\u65B0 zcode-plugins \u63D2\u4EF6",
     featureAutoUpdatePluginsDesc: "\u542F\u52A8\u65F6\u81EA\u52A8\u68C0\u67E5\u5E76\u66F4\u65B0\u5DF2\u5B89\u88C5\u7684 zcode-plugins \u63D2\u4EF6\uFF08\u53EA\u5347\u7EA7\u4E0D\u5B89\u88C5\uFF0C\u5378\u8F7D\u4E0D\u4F1A\u88AB\u64A4\u9500\uFF09\uFF0C\u66F4\u65B0\u5728\u65B0\u4F1A\u8BDD\u751F\u6548\u3002",
     pluginsUpdateTitle: "\u63D2\u4EF6\u66F4\u65B0 \xB7 zcode-plugins",
@@ -644,8 +642,6 @@
     pathCopyFailed: "Failed to copy the path.",
     fileOpenDefault: "Open with default app",
     fileReveal: "Reveal in file manager",
-    featurePinnedExpand: "Keep projects collapsed for pinned sessions (experimental)",
-    featurePinnedExpandDesc: "Keeps the project collapsed after clicking a pinned session. Note: it briefly expands first, then collapses.",
     featureAutoUpdatePlugins: "Auto-update zcode-plugins plugins",
     featureAutoUpdatePluginsDesc: "Checks and updates installed zcode-plugins plugins on startup (updates only \u2014 never installs; uninstalled plugins stay uninstalled). Updates apply to new sessions.",
     pluginsUpdateTitle: "Plugin updates \xB7 zcode-plugins",
@@ -3488,7 +3484,10 @@
         `${LIST} [data-testid^="workspace-item-"]{height:auto !important;min-height:${28 + 2 * pad}px !important;padding-block:${pad}px !important;padding-top:${pad}px !important;padding-bottom:${pad}px !important;}`,
         `${LIST} [data-testid^="workspace-item-"] > div:first-child{align-self:stretch !important;}`,
         `${SCROLL} [data-slot="collapsible-trigger"],${SCROLL} .flex.h-7{height:auto !important;}`,
-        `${SCROLL} [data-slot="collapsible-trigger"]{min-height:${28 + 2 * pad}px !important;padding-block:${pad}px !important;padding-top:${pad}px !important;padding-bottom:${pad}px !important;}`
+        `${SCROLL} [data-slot="collapsible-trigger"]{min-height:${28 + 2 * pad}px !important;padding-block:${pad}px !important;padding-top:${pad}px !important;padding-bottom:${pad}px !important;}`,
+        // 3.16.1 新结构：项目行（virtual-project-row，固定 h-8）按视觉总量放行内留白；
+        // 分区间距由新侧栏容器自己的布局管理，不动
+        `section[data-project-id] [data-testid="virtual-project-row"]{height:auto !important;min-height:${28 + 2 * pad}px !important;padding-block:${Math.round(pad)}px !important;}`
       );
     }
     const sts = styles.sidebarTaskSpacing;
@@ -3499,7 +3498,10 @@
         `ul.space-y-0\\.5:has(> li[data-task-item-key]) > :not(:last-child){margin-block-end:${m}px !important;margin-bottom:${m}px !important;}`,
         `ul.space-y-0\\.5:has(> li[data-task-item-key]) > li{padding-block:${pad}px !important;padding-top:${pad}px !important;padding-bottom:${pad}px !important;}`,
         `${SCROLL} .flex.flex-col.gap-2{gap:${m}px !important;row-gap:${m}px !important;}`,
-        `${SCROLL} div.cursor-pointer[class*="pl-8"]{padding-block:${pad}px !important;padding-top:${pad}px !important;padding-bottom:${pad}px !important;}`
+        `${SCROLL} div.cursor-pointer[class*="pl-8"]{padding-block:${pad}px !important;padding-top:${pad}px !important;padding-bottom:${pad}px !important;}`,
+        // 3.16.1 新结构：任务行（li[data-task-item-key]）行内留白 + 相邻行间距
+        `li[data-task-item-key]{padding-block:${Math.max(1, Math.round(pad))}px !important;}`,
+        `li[data-task-item-key] + li[data-task-item-key]{margin-block-start:${m}px !important;}`
       );
     }
     return parts.join("");
@@ -3540,7 +3542,8 @@
     thinkingLineHeight: `[data-testid^="chat-assistant-history-content"]`,
     userLineHeight: `${CONV} [class*="user-row"] .whitespace-pre-wrap`,
     contentWidth: "[data-v4-timeline-content-column]",
-    sidebarProjectSpacing: '[data-testid^="workspace-item-"]',
+    // 双结构：新侧栏项目行 / 旧 testid 行
+    sidebarProjectSpacing: 'section[data-project-id] [data-testid="virtual-project-row"], [data-testid^="workspace-item-"]',
     sidebarTaskSpacing: "li[data-task-item-key]"
   };
   var HL_MARGIN = {
@@ -3855,11 +3858,6 @@
               if (await setFeature("wsRunningSpin", next)) f.wsRunningSpin = next;
               refreshRows();
             }),
-            settingRow(L.featurePinnedExpand, L.featurePinnedExpandDesc, f.pinnedKeepCollapsed !== false, async () => {
-              const next = !(f.pinnedKeepCollapsed !== false);
-              if (await setFeature("pinnedKeepCollapsed", next)) f.pinnedKeepCollapsed = next;
-              refreshRows();
-            }),
             settingRow(L.featureAutoUpdatePlugins, L.featureAutoUpdatePluginsDesc, f.autoUpdatePlugins === true, async () => {
               const next = !(f.autoUpdatePlugins === true);
               if (await setFeature("autoUpdatePlugins", next)) f.autoUpdatePlugins = next;
@@ -4110,6 +4108,7 @@
           )
         };
         const cells = [
+          // 侧栏间距双结构：3.15.x 旧容器/行 + 3.16.1 新项目行（virtual-project-row）与任务行
           styleCell(L.sidebarProjectSpacingName, L.sidebarProjectSpacingDesc, "sidebarProjectSpacing", { max: 24 }),
           styleCell(L.sidebarTaskSpacingName, L.sidebarTaskSpacingDesc, "sidebarTaskSpacing", { max: 24 }),
           widthCell,
@@ -6241,7 +6240,7 @@
     let item = find();
     if (!item) {
       const ws = workspaceOf(key);
-      const header = document.querySelector(`[data-testid="workspace-item-${CSS.escape(ws)}"]`);
+      const header = findProjectRow(ws);
       const expander = header && header.querySelector("[aria-expanded]");
       if (expander && expander.getAttribute("aria-expanded") === "false") {
         expander.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
@@ -6387,7 +6386,7 @@
           return;
         }
         if (!popupEl) await openPopup();
-        moveHighlight(k === "x" ? 1 : -1);
+        moveHighlight(k === "x" ? -1 : 1);
       })();
     }, true);
     document.addEventListener("keyup", (e) => {
@@ -6829,115 +6828,8 @@
     });
   }
 
-  // src/inject/features/pinned-expand.js
-  var installed4 = false;
-  var keepCollapsed = false;
-  var CONFIG_POLL_MIN_MS = 5e3;
-  var CONFIG_POLL_MAX_MS = 6e4;
-  var pollMs = CONFIG_POLL_MIN_MS;
-  async function refreshConfig() {
-    try {
-      const res = await rpc("/config");
-      if (res && res.ok && res.config && res.config.features) {
-        const next = res.config.features.pinnedKeepCollapsed !== false;
-        if (next !== keepCollapsed) {
-          keepCollapsed = next;
-          return true;
-        }
-      }
-    } catch {
-    }
-    return false;
-  }
-  function pollConfig() {
-    setTimeout(async () => {
-      if (document.hidden) pollMs = CONFIG_POLL_MAX_MS;
-      else pollMs = await refreshConfig() ? CONFIG_POLL_MIN_MS : Math.min(Math.round(pollMs * 1.5), CONFIG_POLL_MAX_MS);
-      pollConfig();
-    }, pollMs);
-  }
-  function startPinnedExpandSuppression() {
-    if (installed4 || typeof document === "undefined") return;
-    installed4 = true;
-    void refreshConfig();
-    pollConfig();
-    document.addEventListener("visibilitychange", () => {
-      if (!document.hidden) void refreshConfig();
-    });
-    document.addEventListener("click", (e) => {
-      if (!keepCollapsed) return;
-      const taskRow = e.target.closest && e.target.closest('[data-testid^="task-item-"]');
-      if (!taskRow) return;
-      const key = taskRow.getAttribute("data-task-item-key") || "";
-      const sep = key.lastIndexOf(":");
-      if (sep <= 0) return;
-      const wsKey = key.slice(0, sep);
-      const wsRow = document.querySelector(`[data-testid="workspace-item-${cssEscape(wsKey)}"]`);
-      if (!wsRow || wsRow.getAttribute("aria-expanded") !== "false") return;
-      const head = wsRow.matches("[aria-expanded]") ? wsRow : wsRow.querySelector("[aria-expanded]");
-      if (!head) return;
-      collapseAfterContentLoaded(wsRow);
-    }, true);
-    document.addEventListener("click", (e) => {
-      const row = e.target.closest && e.target.closest('[data-testid^="workspace-item-"]');
-      if (row) row.__zcodeproUserTouched = Date.now();
-    }, true);
-  }
-  function currentTaskRow() {
-    for (const el of document.querySelectorAll("[data-task-item-key]")) {
-      if ((el.className + "").includes("bg-selected")) return el;
-    }
-    return null;
-  }
-  function collapseNavSafe(head) {
-    const cur = currentTaskRow();
-    const backKey = cur ? cur.getAttribute("data-task-item-key") : "";
-    head.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
-    if (!backKey) return;
-    const back = cur && cur.isConnected ? cur : document.querySelector(`[data-task-item-key="${cssEscape(backKey)}"]`);
-    if (back) back.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
-  }
-  function collapseAfterContentLoaded(wsRow) {
-    const deadline = Date.now() + 25e3;
-    let lastLen = (document.querySelector("main") || document.body).innerText.length;
-    let grewAt = 0;
-    let settledAt = 0;
-    const headOf = () => {
-      const h2 = wsRow.matches("[aria-expanded]") ? wsRow : wsRow.querySelector("[aria-expanded]");
-      return h2 || null;
-    };
-    const userTouched2 = () => wsRow.__zcodeproUserTouched && Date.now() - wsRow.__zcodeproUserTouched < 800;
-    const tick2 = () => {
-      if (!keepCollapsed || Date.now() > deadline || !wsRow.isConnected) return done();
-      const len = (document.querySelector("main") || document.body).innerText.length;
-      if (len > lastLen) grewAt = Date.now();
-      if (grewAt && Date.now() - grewAt >= 1e3) settledAt = settledAt || Date.now();
-      lastLen = len;
-      const head = headOf();
-      if (head && head.getAttribute("aria-expanded") === "true" && !userTouched2()) {
-        collapseNavSafe(head);
-      }
-      if (settledAt && Date.now() - settledAt >= 1e3) {
-        const h2 = headOf();
-        if (h2 && h2.getAttribute("aria-expanded") === "true" && !userTouched2()) {
-          collapseNavSafe(h2);
-        }
-        return done();
-      }
-      setTimeout(tick2, 200);
-    };
-    const done = () => {
-      wsRow.__zcodeproSuppending = false;
-    };
-    wsRow.__zcodeproSuppending = true;
-    setTimeout(tick2, 400);
-  }
-  function cssEscape(s) {
-    return String(s).replace(/(["\\\]])/g, "\\$1");
-  }
-
   // src/inject/features/ws-running.js
-  var installed5 = false;
+  var installed4 = false;
   var enabled3 = true;
   var SCAN_DEBOUNCE_MS4 = 150;
   var SCAN_FALLBACK_MS4 = 5e3;
@@ -6946,10 +6838,26 @@
   var PEEK_SETTLE_MS = 160;
   var PEEK_MAX_MS = 1500;
   var PEEK_UNMOUNT_WAIT_MS = 800;
-  var CONFIG_POLL_MIN_MS2 = 5e3;
-  var CONFIG_POLL_MAX_MS2 = 6e4;
+  var CONFIG_POLL_MIN_MS = 5e3;
+  var CONFIG_POLL_MAX_MS = 6e4;
   var TASK_SEL3 = "[data-task-item-key]";
-  var WS_SEL = '[data-testid^="workspace-item-"]';
+  var WS_SEL = () => projectRowSelector();
+  function findWsRow(ws) {
+    return findProjectRow(ws);
+  }
+  function iconHolderOf(row) {
+    if (row.hasAttribute && row.hasAttribute("data-project-id")) {
+      const toggle2 = row.querySelector('[data-testid="virtual-project-toggle"]');
+      return toggle2 ? toggle2.querySelector(":scope > span") : null;
+    }
+    return row.firstElementChild && row.firstElementChild.querySelector(":scope > span");
+  }
+  function isRunningRow(el) {
+    const scope = el.firstElementChild;
+    if (!scope) return false;
+    const svg = scope.querySelector('svg[class*="lucide-loader"]');
+    return !!svg;
+  }
   var runningByWs = /* @__PURE__ */ new Map();
   var peekTimers = /* @__PURE__ */ new Map();
   var activePeeks = /* @__PURE__ */ new Set();
@@ -6959,21 +6867,13 @@
     const i = key.indexOf(":sess_");
     return i > 0 ? key.slice(0, i) : key;
   }
-  function findWsRow(ws) {
-    return document.querySelector(`[data-testid="workspace-item-${CSS.escape(ws)}"]`);
-  }
   function wsHead(row) {
     return row.matches("[aria-expanded]") ? row : row.querySelector("[aria-expanded]");
-  }
-  function isRunningRow(el) {
-    const holder = el.firstElementChild && el.firstElementChild.querySelector(":scope > span");
-    if (!holder) return false;
-    return [...holder.children].some((c) => c.tagName === "svg" && (c.getAttribute("class") || "").includes("lucide-loader"));
   }
   function domRowsOf(ws) {
     return [...document.querySelectorAll(TASK_SEL3)].filter((e) => workspaceOf2(e.getAttribute("data-task-item-key") || "") === ws);
   }
-  function currentTaskRow2() {
+  function currentTaskRow() {
     for (const el of document.querySelectorAll(TASK_SEL3)) {
       if ((el.className + "").includes("bg-selected")) return el;
     }
@@ -6986,7 +6886,7 @@
     }
   };
   function toggleNavSafe(head) {
-    const cur = currentTaskRow2();
+    const cur = currentTaskRow();
     const backKey = cur ? cur.getAttribute("data-task-item-key") : "";
     synthClick(head);
     if (!backKey) return;
@@ -7054,13 +6954,14 @@
   }
   function apply() {
     const seen = /* @__PURE__ */ new Set();
-    for (const row of document.querySelectorAll(WS_SEL)) {
-      const path = row.getAttribute("data-testid").slice("workspace-item-".length);
+    for (const row of document.querySelectorAll(WS_SEL())) {
+      const path = rowPath(row);
+      if (!path) continue;
       seen.add(path);
       const head = wsHead(row);
       const collapsed = !head || head.getAttribute("aria-expanded") === "false";
       const running = !!(enabled3 && collapsed && runningByWs.get(path) && runningByWs.get(path).size);
-      const icon = row.firstElementChild && row.firstElementChild.querySelector(":scope > span");
+      const icon = iconHolderOf(row);
       if (icon) icon.classList.toggle("zcodepro-ws-running", running);
     }
     for (const ws of [...runningByWs.keys()]) if (!seen.has(ws)) runningByWs.delete(ws);
@@ -7107,7 +7008,7 @@
     const row = findWsRow(ws);
     const head = row && wsHead(row);
     if (!row || !head || head.getAttribute("aria-expanded") !== "false") return false;
-    if (!currentTaskRow2()) {
+    if (!currentTaskRow()) {
       schedulePeek(ws, PEEK_REPEAT_MS);
       return false;
     }
@@ -7123,9 +7024,10 @@
     document.body.append(frozen);
     row.style.visibility = "hidden";
     const hider = installPeekHider(ws);
+    let readOk = false;
     try {
       toggleNavSafe(head);
-      await settleAndRead(ws);
+      readOk = await settleAndRead(ws);
       const rowNow = findWsRow(ws) || row;
       const headNow = wsHead(rowNow);
       if (headNow && headNow.getAttribute("aria-expanded") === "true" && !userTouched(rowNow)) {
@@ -7141,10 +7043,10 @@
     apply();
     const set = runningByWs.get(ws);
     if (set && set.size && enabled3) schedulePeek(ws, PEEK_REPEAT_MS);
-    return true;
+    return readOk;
   }
   function wsRunningSnapshot() {
-    const curKey = currentTaskRow2()?.getAttribute("data-task-item-key") || "";
+    const curKey = currentTaskRow()?.getAttribute("data-task-item-key") || "";
     return {
       running: [...runningByWs.entries()].filter(([, set]) => set.size > 0).map(([ws]) => ws),
       current: curKey ? workspaceOf2(curKey) || null : null
@@ -7174,6 +7076,7 @@
       const t0 = Date.now();
       let lastCount = -1;
       let stableAt = 0;
+      let zeroRows = false;
       const timer = setInterval(() => {
         const rows = domRowsOf(ws);
         const elapsed = Date.now() - t0;
@@ -7185,7 +7088,7 @@
         if (!settled && elapsed < PEEK_MAX_MS) return;
         clearInterval(timer);
         if (lastCount === 0) {
-          runningByWs.delete(ws);
+          zeroRows = true;
         } else {
           let set = runningByWs.get(ws);
           if (!set) {
@@ -7198,7 +7101,7 @@
             else set.delete(key);
           }
         }
-        resolve();
+        resolve(!zeroRows);
       }, 80);
     });
   }
@@ -7239,18 +7142,18 @@
   }
   function relevant(muts) {
     for (const m of muts) {
-      if (inSel(m.target, TASK_SEL3) || inSel(m.target, WS_SEL)) return true;
+      if (inSel(m.target, TASK_SEL3) || inSel(m.target, WS_SEL())) return true;
       for (const n of m.addedNodes) {
-        if (n instanceof Element && (n.matches(TASK_SEL3) || n.matches(WS_SEL) || n.querySelector(TASK_SEL3) || n.querySelector(WS_SEL))) return true;
+        if (n instanceof Element && (n.matches(TASK_SEL3) || n.matches(WS_SEL()) || n.querySelector(TASK_SEL3) || n.querySelector(WS_SEL()))) return true;
       }
       for (const n of m.removedNodes) {
-        if (n instanceof Element && (n.matches(TASK_SEL3) || n.matches(WS_SEL) || n.querySelector(TASK_SEL3))) return true;
+        if (n instanceof Element && (n.matches(TASK_SEL3) || n.matches(WS_SEL()) || n.querySelector(TASK_SEL3))) return true;
       }
     }
     return false;
   }
-  var pollMs2 = CONFIG_POLL_MIN_MS2;
-  async function refreshConfig2() {
+  var pollMs = CONFIG_POLL_MIN_MS;
+  async function refreshConfig() {
     try {
       const res = await rpc("/config");
       if (res && res.ok && res.config && res.config.features) {
@@ -7268,19 +7171,19 @@
     }
     return false;
   }
-  function pollConfig2() {
+  function pollConfig() {
     setTimeout(async () => {
-      if (document.hidden) pollMs2 = CONFIG_POLL_MAX_MS2;
-      else pollMs2 = await refreshConfig2() ? CONFIG_POLL_MIN_MS2 : Math.min(Math.round(pollMs2 * 1.5), CONFIG_POLL_MAX_MS2);
-      pollConfig2();
-    }, pollMs2);
+      if (document.hidden) pollMs = CONFIG_POLL_MAX_MS;
+      else pollMs = await refreshConfig() ? CONFIG_POLL_MIN_MS : Math.min(Math.round(pollMs * 1.5), CONFIG_POLL_MAX_MS);
+      pollConfig();
+    }, pollMs);
   }
   var scanDebounce4 = 0;
   function startWsRunningSpin() {
-    if (installed5 || typeof document === "undefined") return;
-    installed5 = true;
-    void refreshConfig2();
-    pollConfig2();
+    if (installed4 || typeof document === "undefined") return;
+    installed4 = true;
+    void refreshConfig();
+    pollConfig();
     const observer2 = new MutationObserver((muts) => {
       if (!relevant(muts)) return;
       handleRemovals(muts);
@@ -7301,14 +7204,13 @@
     });
     document.addEventListener("click", (e) => {
       if (!e.isTrusted) return;
-      const row = e.target instanceof Element && e.target.closest(WS_SEL);
+      const row = e.target instanceof Element && e.target.closest(WS_SEL());
       if (row) wsTouchAt.set(row, Date.now());
     }, true);
   }
 
   // src/inject/features/idle-reclaim.js
   var CHECK_MS = 3e4;
-  var WS_SEL2 = '[data-testid^="workspace-item-"]';
   var MIN_MINUTES = 1;
   var MAX_MINUTES = 1440;
   var idleSince = /* @__PURE__ */ new Map();
@@ -7352,10 +7254,16 @@
       return null;
     }
   }
-  function sidebarWorkspaces() {
+  async function sidebarWorkspaces() {
     const out = /* @__PURE__ */ new Set();
-    for (const el of document.querySelectorAll(WS_SEL2)) {
-      out.add(el.getAttribute("data-testid").slice("workspace-item-".length));
+    const res = await rpc("/projects-v2").catch(() => null);
+    if (res && res.ok && res.available) {
+      for (const proj of res.projects || []) {
+        for (const r of proj.roots || []) {
+          const p = String(r.path || "").replace(/[\/]+$/, "");
+          if (p) out.add(p);
+        }
+      }
     }
     return out;
   }
@@ -7373,9 +7281,29 @@
       return false;
     }
   }
+  async function authoritativeIdle(ws) {
+    const services = findServices();
+    const ts = services && services.zcodeTaskService;
+    if (!ts || typeof ts.listActiveTaskIds !== "function") return null;
+    try {
+      const base = String(ws).replace(/[\\/]+$/, "");
+      const a = await ts.listActiveTaskIds({ workspacePath: base });
+      const b = await ts.listActiveTaskIds({ workspacePath: base + "/" });
+      if (Array.isArray(a) && Array.isArray(b)) return a.length === 0 && b.length === 0;
+      return null;
+    } catch {
+      return null;
+    }
+  }
   async function tryReclaim(ws, cooldownMs) {
-    const verifiedIdle = await verifyWorkspaceNotRunning(ws);
-    if (!verifiedIdle) {
+    const auth = await authoritativeIdle(ws);
+    if (auth === null) {
+      const verifiedIdle = await verifyWorkspaceNotRunning(ws);
+      if (!verifiedIdle) {
+        blockUntil.set(ws, Date.now() + cooldownMs);
+        return;
+      }
+    } else if (!auth) {
       blockUntil.set(ws, Date.now() + cooldownMs);
       return;
     }
@@ -7405,7 +7333,7 @@
     }
     const busy = new Set(snap.running);
     busy.add(snap.current);
-    const workspaces = sidebarWorkspaces();
+    const workspaces = await sidebarWorkspaces();
     for (const ws of [...idleSince.keys(), ...blockUntil.keys()]) {
       if (!workspaces.has(ws)) {
         idleSince.delete(ws);
@@ -7650,7 +7578,7 @@
       origs = null;
     }
   }
-  async function refreshConfig3() {
+  async function refreshConfig2() {
     const cfg = await getConfig(true).catch(() => null);
     enabled4 = !cfg || !cfg.features || cfg.features.toolbarIcons !== false;
     if (enabled4) sync();
@@ -7659,9 +7587,9 @@
   function startToolbarIcons() {
     ensureStyle();
     window.addEventListener("zcodepro:config-changed", () => {
-      void refreshConfig3();
+      void refreshConfig2();
     });
-    void refreshConfig3();
+    void refreshConfig2();
     new MutationObserver((muts) => {
       if (relevantMutations(muts)) scheduleSync();
     }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "aria-pressed"] });
@@ -7683,8 +7611,8 @@
   var syncTimer2 = 0;
   function findPinnedHeader() {
     for (const h3 of document.querySelectorAll("h3")) {
-      const ul = h3.nextElementSibling;
-      if (ul && ul.tagName === "UL" && ul.querySelector("li[data-task-item-key]")) return h3;
+      const list = h3.nextElementSibling;
+      if (list && list.querySelector("li[data-task-item-key]")) return h3;
     }
     return null;
   }
@@ -7780,7 +7708,7 @@
       h3.parentElement?.classList.remove(COLLAPSED_CLASS);
     }
   }
-  async function refreshConfig4() {
+  async function refreshConfig3() {
     const cfg = await getConfig(true).catch(() => null);
     enabled5 = !cfg || !cfg.features || cfg.features.pinnedCollapse !== false;
     if (enabled5) sync2();
@@ -7789,9 +7717,9 @@
   function startPinnedCollapse() {
     ensureStyle();
     window.addEventListener("zcodepro:config-changed", () => {
-      void refreshConfig4();
+      void refreshConfig3();
     });
-    void refreshConfig4();
+    void refreshConfig3();
     new MutationObserver((muts) => {
       if (relevantMutations2(muts)) scheduleSync2();
     }).observe(document.body, { childList: true, subtree: true });
@@ -7888,10 +7816,6 @@
       }
       try {
         startImageMenu();
-      } catch {
-      }
-      try {
-        startPinnedExpandSuppression();
       } catch {
       }
       try {

@@ -21,7 +21,6 @@ import { rpc, getConfig } from '../core.js';
 import { wsRunningSnapshot, verifyWorkspaceNotRunning } from './ws-running.js';
 
 const CHECK_MS = 30_000;      // 巡检周期
-const WS_SEL = '[data-testid^="workspace-item-"]';
 const MIN_MINUTES = 1;
 const MAX_MINUTES = 1440;
 
@@ -70,10 +69,18 @@ function findServices() {
   }
 }
 
-function sidebarWorkspaces() {
+// 项目清单改读 helper 的 /projects-v2（官方任务索引 projects/project_roots）：
+// 含多目录项目的每个目录（每个目录都可能有会话进程），且不依赖侧栏展开状态
+async function sidebarWorkspaces() {
   const out = new Set();
-  for (const el of document.querySelectorAll(WS_SEL)) {
-    out.add(el.getAttribute('data-testid').slice('workspace-item-'.length));
+  const res = await rpc('/projects-v2').catch(() => null);
+  if (res && res.ok && res.available) {
+    for (const proj of res.projects || []) {
+      for (const r of proj.roots || []) {
+        const p = String(r.path || '').replace(/[\/]+$/, '');
+        if (p) out.add(p);
+      }
+    }
   }
   return out;
 }
@@ -94,12 +101,37 @@ async function reclaim(ws) {
   }
 }
 
+// 权威空闲判定：官方 zcodeTaskService.listActiveTaskIds 返回该工作区仍处非终态
+// （运行/创建/流式等）的会话，来自 CLI 实时活动集合——比侧栏 DOM 的 loader 可靠
+// （DOM 有“提交消息到 loader 渲染”与页面刷新后折叠项目的盲区，曾致误杀）。
+// workspacePath 的尾斜杠形式必须与订阅时一致（roots 两种都有），两种各查一次。
+// 返回 true=确认空闲、false=仍在运行、null=接口不可用或查询失败（按忙处理）
+async function authoritativeIdle(ws) {
+  const services = findServices();
+  const ts = services && services.zcodeTaskService;
+  if (!ts || typeof ts.listActiveTaskIds !== 'function') return null;
+  try {
+    const base = String(ws).replace(/[\\/]+$/, '');
+    const a = await ts.listActiveTaskIds({ workspacePath: base });
+    const b = await ts.listActiveTaskIds({ workspacePath: base + '/' });
+    if (Array.isArray(a) && Array.isArray(b)) return a.length === 0 && b.length === 0;
+    return null;
+  } catch {
+    return null; // 方法不存在（≤3.15.x 的服务对象）或查询失败：一律按忙
+  }
+}
+
 // 回收单个项目：回收前复核运行状态与当前归属，未通过则冷却后由后续周期重试
 async function tryReclaim(ws, cooldownMs) {
-  // 回收前最后复核：折叠项目的运行状态可能没被现场捕获到，无感展开读取再收起；
-  // 复核没做成（窗口隐藏/行不可达）也按忙处理，不回收
-  const verifiedIdle = await verifyWorkspaceNotRunning(ws);
-  if (!verifiedIdle) { blockUntil.set(ws, Date.now() + cooldownMs); return; }
+  // 回收前最后复核。优先官方权威判定（listActiveTaskIds）；接口不可用
+  // （≤3.15.x）时退回 DOM 复核链。任何“未知”都按忙处理，不回收
+  const auth = await authoritativeIdle(ws);
+  if (auth === null) {
+    const verifiedIdle = await verifyWorkspaceNotRunning(ws);
+    if (!verifiedIdle) { blockUntil.set(ws, Date.now() + cooldownMs); return; }
+  } else if (!auth) {
+    blockUntil.set(ws, Date.now() + cooldownMs); return;
+  }
   // 复核要展开读行、网络请求也有耗时：期间用户可能已切到该项目，回收前再确认一次归属
   const currentNow = wsRunningSnapshot().current;
   if (!currentNow || currentNow === ws) { blockUntil.set(ws, Date.now() + cooldownMs); return; }
@@ -130,7 +162,7 @@ async function tick() {
   const busy = new Set(snap.running);
   busy.add(snap.current);
 
-  const workspaces = sidebarWorkspaces();
+  const workspaces = await sidebarWorkspaces();
   for (const ws of [...idleSince.keys(), ...blockUntil.keys()]) {
     if (!workspaces.has(ws)) { idleSince.delete(ws); blockUntil.delete(ws); }
   }

@@ -7,6 +7,7 @@
 // 目标条目在折叠项目下时先展开项目行再点击（展开先例见 pinned-expand.js）。
 import { h, t, getConfig } from '../core.js';
 import { ensureStyle, showToast } from '../ui.js';
+import { findProjectRow } from './ws-rows.js';
 
 const MRU_LIMIT = 50;
 const SCAN_DEBOUNCE_MS = 150;   // 相关 DOM 变动后的去抖，合并连续变动
@@ -93,7 +94,9 @@ async function switchTo(key) {
   let item = find();
   if (!item) {
     const ws = workspaceOf(key);
-    const header = document.querySelector(`[data-testid="workspace-item-${CSS.escape(ws)}"]`);
+    // 项目行按路径定位：旧结构查 testid，新结构（3.16.1 起）按 data-project-id
+    // 分区匹配（分区与路径的关联需该项目本次会话展开过一次，见 ws-rows.js）
+    const header = findProjectRow(ws);
     const expander = header && header.querySelector('[aria-expanded]');
     if (expander && expander.getAttribute('aria-expanded') === 'false') {
       expander.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
@@ -231,7 +234,8 @@ export function startSessionSwitch() {
     // x/c：弹窗导航（无可导航会话时与 z 一致轻提示）
     if (mru.length < 2) { showToast(t().switcherEmpty); return; }
     if (!popupEl) await openPopup();
-    moveHighlight(k === 'x' ? 1 : -1);
+    // 键位对调：alt+x 上移一位（更靠上/更近的键管向上），alt+c 下移
+    moveHighlight(k === 'x' ? -1 : 1);
     })();
   }, true);
 

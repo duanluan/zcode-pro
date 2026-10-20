@@ -285,11 +285,6 @@ export function openSettingsDialog() {
             if (await setFeature('wsRunningSpin', next)) f.wsRunningSpin = next;
             refreshRows();
           }),
-          settingRow(L.featurePinnedExpand, L.featurePinnedExpandDesc, f.pinnedKeepCollapsed !== false, async () => {
-            const next = !(f.pinnedKeepCollapsed !== false);
-            if (await setFeature('pinnedKeepCollapsed', next)) f.pinnedKeepCollapsed = next;
-            refreshRows();
-          }),
           settingRow(L.featureAutoUpdatePlugins, L.featureAutoUpdatePluginsDesc, f.autoUpdatePlugins === true, async () => {
             const next = !(f.autoUpdatePlugins === true);
             if (await setFeature('autoUpdatePlugins', next)) f.autoUpdatePlugins = next;
@@ -501,6 +496,7 @@ export function openSettingsDialog() {
             cellPadH.el, h('span', { class: 'w-3 text-ui-xs text-foreground-subtle' }, 'px'))),
       };
       const cells = [
+        // 侧栏间距双结构：3.15.x 旧容器/行 + 3.16.1 新项目行（virtual-project-row）与任务行
         styleCell(L.sidebarProjectSpacingName, L.sidebarProjectSpacingDesc, 'sidebarProjectSpacing', { max: 24 }),
         styleCell(L.sidebarTaskSpacingName, L.sidebarTaskSpacingDesc, 'sidebarTaskSpacing', { max: 24 }),
         widthCell,

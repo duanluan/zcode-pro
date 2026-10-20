@@ -56,7 +56,6 @@ export function defaultConfig() {
       projectMenu: true,        // 项目菜单增强：自定义别名 + 切换文件夹 + 打开文件夹 + 复制路径（含侧栏别名渲染）
       taskOrder: true,          // 侧边栏会话拖动排序持久化
       fileActions: true,        // 文件菜单：默认应用打开 / 打开所在目录
-      pinnedKeepCollapsed: false, // 点击置顶会话保持项目折叠（实验性：会先展开再缩起，有闪烁）
       autoUpdatePlugins: false,  // 启动时自动更新已装的 zcode-plugins 插件（含安装市场里新增的）
       sessionSwitch: true,     // 会话快捷切换（alt+z 上次会话；按住 alt x/c 弹窗导航，类 alt+tab）
       titleLock: true,        // 会话名锁定：手动重命名过的会话不被运行时推送的自动标题覆盖（侧栏钉回索引库中的名字）

@@ -12,7 +12,6 @@ import { startTaskOrderWatcher } from './features/task-order.js';
 import { startSessionSwitch } from './features/session-switch.js';
 import { startTitleLock } from './features/title-lock.js';
 import { startTitleGen } from './features/title-gen.js';
-import { startPinnedExpandSuppression } from './features/pinned-expand.js';
 import { startWsRunningSpin } from './features/ws-running.js';
 import { startIdleReclaim } from './features/idle-reclaim.js';
 import { startToolbarIcons } from './features/toolbar-icons.js';
@@ -56,7 +55,6 @@ import { ensureStyle } from './ui.js';
     try { startTitleLock(); } catch { /* ignore */ }
     try { startTitleGen(); } catch { /* ignore */ }
     try { startImageMenu(); } catch { /* ignore */ }
-    try { startPinnedExpandSuppression(); } catch { /* ignore */ }
     try { startWsRunningSpin(); } catch { /* ignore */ }
     try { startIdleReclaim(); } catch { /* ignore */ }
     try { startToolbarIcons(); } catch { /* ignore */ }

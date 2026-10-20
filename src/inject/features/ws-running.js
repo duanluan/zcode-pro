@@ -17,6 +17,7 @@
 // 恢复，探查会打扰（实测首启会出现项目逐个展开又收起的干扰）。
 // 开关：helper wsRunningSpin（默认 true）。
 import { rpc } from '../core.js';
+import { projectRows, findProjectRow, rowPath, projectRowSelector } from './ws-rows.js';
 
 let installed = false;
 let enabled = true;
@@ -33,7 +34,31 @@ const CONFIG_POLL_MIN_MS = 5000;   // 配置未变化时逐次拉长轮询间隔
 const CONFIG_POLL_MAX_MS = 60000;
 
 const TASK_SEL = '[data-task-item-key]';
-const WS_SEL = '[data-testid^="workspace-item-"]';
+// 项目行选择器双结构（3.15.x 旧 testid 行 / 3.16.1 起 section[data-project-id]）
+const WS_SEL = () => projectRowSelector();
+
+function findWsRow(ws) {
+  return findProjectRow(ws);
+}
+
+// 行首图标容器（旋转类的挂点）：
+// 旧结构：行.firstElementChild 里的 span；新结构：virtual-project-toggle 的首个 span（folder 图标容器）
+function iconHolderOf(row) {
+  if (row.hasAttribute && row.hasAttribute('data-project-id')) {
+    const toggle = row.querySelector('[data-testid="virtual-project-toggle"]');
+    return toggle ? toggle.querySelector(':scope > span') : null;
+  }
+  return row.firstElementChild && row.firstElementChild.querySelector(':scope > span');
+}
+
+// 运行中的行首图标是 loader；空闲行该位置为空或错误/未读圆点。只认行首图标位
+// （旧结构为 span>svg 嵌套，新结构槽 span 直接含 svg，两者都在 firstElementChild 子树内）
+function isRunningRow(el) {
+  const scope = el.firstElementChild;
+  if (!scope) return false;
+  const svg = scope.querySelector('svg[class*="lucide-loader"]');
+  return !!svg;
+}
 
 const runningByWs = new Map(); // 工作区路径（原样，来自会话键）→ Set(会话键)
 const peekTimers = new Map();  // 工作区 → 复核定时器
@@ -51,20 +76,9 @@ function workspaceOf(key) {
   return i > 0 ? key.slice(0, i) : key;
 }
 
-function findWsRow(ws) {
-  return document.querySelector(`[data-testid="workspace-item-${CSS.escape(ws)}"]`);
-}
-
 function wsHead(row) {
+  // 旧结构行容器自身带 aria-expanded；新结构在 virtual-project-toggle 按钮上
   return row.matches('[aria-expanded]') ? row : row.querySelector('[aria-expanded]');
-}
-
-// 运行中的行首图标是 loader；空闲行该位置为空 span（无 svg）。只认行首图标位
-// （span 的直接子级），行内操作按钮等处将来即使出现 loader 也不算
-function isRunningRow(el) {
-  const holder = el.firstElementChild && el.firstElementChild.querySelector(':scope > span');
-  if (!holder) return false;
-  return [...holder.children].some((c) => c.tagName === 'svg' && (c.getAttribute('class') || '').includes('lucide-loader'));
 }
 
 function domRowsOf(ws) {
@@ -168,14 +182,15 @@ function handleRemovals(muts) {
 
 function apply() {
   const seen = new Set();
-  for (const row of document.querySelectorAll(WS_SEL)) {
-    const path = row.getAttribute('data-testid').slice('workspace-item-'.length);
+  for (const row of document.querySelectorAll(WS_SEL())) {
+    const path = rowPath(row);
+    if (!path) continue;
     seen.add(path);
     const head = wsHead(row);
     const collapsed = !head || head.getAttribute('aria-expanded') === 'false';
     const running = !!(enabled && collapsed && runningByWs.get(path) && runningByWs.get(path).size);
     // 类挂在图标的外层 span 上：展开/收起时 React 会重建 svg，span 是稳定节点
-    const icon = row.firstElementChild && row.firstElementChild.querySelector(':scope > span');
+    const icon = iconHolderOf(row);
     if (icon) icon.classList.toggle('zcodepro-ws-running', running);
   }
   // 侧栏里已不存在的项目清掉状态
@@ -252,9 +267,10 @@ async function peekInner(ws, opts) {
   // 会话行隐藏改走 style 元素（见 installPeekHider）：挂载当帧即 display:none，
   // 与观察器回调时序、列表容器结构均无关
   const hider = installPeekHider(ws);
+  let readOk = false;
   try {
     toggleNavSafe(head);
-    await settleAndRead(ws);
+    readOk = await settleAndRead(ws);
     // 读完后收起；用户在探查期间点了项目行就不再干预
     const rowNow = findWsRow(ws) || row;
     const headNow = wsHead(rowNow);
@@ -273,7 +289,8 @@ async function peekInner(ws, opts) {
   apply();
   const set = runningByWs.get(ws);
   if (set && set.size && enabled) schedulePeek(ws, PEEK_REPEAT_MS);
-  return true;
+  // 一个任务行都没读到（展开没生效/行未渲染）= 未验证成，调用方按“忙”处理
+  return readOk;
 }
 
 // —— 供 idle-reclaim 复用 ——
@@ -308,11 +325,13 @@ export async function verifyWorkspaceNotRunning(ws) {
 }
 
 // 等该项目的会话行渲染稳定后读取运行状态；行始终没出现视为项目无会话，清除记录
+// resolve(true)=读到行并稳定；resolve(false)=一个行都没读到（未验证成）
 function settleAndRead(ws) {
   return new Promise((resolve) => {
     const t0 = Date.now();
     let lastCount = -1;
     let stableAt = 0;
+    let zeroRows = false;
     const timer = setInterval(() => {
       const rows = domRowsOf(ws);
       const elapsed = Date.now() - t0;
@@ -321,7 +340,9 @@ function settleAndRead(ws) {
       if (!settled && elapsed < PEEK_MAX_MS) return;
       clearInterval(timer);
       if (lastCount === 0) {
-        runningByWs.delete(ws);
+        // 一个任务行都没读到：多半是展开没生效或行尚未渲染，不能当作“项目无
+        // 会话”清掉运行记录（idle-reclaim 复核据此判空闲会误杀运行中会话）
+        zeroRows = true;
       } else {
         let set = runningByWs.get(ws);
         if (!set) { set = new Set(); runningByWs.set(ws, set); }
@@ -331,7 +352,7 @@ function settleAndRead(ws) {
           else set.delete(key);
         }
       }
-      resolve();
+      resolve(!zeroRows);
     }, 80);
   });
 }
@@ -398,12 +419,12 @@ function relevant(muts) {
   // 增删、React 重建行内元素），聊天流式输出的 characterData/class 高频变动
   // 一概不进回调（实测后台态全页 5 秒仅 5 个变动、全为非 childList）
   for (const m of muts) {
-    if (inSel(m.target, TASK_SEL) || inSel(m.target, WS_SEL)) return true;
+    if (inSel(m.target, TASK_SEL) || inSel(m.target, WS_SEL())) return true;
     for (const n of m.addedNodes) {
-      if (n instanceof Element && (n.matches(TASK_SEL) || n.matches(WS_SEL) || n.querySelector(TASK_SEL) || n.querySelector(WS_SEL))) return true;
+      if (n instanceof Element && (n.matches(TASK_SEL) || n.matches(WS_SEL()) || n.querySelector(TASK_SEL) || n.querySelector(WS_SEL()))) return true;
     }
     for (const n of m.removedNodes) {
-      if (n instanceof Element && (n.matches(TASK_SEL) || n.matches(WS_SEL) || n.querySelector(TASK_SEL))) return true;
+      if (n instanceof Element && (n.matches(TASK_SEL) || n.matches(WS_SEL()) || n.querySelector(TASK_SEL))) return true;
     }
   }
   return false;
@@ -466,7 +487,7 @@ export function startWsRunningSpin() {
   // 只认真实点击：探查自己派发的合成点击（isTrusted=false）不算用户操作
   document.addEventListener('click', (e) => {
     if (!e.isTrusted) return;
-    const row = e.target instanceof Element && e.target.closest(WS_SEL);
+    const row = e.target instanceof Element && e.target.closest(WS_SEL());
     if (row) wsTouchAt.set(row, Date.now());
   }, true);
 }

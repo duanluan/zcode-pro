@@ -15,11 +15,12 @@ const SCAN_FALLBACK_MS = 5000;  // 兜底轮询周期
 let enabled = true;   // 配置开关（features.pinnedCollapse !== false）
 let syncTimer = 0;
 
-// 已置顶标题的识别不依赖文案（跟随界面语言）：h3 的下一个兄弟是含任务行的列表
+// 已置顶标题的识别不依赖文案（跟随界面语言）：h3 的下一个兄弟是含任务行的
+// 列表容器——3.15.x 是 UL，3.16.1 起是 DIV，不限定标签
 function findPinnedHeader() {
   for (const h3 of document.querySelectorAll('h3')) {
-    const ul = h3.nextElementSibling;
-    if (ul && ul.tagName === 'UL' && ul.querySelector('li[data-task-item-key]')) return h3;
+    const list = h3.nextElementSibling;
+    if (list && list.querySelector('li[data-task-item-key]')) return h3;
   }
   return null;
 }

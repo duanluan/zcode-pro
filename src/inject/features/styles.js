@@ -214,6 +214,9 @@ function buildCss(styles) {
       `${LIST} [data-testid^="workspace-item-"] > div:first-child{align-self:stretch !important;}`,
       `${SCROLL} [data-slot="collapsible-trigger"],${SCROLL} .flex.h-7{height:auto !important;}`,
       `${SCROLL} [data-slot="collapsible-trigger"]{min-height:${28 + 2 * pad}px !important;padding-block:${pad}px !important;padding-top:${pad}px !important;padding-bottom:${pad}px !important;}`,
+      // 3.16.1 新结构：项目行（virtual-project-row，固定 h-8）按视觉总量放行内留白；
+      // 分区间距由新侧栏容器自己的布局管理，不动
+      `section[data-project-id] [data-testid="virtual-project-row"]{height:auto !important;min-height:${28 + 2 * pad}px !important;padding-block:${Math.round(pad)}px !important;}`,
     );
   }
   const sts = styles.sidebarTaskSpacing;
@@ -228,6 +231,9 @@ function buildCss(styles) {
       `ul.space-y-0\\.5:has(> li[data-task-item-key]) > li{padding-block:${pad}px !important;padding-top:${pad}px !important;padding-bottom:${pad}px !important;}`,
       `${SCROLL} .flex.flex-col.gap-2{gap:${m}px !important;row-gap:${m}px !important;}`,
       `${SCROLL} div.cursor-pointer[class*="pl-8"]{padding-block:${pad}px !important;padding-top:${pad}px !important;padding-bottom:${pad}px !important;}`,
+      // 3.16.1 新结构：任务行（li[data-task-item-key]）行内留白 + 相邻行间距
+      `li[data-task-item-key]{padding-block:${Math.max(1, Math.round(pad))}px !important;}`,
+      `li[data-task-item-key] + li[data-task-item-key]{margin-block-start:${m}px !important;}`,
     );
   }
   return parts.join('');
@@ -275,7 +281,8 @@ const HL_SELECTORS = {
   thinkingLineHeight: `[data-testid^="chat-assistant-history-content"]`,
   userLineHeight: `${CONV} [class*="user-row"] .whitespace-pre-wrap`,
   contentWidth: '[data-v4-timeline-content-column]',
-  sidebarProjectSpacing: '[data-testid^="workspace-item-"]',
+  // 双结构：新侧栏项目行 / 旧 testid 行
+  sidebarProjectSpacing: 'section[data-project-id] [data-testid="virtual-project-row"], [data-testid^="workspace-item-"]',
   sidebarTaskSpacing: 'li[data-task-item-key]',
 };
 
