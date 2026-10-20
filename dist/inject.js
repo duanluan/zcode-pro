@@ -6937,13 +6937,8 @@
     const back = cur && cur.isConnected ? cur : document.querySelector(`${TASK_SEL3}[data-task-item-key="${CSS.escape(backKey)}"]`);
     if (back) synthClick(back);
   }
-  var knownPaths = /* @__PURE__ */ new Set();
   function scan3() {
     wsWithRows = /* @__PURE__ */ new Set();
-    for (const row of document.querySelectorAll(WS_SEL())) {
-      const p = rowPath(row);
-      if (p) knownPaths.add(p);
-    }
     for (const el of document.querySelectorAll(TASK_SEL3)) {
       const key = el.getAttribute("data-task-item-key") || "";
       const ws = workspaceOf2(key);
@@ -7032,6 +7027,38 @@
     }).filter(Boolean);
   }
   var SEC_SPIN_CLASS = "zcodepro-ws-sec-spin";
+  var anyActiveCache = { at: 0, value: null, busy: false };
+  function globalAnyActive() {
+    if (anyActiveCache.value !== null && Date.now() - anyActiveCache.at < 1e4) return anyActiveCache.value;
+    if (anyActiveCache.busy) return anyActiveCache.value === true;
+    anyActiveCache.busy = true;
+    void (async () => {
+      let hit = null;
+      try {
+        const res = await rpc("/projects-v2").catch(() => null);
+        const services = findServices();
+        const ts = services && services.zcodeTaskService;
+        if (res && res.ok && res.available && ts && typeof ts.listActiveTaskIds === "function") {
+          hit = false;
+          for (const proj of res.projects || []) {
+            const base = String(proj.roots && proj.roots[0] && proj.roots[0].path || "").replace(/[\\/]+$/, "");
+            if (!base) continue;
+            const a = await ts.listActiveTaskIds({ workspacePath: base });
+            const b = await ts.listActiveTaskIds({ workspacePath: base + "/" });
+            if (Array.isArray(a) && a.length || Array.isArray(b) && b.length) {
+              hit = true;
+              break;
+            }
+          }
+        }
+      } catch {
+      }
+      if (hit !== null) anyActiveCache = { at: Date.now(), value: hit, busy: false };
+      else anyActiveCache.busy = false;
+      apply();
+    })();
+    return anyActiveCache.value === true;
+  }
   function applySectionSpin() {
     if (!enabled3) {
       document.querySelectorAll("." + SEC_SPIN_CLASS).forEach((el) => el.remove());
@@ -7039,26 +7066,13 @@
     }
     for (const { head, cont } of sectionHeads()) {
       const running = !!cont.querySelector('li[data-task-item-key] svg[class*="lucide-loader"]');
-      const isProjectHead = !!cont.querySelector("section[data-project-id]");
       let expanded = true;
-      if (!isProjectHead) {
-        if (head.tagName === "BUTTON") expanded = head.getAttribute("aria-expanded") !== "false";
-        else {
-          const list = head.nextElementSibling;
-          expanded = !list || list.offsetHeight > 0;
-        }
+      if (head.tagName === "BUTTON") expanded = head.getAttribute("aria-expanded") !== "false";
+      else {
+        const list = head.nextElementSibling;
+        expanded = !list || list.offsetHeight > 0;
       }
-      let effRunning = running;
-      if (isProjectHead && !running) {
-        for (const p of knownPaths) {
-          const set = runningByWs.get(p);
-          if (set && set.size) {
-            effRunning = true;
-            break;
-          }
-        }
-      }
-      const want = effRunning && (!isProjectHead ? !expanded : true);
+      const want = !expanded && (running || globalAnyActive());
       const existing = head.querySelector(":scope > ." + SEC_SPIN_CLASS);
       if (want && !existing) {
         const span = document.createElement("span");

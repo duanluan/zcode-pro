@@ -210,15 +210,8 @@ function toggleNavSafe(head) {
 
 // —— 状态维护 ——
 
-// 见过的项目路径（任务行在场时记录）：“项目”分区折叠后 section 全部卸载，
-// 分区头运行判定只能靠 runningByWs（权威复核维护，不依赖 DOM）+ 此缓存
-const knownPaths = new Set();
 function scan() {
   wsWithRows = new Set();
-  for (const row of document.querySelectorAll(WS_SEL())) {
-    const p = rowPath(row);
-    if (p) knownPaths.add(p);
-  }
   for (const el of document.querySelectorAll(TASK_SEL)) {
     const key = el.getAttribute('data-task-item-key') || '';
     const ws = workspaceOf(key);
@@ -319,6 +312,38 @@ function sectionHeads() {
 }
 
 const SEC_SPIN_CLASS = 'zcodepro-ws-sec-spin';
+
+// 全局权威扫描：listActiveTaskIds 遍历侧栏全部项目（/projects-v2 提供路径，
+// 尾斜杠两种形式各查一次），任一非终态会话即“有任务在跑”。10 秒节流缓存；
+// 接口不可用（≤3.15.x）时无缓存，分区头退回 DOM 检测
+let anyActiveCache = { at: 0, value: null, busy: false };
+function globalAnyActive() {
+  if (anyActiveCache.value !== null && Date.now() - anyActiveCache.at < 10_000) return anyActiveCache.value;
+  if (anyActiveCache.busy) return anyActiveCache.value === true;
+  anyActiveCache.busy = true;
+  void (async () => {
+    let hit = null;
+    try {
+      const res = await rpc('/projects-v2').catch(() => null);
+      const services = findServices();
+      const ts = services && services.zcodeTaskService;
+      if (res && res.ok && res.available && ts && typeof ts.listActiveTaskIds === 'function') {
+        hit = false;
+        for (const proj of res.projects || []) {
+          const base = String((proj.roots && proj.roots[0] && proj.roots[0].path) || '').replace(/[\\/]+$/, '');
+          if (!base) continue;
+          const a = await ts.listActiveTaskIds({ workspacePath: base });
+          const b = await ts.listActiveTaskIds({ workspacePath: base + '/' });
+          if ((Array.isArray(a) && a.length) || (Array.isArray(b) && b.length)) { hit = true; break; }
+        }
+      }
+    } catch { /* 查询失败保持旧值 */ }
+    if (hit !== null) anyActiveCache = { at: Date.now(), value: hit, busy: false };
+    else anyActiveCache.busy = false;
+    apply();
+  })();
+  return anyActiveCache.value === true;
+}
 function applySectionSpin() {
   if (!enabled) {
     document.querySelectorAll('.' + SEC_SPIN_CLASS).forEach((el) => el.remove());
@@ -329,26 +354,17 @@ function applySectionSpin() {
     // “任务”分区与“已置顶”标题：展开时任务行的 loader 直接可见，头部不再重复
     // 提示，仅在分区折叠时挂。“项目”分区头（容器含项目行 section）不受此限——
     // 折叠的单个项目仍由项目行的权威复核提示。
-    const isProjectHead = !!cont.querySelector('section[data-project-id]');
+    // 仅分区折叠时显示：展开时任务行的 loader 直接可见，头部不重复。
+    // 分区折叠会把内容行全部卸载（DOM 检测失效），改看全局权威扫描
+    //（listActiveTaskIds 遍历全部项目，节流缓存）是否有任何任务在跑
     let expanded = true;
-    if (!isProjectHead) {
-      if (head.tagName === 'BUTTON') expanded = head.getAttribute('aria-expanded') !== 'false';
-      else {
-        // 已置顶标题（h3）：其折叠是藏起任务列表，按列表实际显示判定
-        const list = head.nextElementSibling;
-        expanded = !list || list.offsetHeight > 0;
-      }
+    if (head.tagName === 'BUTTON') expanded = head.getAttribute('aria-expanded') !== 'false';
+    else {
+      // 已置顶标题（h3）：折叠是藏起任务列表，按列表实际显示判定
+      const list = head.nextElementSibling;
+      expanded = !list || list.offsetHeight > 0;
     }
-    // “项目”分区折叠后 section 全部卸载，DOM 检测失效：改看权威复核维护的
-    // runningByWs（knownPaths 缓存了折叠前见过的项目路径）
-    let effRunning = running;
-    if (isProjectHead && !running) {
-      for (const p of knownPaths) {
-        const set = runningByWs.get(p);
-        if (set && set.size) { effRunning = true; break; }
-      }
-    }
-    const want = effRunning && (!isProjectHead ? !expanded : true);
+    const want = !expanded && (running || globalAnyActive());
     const existing = head.querySelector(':scope > .' + SEC_SPIN_CLASS);
     if (want && !existing) {
       const span = document.createElement('span');
