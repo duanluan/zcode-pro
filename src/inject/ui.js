@@ -358,7 +358,7 @@ export function settingRow(name, desc, checked, onToggle, extra) {
   },
     h('div', { class: 'min-w-0 flex-1' },
       h('div', { class: 'text-ui-sm font-medium text-foreground' }, name),
-      ...(desc ? [h('div', { class: 'mt-0.5 text-ui-xs/relaxed text-foreground-subtle' }, desc)] : [])),
+      h('div', { class: 'mt-0.5 text-ui-xs/relaxed text-foreground-subtle', 'data-zcodepro-row-desc': '' }, desc ?? '')),
     ...(extraEl ? [extraEl] : []),
     h('button', {
       type: 'button',

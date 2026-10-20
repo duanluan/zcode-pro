@@ -252,10 +252,10 @@
     pathCopyFailed: "\u590D\u5236\u8DEF\u5F84\u5931\u8D25",
     fileOpenDefault: "\u9ED8\u8BA4\u5E94\u7528\u6253\u5F00",
     fileReveal: "\u6253\u5F00\u6240\u5728\u76EE\u5F55",
-    featureAutoUpdatePlugins: "\u81EA\u52A8\u66F4\u65B0 zcode-plugins \u63D2\u4EF6",
-    featureAutoUpdatePluginsDesc: "\u542F\u52A8\u65F6\u81EA\u52A8\u68C0\u67E5\u5E76\u66F4\u65B0\u5DF2\u5B89\u88C5\u7684 zcode-plugins \u63D2\u4EF6\uFF08\u53EA\u5347\u7EA7\u4E0D\u5B89\u88C5\uFF0C\u5378\u8F7D\u4E0D\u4F1A\u88AB\u64A4\u9500\uFF09\uFF0C\u66F4\u65B0\u5728\u65B0\u4F1A\u8BDD\u751F\u6548\u3002",
-    pluginsUpdateTitle: "\u63D2\u4EF6\u66F4\u65B0 \xB7 zcode-plugins",
-    pluginsCheckNow: "\u68C0\u67E5\u5E76\u66F4\u65B0",
+    featureAutoUpdatePlugins: "\u81EA\u52A8\u66F4\u65B0",
+    featureAutoUpdatePluginsRepo: "duanluan/zcode-plugins",
+    featureAutoUpdatePluginsDesc: "",
+    pluginsCheckNow: "\u68C0\u67E5\u66F4\u65B0",
     pluginsUpdating: "\u6B63\u5728\u66F4\u65B0\u63D2\u4EF6\u2026",
     pluginsUpToDate: "\u63D2\u4EF6\u5DF2\u662F\u6700\u65B0",
     pluginsUpdatesFound: "{n} \u4E2A\u63D2\u4EF6\u53EF\u66F4\u65B0",
@@ -642,10 +642,10 @@
     pathCopyFailed: "Failed to copy the path.",
     fileOpenDefault: "Open with default app",
     fileReveal: "Reveal in file manager",
-    featureAutoUpdatePlugins: "Auto-update zcode-plugins plugins",
-    featureAutoUpdatePluginsDesc: "Checks and updates installed zcode-plugins plugins on startup (updates only \u2014 never installs; uninstalled plugins stay uninstalled). Updates apply to new sessions.",
-    pluginsUpdateTitle: "Plugin updates \xB7 zcode-plugins",
-    pluginsCheckNow: "Check & update",
+    featureAutoUpdatePlugins: "Auto-update",
+    featureAutoUpdatePluginsRepo: "duanluan/zcode-plugins",
+    featureAutoUpdatePluginsDesc: "",
+    pluginsCheckNow: "Check for updates",
     pluginsUpdating: "Updating plugins\u2026",
     pluginsUpToDate: "Plugins are up to date",
     pluginsUpdatesFound: "{n} plugin(s) can be updated",
@@ -1343,7 +1343,7 @@
         "div",
         { class: "min-w-0 flex-1" },
         h("div", { class: "text-ui-sm font-medium text-foreground" }, name),
-        ...desc ? [h("div", { class: "mt-0.5 text-ui-xs/relaxed text-foreground-subtle" }, desc)] : []
+        h("div", { class: "mt-0.5 text-ui-xs/relaxed text-foreground-subtle", "data-zcodepro-row-desc": "" }, desc ?? "")
       ),
       ...extraEl ? [extraEl] : [],
       h("button", {
@@ -3583,6 +3583,7 @@
     } catch {
     }
   }
+  var PLUGINS_REPO_URL = "https://github.com/duanluan/zcode-plugins";
   function makeUpgradeControls({ endpoint, metaRefresh, idleText }) {
     const L = t();
     const state = h("span", { class: "min-w-0 flex-1 truncate text-left text-ui-xs/relaxed text-foreground-subtle" });
@@ -3879,11 +3880,32 @@
               if (await setFeature("wsRunningSpin", next)) f.wsRunningSpin = next;
               refreshRows();
             }),
-            settingRow(L.featureAutoUpdatePlugins, L.featureAutoUpdatePluginsDesc, f.autoUpdatePlugins === true, async () => {
-              const next = !(f.autoUpdatePlugins === true);
-              if (await setFeature("autoUpdatePlugins", next)) f.autoUpdatePlugins = next;
-              refreshRows();
-            }, h("div", { class: "flex items-center gap-2" }, pluginsStatusLine, pluginsBtn))
+            (() => {
+              const repoLink = h("span", {
+                class: "cursor-pointer underline-offset-4 hover:underline",
+                title: PLUGINS_REPO_URL,
+                onClick: (ev) => {
+                  ev.stopPropagation();
+                  openExternal(PLUGINS_REPO_URL);
+                }
+              }, L.featureAutoUpdatePluginsRepo);
+              const row = settingRow("", "", f.autoUpdatePlugins === true, async () => {
+                const next = !(f.autoUpdatePlugins === true);
+                if (await setFeature("autoUpdatePlugins", next)) f.autoUpdatePlugins = next;
+                refreshRows();
+              }, h("div", { class: "flex items-center gap-2" }, pluginsBtn));
+              const nameEl = row.querySelector(".text-ui-sm.font-medium");
+              if (nameEl) {
+                nameEl.replaceChildren(
+                  document.createTextNode(L.featureAutoUpdatePlugins + " "),
+                  repoLink,
+                  document.createTextNode(" \u63D2\u4EF6")
+                );
+              }
+              const descEl = row.querySelector("[data-zcodepro-row-desc]");
+              if (descEl) descEl.replaceChildren(pluginsStatusLine);
+              return row;
+            })()
           );
         };
         refreshRows();

@@ -13,6 +13,9 @@ function openExternal(url) {
   try { void window.zcode.openExternal(url); } catch { /* ignore */ }
 }
 
+// 插件市场仓库（设置页“自动更新”行的仓库名链接指向它）
+const PLUGINS_REPO_URL = 'https://github.com/duanluan/zcode-plugins';
+
 // 本体升级交互（Headroom 的 pip 与 rtk 的 GitHub Releases 共用）：
 // 检查更新 → 升级（helper 后台任务，轮询进度，输出取最后一行、超长省略中间）→
 // 进行中可停止；关弹窗不中断升级，重开恢复显示。endpoint 为 /headroom 或 /rtk，
@@ -310,11 +313,31 @@ export function openSettingsDialog() {
             if (await setFeature('wsRunningSpin', next)) f.wsRunningSpin = next;
             refreshRows();
           }),
-          settingRow(L.featureAutoUpdatePlugins, L.featureAutoUpdatePluginsDesc, f.autoUpdatePlugins === true, async () => {
-            const next = !(f.autoUpdatePlugins === true);
-            if (await setFeature('autoUpdatePlugins', next)) f.autoUpdatePlugins = next;
-            refreshRows();
-          }, h('div', { class: 'flex items-center gap-2' }, pluginsStatusLine, pluginsBtn)),
+          (() => {
+            // 标题 = “自动更新 duanluan/zcode-plugins 插件”，仓库名可点击跳转仓库
+            const repoLink = h('span', {
+              class: 'cursor-pointer underline-offset-4 hover:underline',
+              title: PLUGINS_REPO_URL,
+              onClick: (ev) => { ev.stopPropagation(); openExternal(PLUGINS_REPO_URL); },
+            }, L.featureAutoUpdatePluginsRepo);
+            const row = settingRow('', '', f.autoUpdatePlugins === true, async () => {
+              const next = !(f.autoUpdatePlugins === true);
+              if (await setFeature('autoUpdatePlugins', next)) f.autoUpdatePlugins = next;
+              refreshRows();
+            }, h('div', { class: 'flex items-center gap-2' }, pluginsBtn));
+            // 标题行：自动更新 <链接> 插件；描述位放状态字（检查结果/更新进度）
+            const nameEl = row.querySelector('.text-ui-sm.font-medium');
+            if (nameEl) {
+              nameEl.replaceChildren(
+                document.createTextNode(L.featureAutoUpdatePlugins + ' '),
+                repoLink,
+                document.createTextNode(' 插件'),
+              );
+            }
+            const descEl = row.querySelector('[data-zcodepro-row-desc]');
+            if (descEl) descEl.replaceChildren(pluginsStatusLine);
+            return row;
+          })(),
         );
       };
       refreshRows();
