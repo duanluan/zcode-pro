@@ -30,6 +30,18 @@
   function clearConfigCache() {
     configCache = { value: null, at: 0 };
   }
+  var DEFAULT_SHORTCUTS = {
+    switchLast: "z",
+    // 立即切到上次会话
+    switchPrev: "x",
+    // 弹窗中上移
+    switchNext: "c",
+    // 弹窗中下移
+    switchRecent: "e",
+    // 打开最近 10 条
+    switchAttention: "r"
+    // 打开运行中 / 未查看
+  };
   function zcodeAppVersion() {
     const v = liveBoot().zcodeVersion;
     return typeof v === "string" && v ? v : "";
@@ -178,7 +190,7 @@
     featureTaskOrder: "\u4FA7\u8FB9\u680F\u4F1A\u8BDD\u62D6\u52A8\u6392\u5E8F",
     featureTaskOrderDesc: "\u8BA9\u7F6E\u9876\u3001\u9879\u76EE\u4E0E\u5206\u7EC4\u4E2D\u7684\u4F1A\u8BDD\u62D6\u52A8\u540E\u8BB0\u4F4F\u987A\u5E8F\uFF0C\u5237\u65B0\u540E\u4FDD\u6301\u3002",
     featureSessionSwitch: "\u4F1A\u8BDD\u5FEB\u6377\u5207\u6362",
-    featureSessionSwitchDesc: "alt+z \u5728\u5F53\u524D\u4E0E\u4E0A\u6B21\u4F1A\u8BDD\u95F4\u6765\u56DE\u5207\u6362\uFF1B\u6309\u4F4F alt \u518D\u6309 x/c \u5F39\u51FA\u6700\u8FD1\u4F1A\u8BDD\u5217\u8868\u524D\u540E\u9009\u62E9\uFF0C\u677E\u5F00 alt \u5207\u6362\uFF08\u7C7B alt+tab\uFF09\u3002",
+    featureSessionSwitchDesc: "{last} \u5728\u5F53\u524D\u4E0E\u4E0A\u6B21\u4F1A\u8BDD\u95F4\u6765\u56DE\u5207\u6362\uFF1B\u6309\u4F4F alt \u518D\u6309 {prev}/{next} \u5F39\u51FA\u6700\u8FD1\u4F1A\u8BDD\u5217\u8868\u524D\u540E\u9009\u62E9\uFF08\u521D\u59CB 10 \u6761\uFF0C{next} \u5230\u5E95\u518D\u52A0\u8F7D 5 \u6761\uFF09\uFF0C{recent} \u76F4\u63A5\u6253\u5F00\u6700\u8FD1 10 \u6761\uFF0C{attention} \u6253\u5F00\u8FD0\u884C\u4E2D\u4E0E\u8FD0\u884C\u5B8C\u672A\u67E5\u770B\u7684\u4EFB\u52A1\uFF1B\u65B9\u5411\u952E\u540C\u6837\u53EF\u9009\uFF0CEnter \u6216\u677E\u5F00 alt \u5207\u6362\uFF08\u7C7B alt+tab\uFF09",
     featureTitleLock: "\u91CD\u547D\u540D\u4F1A\u8BDD\u540D\u9501\u5B9A",
     featureTitleLockDesc: "\u624B\u52A8\u91CD\u547D\u540D\u8FC7\u7684\u4F1A\u8BDD\u4E0D\u518D\u88AB\u81EA\u52A8\u6807\u9898\u8986\u76D6\uFF1A\u4F1A\u8BDD\u6709\u65B0\u56DE\u7B54\u540E\u754C\u9762\u53EF\u80FD\u6539\u663E\u81EA\u52A8\u6807\u9898\uFF0C\u91CD\u542F\u540E\u53C8\u53D8\u56DE\uFF0C\u672C\u529F\u80FD\u8BA9\u4FA7\u680F\u59CB\u7EC8\u663E\u793A\u91CD\u547D\u540D\u540E\u7684\u540D\u5B57\u3002",
     tabTitleGen: "\u4EFB\u52A1\u540D\u63D0\u793A\u8BCD",
@@ -206,7 +218,7 @@
     titleGenTestOk: "\u751F\u6210\u7ED3\u679C\uFF1A",
     titleGenTestFailed: "\u751F\u6210\u5931\u8D25",
     featureWsRunning: "\u6298\u53E0\u65F6\u4EFB\u52A1\u8FD0\u884C\u4E2D\u63D0\u793A",
-    featureWsRunningDesc: "\u6709\u4F1A\u8BDD\u5728\u8FD0\u884C\u65F6\uFF0C\u6298\u53E0\u7684\u9879\u76EE\u4E0E\u201C\u4EFB\u52A1\u201D\u201C\u5DF2\u7F6E\u9876\u201D\u7B49\u5206\u533A\u5934\u663E\u793A\u4E0E\u4EFB\u52A1\u8FD0\u884C\u4E2D\u540C\u6B3E\u7684\u52A0\u8F7D\u56FE\u6807\uFF0C\u5168\u90E8\u7ED3\u675F\u540E\u6D88\u5931\uFF1B3.16.1 \u4E4B\u524D\u6BCF 60 \u79D2\u4F1A\u5728\u540E\u53F0\u77ED\u6682\u5C55\u5F00\u9879\u76EE\u590D\u6838\u518D\u6536\u8D77\u3002",
+    featureWsRunningDesc: "\u6709\u4F1A\u8BDD\u5728\u8FD0\u884C\u65F6\uFF0C\u6298\u53E0\u7684\u9879\u76EE\u4E0E\u201C\u4EFB\u52A1\u201D\u201C\u5DF2\u7F6E\u9876\u201D\u7B49\u5206\u533A\u5934\u663E\u793A\u4E0E\u4EFB\u52A1\u8FD0\u884C\u4E2D\u540C\u6B3E\u7684\u52A0\u8F7D\u56FE\u6807\uFF0C\u5168\u90E8\u7ED3\u675F\u540E\u6D88\u5931\u3002",
     tabPerformance: "\u6027\u80FD",
     perfDesc: "ZCode \u4E3A\u6BCF\u4E2A\u6253\u5F00\u8FC7\u7684\u9879\u76EE\u5E38\u9A7B\u4E00\u4E2A\u4F1A\u8BDD\u8FDB\u7A0B\uFF0C\u5E94\u7528\u81EA\u8EAB\u4E0D\u4F1A\u56DE\u6536\uFF0C\u9879\u76EE\u591A\u4E86\u5185\u5B58\u5360\u7528\u5C31\u9AD8\u3002\u5F00\u542F\u540E\uFF0C\u957F\u65F6\u95F4\u672A\u4F7F\u7528\u4E14\u6CA1\u6709\u4EFB\u52A1\u5728\u8DD1\u7684\u9879\u76EE\u4F1A\u88AB\u81EA\u52A8\u91CA\u653E\uFF1A\u4F1A\u8BDD\u8BB0\u5F55\u4E0D\u53D7\u5F71\u54CD\uFF0C\u518D\u6B21\u6253\u5F00\u65F6\u81EA\u52A8\u6062\u590D\uFF0C\u4EC5\u9996\u6B21\u56DE\u590D\u6709\u51E0\u79D2\u7B49\u5F85\u3002\u6B63\u5728\u4F7F\u7528\u7684\u9879\u76EE\u3001\u8FD0\u884C\u4E2D\u7684\u4F1A\u8BDD\u4E0E\u540E\u53F0\u547D\u4EE4\u3001\u5B9A\u65F6\u4EFB\u52A1\u90FD\u4E0D\u4F1A\u88AB\u56DE\u6536\u3002\u540E\u53F0\u547D\u4EE4\u68C0\u6D4B\u4F9D\u8D56\u7CFB\u7EDF\u8FDB\u7A0B\u4FE1\u606F\uFF08Linux / macOS / Windows \u5404\u8D70\u7CFB\u7EDF\u81EA\u5E26\u5DE5\u5177\uFF09\uFF0C\u68C0\u6D4B\u4E0D\u53EF\u7528\u65F6\u529F\u80FD\u81EA\u52A8\u505C\u7528\u3002",
     featureIdleReclaim: "\u7A7A\u95F2\u9879\u76EE\u5185\u5B58\u56DE\u6536",
@@ -234,10 +246,40 @@
     userFontDesc: "\u4F1A\u8BDD\u4E2D\u63D0\u95EE\u5185\u5BB9\u7684\u5B57\u4F53\uFF1B\u9009\u201C\u9ED8\u8BA4\u201D\u65F6\u8DDF\u968F\u754C\u9762\u5B57\u4F53\u3002",
     assistantFontName: "\u56DE\u7B54\u5B57\u4F53",
     assistantFontDesc: "\u4F1A\u8BDD\u4E2D\u56DE\u7B54\u6B63\u6587\u7684\u5B57\u4F53\uFF08\u4EE3\u7801\u5757\u4ECD\u7528\u7B49\u5BBD\u5B57\u4F53\uFF09\uFF1B\u9009\u201C\u9ED8\u8BA4\u201D\u65F6\u8DDF\u968F\u754C\u9762\u5B57\u4F53\u3002",
-    switcherHint: "x / c \u9009\u62E9\uFF0C\u677E\u5F00 alt \u5207\u6362\uFF0CEsc \u53D6\u6D88",
+    switcherHint: "{prev} / {next} \u6216 \u2191 / \u2193 \u9009\u62E9\uFF0CEnter \u6216\u677E\u5F00 alt \u5207\u6362\uFF0CEsc \u53D6\u6D88",
     switcherCurrent: "\u5F53\u524D",
     switcherEmpty: "\u6682\u65E0\u4E0A\u6B21\u4F1A\u8BDD\uFF08\u5207\u6362\u8FC7\u4F1A\u8BDD\u540E\u53EF\u7528\uFF09",
     switcherFailed: "\u672A\u80FD\u5207\u6362\u5230\u8BE5\u4F1A\u8BDD\uFF08\u53EF\u80FD\u5DF2\u5220\u9664\uFF09",
+    switcherMore: "\u8FD8\u6709 {n} \u6761 \xB7 \u6309 c \u52A0\u8F7D",
+    switcherRunning: "\u8FD0\u884C\u4E2D",
+    switcherUnseen: "\u672A\u67E5\u770B",
+    switcherAttentionHint: "\u8FD0\u884C\u4E2D / \u8FD0\u884C\u5B8C\u672A\u67E5\u770B\u7684\u4EFB\u52A1 \xB7 {prev} / {next} \u6216 \u2191 / \u2193 \u9009\u62E9\uFF0CEnter \u6216\u677E\u5F00 alt \u5207\u6362",
+    switcherAttentionEmpty: "\u6682\u65E0\u8FD0\u884C\u4E2D\u6216\u672A\u67E5\u770B\u7684\u4EFB\u52A1",
+    tabShortcuts: "\u5FEB\u6377\u952E",
+    hkTitle: "\u4F1A\u8BDD\u5FEB\u6377\u5207\u6362",
+    hkAltZ: "\u5728\u5F53\u524D\u4E0E\u4E0A\u6B21\u4F7F\u7528\u7684\u4F1A\u8BDD\u95F4\u6765\u56DE\u5207\u6362",
+    hkAltX: "\u5F39\u7A97\u4E2D\u4E0A\u79FB\u9AD8\u4EAE\uFF08\u66F4\u65E9\u7684\u4F1A\u8BDD\uFF09",
+    hkAltC: "\u5F39\u7A97\u4E2D\u4E0B\u79FB\u9AD8\u4EAE\uFF08\u66F4\u65B0\u7684\u4F1A\u8BDD\uFF09\uFF1B\u5230\u5E95\u4E14\u8FD8\u6709\u66F4\u591A\u65F6\u52A0\u8F7D 5 \u6761\u5E76\u9009\u4E2D\u65B0\u52A0\u8F7D\u7684\u7B2C\u4E00\u6761",
+    hkAltE: "\u6253\u5F00\u6700\u8FD1 10 \u6761\u4EFB\u52A1\u5217\u8868",
+    hkAltR: "\u6253\u5F00\u6B63\u5728\u8FD0\u884C\u4E0E\u8FD0\u884C\u5B8C\u672A\u67E5\u770B\u7684\u4EFB\u52A1\u5217\u8868",
+    hkArrow: "\u5F39\u7A97\u6253\u5F00\u65F6\u79FB\u52A8\u9AD8\u4EAE\uFF08\u4E0E alt + {prev} / alt + {next} \u540C\u89C4\u5219\uFF09",
+    hkEnter: "\u786E\u8BA4\u5207\u6362\u5230\u9AD8\u4EAE\u7684\u4F1A\u8BDD",
+    hkEsc: "\u53D6\u6D88\u5E76\u5173\u95ED\u5F39\u7A97",
+    hkRelease: "\u79FB\u52A8\u8FC7\u9AD8\u4EAE\u65F6\u677E\u5F00\u5373\u5207\u6362\uFF1B\u4ECE\u672A\u79FB\u52A8\u5219\u5F39\u7A97\u4FDD\u6301\u6253\u5F00\uFF0C\u7EE7\u7EED\u9009\u62E9",
+    hkReleaseKey: "\u677E\u5F00 alt",
+    hkModify: "\u4FEE\u6539",
+    hkRecording: "\u6309\u4E0B\u65B0\u952E\u2026",
+    hkInvalid: "\u5FEB\u6377\u952E\u53EA\u652F\u6301\u5355\u4E2A\u5B57\u6BCD\u6216\u6570\u5B57",
+    hkConflict: "alt+{k} \u5DF2\u7528\u4E8E\u201C{name}\u201D",
+    hkSaved: "\u5FEB\u6377\u952E\u5DF2\u66F4\u65B0",
+    hkNameLast: "\u5207\u6362\u4E0A\u6B21\u4F1A\u8BDD",
+    hkNamePrev: "\u4E0A\u79FB\u9AD8\u4EAE",
+    hkNameNext: "\u4E0B\u79FB\u9AD8\u4EAE",
+    hkNameRecent: "\u6700\u8FD1 10 \u6761",
+    hkNameAttention: "\u8FD0\u884C\u4E2D / \u672A\u67E5\u770B",
+    hkEditHint: "\u70B9\u51FB\u201C\u4FEE\u6539\u201D\u540E\u6309\u4E0B\u65B0\u6309\u952E\uFF08\u5B57\u6BCD\u6216\u6570\u5B57\uFF09\uFF0CEsc \u53D6\u6D88",
+    hkReset: "\u91CD\u7F6E\u4E3A\u9ED8\u8BA4",
+    hkResetDone: "\u5DF2\u6062\u590D\u9ED8\u8BA4\u952E\u4F4D",
     featureFileActions: "\u6587\u4EF6\u83DC\u5355\u589E\u5F3A",
     featureFileActionsDesc: "\u5728\u4F1A\u8BDD\u4E2D\u6587\u4EF6\u94FE\u63A5\u7684\u53F3\u952E\u83DC\u5355\u91CC\u65B0\u589E\u201C\u9ED8\u8BA4\u5E94\u7528\u6253\u5F00\u201D\u4E0E\u201C\u6253\u5F00\u6240\u5728\u76EE\u5F55\u201D\u3002",
     featureImageCopy: "\u56FE\u7247\u53F3\u952E\u590D\u5236",
@@ -362,7 +404,7 @@
     headroomStoppedWarn: "\u4EE3\u7406\u5DF2\u505C\u6B62\uFF1B\u6307\u5411 127.0.0.1 \u7684\u4F9B\u5E94\u5546\u5C06\u65E0\u6CD5\u8FDE\u63A5",
     headroomBackend: "\u538B\u7F29\u8BBE\u5907",
     headroomBackendAuto: "\u81EA\u52A8 \xB7 \u663E\u5361\u4F18\u5148",
-    headroomBackendCpu: "CPU \xB7 \u7701\u7535",
+    headroomBackendCpu: "\u7701\u7535 \xB7 CPU \u4F18\u5148",
     headroomBackendNative: "\uFF08\u539F\u751F\u503C\uFF09",
     headroomBackendDesc: "\u81EA\u52A8\uFF1Aheadroom \u9009\u6700\u5FEB\u8BBE\u5907\uFF08CUDA/MPS \u663E\u5361\u4F18\u5148\uFF09\uFF1BCPU\uFF1A\u5F3A\u5236 CPU \u538B\u7F29\uFF0C\u7701\u7535\u4E14\u4E0D\u5360\u663E\u5B58\u3002\u4E5F\u652F\u6301 headroom \u539F\u751F\u503C\uFF08onnx\u3001pytorch_mps \u7B49\uFF09\u3002\u5207\u6362\u4F1A\u91CD\u542F\u4EE3\u7406\u7ACB\u5373\u751F\u6548\u3002",
     headroomPower: "\u7701\u7535\u81EA\u52A8\u5207\u6362",
@@ -400,7 +442,7 @@
     aliasSaved: "\u522B\u540D\u5DF2\u66F4\u65B0",
     aliasCleared: "\u5DF2\u6062\u590D\u771F\u5B9E\u540D\u79F0",
     aliasHint: "\u78C1\u76D8\u76EE\u5F55\u540D\u4E0D\u53D8\uFF1A\u7EC8\u7AEF\u3001\u6587\u4EF6\u7BA1\u7406\u5668\u4E0E\u5176\u4ED6\u5F15\u7528\u771F\u5B9E\u8DEF\u5F84\u7684\u754C\u9762\u4ECD\u663E\u793A\u539F\u540D\u3002",
-    featureProjectMenuDescNew: "\u9879\u76EE\u201C\u66F4\u591A\u201D\u83DC\u5355\u4E2D\u7684\u5207\u6362\u6587\u4EF6\u5939\u3001\u6253\u5F00\u6587\u4EF6\u5939\u4E0E\u590D\u5236\u8DEF\u5F84\u3002\u5B98\u65B9\u5DF2\u652F\u6301\u4FEE\u6539\u9879\u76EE\u540D\u79F0\uFF08\u7F16\u8F91\u9879\u76EE\uFF09\uFF0C\u81EA\u5B9A\u4E49\u522B\u540D\u5DF2\u505C\u7528\u3002",
+    featureProjectMenuDescNew: "\u9879\u76EE\u201C\u66F4\u591A\u201D\u83DC\u5355\u4E2D\u7684\u6253\u5F00\u6587\u4EF6\u5939\u4E0E\u590D\u5236\u8DEF\u5F84\u3002\u5B98\u65B9\u5DF2\u652F\u6301\u4FEE\u6539\u9879\u76EE\u540D\u79F0\uFF08\u7F16\u8F91\u9879\u76EE\uFF09\uFF0C\u81EA\u5B9A\u4E49\u522B\u540D\u5DF2\u505C\u7528\u3002",
     aliasMigrateTitle: "\u8FC1\u79FB\u9879\u76EE\u522B\u540D",
     aliasMigrateDesc: "\u5F53\u524D ZCode \u5DF2\u652F\u6301\u4FEE\u6539\u9879\u76EE\u540D\u79F0\uFF08\u9879\u76EE\u201C\u66F4\u591A\u201D\u83DC\u5355 \u2192 \u7F16\u8F91\u9879\u76EE\uFF09\uFF0C\u81EA\u5B9A\u4E49\u522B\u540D\u529F\u80FD\u5DF2\u505C\u7528\u3002\u53EF\u628A\u5DF2\u4FDD\u5B58\u7684\u522B\u540D\u5199\u5165\u5B98\u65B9\u9879\u76EE\u540D\u79F0\uFF0C\u52FE\u9009\u8981\u8FC1\u79FB\u7684\u9879\u76EE\uFF1B\u8FC1\u79FB\u53EA\u6539\u9879\u76EE\u540D\u79F0\uFF0C\u78C1\u76D8\u76EE\u5F55\u4E0D\u53D7\u5F71\u54CD\u3002",
     aliasMigrateItemHint: "\u8FC1\u79FB\u540E\u5C06\u4F5C\u4E3A\u9879\u76EE\u540D\u79F0\u4FDD\u5B58\uFF08\u53EF\u968F\u65F6\u5728\u201C\u7F16\u8F91\u9879\u76EE\u201D\u4E2D\u518D\u6539\uFF09\u3002\u4EC5\u65E0\u6807\u8BB0\u7684\u6761\u76EE\u53EF\u52FE\u9009\uFF1B\u5DF2\u8FC1\u79FB\u3001\u5DF2\u5E76\u5165\u3001\u9879\u76EE\u5DF2\u5220\u9664\u3001\u672C\u673A\u4E0D\u5B58\u5728\uFF08\u65E7\u673A\u5668\u8DEF\u5F84\uFF09\u4EE5\u53CA\u9879\u76EE\u5DF2\u91CD\u547D\u540D\u7684\u90FD\u4E0D\u53EF\u52FE\u9009\u2014\u2014\u8981\u6539\u8FD9\u4E9B\u9879\u76EE\u7684\u540D\u5B57\uFF0C\u76F4\u63A5\u7528\u9879\u76EE\u201C\u66F4\u591A\u201D\u83DC\u5355\u91CC\u7684\u201C\u7F16\u8F91\u9879\u76EE\u201D\u3002",
@@ -568,7 +610,7 @@
     featureTaskOrder: "Sidebar session drag ordering",
     featureTaskOrderDesc: "Makes session drags in Pinned, Projects and Groups persist across refreshes.",
     featureSessionSwitch: "Session quick switch",
-    featureSessionSwitchDesc: "alt+z toggles between the current and the last session; hold alt and press x/c to move the highlight across recently used sessions, release alt to switch (like alt+tab).",
+    featureSessionSwitchDesc: "{last} toggles between the current and the last session; hold alt and press {prev}/{next} to move the highlight across recently used sessions (10 shown initially, pressing {next} at the bottom loads 5 more), {recent} opens the last 10 directly, {attention} opens running / finished-but-unseen tasks; arrow keys also move the highlight, Enter or release alt to switch (like alt+tab)",
     featureTitleLock: "Keep renamed session titles",
     featureTitleLockDesc: "Sessions you renamed keep their custom title: after new replies the app may show an auto-generated title instead, which reverts after a restart; this keeps the renamed title in the sidebar.",
     tabTitleGen: "Task name prompt",
@@ -596,7 +638,7 @@
     titleGenTestOk: "Result: ",
     titleGenTestFailed: "Generation failed",
     featureWsRunning: "Running indicator when collapsed",
-    featureWsRunningDesc: "Shows the same spinning loader as running tasks on collapsed projects and on section headers (\u201CTasks\u201D, \u201CPinned\u201D) while any session is running; clears when they all finish. Before ZCode 3.16.1 the project is briefly re-expanded in the background every 60 s to re-check.",
+    featureWsRunningDesc: "Shows the same spinning loader as running tasks on collapsed projects and on section headers (\u201CTasks\u201D, \u201CPinned\u201D) while any session is running; clears when they all finish.",
     tabPerformance: "Performance",
     perfDesc: "ZCode keeps a session process resident for every project you have opened and never reclaims it, so memory grows with projects. When enabled, projects unused for a while with nothing running release their memory automatically: sessions are untouched and reload when reopened, with a few seconds wait on the first reply. The project in use, running sessions, background commands and scheduled tasks are never reclaimed. Background-command detection reads system process info via built-in tools (Linux / macOS / Windows); when unavailable, the feature disables itself.",
     featureIdleReclaim: "Idle project memory reclaim",
@@ -624,10 +666,40 @@
     userFontDesc: 'Font of question text in conversations; "default" follows the UI font.',
     assistantFontName: "Answer font",
     assistantFontDesc: 'Font of answer text in conversations (code blocks stay monospaced); "default" follows the UI font.',
-    switcherHint: "x / c to choose, release alt to switch, Esc to cancel",
+    switcherHint: "{prev} / {next} or \u2191 / \u2193 to choose, Enter or release alt to switch, Esc to cancel",
     switcherCurrent: "current",
     switcherEmpty: "No previous session yet (available after you switch sessions)",
     switcherFailed: "Failed to switch to that session (it may have been deleted)",
+    switcherMore: "{n} more \xB7 press c to load",
+    switcherRunning: "running",
+    switcherUnseen: "unseen",
+    switcherAttentionHint: "Running / finished but unseen tasks \xB7 {prev} / {next} or \u2191 / \u2193 to choose, Enter or release alt to switch",
+    switcherAttentionEmpty: "No running or unseen tasks",
+    tabShortcuts: "Shortcuts",
+    hkTitle: "Session quick switch",
+    hkAltZ: "Toggle between the current and the last-used session",
+    hkAltX: "Move the highlight up (earlier sessions) in the popup",
+    hkAltC: "Move the highlight down (recent sessions); at the bottom it loads 5 more and highlights the first newly loaded entry",
+    hkAltE: "Open the last 10 tasks",
+    hkAltR: "Open running / finished-but-unseen tasks",
+    hkArrow: "Move the highlight while the popup is open (same rules as alt + {prev} / alt + {next})",
+    hkEnter: "Switch to the highlighted session",
+    hkEsc: "Cancel and close the popup",
+    hkRelease: "Releasing alt switches once the highlight has moved; otherwise the popup stays open for further selection",
+    hkReleaseKey: "release alt",
+    hkModify: "Change",
+    hkRecording: "press a key\u2026",
+    hkInvalid: "Shortcuts accept a single letter or digit only",
+    hkConflict: 'alt+{k} is already used by "{name}"',
+    hkSaved: "Shortcut updated",
+    hkNameLast: "last session",
+    hkNamePrev: "move up",
+    hkNameNext: "move down",
+    hkNameRecent: "last 10 tasks",
+    hkNameAttention: "running / unseen",
+    hkEditHint: 'Click "Change", press a new key (letter or digit); Esc cancels',
+    hkReset: "Reset to defaults",
+    hkResetDone: "Shortcuts reset to defaults",
     featureFileActions: "File menu actions",
     featureFileActionsDesc: 'Adds "Open with default app" and "Reveal in file manager" to the right-click menu of file links in chat.',
     featureImageCopy: "Image right-click copy",
@@ -752,7 +824,7 @@
     headroomStoppedWarn: "Proxy stopped; providers pointing at 127.0.0.1 cannot connect.",
     headroomBackend: "Compression device",
     headroomBackendAuto: "Auto \xB7 GPU first",
-    headroomBackendCpu: "CPU \xB7 power saving",
+    headroomBackendCpu: "Power saving \xB7 CPU first",
     headroomBackendNative: " (native)",
     headroomBackendDesc: "Auto lets headroom pick the fastest device (CUDA/MPS); CPU forces CPU compression (power saving, no VRAM). Native headroom values (onnx, pytorch_mps, \u2026) also work. Switching restarts the proxy to apply.",
     headroomPower: "Power-save auto switch",
@@ -790,7 +862,7 @@
     aliasSaved: "Alias updated.",
     aliasCleared: "Real name restored.",
     aliasHint: "The directory name on disk is unchanged: terminals, file managers and other path-based UI still show the real name.",
-    featureProjectMenuDescNew: 'Switch folder, open folder and copy path in the project "More" menu. Renaming is built in since ZCode 3.16.1 ("Edit project"), so the custom alias is retired.',
+    featureProjectMenuDescNew: 'Open folder and copy path in the project "More" menu. Renaming is built in since ZCode 3.16.1 ("Edit project"), so the custom alias is retired.',
     aliasMigrateTitle: "Migrate project aliases",
     aliasMigrateDesc: 'This ZCode supports renaming projects (project "More" menu \u2192 Edit project), so the custom alias feature is retired. Write your saved aliases into the official project names by picking the projects below; only the project name changes, folders on disk are untouched.',
     aliasMigrateItemHint: 'The alias becomes the project name (re-editable anytime via "Edit project"). Only unmarked entries can be checked; migrated, merged, deleted, not-on-this-machine and manually-renamed ones cannot \u2014 to rename those projects, use "Edit project" in the project "More" menu directly.',
@@ -1600,6 +1672,20 @@
       font-size: 10px;
       background-color: color-mix(in oklab, var(--color-primary, #111) 12%, transparent);
       color: var(--color-foreground-subtle, #666);
+    }
+    /* attention \u5F39\u7A97\uFF08alt+r\uFF09\u7684\u884C\u72B6\u6001\u6807\u7B7E\uFF1A\u8FD0\u884C\u4E2D\u7EFF\u3001\u672A\u67E5\u770B\u7425\u73C0 */
+    .zcodepro-switcher-tag-run {
+      background-color: color-mix(in oklab, var(--color-emerald-500, #10b981) 20%, transparent);
+    }
+    .zcodepro-switcher-tag-new {
+      background-color: color-mix(in oklab, var(--color-amber-500, #f59e0b) 22%, transparent);
+    }
+    /* \u5217\u8868\u5E95\u90E8\u201C\u8FD8\u6709 N \u6761\u201D\u63D0\u793A\u884C */
+    .zcodepro-switcher-more {
+      padding: 6px 12px 2px;
+      font-size: 11px;
+      text-align: center;
+      color: var(--color-muted-foreground, #888);
     }
     .zcodepro-switcher-ws {
       font-size: 11px;
@@ -3845,6 +3931,32 @@
           }
           pluginsStatusLine.textContent = n > 0 ? L.pluginsUpdatesFound.replaceAll("{n}", String(n)) : L.pluginsUpToDate;
         })();
+        const HK_ACTIONS = [
+          ["switchLast", "hkAltZ"],
+          ["switchPrev", "hkAltX"],
+          ["switchNext", "hkAltC"],
+          ["switchRecent", "hkAltE"],
+          ["switchAttention", "hkAltR"]
+        ];
+        const hkNames = () => ({
+          switchLast: L.hkNameLast,
+          switchPrev: L.hkNamePrev,
+          switchNext: L.hkNameNext,
+          switchRecent: L.hkNameRecent,
+          switchAttention: L.hkNameAttention
+        });
+        const hkKeys = () => {
+          const sc = config.shortcuts || {};
+          const keys = {};
+          for (const [a] of HK_ACTIONS) {
+            keys[a] = /^[a-z0-9]$/.test(sc[a]) ? sc[a] : DEFAULT_SHORTCUTS[a];
+          }
+          return keys;
+        };
+        const sessionSwitchDesc = () => {
+          const k = hkKeys();
+          return L.featureSessionSwitchDesc.replaceAll("{last}", "alt+" + k.switchLast).replaceAll("{prev}", k.switchPrev).replaceAll("{next}", k.switchNext).replaceAll("{recent}", "alt+" + k.switchRecent).replaceAll("{attention}", "alt+" + k.switchAttention);
+        };
         const refreshRows = () => {
           const f = config.features || {};
           rows.replaceChildren(
@@ -3860,7 +3972,7 @@
               if (await setFeature("taskOrder", next)) f.taskOrder = next;
               refreshRows();
             }),
-            settingRow(L.featureSessionSwitch, L.featureSessionSwitchDesc, f.sessionSwitch !== false, async () => {
+            settingRow(L.featureSessionSwitch, sessionSwitchDesc(), f.sessionSwitch !== false, async () => {
               const next = !(f.sessionSwitch !== false);
               if (await setFeature("sessionSwitch", next)) f.sessionSwitch = next;
               refreshRows();
@@ -3972,6 +4084,127 @@
           h("div", {}, rows),
           communityCards
         );
+        let hkRecording = null;
+        let hkKeyHandler = null;
+        const hkCard = h("div", { class: "divide-y divide-border rounded-xl border border-border" });
+        const hkCell = (keyLabel, desc, extra) => h(
+          "div",
+          { class: "flex items-start gap-3 px-3 py-2.5" },
+          h("kbd", {
+            class: "shrink-0 min-w-20 rounded-md border border-border px-2 py-0.5 text-center text-ui-xs text-foreground-subtle",
+            style: "font-family: ui-monospace, SFMono-Regular, Menlo, monospace; line-height: 1.5;"
+          }, keyLabel),
+          h("div", { class: "min-w-0 flex-1 text-ui-sm text-foreground-subtle" }, desc),
+          extra ? h("div", { class: "ml-auto shrink-0 pl-3" }, extra) : null
+        );
+        const renderShortcuts = () => {
+          const keys = hkKeys();
+          const names = hkNames();
+          hkCard.replaceChildren(
+            ...HK_ACTIONS.map(([a, descKey]) => {
+              const recording = hkRecording === a;
+              return hkCell(
+                recording ? L.hkRecording : "alt + " + keys[a],
+                L[descKey],
+                btnSmall(recording ? L.hkRecording : L.hkModify, () => {
+                  recording ? stopHkRecording() : startHkRecording(a);
+                })
+              );
+            }),
+            hkCell("\u2191 / \u2193", L.hkArrow.replaceAll("{prev}", keys.switchPrev).replaceAll("{next}", keys.switchNext)),
+            hkCell("Enter", L.hkEnter),
+            hkCell("Esc", L.hkEsc),
+            hkCell(L.hkReleaseKey, L.hkRelease)
+          );
+        };
+        const stopHkRecording = () => {
+          hkRecording = null;
+          if (hkKeyHandler) {
+            document.removeEventListener("keydown", hkKeyHandler, true);
+            hkKeyHandler = null;
+          }
+          renderShortcuts();
+        };
+        const startHkRecording = (action) => {
+          hkRecording = action;
+          if (!hkKeyHandler) {
+            const myOverlay = document.querySelector(".zcodepro-overlay");
+            hkKeyHandler = (e) => {
+              if (!myOverlay || !myOverlay.isConnected) {
+                stopHkRecording();
+                return;
+              }
+              if (e.isComposing) return;
+              e.preventDefault();
+              e.stopImmediatePropagation();
+              if (e.key === "Escape") {
+                stopHkRecording();
+                return;
+              }
+              const k = e.key.toLowerCase();
+              if (!/^[a-z0-9]$/.test(k)) {
+                showToast(L.hkInvalid, "error");
+                return;
+              }
+              const keys = hkKeys();
+              const names = hkNames();
+              const conflict = HK_ACTIONS.find(([a2]) => a2 !== hkRecording && keys[a2] === k);
+              if (conflict) {
+                showToast(L.hkConflict.replaceAll("{k}", k).replaceAll("{name}", names[conflict[0]]), "error");
+                return;
+              }
+              const a = hkRecording;
+              stopHkRecording();
+              void (async () => {
+                const res = await rpc("/config", { method: "POST", body: { shortcuts: { [a]: k } } });
+                clearConfigCache();
+                window.dispatchEvent(new CustomEvent("zcodepro:config-changed"));
+                if (!res.ok) {
+                  showToast(L.failed + ": " + errText(res), "error");
+                  renderShortcuts();
+                  return;
+                }
+                if (res.config && res.config.shortcuts) config.shortcuts = res.config.shortcuts;
+                showToast(L.hkSaved, "success");
+                refreshRows();
+                renderShortcuts();
+              })();
+            };
+            document.addEventListener("keydown", hkKeyHandler, true);
+          }
+          renderShortcuts();
+        };
+        renderShortcuts();
+        const resetShortcuts = async () => {
+          stopHkRecording();
+          const all = {};
+          for (const [a] of HK_ACTIONS) all[a] = DEFAULT_SHORTCUTS[a];
+          const res = await rpc("/config", { method: "POST", body: { shortcuts: all } });
+          clearConfigCache();
+          window.dispatchEvent(new CustomEvent("zcodepro:config-changed"));
+          if (!res.ok) {
+            showToast(L.failed + ": " + errText(res), "error");
+            return;
+          }
+          if (res.config && res.config.shortcuts) config.shortcuts = res.config.shortcuts;
+          showToast(L.hkResetDone, "success");
+          refreshRows();
+          renderShortcuts();
+        };
+        const paneShortcuts = h(
+          "div",
+          { role: "tabpanel", class: "mt-4", style: "display:none" },
+          h("div", { class: "mb-2 text-ui-sm font-medium" }, L.hkTitle),
+          h(
+            "div",
+            { class: "mb-2 flex items-center gap-2" },
+            h("div", { class: "min-w-0 flex-1 text-ui-xs/relaxed text-foreground-subtle" }, L.hkEditHint),
+            h("div", { class: "shrink-0" }, btnSmall(L.hkReset, () => {
+              void resetShortcuts();
+            }))
+          ),
+          hkCard
+        );
         const paneStyles = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
         const panePerf = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
         const paneAgents = h("div", { role: "tabpanel", class: "mt-2", style: "display:none" });
@@ -3982,9 +4215,10 @@
         const paneHeadroom = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
         const paneTitleGen = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
         const paneDebug = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
-        const panes = { features: paneFeatures, styles: paneStyles, perf: panePerf, agents: paneAgents, proxy: paneProxy, sync: paneSync, vision: paneVision, headroom: paneHeadroom, rtk: paneRtk, debug: paneDebug };
+        const panes = { features: paneFeatures, shortcuts: paneShortcuts, styles: paneStyles, perf: panePerf, agents: paneAgents, proxy: paneProxy, sync: paneSync, vision: paneVision, headroom: paneHeadroom, rtk: paneRtk, debug: paneDebug };
         const tabDefs = [
           ["features", L.tabFeatures],
+          ["shortcuts", L.tabShortcuts],
           ["agents", L.tabBehavior],
           ["styles", L.tabStyles],
           ["perf", L.tabPerformance],
@@ -4008,6 +4242,7 @@
         }, label)));
         const switchTab = (name) => {
           activeTab = name;
+          if (name !== "shortcuts" && hkRecording) stopHkRecording();
           for (const [id, pane] of Object.entries(panes)) pane.style.display = id === name ? "" : "none";
           renderTabs();
         };
@@ -6077,6 +6312,7 @@
           statusLine,
           tablist,
           paneFeatures,
+          paneShortcuts,
           paneAgents,
           paneStyles,
           panePerf,
@@ -6169,669 +6405,11 @@
     }
   }
 
-  // src/inject/features/session-switch.js
-  var MRU_LIMIT = 50;
+  // src/inject/features/ws-running.js
+  var installed2 = false;
+  var enabled2 = true;
   var SCAN_DEBOUNCE_MS = 150;
   var SCAN_FALLBACK_MS = 5e3;
-  var mru = [];
-  var current = null;
-  var titles = /* @__PURE__ */ new Map();
-  var popupEl = null;
-  var aliasesCache = {};
-  var highlight = 0;
-  var scanDebounce = 0;
-  function firstLineOf(item) {
-    const tEl = item.querySelector('[class*="truncate"]');
-    return (tEl ? tEl.textContent : (item.innerText || "").split("\n")[0])?.trim() || "";
-  }
-  function workspaceOf(key) {
-    const i = key.indexOf(":sess_");
-    return i > 0 ? key.slice(0, i) : key;
-  }
-  function findCurrent() {
-    for (const el of document.querySelectorAll("[data-task-item-key]")) {
-      if ((el.className + "").includes("bg-selected")) return el;
-    }
-    return null;
-  }
-  function record(key) {
-    if (key && key !== current) {
-      current = key;
-      mru = mru.filter((k) => k !== key);
-      mru.unshift(key);
-      if (mru.length > MRU_LIMIT) mru.length = MRU_LIMIT;
-    }
-  }
-  function scan() {
-    const cur = findCurrent();
-    if (cur) record(cur.getAttribute("data-task-item-key"));
-    for (const el of document.querySelectorAll("[data-task-item-key]")) {
-      titles.set(el.getAttribute("data-task-item-key"), firstLineOf(el));
-    }
-  }
-  var rowSel2 = "[data-task-item-key]";
-  var inTaskRow = (node) => node instanceof Element && !!node.closest && !!node.closest(rowSel2);
-  function taskRowMutations(muts) {
-    for (const m of muts) {
-      if (m.type === "attributes") {
-        if (inTaskRow(m.target)) return true;
-      } else if (m.type === "characterData") {
-        if (m.target.parentElement && inTaskRow(m.target.parentElement)) return true;
-      } else if (inTaskRow(m.target)) {
-        return true;
-      } else {
-        for (const n of m.addedNodes) {
-          if (n instanceof Element && (n.matches(rowSel2) || !!n.querySelector(rowSel2))) return true;
-        }
-      }
-    }
-    return false;
-  }
-  function scheduleScan() {
-    if (scanDebounce) return;
-    scanDebounce = setTimeout(() => {
-      scanDebounce = 0;
-      scan();
-    }, SCAN_DEBOUNCE_MS);
-  }
-  async function switchTo(key) {
-    const find = () => document.querySelector(`[data-task-item-key="${CSS.escape(key)}"]`);
-    let item = find();
-    if (!item) {
-      const ws = workspaceOf(key);
-      const header = findProjectRow(ws);
-      const expander = header && header.querySelector("[aria-expanded]");
-      if (expander && expander.getAttribute("aria-expanded") === "false") {
-        expander.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
-        for (let i = 0; i < 20 && !(item = find()); i++) await new Promise((r) => setTimeout(r, 100));
-      }
-    }
-    if (!item) return false;
-    item.scrollIntoView({ block: "nearest" });
-    item.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
-    return true;
-  }
-  function closePopup(commit) {
-    if (!popupEl) return;
-    const idx = highlight;
-    popupEl.remove();
-    popupEl = null;
-    if (commit && idx > 0 && mru[idx] && mru[idx] !== current) {
-      void switchTo(mru[idx]).then((ok) => {
-        if (!ok) showToast(t().switcherFailed, "error");
-      });
-    }
-  }
-  function findTitle(key) {
-    const item = document.querySelector(`[data-task-item-key="${CSS.escape(key)}"]`);
-    if (item) titles.set(key, firstLineOf(item));
-    const id = key.slice(key.indexOf(":sess_") + 1);
-    return titles.get(key) || `sess ${id.slice(0, 8)}`;
-  }
-  function projLabelOf(key, aliases2) {
-    const ws = workspaceOf(key);
-    if (!ws) return "";
-    return aliases2[ws] || ws.replace(/[\\/]+$/, "").split(/[\\/]/).pop();
-  }
-  function renderPopup() {
-    if (!popupEl) return;
-    const L = t();
-    const list = popupEl.querySelector("[data-zcodepro-switcher-list]");
-    list.replaceChildren(...mru.map((key, i) => {
-      const proj = projLabelOf(key, aliasesCache);
-      return h(
-        "div",
-        {
-          class: "zcodepro-switcher-row",
-          "data-active": i === highlight ? "" : void 0,
-          onClick: () => {
-            highlight = i;
-            closePopup(true);
-          }
-        },
-        // 标题文本包 span：截断省略作用在文本节点上（flex 容器自身 ellipsis 无效）
-        h(
-          "div",
-          { class: "zcodepro-switcher-title" },
-          i === 0 ? h("span", { class: "zcodepro-switcher-tag" }, L.switcherCurrent) : null,
-          h("span", null, findTitle(key))
-        ),
-        // 无项目归属（如置顶）时不渲染空行
-        proj ? h("div", { class: "zcodepro-switcher-ws" }, proj) : null
-      );
-    }));
-  }
-  async function openPopup() {
-    if (popupEl) return;
-    const cfg = await getConfig().catch(() => null);
-    aliasesCache = cfg && cfg.aliases && typeof cfg.aliases === "object" ? cfg.aliases : {};
-    ensureStyle();
-    const L = t();
-    highlight = 0;
-    popupEl = h(
-      "div",
-      {
-        class: "zcodepro-switcher-overlay",
-        // 点弹窗外 = 取消（不切）
-        onMousedown: (e) => {
-          if (e.target === popupEl) closePopup(false);
-        }
-      },
-      h(
-        "div",
-        { class: "zcodepro-switcher" },
-        h("div", { class: "zcodepro-switcher-hint" }, L.switcherHint),
-        h("div", { "data-zcodepro-switcher-list": "1", class: "zcodepro-switcher-list" })
-      )
-    );
-    document.body.append(popupEl);
-    renderPopup();
-  }
-  function moveHighlight(delta) {
-    if (!popupEl || mru.length < 2) return;
-    highlight = (highlight + delta + mru.length) % mru.length;
-    renderPopup();
-    const row = popupEl.querySelector("[data-active]");
-    if (row) row.scrollIntoView({ block: "nearest" });
-  }
-  function startSessionSwitch() {
-    scan();
-    new MutationObserver((muts) => {
-      if (taskRowMutations(muts)) scheduleScan();
-    }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
-    setInterval(() => {
-      if (!document.hidden) scan();
-    }, SCAN_FALLBACK_MS);
-    document.addEventListener("visibilitychange", () => {
-      if (!document.hidden) scan();
-    });
-    document.addEventListener("click", (e) => {
-      const item = e.target instanceof Element && e.target.closest("[data-task-item-key]");
-      if (item) record(item.getAttribute("data-task-item-key"));
-    }, true);
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && popupEl) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        closePopup(false);
-        return;
-      }
-      if (!e.altKey || e.ctrlKey || e.metaKey || e.isComposing) return;
-      if (document.querySelector(".zcodepro-overlay")) return;
-      const k = e.key.toLowerCase();
-      if (k !== "z" && k !== "x" && k !== "c") return;
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      void (async () => {
-        const cfg = await getConfig();
-        if (cfg.features && cfg.features.sessionSwitch === false) return;
-        if (k === "z") {
-          if (e.repeat) return;
-          closePopup(false);
-          const live = findCurrent();
-          if (live) record(live.getAttribute("data-task-item-key"));
-          const target = live ? mru[0] === current ? mru[1] : mru.find((mk) => mk !== current) : mru[0];
-          if (!target) {
-            showToast(t().switcherEmpty);
-            return;
-          }
-          void switchTo(target).then((ok) => {
-            if (!ok) showToast(t().switcherFailed, "error");
-          });
-          return;
-        }
-        if (mru.length < 2) {
-          showToast(t().switcherEmpty);
-          return;
-        }
-        if (!popupEl) await openPopup();
-        moveHighlight(k === "x" ? -1 : 1);
-      })();
-    }, true);
-    document.addEventListener("keyup", (e) => {
-      if (e.key === "Alt" && popupEl) closePopup(true);
-    }, true);
-    window.addEventListener("blur", () => closePopup(false));
-  }
-
-  // src/inject/features/title-lock.js
-  var TASK_SEL = "[data-task-item-key]";
-  var SCAN_DEBOUNCE_MS2 = 150;
-  var SCAN_FALLBACK_MS2 = 5e3;
-  var BOOT_RETRY_MS = 5e3;
-  var RECHECK_DELAY_MS = 1e3;
-  var REVERIFY_MS = 3e3;
-  var MAP_REFRESH_MS = 6e4;
-  var installed2 = false;
-  var seenRows = /* @__PURE__ */ new WeakSet();
-  var enabled2 = true;
-  var pinned = null;
-  var resolved = false;
-  var fetching = null;
-  var pendingKeys = /* @__PURE__ */ new Set();
-  function sessIdOf(key) {
-    const i = key.indexOf(":sess_");
-    return i > 0 ? key.slice(i + 1) : key;
-  }
-  function titleElsOf(item) {
-    const copies = item.querySelectorAll("[data-task-title-copy]");
-    if (copies.length) return [...copies];
-    const t2 = item.querySelector('[class*="truncate"]');
-    return t2 ? [t2] : [];
-  }
-  function findRows(key) {
-    return [...document.querySelectorAll(`${TASK_SEL}[data-task-item-key="${CSS.escape(key)}"]`)];
-  }
-  async function fetchPinned() {
-    if (fetching) return fetching;
-    const p = (async () => {
-      const res = await rpc("/pinned-titles");
-      if (!res || !res.ok) return null;
-      resolved = true;
-      enabled2 = res.enabled !== false;
-      if (!enabled2) {
-        pinned = null;
-        return null;
-      }
-      pinned = new Map(Object.entries(res.titles || {}));
-      return pinned;
-    })();
-    fetching = p;
-    try {
-      return await p;
-    } finally {
-      if (fetching === p) fetching = null;
-    }
-  }
-  function isMismatch(item) {
-    if (!enabled2 || !pinned) return null;
-    const key = item.getAttribute("data-task-item-key") || "";
-    const want = pinned.get(sessIdOf(key));
-    if (want === void 0) return null;
-    const els = titleElsOf(item);
-    if (!els.length) return null;
-    if ((els[0].textContent || "").trim() === String(want).trim()) return null;
-    if (item.querySelector('input, textarea, [contenteditable="true"]')) return null;
-    return key;
-  }
-  function writeTitle(el, text) {
-    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
-    const first = walker.nextNode();
-    if (first && !walker.nextNode()) first.nodeValue = text;
-    else el.textContent = text;
-  }
-  function scheduleEnforce(key, { immediate = false } = {}) {
-    if (immediate) {
-      if (enabled2 && pinned) {
-        const want = pinned.get(sessIdOf(key));
-        if (want !== void 0) {
-          for (const item of findRows(key)) {
-            for (const el of titleElsOf(item)) writeTitle(el, want);
-          }
-        }
-      }
-    }
-    if (pendingKeys.has(key)) return;
-    pendingKeys.add(key);
-    setTimeout(() => {
-      pendingKeys.delete(key);
-      void (async () => {
-        const map = await fetchPinned();
-        if (!map) return;
-        const want = map.get(sessIdOf(key));
-        if (want === void 0) return;
-        let wrote = false;
-        for (const item of findRows(key)) {
-          if (isMismatch(item) !== key) continue;
-          for (const el of titleElsOf(item)) writeTitle(el, want);
-          wrote = true;
-        }
-        if (wrote) setTimeout(() => {
-          void enforceKey(key);
-        }, REVERIFY_MS);
-      })();
-    }, RECHECK_DELAY_MS);
-  }
-  async function enforceKey(key) {
-    const map = await fetchPinned();
-    if (!map) return;
-    const want = map.get(sessIdOf(key));
-    if (want === void 0) return;
-    for (const item of findRows(key)) {
-      if (isMismatch(item) !== key) continue;
-      for (const el of titleElsOf(item)) writeTitle(el, want);
-    }
-  }
-  function scan2() {
-    if (!enabled2 || !pinned || pinned.size === 0) return;
-    for (const item of document.querySelectorAll(TASK_SEL)) {
-      const key = isMismatch(item);
-      if (!key) {
-        seenRows.add(item);
-        continue;
-      }
-      const fresh = !seenRows.has(item);
-      seenRows.add(item);
-      scheduleEnforce(key, { immediate: fresh });
-    }
-  }
-  var inTaskRow2 = (node) => !!(node instanceof Element && node.closest && node.closest(TASK_SEL));
-  function taskRowMutations2(muts) {
-    for (const m of muts) {
-      if (m.type === "attributes") {
-        if (inTaskRow2(m.target)) return true;
-      } else if (m.type === "characterData") {
-        if (m.target.parentElement && inTaskRow2(m.target.parentElement)) return true;
-      } else if (inTaskRow2(m.target)) {
-        return true;
-      } else {
-        for (const n of m.addedNodes) {
-          if (n instanceof Element && (n.matches(TASK_SEL) || !!n.querySelector(TASK_SEL))) return true;
-        }
-      }
-    }
-    return false;
-  }
-  var scanDebounce2 = 0;
-  function scheduleScan2() {
-    if (scanDebounce2) return;
-    scanDebounce2 = setTimeout(() => {
-      scanDebounce2 = 0;
-      scan2();
-    }, SCAN_DEBOUNCE_MS2);
-  }
-  var mapRefreshTimer = 0;
-  function refreshMapSoon() {
-    if (mapRefreshTimer) return;
-    const tick2 = () => {
-      if (document.hidden) {
-        mapRefreshTimer = setTimeout(tick2, 1e4);
-        return;
-      }
-      mapRefreshTimer = 0;
-      if (enabled2 && resolved) void fetchPinned().then((m) => {
-        if (m) scan2();
-      });
-    };
-    mapRefreshTimer = setTimeout(tick2, MAP_REFRESH_MS);
-  }
-  var editingKey = null;
-  var bootDelay = 0;
-  function scheduleBootRetry() {
-    bootDelay = bootDelay ? Math.min(bootDelay * 2, MAP_REFRESH_MS) : BOOT_RETRY_MS;
-    setTimeout(() => {
-      if (resolved) return;
-      if (!document.hidden) void bootstrap();
-      scheduleBootRetry();
-    }, bootDelay);
-  }
-  async function bootstrap() {
-    const map = await fetchPinned();
-    if (map) scan2();
-  }
-  function setRowTitle(key, text) {
-    for (const item of findRows(key)) {
-      for (const el of titleElsOf(item)) writeTitle(el, text);
-    }
-  }
-  function refreshPinnedTitles() {
-    return fetchPinned().then((m) => {
-      if (m) scan2();
-    });
-  }
-  var RENAME_CTX_VALID_MS = 15e3;
-  var renameCtx = null;
-  var renamePrefilled = /* @__PURE__ */ new WeakSet();
-  function setNativeValue(el, text) {
-    if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
-      Object.getOwnPropertyDescriptor(el.constructor.prototype, "value").set.call(el, text);
-    } else {
-      el.textContent = text;
-    }
-    el.dispatchEvent(new Event("input", { bubbles: true }));
-  }
-  function prefillRenameDialog() {
-    if (!renameCtx || !renameCtx.armed || Date.now() - renameCtx.at > RENAME_CTX_VALID_MS) {
-      renameCtx = null;
-      return;
-    }
-    if (!enabled2 || !pinned) return;
-    const want = pinned.get(sessIdOf(renameCtx.key));
-    if (want === void 0) return;
-    for (const el of document.querySelectorAll('[role="dialog"] input, [role="dialog"] textarea, [role="dialog"] [contenteditable="true"]')) {
-      if (renamePrefilled.has(el) || !el.getClientRects().length) continue;
-      if (el.closest(TASK_SEL) || el.closest(".zcodepro-overlay")) continue;
-      const cur = String(el.value ?? el.textContent ?? "").trim();
-      if (!cur) continue;
-      renamePrefilled.add(el);
-      if (cur !== String(want).trim()) setNativeValue(el, String(want));
-      renameCtx = null;
-      return;
-    }
-  }
-  function startTitleLock() {
-    if (installed2 || typeof document === "undefined") return;
-    installed2 = true;
-    void bootstrap();
-    new MutationObserver((muts) => {
-      if (renameCtx) prefillRenameDialog();
-      if (!taskRowMutations2(muts)) return;
-      refreshMapSoon();
-      scheduleScan2();
-    }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"], characterData: true });
-    document.addEventListener("contextmenu", (e) => {
-      const row = e.target instanceof Element && e.target.closest(TASK_SEL);
-      renameCtx = row ? { key: row.getAttribute("data-task-item-key") || "", at: 0, armed: false } : null;
-    }, true);
-    document.addEventListener("click", (e) => {
-      if (!renameCtx || renameCtx.armed) return;
-      const item = e.target instanceof Element && e.target.closest('[role="menuitem"], [data-radix-collection-item]');
-      if (item && /重命名|rename/i.test(item.textContent || "")) {
-        renameCtx.armed = true;
-        renameCtx.at = Date.now();
-      }
-    }, true);
-    scheduleBootRetry();
-    setInterval(() => {
-      if (!document.hidden) scan2();
-    }, SCAN_FALLBACK_MS2);
-    document.addEventListener("visibilitychange", () => {
-      if (!document.hidden) scan2();
-    });
-    window.addEventListener("zcodepro:config-changed", () => {
-      void bootstrap();
-    });
-    document.addEventListener("focusin", (e) => {
-      const el = e.target;
-      if (!(el instanceof Element)) return;
-      if (!el.matches('input, textarea, [contenteditable="true"]')) return;
-      const row = el.closest(TASK_SEL);
-      editingKey = row ? row.getAttribute("data-task-item-key") || "" : null;
-    });
-    document.addEventListener("focusout", () => {
-      if (editingKey === null) return;
-      editingKey = null;
-      void fetchPinned().then((m) => {
-        if (m) scan2();
-      });
-    });
-  }
-
-  // src/inject/features/title-gen.js
-  var CONV2 = '[class*="@md/conversation"]';
-  var USER_ROW = '[class*="user-row"]';
-  var SCAN_DEBOUNCE_MS3 = 300;
-  var SCAN_FALLBACK_MS3 = 5e3;
-  var SELECT_WAIT_MS = 2e3;
-  var MSG_WAIT_MS = 1e4;
-  var QUIET_FALLBACK_MS = 12e4;
-  var COLLECT_MAX_MS = 6e5;
-  var installed3 = false;
-  var knownKeys = /* @__PURE__ */ new Set();
-  var attempted = /* @__PURE__ */ new Set();
-  var sleep2 = (ms) => new Promise((r) => setTimeout(r, ms));
-  function sessIdOf2(key) {
-    const i = key.indexOf(":sess_");
-    return i > 0 ? key.slice(i + 1) : "";
-  }
-  function currentKey() {
-    for (const el of document.querySelectorAll("[data-task-item-key]")) {
-      if ((el.className + "").includes("bg-selected")) return el.getAttribute("data-task-item-key") || "";
-    }
-    return "";
-  }
-  function userTexts() {
-    return [...document.querySelectorAll(`${CONV2} ${USER_ROW}`)].map((r) => {
-      const el = r.querySelector(".whitespace-pre-wrap");
-      return ((el ? el.textContent : r.innerText) || "").trim();
-    }).filter(Boolean);
-  }
-  var URL_RE = /https?:\/\/[^\s\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]+/g;
-  function assistantText() {
-    const els = [...document.querySelectorAll('[class*="@md/conversation"] [class*="assistant-row"]')].filter((e) => !e.querySelector("[data-is-streaming]"));
-    const last = els[els.length - 1];
-    if (!last) return "";
-    const text = (last.innerText || "").replace(URL_RE, "").trim();
-    return text.slice(0, 600);
-  }
-  function linkDominant(t2) {
-    const raw = t2.replace(/\s+/g, "");
-    if (!raw) return true;
-    const stripped = raw.replace(URL_RE, "");
-    return stripped.length < raw.length / 3;
-  }
-  async function onNewTaskRow(key) {
-    const selDeadline = Date.now() + SELECT_WAIT_MS;
-    while (currentKey() !== key && Date.now() < selDeadline) await sleep2(200);
-    if (currentKey() !== key) return;
-    const cfg = await getConfig().catch(() => null);
-    if (!cfg || !cfg.titleGen || cfg.titleGen.enabled !== true) return;
-    const sessId = sessIdOf2(key);
-    if (!sessId || attempted.has(sessId)) return;
-    attempted.add(sessId);
-    let texts = [];
-    const msgDeadline = Date.now() + MSG_WAIT_MS;
-    while (Date.now() < msgDeadline) {
-      texts = userTexts();
-      if (texts.length) break;
-      await sleep2(400);
-    }
-    if (!texts.length) return;
-    let assistantSeen = false;
-    const convObserver = new MutationObserver((muts) => {
-      if (currentKey() !== key) return;
-      for (const m of muts) {
-        const t2 = m.type === "characterData" ? m.target.parentElement : m.target;
-        if (t2 instanceof Element && t2.closest(USER_ROW)) continue;
-        for (const n of [t2, ...m.addedNodes]) {
-          if (n instanceof Element && n.closest && n.closest(CONV2)) {
-            assistantSeen = true;
-            return;
-          }
-        }
-      }
-    });
-    convObserver.observe(document.body, { childList: true, subtree: true, characterData: true });
-    const startAt = Date.now();
-    let lastCount = texts.length;
-    let lastChange = Date.now();
-    try {
-      while (Date.now() - startAt < COLLECT_MAX_MS) {
-        await sleep2(500);
-        if (currentKey() !== key) {
-          lastChange = Date.now();
-          continue;
-        }
-        texts = userTexts();
-        if (texts.length !== lastCount) {
-          lastCount = texts.length;
-          lastChange = Date.now();
-        }
-        if (assistantSeen) break;
-        if (Date.now() - lastChange >= QUIET_FALLBACK_MS) break;
-      }
-    } finally {
-      convObserver.disconnect();
-    }
-    if (!texts.length) return;
-    if (linkDominant(texts.join("\n"))) {
-      const deadline = Date.now() + 6e4;
-      while (Date.now() < deadline) {
-        await sleep2(2e3);
-        if (currentKey() !== key) continue;
-        const a = assistantText();
-        if (a && a.length > 80) {
-          texts.push(`\uFF08\u9996\u8F6E\u56DE\u7B54\u6458\u8981\uFF09${a}`);
-          break;
-        }
-      }
-    }
-    const callTitleGen = () => rpc("/title-gen/run", { method: "POST", body: { sessId, text: texts.join("\n") } }).catch(() => null);
-    let res = await callTitleGen();
-    for (const delay of [5e3, 2e4]) {
-      if (res && res.ok) break;
-      await sleep2(delay);
-      res = await callTitleGen();
-    }
-    if (res && res.ok && res.written && res.title) {
-      setRowTitle(key, res.title);
-      void refreshPinnedTitles();
-    }
-  }
-  function scanForNewRows() {
-    for (const el of document.querySelectorAll("[data-task-item-key]")) {
-      const key = el.getAttribute("data-task-item-key") || "";
-      if (!key || knownKeys.has(key)) continue;
-      knownKeys.add(key);
-      void onNewTaskRow(key);
-    }
-  }
-  var TASK_SEL2 = "[data-task-item-key]";
-  var inTaskRow3 = (node) => !!(node instanceof Element && node.closest && node.closest(TASK_SEL2));
-  function taskRowMutations3(muts) {
-    for (const m of muts) {
-      if (m.type === "attributes") {
-        if (inTaskRow3(m.target)) return true;
-      } else if (m.type === "characterData") {
-        if (m.target.parentElement && inTaskRow3(m.target.parentElement)) return true;
-      } else if (inTaskRow3(m.target)) {
-        return true;
-      } else {
-        for (const n of m.addedNodes) {
-          if (n instanceof Element && (n.matches(TASK_SEL2) || !!n.querySelector(TASK_SEL2))) return true;
-        }
-      }
-    }
-    return false;
-  }
-  var scanDebounce3 = 0;
-  function scheduleScan3() {
-    if (scanDebounce3) return;
-    scanDebounce3 = setTimeout(() => {
-      scanDebounce3 = 0;
-      scanForNewRows();
-    }, SCAN_DEBOUNCE_MS3);
-  }
-  function startTitleGen() {
-    if (installed3 || typeof document === "undefined") return;
-    installed3 = true;
-    scanForNewRows();
-    new MutationObserver((muts) => {
-      if (taskRowMutations3(muts)) scheduleScan3();
-    }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"], characterData: true });
-    setInterval(() => {
-      if (!document.hidden) scanForNewRows();
-    }, SCAN_FALLBACK_MS3);
-    document.addEventListener("visibilitychange", () => {
-      if (!document.hidden) scanForNewRows();
-    });
-  }
-
-  // src/inject/features/ws-running.js
-  var installed4 = false;
-  var enabled3 = true;
-  var SCAN_DEBOUNCE_MS4 = 150;
-  var SCAN_FALLBACK_MS4 = 5e3;
   var PEEK_FIRST_MS = 2e4;
   var PEEK_REPEAT_MS = 6e4;
   var PEEK_SETTLE_MS = 160;
@@ -6839,7 +6417,7 @@
   var PEEK_UNMOUNT_WAIT_MS = 800;
   var CONFIG_POLL_MIN_MS = 5e3;
   var CONFIG_POLL_MAX_MS = 6e4;
-  var TASK_SEL3 = "[data-task-item-key]";
+  var TASK_SEL = "[data-task-item-key]";
   var WS_SEL = () => projectRowSelector();
   function findWsRow(ws) {
     return findProjectRow(ws);
@@ -6968,7 +6546,7 @@
       return null;
     }
   }
-  function workspaceOf2(key) {
+  function workspaceOf(key) {
     const i = key.indexOf(":sess_");
     return i > 0 ? key.slice(0, i) : key;
   }
@@ -6976,10 +6554,10 @@
     return row.matches("[aria-expanded]") ? row : row.querySelector("[aria-expanded]");
   }
   function domRowsOf(ws) {
-    return [...document.querySelectorAll(TASK_SEL3)].filter((e) => workspaceOf2(e.getAttribute("data-task-item-key") || "") === ws);
+    return [...document.querySelectorAll(TASK_SEL)].filter((e) => workspaceOf(e.getAttribute("data-task-item-key") || "") === ws);
   }
   function currentTaskRow() {
-    for (const el of document.querySelectorAll(TASK_SEL3)) {
+    for (const el of document.querySelectorAll(TASK_SEL)) {
       if ((el.className + "").includes("bg-selected")) return el;
     }
     return null;
@@ -6995,14 +6573,14 @@
     const backKey = cur ? cur.getAttribute("data-task-item-key") : "";
     synthClick(head);
     if (!backKey) return;
-    const back = cur && cur.isConnected ? cur : document.querySelector(`${TASK_SEL3}[data-task-item-key="${CSS.escape(backKey)}"]`);
+    const back = cur && cur.isConnected ? cur : document.querySelector(`${TASK_SEL}[data-task-item-key="${CSS.escape(backKey)}"]`);
     if (back) synthClick(back);
   }
-  function scan3() {
+  function scan() {
     wsWithRows = /* @__PURE__ */ new Set();
-    for (const el of document.querySelectorAll(TASK_SEL3)) {
+    for (const el of document.querySelectorAll(TASK_SEL)) {
       const key = el.getAttribute("data-task-item-key") || "";
-      const ws = workspaceOf2(key);
+      const ws = workspaceOf(key);
       if (!ws) continue;
       wsWithRows.add(ws);
       const run = isRunningRow(el);
@@ -7026,14 +6604,14 @@
       if (m.type !== "childList") continue;
       for (const n of m.removedNodes) {
         if (!(n instanceof Element)) continue;
-        if (n.matches(TASK_SEL3)) removed.push(n);
-        else for (const r of n.querySelectorAll(TASK_SEL3)) removed.push(r);
+        if (n.matches(TASK_SEL)) removed.push(n);
+        else for (const r of n.querySelectorAll(TASK_SEL)) removed.push(r);
       }
     }
     if (!removed.length) return;
     const infos = removed.map((el) => {
       const key = el.getAttribute("data-task-item-key") || "";
-      const ws = workspaceOf2(key);
+      const ws = workspaceOf(key);
       return key && ws ? { key, ws, run: isRunningRow(el) } : null;
     }).filter(Boolean);
     if (!infos.length) return;
@@ -7067,7 +6645,7 @@
       const collapsed = !head || head.getAttribute("aria-expanded") === "false";
       const domRunning = !!(runningByWs.get(path) && runningByWs.get(path).size);
       const normP = (v) => String(v || "").replace(/[\\/]+$/, "");
-      const running = enabled3 && collapsed && (activeProjectPaths.size ? [...activeProjectPaths].some((p2) => normP(p2) === normP(path)) : domRunning);
+      const running = enabled2 && collapsed && (activeProjectPaths.size ? [...activeProjectPaths].some((p2) => normP(p2) === normP(path)) : domRunning);
       const icon = iconHolderOf(row);
       icon?.classList.toggle("zcodepro-ws-running", running);
       setRunningIcon(icon, running);
@@ -7196,7 +6774,7 @@
     return anyActiveCache.value === true;
   }
   function applySectionSpin() {
-    if (!enabled3) {
+    if (!enabled2) {
       document.querySelectorAll("." + SEC_SPIN_CLASS).forEach((el) => el.remove());
       return;
     }
@@ -7238,7 +6816,7 @@
   }
   function syncPeeks() {
     for (const [ws, set] of runningByWs) {
-      if (!enabled3 || !set.size) {
+      if (!enabled2 || !set.size) {
         clearPeek(ws);
         continue;
       }
@@ -7278,7 +6856,7 @@
     return p;
   }
   async function peekInner(ws, opts) {
-    if (!opts?.manual && !enabled3 || document.hidden || activePeeks.has(ws)) return false;
+    if (!opts?.manual && !enabled2 || document.hidden || activePeeks.has(ws)) return false;
     const row = findWsRow(ws);
     const head = row && wsHead(row);
     if (!row || !head || head.getAttribute("aria-expanded") !== "false") return false;
@@ -7316,15 +6894,20 @@
     }
     apply();
     const set = runningByWs.get(ws);
-    if (set && set.size && enabled3) schedulePeek(ws, PEEK_REPEAT_MS);
+    if (set && set.size && enabled2) schedulePeek(ws, PEEK_REPEAT_MS);
     return readOk;
   }
   function wsRunningSnapshot() {
     const curKey = currentTaskRow()?.getAttribute("data-task-item-key") || "";
     return {
       running: [...runningByWs.entries()].filter(([, set]) => set.size > 0).map(([ws]) => ws),
-      current: curKey ? workspaceOf2(curKey) || null : null
+      current: curKey ? workspaceOf(curKey) || null : null
     };
+  }
+  function wsRunningKeys() {
+    const keys = /* @__PURE__ */ new Set();
+    for (const set of runningByWs.values()) for (const k of set) keys.add(k);
+    return keys;
   }
   async function verifyWorkspaceNotRunning(ws) {
     if (!ws || document.hidden) return false;
@@ -7382,7 +6965,7 @@
   var PEEK_EXEMPT_CLASS = "zcodepro-peek-exempt";
   var cssAttr = (v) => String(v).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
   function installPeekHider(ws) {
-    const rowSel3 = `${TASK_SEL3}[data-task-item-key^="${cssAttr(ws + ":")}"]`;
+    const rowSel3 = `${TASK_SEL}[data-task-item-key^="${cssAttr(ws + ":")}"]`;
     for (const r of document.querySelectorAll(rowSel3)) r.classList.add(PEEK_EXEMPT_CLASS);
     const style = document.createElement("style");
     style.textContent = `${rowSel3}:not(.${PEEK_EXEMPT_CLASS}){display:none!important}`;
@@ -7394,7 +6977,7 @@
     for (const r of document.querySelectorAll("." + PEEK_EXEMPT_CLASS)) r.classList.remove(PEEK_EXEMPT_CLASS);
   }
   function waitForRowsGone(ws) {
-    const sel = `${TASK_SEL3}[data-task-item-key^="${cssAttr(ws + ":")}"]:not(.${PEEK_EXEMPT_CLASS})`;
+    const sel = `${TASK_SEL}[data-task-item-key^="${cssAttr(ws + ":")}"]:not(.${PEEK_EXEMPT_CLASS})`;
     return new Promise((resolve) => {
       const t0 = Date.now();
       const timer = setInterval(() => {
@@ -7416,12 +6999,12 @@
   }
   function relevant(muts) {
     for (const m of muts) {
-      if (inSel(m.target, TASK_SEL3) || inSel(m.target, WS_SEL())) return true;
+      if (inSel(m.target, TASK_SEL) || inSel(m.target, WS_SEL())) return true;
       for (const n of m.addedNodes) {
-        if (n instanceof Element && (n.matches(TASK_SEL3) || n.matches(WS_SEL()) || n.querySelector(TASK_SEL3) || n.querySelector(WS_SEL()))) return true;
+        if (n instanceof Element && (n.matches(TASK_SEL) || n.matches(WS_SEL()) || n.querySelector(TASK_SEL) || n.querySelector(WS_SEL()))) return true;
       }
       for (const n of m.removedNodes) {
-        if (n instanceof Element && (n.matches(TASK_SEL3) || n.matches(WS_SEL()) || n.querySelector(TASK_SEL3))) return true;
+        if (n instanceof Element && (n.matches(TASK_SEL) || n.matches(WS_SEL()) || n.querySelector(TASK_SEL))) return true;
       }
     }
     return false;
@@ -7432,8 +7015,8 @@
       const res = await rpc("/config");
       if (res && res.ok && res.config && res.config.features) {
         const next = res.config.features.wsRunningSpin !== false;
-        if (next !== enabled3) {
-          enabled3 = next;
+        if (next !== enabled2) {
+          enabled2 = next;
           if (!next) {
             for (const ws of [...peekTimers.keys()]) clearPeek(ws);
             apply();
@@ -7452,35 +7035,819 @@
       pollConfig();
     }, pollMs);
   }
-  var scanDebounce4 = 0;
+  var scanDebounce = 0;
   function startWsRunningSpin() {
-    if (installed4 || typeof document === "undefined") return;
-    installed4 = true;
+    if (installed2 || typeof document === "undefined") return;
+    installed2 = true;
     void refreshConfig();
     pollConfig();
     const observer2 = new MutationObserver((muts) => {
       if (!relevant(muts)) return;
       handleRemovals(muts);
-      if (!scanDebounce4) {
-        scanDebounce4 = setTimeout(() => {
-          scanDebounce4 = 0;
-          scan3();
-        }, SCAN_DEBOUNCE_MS4);
+      if (!scanDebounce) {
+        scanDebounce = setTimeout(() => {
+          scanDebounce = 0;
+          scan();
+        }, SCAN_DEBOUNCE_MS);
       }
     });
     observer2.observe(document.body, { childList: true, subtree: true });
-    scan3();
+    scan();
     setInterval(() => {
-      if (!document.hidden && enabled3) scan3();
-    }, SCAN_FALLBACK_MS4);
+      if (!document.hidden && enabled2) scan();
+    }, SCAN_FALLBACK_MS);
     document.addEventListener("visibilitychange", () => {
-      if (!document.hidden) scan3();
+      if (!document.hidden) scan();
     });
     document.addEventListener("click", (e) => {
       if (!e.isTrusted) return;
       const row = e.target instanceof Element && e.target.closest(WS_SEL());
       if (row) wsTouchAt.set(row, Date.now());
     }, true);
+  }
+
+  // src/inject/features/session-switch.js
+  var MRU_LIMIT = 50;
+  var SCAN_DEBOUNCE_MS2 = 150;
+  var SCAN_FALLBACK_MS2 = 5e3;
+  var INITIAL_COUNT = 10;
+  var PAGE_SIZE = 5;
+  var UNSEEN_LIMIT = 50;
+  var mru = [];
+  var current = null;
+  var titles = /* @__PURE__ */ new Map();
+  var popupEl = null;
+  var aliasesCache = {};
+  var highlight = 0;
+  var scanDebounce2 = 0;
+  var popupMode = "mru";
+  var visibleCount = INITIAL_COUNT;
+  var unseen = /* @__PURE__ */ new Set();
+  var lastRunKeys = null;
+  var movedSinceOpen = false;
+  var hotkeys = { ...DEFAULT_SHORTCUTS };
+  function loadHotkeys() {
+    return getConfig(true).then((cfg) => {
+      const sc = cfg && cfg.shortcuts;
+      if (sc && typeof sc === "object") {
+        for (const k of Object.keys(DEFAULT_SHORTCUTS)) {
+          if (typeof sc[k] === "string" && /^[a-z0-9]$/.test(sc[k])) hotkeys[k] = sc[k];
+        }
+      }
+    }).catch(() => {
+    });
+  }
+  function firstLineOf(item) {
+    const tEl = item.querySelector('[class*="truncate"]');
+    return (tEl ? tEl.textContent : (item.innerText || "").split("\n")[0])?.trim() || "";
+  }
+  function workspaceOf2(key) {
+    const i = key.indexOf(":sess_");
+    return i > 0 ? key.slice(0, i) : key;
+  }
+  function findCurrent() {
+    for (const el of document.querySelectorAll("[data-task-item-key]")) {
+      if ((el.className + "").includes("bg-selected")) return el;
+    }
+    return null;
+  }
+  function record(key) {
+    if (key) unseen.delete(key);
+    if (key && key !== current) {
+      current = key;
+      mru = mru.filter((k) => k !== key);
+      mru.unshift(key);
+      if (mru.length > MRU_LIMIT) mru.length = MRU_LIMIT;
+    }
+  }
+  function scan2() {
+    const cur = findCurrent();
+    if (cur) record(cur.getAttribute("data-task-item-key"));
+    for (const el of document.querySelectorAll("[data-task-item-key]")) {
+      titles.set(el.getAttribute("data-task-item-key"), firstLineOf(el));
+    }
+  }
+  var rowSel2 = "[data-task-item-key]";
+  var inTaskRow = (node) => node instanceof Element && !!node.closest && !!node.closest(rowSel2);
+  function taskRowMutations(muts) {
+    for (const m of muts) {
+      if (m.type === "attributes") {
+        if (inTaskRow(m.target)) return true;
+      } else if (m.type === "characterData") {
+        if (m.target.parentElement && inTaskRow(m.target.parentElement)) return true;
+      } else if (inTaskRow(m.target)) {
+        return true;
+      } else {
+        for (const n of m.addedNodes) {
+          if (n instanceof Element && (n.matches(rowSel2) || !!n.querySelector(rowSel2))) return true;
+        }
+      }
+    }
+    return false;
+  }
+  function scheduleScan() {
+    if (scanDebounce2) return;
+    scanDebounce2 = setTimeout(() => {
+      scanDebounce2 = 0;
+      scan2();
+    }, SCAN_DEBOUNCE_MS2);
+  }
+  async function switchTo(key) {
+    const find = () => document.querySelector(`[data-task-item-key="${CSS.escape(key)}"]`);
+    let item = find();
+    if (!item) {
+      const ws = workspaceOf2(key);
+      const header = findProjectRow(ws);
+      const expander = header && header.querySelector("[aria-expanded]");
+      if (expander && expander.getAttribute("aria-expanded") === "false") {
+        expander.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+        for (let i = 0; i < 20 && !(item = find()); i++) await new Promise((r) => setTimeout(r, 100));
+      }
+    }
+    if (!item) return false;
+    item.scrollIntoView({ block: "nearest" });
+    item.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+    return true;
+  }
+  function attentionList() {
+    const run = wsRunningKeys();
+    const listed = /* @__PURE__ */ new Set();
+    const head = [];
+    for (const k of mru) {
+      if (run.has(k) || unseen.has(k)) {
+        head.push(k);
+        listed.add(k);
+      }
+    }
+    const tail = [];
+    for (const k of run) if (!listed.has(k)) {
+      tail.push(k);
+      listed.add(k);
+    }
+    for (const k of unseen) if (!listed.has(k)) {
+      tail.push(k);
+      listed.add(k);
+    }
+    return [...head, ...tail];
+  }
+  function activeList() {
+    return popupMode === "attention" ? attentionList() : mru;
+  }
+  function closePopup(commit) {
+    if (!popupEl) return;
+    const idx = highlight;
+    const list = activeList();
+    popupEl.remove();
+    popupEl = null;
+    if (commit && list[idx] && list[idx] !== current) {
+      void switchTo(list[idx]).then((ok) => {
+        if (!ok) showToast(t().switcherFailed, "error");
+      });
+    }
+  }
+  function findTitle(key) {
+    const item = document.querySelector(`[data-task-item-key="${CSS.escape(key)}"]`);
+    if (item) titles.set(key, firstLineOf(item));
+    const id = key.slice(key.indexOf(":sess_") + 1);
+    return titles.get(key) || `sess ${id.slice(0, 8)}`;
+  }
+  function projLabelOf(key, aliases2) {
+    const ws = workspaceOf2(key);
+    if (!ws) return "";
+    return aliases2[ws] || ws.replace(/[\\/]+$/, "").split(/[\\/]/).pop();
+  }
+  function renderPopup() {
+    if (!popupEl) return;
+    const L = t();
+    const list = popupEl.querySelector("[data-zcodepro-switcher-list]");
+    const full = activeList();
+    const shown = full.slice(0, visibleCount);
+    const run = popupMode === "attention" ? wsRunningKeys() : null;
+    list.replaceChildren(...shown.map((key) => {
+      const proj = projLabelOf(key, aliasesCache);
+      return h(
+        "div",
+        {
+          class: "zcodepro-switcher-row",
+          "data-active": full[highlight] === key ? "" : void 0,
+          onClick: () => {
+            highlight = full.indexOf(key);
+            closePopup(true);
+          }
+        },
+        // 标题文本包 span：截断省略作用在文本节点上（flex 容器自身 ellipsis 无效）
+        h(
+          "div",
+          { class: "zcodepro-switcher-title" },
+          key === current ? h("span", { class: "zcodepro-switcher-tag" }, L.switcherCurrent) : null,
+          run && run.has(key) ? h("span", { class: "zcodepro-switcher-tag zcodepro-switcher-tag-run" }, L.switcherRunning) : null,
+          run && !run.has(key) ? h("span", { class: "zcodepro-switcher-tag zcodepro-switcher-tag-new" }, L.switcherUnseen) : null,
+          h("span", null, findTitle(key))
+        ),
+        // 无项目归属（如置顶）时不渲染空行
+        proj ? h("div", { class: "zcodepro-switcher-ws" }, proj) : null
+      );
+    }));
+    if (full.length > shown.length) {
+      list.append(h(
+        "div",
+        { class: "zcodepro-switcher-more" },
+        L.switcherMore.replaceAll("{n}", String(full.length - shown.length))
+      ));
+    }
+  }
+  async function openPopup(mode = "mru") {
+    if (popupEl) return;
+    popupMode = mode;
+    visibleCount = INITIAL_COUNT;
+    highlight = 0;
+    movedSinceOpen = false;
+    const cfg = await getConfig().catch(() => null);
+    aliasesCache = cfg && cfg.aliases && typeof cfg.aliases === "object" ? cfg.aliases : {};
+    ensureStyle();
+    const L = t();
+    popupEl = h(
+      "div",
+      {
+        class: "zcodepro-switcher-overlay",
+        // 点弹窗外 = 取消（不切）
+        onMousedown: (e) => {
+          if (e.target === popupEl) closePopup(false);
+        }
+      },
+      h(
+        "div",
+        { class: "zcodepro-switcher" },
+        // 提示行键位跟随当前配置（改键后新开的弹窗即用新键位）
+        h(
+          "div",
+          { class: "zcodepro-switcher-hint" },
+          (mode === "attention" ? L.switcherAttentionHint : L.switcherHint).replaceAll("{prev}", hotkeys.switchPrev).replaceAll("{next}", hotkeys.switchNext)
+        ),
+        h("div", { "data-zcodepro-switcher-list": "1", class: "zcodepro-switcher-list" })
+      )
+    );
+    document.body.append(popupEl);
+    renderPopup();
+  }
+  function scrollHighlight() {
+    const row = popupEl && popupEl.querySelector("[data-active]");
+    if (row) row.scrollIntoView({ block: "nearest" });
+  }
+  function moveUp() {
+    const len = Math.min(activeList().length, visibleCount);
+    if (len < 2) return;
+    highlight = highlight > 0 ? highlight - 1 : len - 1;
+    movedSinceOpen = true;
+    renderPopup();
+    scrollHighlight();
+  }
+  function moveDown() {
+    const full = activeList();
+    const len = Math.min(full.length, visibleCount);
+    if (len < 2) return;
+    if (highlight < len - 1) {
+      highlight += 1;
+    } else if (visibleCount < full.length) {
+      visibleCount = Math.min(visibleCount + PAGE_SIZE, full.length);
+      highlight = len;
+    } else {
+      highlight = 0;
+    }
+    movedSinceOpen = true;
+    renderPopup();
+    scrollHighlight();
+  }
+  function startSessionSwitch() {
+    scan2();
+    void loadHotkeys();
+    window.addEventListener("zcodepro:config-changed", () => {
+      void loadHotkeys();
+    });
+    new MutationObserver((muts) => {
+      if (taskRowMutations(muts)) scheduleScan();
+    }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
+    setInterval(() => {
+      if (!document.hidden) scan2();
+    }, SCAN_FALLBACK_MS2);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) scan2();
+    });
+    setInterval(() => {
+      if (document.hidden) return;
+      const now = wsRunningKeys();
+      if (lastRunKeys) {
+        for (const k of lastRunKeys) {
+          if (!now.has(k) && k !== current) unseen.add(k);
+        }
+      }
+      lastRunKeys = now;
+      if (unseen.size > UNSEEN_LIMIT) unseen = new Set([...unseen].slice(-UNSEEN_LIMIT));
+    }, 1e4);
+    document.addEventListener("click", (e) => {
+      const item = e.target instanceof Element && e.target.closest("[data-task-item-key]");
+      if (item) record(item.getAttribute("data-task-item-key"));
+    }, true);
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && popupEl) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        closePopup(false);
+        return;
+      }
+      if (popupEl && (e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === "Enter")) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        if (e.key === "ArrowUp") moveUp();
+        else if (e.key === "ArrowDown") moveDown();
+        else if (!e.repeat) closePopup(true);
+        return;
+      }
+      if (!e.altKey || e.ctrlKey || e.metaKey || e.isComposing) return;
+      if (document.querySelector(".zcodepro-overlay")) return;
+      const k = e.key.toLowerCase();
+      const isHot = k === hotkeys.switchLast || k === hotkeys.switchPrev || k === hotkeys.switchNext || k === hotkeys.switchRecent || k === hotkeys.switchAttention;
+      if (!isHot) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      void (async () => {
+        const cfg = await getConfig();
+        if (cfg.features && cfg.features.sessionSwitch === false) return;
+        if (k === hotkeys.switchLast) {
+          if (e.repeat) return;
+          closePopup(false);
+          const live = findCurrent();
+          if (live) record(live.getAttribute("data-task-item-key"));
+          const target = live ? mru[0] === current ? mru[1] : mru.find((mk) => mk !== current) : mru[0];
+          if (!target) {
+            showToast(t().switcherEmpty);
+            return;
+          }
+          void switchTo(target).then((ok) => {
+            if (!ok) showToast(t().switcherFailed, "error");
+          });
+          return;
+        }
+        if (k === hotkeys.switchAttention) {
+          if (e.repeat) return;
+          closePopup(false);
+          if (!attentionList().length) {
+            showToast(t().switcherAttentionEmpty);
+            return;
+          }
+          await openPopup("attention");
+          return;
+        }
+        if (mru.length < 2) {
+          showToast(t().switcherEmpty);
+          return;
+        }
+        if (k === hotkeys.switchRecent) {
+          if (!e.repeat && !popupEl) await openPopup("mru");
+          return;
+        }
+        if (!popupEl) await openPopup("mru");
+        if (k === hotkeys.switchPrev) moveUp();
+        else moveDown();
+      })();
+    }, true);
+    document.addEventListener("keyup", (e) => {
+      if (e.key === "Alt" && popupEl && movedSinceOpen) closePopup(true);
+    }, true);
+    window.addEventListener("blur", () => closePopup(false));
+  }
+
+  // src/inject/features/title-lock.js
+  var TASK_SEL2 = "[data-task-item-key]";
+  var SCAN_DEBOUNCE_MS3 = 150;
+  var SCAN_FALLBACK_MS3 = 5e3;
+  var BOOT_RETRY_MS = 5e3;
+  var RECHECK_DELAY_MS = 1e3;
+  var REVERIFY_MS = 3e3;
+  var MAP_REFRESH_MS = 6e4;
+  var installed3 = false;
+  var seenRows = /* @__PURE__ */ new WeakSet();
+  var enabled3 = true;
+  var pinned = null;
+  var resolved = false;
+  var fetching = null;
+  var pendingKeys = /* @__PURE__ */ new Set();
+  function sessIdOf(key) {
+    const i = key.indexOf(":sess_");
+    return i > 0 ? key.slice(i + 1) : key;
+  }
+  function titleElsOf(item) {
+    const copies = item.querySelectorAll("[data-task-title-copy]");
+    if (copies.length) return [...copies];
+    const t2 = item.querySelector('[class*="truncate"]');
+    return t2 ? [t2] : [];
+  }
+  function findRows(key) {
+    return [...document.querySelectorAll(`${TASK_SEL2}[data-task-item-key="${CSS.escape(key)}"]`)];
+  }
+  async function fetchPinned() {
+    if (fetching) return fetching;
+    const p = (async () => {
+      const res = await rpc("/pinned-titles");
+      if (!res || !res.ok) return null;
+      resolved = true;
+      enabled3 = res.enabled !== false;
+      if (!enabled3) {
+        pinned = null;
+        return null;
+      }
+      pinned = new Map(Object.entries(res.titles || {}));
+      return pinned;
+    })();
+    fetching = p;
+    try {
+      return await p;
+    } finally {
+      if (fetching === p) fetching = null;
+    }
+  }
+  function isMismatch(item) {
+    if (!enabled3 || !pinned) return null;
+    const key = item.getAttribute("data-task-item-key") || "";
+    const want = pinned.get(sessIdOf(key));
+    if (want === void 0) return null;
+    const els = titleElsOf(item);
+    if (!els.length) return null;
+    if ((els[0].textContent || "").trim() === String(want).trim()) return null;
+    if (item.querySelector('input, textarea, [contenteditable="true"]')) return null;
+    return key;
+  }
+  function writeTitle(el, text) {
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    const first = walker.nextNode();
+    if (first && !walker.nextNode()) first.nodeValue = text;
+    else el.textContent = text;
+  }
+  function scheduleEnforce(key, { immediate = false } = {}) {
+    if (immediate) {
+      if (enabled3 && pinned) {
+        const want = pinned.get(sessIdOf(key));
+        if (want !== void 0) {
+          for (const item of findRows(key)) {
+            for (const el of titleElsOf(item)) writeTitle(el, want);
+          }
+        }
+      }
+    }
+    if (pendingKeys.has(key)) return;
+    pendingKeys.add(key);
+    setTimeout(() => {
+      pendingKeys.delete(key);
+      void (async () => {
+        const map = await fetchPinned();
+        if (!map) return;
+        const want = map.get(sessIdOf(key));
+        if (want === void 0) return;
+        let wrote = false;
+        for (const item of findRows(key)) {
+          if (isMismatch(item) !== key) continue;
+          for (const el of titleElsOf(item)) writeTitle(el, want);
+          wrote = true;
+        }
+        if (wrote) setTimeout(() => {
+          void enforceKey(key);
+        }, REVERIFY_MS);
+      })();
+    }, RECHECK_DELAY_MS);
+  }
+  async function enforceKey(key) {
+    const map = await fetchPinned();
+    if (!map) return;
+    const want = map.get(sessIdOf(key));
+    if (want === void 0) return;
+    for (const item of findRows(key)) {
+      if (isMismatch(item) !== key) continue;
+      for (const el of titleElsOf(item)) writeTitle(el, want);
+    }
+  }
+  function scan3() {
+    if (!enabled3 || !pinned || pinned.size === 0) return;
+    for (const item of document.querySelectorAll(TASK_SEL2)) {
+      const key = isMismatch(item);
+      if (!key) {
+        seenRows.add(item);
+        continue;
+      }
+      const fresh = !seenRows.has(item);
+      seenRows.add(item);
+      scheduleEnforce(key, { immediate: fresh });
+    }
+  }
+  var inTaskRow2 = (node) => !!(node instanceof Element && node.closest && node.closest(TASK_SEL2));
+  function taskRowMutations2(muts) {
+    for (const m of muts) {
+      if (m.type === "attributes") {
+        if (inTaskRow2(m.target)) return true;
+      } else if (m.type === "characterData") {
+        if (m.target.parentElement && inTaskRow2(m.target.parentElement)) return true;
+      } else if (inTaskRow2(m.target)) {
+        return true;
+      } else {
+        for (const n of m.addedNodes) {
+          if (n instanceof Element && (n.matches(TASK_SEL2) || !!n.querySelector(TASK_SEL2))) return true;
+        }
+      }
+    }
+    return false;
+  }
+  var scanDebounce3 = 0;
+  function scheduleScan2() {
+    if (scanDebounce3) return;
+    scanDebounce3 = setTimeout(() => {
+      scanDebounce3 = 0;
+      scan3();
+    }, SCAN_DEBOUNCE_MS3);
+  }
+  var mapRefreshTimer = 0;
+  function refreshMapSoon() {
+    if (mapRefreshTimer) return;
+    const tick2 = () => {
+      if (document.hidden) {
+        mapRefreshTimer = setTimeout(tick2, 1e4);
+        return;
+      }
+      mapRefreshTimer = 0;
+      if (enabled3 && resolved) void fetchPinned().then((m) => {
+        if (m) scan3();
+      });
+    };
+    mapRefreshTimer = setTimeout(tick2, MAP_REFRESH_MS);
+  }
+  var editingKey = null;
+  var bootDelay = 0;
+  function scheduleBootRetry() {
+    bootDelay = bootDelay ? Math.min(bootDelay * 2, MAP_REFRESH_MS) : BOOT_RETRY_MS;
+    setTimeout(() => {
+      if (resolved) return;
+      if (!document.hidden) void bootstrap();
+      scheduleBootRetry();
+    }, bootDelay);
+  }
+  async function bootstrap() {
+    const map = await fetchPinned();
+    if (map) scan3();
+  }
+  function setRowTitle(key, text) {
+    for (const item of findRows(key)) {
+      for (const el of titleElsOf(item)) writeTitle(el, text);
+    }
+  }
+  function refreshPinnedTitles() {
+    return fetchPinned().then((m) => {
+      if (m) scan3();
+    });
+  }
+  var RENAME_CTX_VALID_MS = 15e3;
+  var renameCtx = null;
+  var renamePrefilled = /* @__PURE__ */ new WeakSet();
+  function setNativeValue(el, text) {
+    if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
+      Object.getOwnPropertyDescriptor(el.constructor.prototype, "value").set.call(el, text);
+    } else {
+      el.textContent = text;
+    }
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+  function prefillRenameDialog() {
+    if (!renameCtx || !renameCtx.armed || Date.now() - renameCtx.at > RENAME_CTX_VALID_MS) {
+      renameCtx = null;
+      return;
+    }
+    if (!enabled3 || !pinned) return;
+    const want = pinned.get(sessIdOf(renameCtx.key));
+    if (want === void 0) return;
+    for (const el of document.querySelectorAll('[role="dialog"] input, [role="dialog"] textarea, [role="dialog"] [contenteditable="true"]')) {
+      if (renamePrefilled.has(el) || !el.getClientRects().length) continue;
+      if (el.closest(TASK_SEL2) || el.closest(".zcodepro-overlay")) continue;
+      const cur = String(el.value ?? el.textContent ?? "").trim();
+      if (!cur) continue;
+      renamePrefilled.add(el);
+      if (cur !== String(want).trim()) setNativeValue(el, String(want));
+      renameCtx = null;
+      return;
+    }
+  }
+  function startTitleLock() {
+    if (installed3 || typeof document === "undefined") return;
+    installed3 = true;
+    void bootstrap();
+    new MutationObserver((muts) => {
+      if (renameCtx) prefillRenameDialog();
+      if (!taskRowMutations2(muts)) return;
+      refreshMapSoon();
+      scheduleScan2();
+    }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"], characterData: true });
+    document.addEventListener("contextmenu", (e) => {
+      const row = e.target instanceof Element && e.target.closest(TASK_SEL2);
+      renameCtx = row ? { key: row.getAttribute("data-task-item-key") || "", at: 0, armed: false } : null;
+    }, true);
+    document.addEventListener("click", (e) => {
+      if (!renameCtx || renameCtx.armed) return;
+      const item = e.target instanceof Element && e.target.closest('[role="menuitem"], [data-radix-collection-item]');
+      if (item && /重命名|rename/i.test(item.textContent || "")) {
+        renameCtx.armed = true;
+        renameCtx.at = Date.now();
+      }
+    }, true);
+    scheduleBootRetry();
+    setInterval(() => {
+      if (!document.hidden) scan3();
+    }, SCAN_FALLBACK_MS3);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) scan3();
+    });
+    window.addEventListener("zcodepro:config-changed", () => {
+      void bootstrap();
+    });
+    document.addEventListener("focusin", (e) => {
+      const el = e.target;
+      if (!(el instanceof Element)) return;
+      if (!el.matches('input, textarea, [contenteditable="true"]')) return;
+      const row = el.closest(TASK_SEL2);
+      editingKey = row ? row.getAttribute("data-task-item-key") || "" : null;
+    });
+    document.addEventListener("focusout", () => {
+      if (editingKey === null) return;
+      editingKey = null;
+      void fetchPinned().then((m) => {
+        if (m) scan3();
+      });
+    });
+  }
+
+  // src/inject/features/title-gen.js
+  var CONV2 = '[class*="@md/conversation"]';
+  var USER_ROW = '[class*="user-row"]';
+  var SCAN_DEBOUNCE_MS4 = 300;
+  var SCAN_FALLBACK_MS4 = 5e3;
+  var SELECT_WAIT_MS = 2e3;
+  var MSG_WAIT_MS = 1e4;
+  var QUIET_FALLBACK_MS = 12e4;
+  var COLLECT_MAX_MS = 6e5;
+  var installed4 = false;
+  var knownKeys = /* @__PURE__ */ new Set();
+  var attempted = /* @__PURE__ */ new Set();
+  var sleep2 = (ms) => new Promise((r) => setTimeout(r, ms));
+  function sessIdOf2(key) {
+    const i = key.indexOf(":sess_");
+    return i > 0 ? key.slice(i + 1) : "";
+  }
+  function currentKey() {
+    for (const el of document.querySelectorAll("[data-task-item-key]")) {
+      if ((el.className + "").includes("bg-selected")) return el.getAttribute("data-task-item-key") || "";
+    }
+    return "";
+  }
+  function userTexts() {
+    return [...document.querySelectorAll(`${CONV2} ${USER_ROW}`)].map((r) => {
+      const el = r.querySelector(".whitespace-pre-wrap");
+      return ((el ? el.textContent : r.innerText) || "").trim();
+    }).filter(Boolean);
+  }
+  var URL_RE = /https?:\/\/[^\s\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]+/g;
+  function assistantText() {
+    const els = [...document.querySelectorAll('[class*="@md/conversation"] [class*="assistant-row"]')].filter((e) => !e.querySelector("[data-is-streaming]"));
+    const last = els[els.length - 1];
+    if (!last) return "";
+    const text = (last.innerText || "").replace(URL_RE, "").trim();
+    return text.slice(0, 600);
+  }
+  function linkDominant(t2) {
+    const raw = t2.replace(/\s+/g, "");
+    if (!raw) return true;
+    const stripped = raw.replace(URL_RE, "");
+    return stripped.length < raw.length / 3;
+  }
+  async function onNewTaskRow(key) {
+    const selDeadline = Date.now() + SELECT_WAIT_MS;
+    while (currentKey() !== key && Date.now() < selDeadline) await sleep2(200);
+    if (currentKey() !== key) return;
+    const cfg = await getConfig().catch(() => null);
+    if (!cfg || !cfg.titleGen || cfg.titleGen.enabled !== true) return;
+    const sessId = sessIdOf2(key);
+    if (!sessId || attempted.has(sessId)) return;
+    attempted.add(sessId);
+    let texts = [];
+    const msgDeadline = Date.now() + MSG_WAIT_MS;
+    while (Date.now() < msgDeadline) {
+      texts = userTexts();
+      if (texts.length) break;
+      await sleep2(400);
+    }
+    if (!texts.length) return;
+    let assistantSeen = false;
+    const convObserver = new MutationObserver((muts) => {
+      if (currentKey() !== key) return;
+      for (const m of muts) {
+        const t2 = m.type === "characterData" ? m.target.parentElement : m.target;
+        if (t2 instanceof Element && t2.closest(USER_ROW)) continue;
+        for (const n of [t2, ...m.addedNodes]) {
+          if (n instanceof Element && n.closest && n.closest(CONV2)) {
+            assistantSeen = true;
+            return;
+          }
+        }
+      }
+    });
+    convObserver.observe(document.body, { childList: true, subtree: true, characterData: true });
+    const startAt = Date.now();
+    let lastCount = texts.length;
+    let lastChange = Date.now();
+    try {
+      while (Date.now() - startAt < COLLECT_MAX_MS) {
+        await sleep2(500);
+        if (currentKey() !== key) {
+          lastChange = Date.now();
+          continue;
+        }
+        texts = userTexts();
+        if (texts.length !== lastCount) {
+          lastCount = texts.length;
+          lastChange = Date.now();
+        }
+        if (assistantSeen) break;
+        if (Date.now() - lastChange >= QUIET_FALLBACK_MS) break;
+      }
+    } finally {
+      convObserver.disconnect();
+    }
+    if (!texts.length) return;
+    if (linkDominant(texts.join("\n"))) {
+      const deadline = Date.now() + 6e4;
+      while (Date.now() < deadline) {
+        await sleep2(2e3);
+        if (currentKey() !== key) continue;
+        const a = assistantText();
+        if (a && a.length > 80) {
+          texts.push(`\uFF08\u9996\u8F6E\u56DE\u7B54\u6458\u8981\uFF09${a}`);
+          break;
+        }
+      }
+    }
+    const callTitleGen = () => rpc("/title-gen/run", { method: "POST", body: { sessId, text: texts.join("\n") } }).catch(() => null);
+    let res = await callTitleGen();
+    for (const delay of [5e3, 2e4]) {
+      if (res && res.ok) break;
+      await sleep2(delay);
+      res = await callTitleGen();
+    }
+    if (res && res.ok && res.written && res.title) {
+      setRowTitle(key, res.title);
+      void refreshPinnedTitles();
+    }
+  }
+  function scanForNewRows() {
+    for (const el of document.querySelectorAll("[data-task-item-key]")) {
+      const key = el.getAttribute("data-task-item-key") || "";
+      if (!key || knownKeys.has(key)) continue;
+      knownKeys.add(key);
+      void onNewTaskRow(key);
+    }
+  }
+  var TASK_SEL3 = "[data-task-item-key]";
+  var inTaskRow3 = (node) => !!(node instanceof Element && node.closest && node.closest(TASK_SEL3));
+  function taskRowMutations3(muts) {
+    for (const m of muts) {
+      if (m.type === "attributes") {
+        if (inTaskRow3(m.target)) return true;
+      } else if (m.type === "characterData") {
+        if (m.target.parentElement && inTaskRow3(m.target.parentElement)) return true;
+      } else if (inTaskRow3(m.target)) {
+        return true;
+      } else {
+        for (const n of m.addedNodes) {
+          if (n instanceof Element && (n.matches(TASK_SEL3) || !!n.querySelector(TASK_SEL3))) return true;
+        }
+      }
+    }
+    return false;
+  }
+  var scanDebounce4 = 0;
+  function scheduleScan3() {
+    if (scanDebounce4) return;
+    scanDebounce4 = setTimeout(() => {
+      scanDebounce4 = 0;
+      scanForNewRows();
+    }, SCAN_DEBOUNCE_MS4);
+  }
+  function startTitleGen() {
+    if (installed4 || typeof document === "undefined") return;
+    installed4 = true;
+    scanForNewRows();
+    new MutationObserver((muts) => {
+      if (taskRowMutations3(muts)) scheduleScan3();
+    }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"], characterData: true });
+    setInterval(() => {
+      if (!document.hidden) scanForNewRows();
+    }, SCAN_FALLBACK_MS4);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) scanForNewRows();
+    });
   }
 
   // src/inject/features/idle-reclaim.js

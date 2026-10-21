@@ -339,6 +339,15 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         if (body && typeof body === 'object' && body.styles && typeof body.styles === 'object') {
           current.styles = applyStylesPartial(current.styles, body.styles);
         }
+        // 会话快捷切换的键位（设置 → 快捷键里修改）：键名固定，值限单个字母或数字
+        if (body && typeof body === 'object' && body.shortcuts && typeof body.shortcuts === 'object') {
+          const patch = {};
+          for (const k of ['switchLast', 'switchPrev', 'switchNext', 'switchRecent', 'switchAttention']) {
+            const v = body.shortcuts[k];
+            if (typeof v === 'string' && /^[a-z0-9]$/.test(v)) patch[k] = v;
+          }
+          current.shortcuts = { ...(current.shortcuts || {}), ...patch };
+        }
         if (body && typeof body === 'object' && body.titleGen && typeof body.titleGen === 'object') {
           current.titleGen = mergeTitleGenConfig({ ...current.titleGen, ...body.titleGen });
         }

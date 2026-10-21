@@ -616,6 +616,20 @@ export function ensureStyle() {
       background-color: color-mix(in oklab, var(--color-primary, #111) 12%, transparent);
       color: var(--color-foreground-subtle, #666);
     }
+    /* attention 弹窗（alt+r）的行状态标签：运行中绿、未查看琥珀 */
+    .zcodepro-switcher-tag-run {
+      background-color: color-mix(in oklab, var(--color-emerald-500, #10b981) 20%, transparent);
+    }
+    .zcodepro-switcher-tag-new {
+      background-color: color-mix(in oklab, var(--color-amber-500, #f59e0b) 22%, transparent);
+    }
+    /* 列表底部“还有 N 条”提示行 */
+    .zcodepro-switcher-more {
+      padding: 6px 12px 2px;
+      font-size: 11px;
+      text-align: center;
+      color: var(--color-muted-foreground, #888);
+    }
     .zcodepro-switcher-ws {
       font-size: 11px;
       color: var(--color-muted-foreground, #888);

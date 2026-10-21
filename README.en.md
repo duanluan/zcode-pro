@@ -13,13 +13,13 @@ ZCode Pro enhances the ZCode desktop UI. No client files are modified; just laun
 | Feature | Description |
 | --- | --- |
 | Custom project alias | Show a custom name for a project in the sidebar; UI-only, revert anytime; renaming is built into ZCode ≥ 3.16.1 (project menu "Edit project") — the feature disables itself there and offers to migrate existing aliases |
-| Switch project folder | Point a project at another folder; sidebar, tabs and task history follow. Stop running tasks before switching; historical checkpoints still reference the original path |
+| Switch project folder | Point a project at another folder; sidebar, tabs and task history follow. Stop running tasks before switching; historical checkpoints still reference the original path; retired on ZCode ≥ 3.16.1, where a project can hold multiple directories natively |
 | Open folder / Copy path | Project "More" menu: open the project directory in the file manager, or copy its path |
 | Session drag ordering | Reorder sessions in Pinned, Projects and Groups; persists across refreshes |
-| Session quick switch | `alt+z` toggles between the current and the last session; hold `alt` and press `x` (up) / `c` (down) to pick from recent sessions, release `alt` to switch (like `alt+tab`) |
+| Session quick switch | `alt+z` toggles between the current and the last session; hold `alt` and press `x` (up) / `c` (down) to pick from recent sessions (10 shown initially, pressing `c` at the bottom loads 5 more), `alt+e` opens the last 10 directly, `alt+r` opens running / finished-but-unseen tasks; arrow keys also move the highlight, release `alt` or press `Enter` to switch (like `alt+tab`); the five trigger keys are customizable in Settings → Shortcuts |
 | Keep renamed session titles | Sessions you renamed keep their custom title; auto-generated titles no longer overwrite it in the sidebar |
 | Task name prompt | When a new session starts answering, generates the task name with a provider and prompt you choose (following the current session and glm-5.3-flash by default; every question sent before the first answer counts), saved as a manual rename the built-in auto title never overrides; provider, model and prompt are editable in settings, with a test button |
-| Running indicator while collapsed | While any session is running, collapsed projects and the "Tasks" / "Pinned" section headers show the same loader the running task row uses; it disappears when all finish; on pre-3.16.1 builds projects are briefly re-expanded in the background every 60 seconds to re-check |
+| Running indicator while collapsed | While any session is running, collapsed projects and the "Tasks" / "Pinned" section headers show the same loader the running task row uses; it disappears when all finish |
 | Idle project memory reclaim | Projects unused for a while with no running tasks release their memory automatically, and unused ones are reclaimed once after startup; sessions are untouched and reload when reopened (durations adjustable) |
 | Plugin card sandbox reclaim | Releases the oldest plugin-card sandboxes once the cap is hit (the one being viewed goes last), so new cards keep opening after the 64-slot pool fills up; released cards come back when their session is reopened (cap adjustable) |
 | Sidebar menu in the top bar | Turns "New task / Search / Automations / Plugin store" into icon buttons in the top navigation bar: hover shows the name, highlighted while its view is open, shortcuts still work |
@@ -41,7 +41,7 @@ All features can be toggled or adjusted in the settings window; works on both ZC
 
 ## 📦 Installation
 
-> **Version match**: for ZCode ≥ 3.16.1 use **zcode-pro 1.0.0** (latest npm / PyPI / AUR release); for ZCode ≤ 3.15.x use **zcode-pro 0.20.3** (the previous release, still available).
+> **Version match**: for ZCode ≥ 3.16.1 use **zcode-pro 1.1.0** (latest npm / PyPI / AUR release); for ZCode ≤ 3.15.x use **zcode-pro 0.20.3** (the previous release, still available).
 
 Once installed, launch ZCode via the "ZCode Pro" shortcut in your app menu / Start menu, or the `zcode-pro` command in a terminal — the enhancements are enabled automatically in this mode; launching ZCode through its original entry does not load them. After launching, right-click the settings button at the bottom of the ZCode sidebar to open the ZCode Pro settings window.
 

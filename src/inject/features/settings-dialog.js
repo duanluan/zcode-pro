@@ -1,6 +1,6 @@
 // “ZCode Pro 增强设置”弹窗：功能开关 + 样式调整 + 运行状态。
 // 顶部标签页切换（视觉参考侧栏“分组/项目”切换）；配置写入 helper（~/.zcode/zcodepro.json）。
-import { h, t, rpc, getConfig, clearConfigCache, errText, HELPER_URL, isZhLocale, isNewProjectSidebar } from '../core.js';
+import { h, t, rpc, getConfig, clearConfigCache, errText, HELPER_URL, isZhLocale, isNewProjectSidebar, DEFAULT_SHORTCUTS } from '../core.js';
 import { openDialog, dialogFooter, btnPrimary, btnSecondary, btnSmall, settingRow, ensureStyle, showToast, numberField, unitField } from '../ui.js';
 import { comboField, providerOptionsOf, modelOptionsOf, modelPlaceholderOf, isManualConn } from '../provider-fields.js';
 import { refreshAliases } from './alias.js';
@@ -278,6 +278,40 @@ export function openSettingsDialog() {
           : L.pluginsUpToDate;
       })();
 
+      // 会话快捷切换：入口键位（“快捷键”标签页可改）；此处定义在 refreshRows 之前，
+      // 功能行的描述与快捷键面板共用同一份当前键位
+      const HK_ACTIONS = [
+        ['switchLast', 'hkAltZ'],
+        ['switchPrev', 'hkAltX'],
+        ['switchNext', 'hkAltC'],
+        ['switchRecent', 'hkAltE'],
+        ['switchAttention', 'hkAltR'],
+      ];
+      const hkNames = () => ({
+        switchLast: L.hkNameLast, switchPrev: L.hkNamePrev, switchNext: L.hkNameNext,
+        switchRecent: L.hkNameRecent, switchAttention: L.hkNameAttention,
+      });
+      // 当前生效键位：配置里合法的单字符覆盖默认，其余回退默认
+      const hkKeys = () => {
+        const sc = config.shortcuts || {};
+        const keys = {};
+        for (const [a] of HK_ACTIONS) {
+          keys[a] = /^[a-z0-9]$/.test(sc[a]) ? sc[a] : DEFAULT_SHORTCUTS[a];
+        }
+        return keys;
+      };
+      // 开关描述按当前键位渲染（改键后 refreshRows 重绘即更新）；
+      // prev/next 出现在“按住 alt 再按 {prev}/{next}”语境，用裸键位避免 alt 重复
+      const sessionSwitchDesc = () => {
+        const k = hkKeys();
+        return L.featureSessionSwitchDesc
+          .replaceAll('{last}', 'alt+' + k.switchLast)
+          .replaceAll('{prev}', k.switchPrev)
+          .replaceAll('{next}', k.switchNext)
+          .replaceAll('{recent}', 'alt+' + k.switchRecent)
+          .replaceAll('{attention}', 'alt+' + k.switchAttention);
+      };
+
       const refreshRows = () => {
         const f = config.features || {};
         rows.replaceChildren(
@@ -296,7 +330,7 @@ export function openSettingsDialog() {
             if (await setFeature('taskOrder', next)) f.taskOrder = next;
             refreshRows();
           }),
-          settingRow(L.featureSessionSwitch, L.featureSessionSwitchDesc, f.sessionSwitch !== false, async () => {
+          settingRow(L.featureSessionSwitch, sessionSwitchDesc(), f.sessionSwitch !== false, async () => {
             const next = !(f.sessionSwitch !== false);
             if (await setFeature('sessionSwitch', next)) f.sessionSwitch = next;
             refreshRows();
@@ -398,6 +432,103 @@ export function openSettingsDialog() {
         h('div', {}, rows),
         communityCards,
       );
+      // “快捷键”：五个入口键可改（点“修改”后按下新键，字母/数字，Esc 取消），
+      // 弹窗内通用键（↑/↓、Enter、Esc、松开 alt）固定只读；开关仍在“功能”标签页。
+      // 键位与名称定义（HK_ACTIONS/hkNames/hkKeys）在 refreshRows 前共用
+      let hkRecording = null; // 正在录制新键的动作（null = 未在录制）
+      let hkKeyHandler = null;
+      const hkCard = h('div', { class: 'divide-y divide-border rounded-xl border border-border' });
+      const hkCell = (keyLabel, desc, extra) => h('div', { class: 'flex items-start gap-3 px-3 py-2.5' },
+        h('kbd', {
+          class: 'shrink-0 min-w-20 rounded-md border border-border px-2 py-0.5 text-center text-ui-xs text-foreground-subtle',
+          style: 'font-family: ui-monospace, SFMono-Regular, Menlo, monospace; line-height: 1.5;',
+        }, keyLabel),
+        h('div', { class: 'min-w-0 flex-1 text-ui-sm text-foreground-subtle' }, desc),
+        extra ? h('div', { class: 'ml-auto shrink-0 pl-3' }, extra) : null);
+      const renderShortcuts = () => {
+        const keys = hkKeys();
+        const names = hkNames();
+        hkCard.replaceChildren(
+          ...HK_ACTIONS.map(([a, descKey]) => {
+            const recording = hkRecording === a;
+            return hkCell(
+              recording ? L.hkRecording : 'alt + ' + keys[a],
+              L[descKey],
+              btnSmall(recording ? L.hkRecording : L.hkModify, () => { recording ? stopHkRecording() : startHkRecording(a); }));
+          }),
+          hkCell('↑ / ↓', L.hkArrow.replaceAll('{prev}', keys.switchPrev).replaceAll('{next}', keys.switchNext)),
+          hkCell('Enter', L.hkEnter),
+          hkCell('Esc', L.hkEsc),
+          hkCell(L.hkReleaseKey, L.hkRelease));
+      };
+      const stopHkRecording = () => {
+        hkRecording = null;
+        if (hkKeyHandler) {
+          document.removeEventListener('keydown', hkKeyHandler, true);
+          hkKeyHandler = null;
+        }
+        renderShortcuts();
+      };
+      const startHkRecording = (action) => {
+        hkRecording = action;
+        if (!hkKeyHandler) {
+          // 绑定本次弹窗实例：弹窗关闭（哪怕马上重开新弹窗）后旧监听器自摘，
+          // 不会吞掉新弹窗里的按键
+          const myOverlay = document.querySelector('.zcodepro-overlay');
+          hkKeyHandler = (e) => {
+            if (!myOverlay || !myOverlay.isConnected) { stopHkRecording(); return; }
+            if (e.isComposing) return;
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            if (e.key === 'Escape') { stopHkRecording(); return; }
+            const k = e.key.toLowerCase();
+            if (!/^[a-z0-9]$/.test(k)) { showToast(L.hkInvalid, 'error'); return; }
+            const keys = hkKeys();
+            const names = hkNames();
+            const conflict = HK_ACTIONS.find(([a]) => a !== hkRecording && keys[a] === k);
+            if (conflict) {
+              showToast(L.hkConflict.replaceAll('{k}', k).replaceAll('{name}', names[conflict[0]]), 'error');
+              return;
+            }
+            const a = hkRecording;
+            stopHkRecording();
+            void (async () => {
+              const res = await rpc('/config', { method: 'POST', body: { shortcuts: { [a]: k } } });
+              clearConfigCache();
+              window.dispatchEvent(new CustomEvent('zcodepro:config-changed'));
+              if (!res.ok) { showToast(L.failed + ': ' + errText(res), 'error'); renderShortcuts(); return; }
+              if (res.config && res.config.shortcuts) config.shortcuts = res.config.shortcuts;
+              showToast(L.hkSaved, 'success');
+              refreshRows(); // 功能标签页的开关描述跟随新键位
+              renderShortcuts();
+            })();
+          };
+          document.addEventListener('keydown', hkKeyHandler, true);
+        }
+        renderShortcuts();
+      };
+      renderShortcuts();
+      // 重置为默认：五个入口键一次性写回默认值，保存路径与单个改键一致
+      const resetShortcuts = async () => {
+        stopHkRecording(); // 录制进行中点重置：先结束录制再写回默认
+        const all = {};
+        for (const [a] of HK_ACTIONS) all[a] = DEFAULT_SHORTCUTS[a];
+        const res = await rpc('/config', { method: 'POST', body: { shortcuts: all } });
+        clearConfigCache();
+        window.dispatchEvent(new CustomEvent('zcodepro:config-changed'));
+        if (!res.ok) { showToast(L.failed + ': ' + errText(res), 'error'); return; }
+        if (res.config && res.config.shortcuts) config.shortcuts = res.config.shortcuts;
+        showToast(L.hkResetDone, 'success');
+        refreshRows(); // 功能标签页的开关描述跟随默认键位
+        renderShortcuts();
+      };
+      const paneShortcuts = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' },
+        h('div', { class: 'mb-2 text-ui-sm font-medium' }, L.hkTitle),
+        h('div', { class: 'mb-2 flex items-center gap-2' },
+          h('div', { class: 'min-w-0 flex-1 text-ui-xs/relaxed text-foreground-subtle' }, L.hkEditHint),
+          h('div', { class: 'shrink-0' }, btnSmall(L.hkReset, () => { void resetShortcuts(); }))),
+        hkCard,
+      );
       const paneStyles = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
       const panePerf = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
       const paneAgents = h('div', { role: 'tabpanel', class: 'mt-2', style: 'display:none' });
@@ -408,9 +539,10 @@ export function openSettingsDialog() {
       const paneHeadroom = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
       const paneTitleGen = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
       const paneDebug = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
-      const panes = { features: paneFeatures, styles: paneStyles, perf: panePerf, agents: paneAgents, proxy: paneProxy, sync: paneSync, vision: paneVision, headroom: paneHeadroom, rtk: paneRtk, debug: paneDebug };
+      const panes = { features: paneFeatures, shortcuts: paneShortcuts, styles: paneStyles, perf: panePerf, agents: paneAgents, proxy: paneProxy, sync: paneSync, vision: paneVision, headroom: paneHeadroom, rtk: paneRtk, debug: paneDebug };
       const tabDefs = [
         ['features', L.tabFeatures],
+        ['shortcuts', L.tabShortcuts],
         ['agents', L.tabBehavior],
         ['styles', L.tabStyles],
         ['perf', L.tabPerformance],
@@ -433,6 +565,8 @@ export function openSettingsDialog() {
         }, label)));
       const switchTab = (name) => {
         activeTab = name;
+        // 切走“快捷键”标签页时结束键位录制：否则在其它标签页打字会被录制监听吞掉
+        if (name !== 'shortcuts' && hkRecording) stopHkRecording();
         for (const [id, pane] of Object.entries(panes)) pane.style.display = id === name ? '' : 'none';
         renderTabs();
       };
@@ -2256,6 +2390,7 @@ export function openSettingsDialog() {
         statusLine,
         tablist,
         paneFeatures,
+        paneShortcuts,
         paneAgents,
         paneStyles,
         panePerf,

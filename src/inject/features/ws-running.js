@@ -640,6 +640,13 @@ export function wsRunningSnapshot() {
   };
 }
 
+// 当前所有运行中会话键的集合（会话切换的 alt+r 以此筛“正在运行”的任务）
+export function wsRunningKeys() {
+  const keys = new Set();
+  for (const set of runningByWs.values()) for (const k of set) keys.add(k);
+  return keys;
+}
+
 // 无感复核指定工作区当前是否仍有运行中会话（展开读行后原样收起）。
 // 返回 true = 确认无运行；false = 有运行、窗口隐藏或行不可达（一律视为忙，调用方不得回收）
 export async function verifyWorkspaceNotRunning(ws) {
