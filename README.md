@@ -41,7 +41,7 @@ ZCode 桌面版界面增强工具。不修改客户端文件，通过 ZCode Pro 
 
 ## 📦 安装与使用
 
-> **版本匹配**：ZCode ≥ 3.16.1 请使用本仓库 main 分支（随下个版本发布）；ZCode ≤ 3.15.x 请使用已发布的 **zcode-pro 0.20.3**（npm / PyPI / AUR 当前发布版）。
+> **版本匹配**：ZCode ≥ 3.16.1 请使用 **zcode-pro 1.0.0**（npm / PyPI / AUR 最新发布版）；ZCode ≤ 3.15.x 请使用 **zcode-pro 0.20.3**（旧版仍可用）。
 
 安装后，通过应用菜单 / 开始菜单中的“ZCode Pro”快捷方式或终端命令 `zcode-pro` 启动 ZCode，增强在该方式下自动生效；使用原有 ZCode 入口启动时不加载增强。
 

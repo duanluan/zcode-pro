@@ -17,7 +17,7 @@ import { reorderWorkspaceTasks, reorderGroupMembers } from './taskOrder.mjs';
 import { webdavRequest, webdavPutWithMkcol, webdavHttpText, parseWebdavListing, findCurl } from './webdav.mjs';
 import { resolveZcodeExecutable } from './paths.mjs';
 
-const VERSION = '0.20.3';
+const VERSION = '1.0.0';
 
 // 全局提示词固定在用户主目录：官方加载器按 HOME/USERPROFILE 拼 .zcode/AGENTS.md，
 // 不读 ZCODE_DATA_BASE_DIR（数据根迁走时全局指令仍在原位）。
