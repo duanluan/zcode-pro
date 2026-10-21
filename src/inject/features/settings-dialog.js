@@ -242,10 +242,15 @@ export function openSettingsDialog() {
       const rows = h('div', { class: 'divide-y divide-border rounded-xl border border-border' });
       const pluginsStatusLine = h('span', { class: 'max-w-40 truncate text-ui-xs/relaxed text-foreground-subtle' }, '…');
       const pluginsBtn = btnSmall(L.pluginsCheckNow, () => { void runPluginsUpdate(); });
+      let pluginsUpdating = false;
       const runPluginsUpdate = async () => {
+        // 并发守卫：打开弹窗的自动触发与手动点击可能撞在一起，第二个直接忽略
+        if (pluginsUpdating) return;
+        pluginsUpdating = true;
         pluginsBtn.disabled = true;
         pluginsStatusLine.textContent = L.pluginsUpdating;
         const res = await rpc('/plugins/update', { method: 'POST', body: {} });
+        pluginsUpdating = false;
         pluginsBtn.disabled = false;
         if (!res.ok) {
           pluginsStatusLine.textContent = '';
@@ -258,10 +263,18 @@ export function openSettingsDialog() {
         showToast(pluginsStatusLine.textContent, 'success');
       };
       void (async () => {
+        // 打开设置弹窗即自动更新（与启动时同语义）：开关开着且有新版时直接更，
+        // 状态行如实显示过程与结果；开关关闭时只检查并显示“N 个可更新”
+        const cfg = await getConfig(true).catch(() => null);
         const res = await rpc('/plugins/status');
         if (!res.ok) { pluginsStatusLine.textContent = ''; return; }
-        pluginsStatusLine.textContent = (res.updates || []).length > 0
-          ? L.pluginsUpdatesFound.replaceAll('{n}', String(res.updates.length))
+        const n = (res.updates || []).length;
+        if (cfg && (cfg.features || {}).autoUpdatePlugins === true && n > 0) {
+          void runPluginsUpdate();
+          return;
+        }
+        pluginsStatusLine.textContent = n > 0
+          ? L.pluginsUpdatesFound.replaceAll('{n}', String(n))
           : L.pluginsUpToDate;
       })();
 

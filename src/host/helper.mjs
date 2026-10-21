@@ -1128,7 +1128,9 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
       // —— zcode-plugins 市场更新：读状态（带 30 分钟节流的市场同步）与执行更新 ————
       if (req.method === 'GET' && url.pathname === '/plugins/status') {
         await ensureZcodePluginsMarketplace();
-        if (Date.now() - lastMarketplaceSync > 30 * 60 * 1000) {
+        // 有更新任务在执行或排队时跳过这里的节流同步（任务本身会同步市场并刷新
+        // 时间戳），避免两处同时跑 marketplace update
+        if (!pluginsUpdateJob && Date.now() - lastMarketplaceSync > 30 * 60 * 1000) {
           await runZcodeCli(['plugins', 'marketplace', 'update', ZCODE_PLUGINS_MARKETPLACE], 60000);
           lastMarketplaceSync = Date.now();
         }
@@ -1142,40 +1144,8 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
       }
       if (req.method === 'POST' && url.pathname === '/plugins/update') {
         const body = await readBody(req);
-        // name 指定时只处理该插件：已装且有更新则更新，未装则安装（各插件面板的单插件操作）
-        const only = typeof body?.name === 'string' && body.name.trim() ? body.name.trim() : null;
-        const steps = [];
-        const added = await ensureZcodePluginsMarketplace();
-        if (added) steps.push({ step: 'marketplace add', ok: added.ok, output: added.output || added.error });
-        const sync = await runZcodeCli(['plugins', 'marketplace', 'update', ZCODE_PLUGINS_MARKETPLACE], 60000);
-        lastMarketplaceSync = Date.now();
-        steps.push({ step: 'marketplace update', ok: sync.ok, output: sync.output });
-        if (!sync.ok && sync.code !== 'cli-not-found') {
-          json(res, 500, { ok: false, code: 'plugins-update', error: sync.error || sync.output || 'marketplace update 失败', steps });
-          return;
-        }
-        const status = pluginUpdateStatus();
-        if (status) {
-          let updated = 0;
-          for (const p of status.plugins) {
-            if (only && p.name !== only) continue;
-            if (p.installed && p.hasUpdate) {
-              const r = await runZcodeCli(['plugins', 'update', `${p.name}@${ZCODE_PLUGINS_MARKETPLACE}`], 120000);
-              steps.push({ step: `update ${p.name}`, ok: r.ok, output: r.output });
-              if (r.ok) updated += 1;
-            } else if (!p.installed && only) {
-              // 安装只走单插件入口（name 指定＝各面板的安装卡）：
-              // 全量“检查并更新”/启动自动更新只升级已装插件——卸载必须被尊重，
-              // 未装插件一律由用户在各 tab 显式点安装
-              const r = await runZcodeCli(['plugins', 'install', `${p.name}@${ZCODE_PLUGINS_MARKETPLACE}`], 120000);
-              steps.push({ step: `install ${p.name}`, ok: r.ok, output: r.output });
-              if (r.ok) updated += 1;
-            }
-          }
-          json(res, 200, { ok: steps.every((s) => s.ok), updated, steps, ...pluginUpdateStatus() });
-          return;
-        }
-        json(res, 200, { ok: sync.ok, updated: 0, steps });
+        const result = await enqueuePluginsUpdate(body);
+        json(res, result.status, result.payload);
         return;
       }
       json(res, 404, { ok: false, error: 'not found' });
@@ -3248,6 +3218,38 @@ function runZcodeCli(subArgs, timeoutMs = 120000, scope = 'plugins') {
   return runNodeScript([bundle, ...subArgs], timeoutMs, scope);
 }
 
+// 简单版本号比较（a<b 返回 -1，相等 0，a>b 返回 1）：主版本按点分段，
+// 数字段按数值比、非数字段按字符串比；主版本相同时带 pre-release 后缀
+// （如 1.7.0-beta）低于正式版，后缀内部同样按段比较；空版本视为最旧
+// （已装版本未知时当作可更新）
+function cmpVersion(a, b) {
+  const cmpSegs = (A, B) => {
+    for (let i = 0; i < Math.max(A.length, B.length); i++) {
+      const x = A[i] || '';
+      const y = B[i] || '';
+      const nx = /^\d+$/.test(x) ? Number(x) : null;
+      const ny = /^\d+$/.test(y) ? Number(y) : null;
+      if (nx !== null && ny !== null) {
+        if (nx !== ny) return nx < ny ? -1 : 1;
+      } else if (x !== y) {
+        return x < y ? -1 : 1;
+      }
+    }
+    return 0;
+  };
+  const parse = (v) => {
+    const s = String(v || '');
+    const i = s.indexOf('-');
+    return { pre: i >= 0 ? s.slice(i + 1) : null, core: (i >= 0 ? s.slice(0, i) : s).split('.') };
+  };
+  const A = parse(a), B = parse(b);
+  const c = cmpSegs(A.core, B.core);
+  if (c !== 0) return c;
+  if ((A.pre === null) !== (B.pre === null)) return A.pre === null ? 1 : -1;
+  if (A.pre !== B.pre) return cmpSegs(A.pre.split('.'), B.pre.split('.'));
+  return 0;
+}
+
 // 比对市场清单与已装清单：每个插件的已装版本与最新版本。导出以便测试。
 export function pluginUpdateStatus() {
   const installedRaw = readJsonFile(join(cliPluginsDir(), 'installed_plugins.json'));
@@ -3261,7 +3263,8 @@ export function pluginUpdateStatus() {
     name: e.name,
     latest: e.version || '',
     installed: mine.get(e.name) || null,
-    hasUpdate: mine.has(e.name) && mine.get(e.name) !== (e.version || ''),
+    // 只有市场版本更高才算可更新：本地高于市场（市场回退/降级）不提示、不自动降级
+    hasUpdate: mine.has(e.name) && cmpVersion(mine.get(e.name), e.version || '') < 0,
   }));
   return { plugins, updates: plugins.filter((e) => e.hasUpdate) };
 }
@@ -3279,6 +3282,63 @@ async function ensureZcodePluginsMarketplace() {
   const r = await runZcodeCli(['plugins', 'marketplace', 'add', ZCODE_PLUGINS_MARKETPLACE_SOURCE], 120000);
   if (!r.ok) lastMarketplaceAddFail = Date.now();
   return { ok: r.ok, output: r.output, error: r.error };
+}
+
+// /plugins/update 并发控制：启动自动更新、打开设置弹窗时的自动触发、手动按钮、
+// 各插件面板的单插件操作都打到这个端点，而 CLI 同时改同一个插件目录会互相破坏。
+// 同目标（全量或同一插件名）的并发请求共用同一次执行结果；
+// 不同目标的请求排队串行，后到的等前一个结束再跑
+let pluginsUpdateJob = null; // { only, promise }：正在执行或排队的任务
+let pluginsUpdateQueue = Promise.resolve();
+
+async function runPluginsUpdateJob(body) {
+  // name 指定时只处理该插件：已装且有更新则更新，未装则安装（各插件面板的单插件操作）
+  const only = typeof body?.name === 'string' && body.name.trim() ? body.name.trim() : null;
+  const steps = [];
+  const added = await ensureZcodePluginsMarketplace();
+  if (added) steps.push({ step: 'marketplace add', ok: added.ok, output: added.output || added.error });
+  const sync = await runZcodeCli(['plugins', 'marketplace', 'update', ZCODE_PLUGINS_MARKETPLACE], 60000);
+  lastMarketplaceSync = Date.now();
+  steps.push({ step: 'marketplace update', ok: sync.ok, output: sync.output });
+  if (!sync.ok && sync.code !== 'cli-not-found') {
+    return { status: 500, payload: { ok: false, code: 'plugins-update', error: sync.error || sync.output || 'marketplace update 失败', steps } };
+  }
+  const status = pluginUpdateStatus();
+  if (!status) return { status: 200, payload: { ok: sync.ok, updated: 0, steps } };
+  let updated = 0;
+  for (const p of status.plugins) {
+    if (only && p.name !== only) continue;
+    if (p.installed && p.hasUpdate) {
+      const r = await runZcodeCli(['plugins', 'update', `${p.name}@${ZCODE_PLUGINS_MARKETPLACE}`], 120000);
+      steps.push({ step: `update ${p.name}`, ok: r.ok, output: r.output });
+      if (r.ok) updated += 1;
+    } else if (!p.installed && only) {
+      // 安装只走单插件入口（name 指定＝各面板的安装卡）：
+      // 全量“检查并更新”/启动自动更新只升级已装插件——卸载必须被尊重，
+      // 未装插件一律由用户在各 tab 显式点安装
+      const r = await runZcodeCli(['plugins', 'install', `${p.name}@${ZCODE_PLUGINS_MARKETPLACE}`], 120000);
+      steps.push({ step: `install ${p.name}`, ok: r.ok, output: r.output });
+      if (r.ok) updated += 1;
+    }
+  }
+  return { status: 200, payload: { ok: steps.every((s) => s.ok), updated, steps, ...pluginUpdateStatus() } };
+}
+
+function enqueuePluginsUpdate(body) {
+  const only = typeof body?.name === 'string' && body.name.trim() ? body.name.trim() : null;
+  if (pluginsUpdateJob && pluginsUpdateJob.only === only) return pluginsUpdateJob.promise;
+  const prev = pluginsUpdateQueue;
+  const promise = (async () => {
+    await prev;
+    try {
+      return await runPluginsUpdateJob(body);
+    } finally {
+      if (pluginsUpdateJob && pluginsUpdateJob.promise === promise) pluginsUpdateJob = null;
+    }
+  })();
+  pluginsUpdateQueue = promise.then(() => undefined, () => undefined);
+  pluginsUpdateJob = { only, promise };
+  return promise;
 }
 
 // 读全局提示词（~/.zcode/AGENTS.md）；文件不存在视为空内容。
