@@ -23,6 +23,7 @@ ZCode Pro enhances the ZCode desktop UI. No client files are modified; just laun
 | Idle project memory reclaim | Projects unused for a while with no running tasks release their memory automatically, and unused ones are reclaimed once after startup; sessions are untouched and reload when reopened (durations adjustable) |
 | Plugin card sandbox reclaim | Releases the oldest plugin-card sandboxes once the cap is hit (the one being viewed goes last), so new cards keep opening after the 64-slot pool fills up; released cards come back when their session is reopened (cap adjustable) |
 | Sidebar menu in the top bar | Turns "New task / Search / Automations / Plugin store" into icon buttons in the top navigation bar: hover shows the name, highlighted while its view is open, shortcuts still work |
+| Plugin panels on the new tab page | The built-in "new tab page" only lists built-in panels and recommended official plugins; this adds cards for third-party marketplace plugin panels (headroom, rtk, …) that open in the side pane |
 | Collapsible Pinned section | The sidebar "Pinned" header collapses/expands its task list; the state is remembered |
 | File menu actions | Adds "Open with default app" and "Reveal in file manager" to file links in chat |
 | Copy image | Right-click an image in chat or the enlarged preview to copy it to the clipboard |

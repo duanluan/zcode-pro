@@ -10,6 +10,7 @@ import { startAliasWatcher } from './features/alias.js';
 import { startAliasMigrationWatcher } from './features/alias-migration.js';
 import { startTaskOrderWatcher } from './features/task-order.js';
 import { startSessionSwitch } from './features/session-switch.js';
+import { startNewtabPanels } from './features/newtab-panels.js';
 import { startTitleLock } from './features/title-lock.js';
 import { startTitleGen } from './features/title-gen.js';
 import { startWsRunningSpin } from './features/ws-running.js';
@@ -58,6 +59,7 @@ import { ensureStyle } from './ui.js';
     try { startWsRunningSpin(); } catch { /* ignore */ }
     try { startIdleReclaim(); } catch { /* ignore */ }
     try { startToolbarIcons(); } catch { /* ignore */ }
+    try { startNewtabPanels(); } catch { /* ignore */ }
     try { startPinnedCollapse(); } catch { /* ignore */ }
     try { startStyleAdjustments(); } catch { /* ignore */ }
     try { startSettingsEntry(); } catch { /* ignore */ }

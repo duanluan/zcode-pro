@@ -360,6 +360,11 @@ export function openSettingsDialog() {
             if (await setFeature('wsRunningSpin', next)) f.wsRunningSpin = next;
             refreshRows();
           }),
+          settingRow(L.featureNewtabPanels, L.featureNewtabPanelsDesc, f.newtabPanels !== false, async () => {
+            const next = !(f.newtabPanels !== false);
+            if (await setFeature('newtabPanels', next)) f.newtabPanels = next;
+            refreshRows();
+          }),
           (() => {
             // 标题 = “自动更新 duanluan/zcode-plugins 插件”，仓库名可点击跳转仓库
             const repoLink = h('span', {

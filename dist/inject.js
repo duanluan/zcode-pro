@@ -255,6 +255,10 @@
     switcherUnseen: "\u672A\u67E5\u770B",
     switcherAttentionHint: "\u8FD0\u884C\u4E2D / \u8FD0\u884C\u5B8C\u672A\u67E5\u770B\u7684\u4EFB\u52A1 \xB7 {prev} / {next} \u6216 \u2191 / \u2193 \u9009\u62E9\uFF0CEnter \u6216\u677E\u5F00 alt \u5207\u6362",
     switcherAttentionEmpty: "\u6682\u65E0\u8FD0\u884C\u4E2D\u6216\u672A\u67E5\u770B\u7684\u4EFB\u52A1",
+    featureNewtabPanels: "\u65B0\u6807\u7B7E\u9875\u63D2\u4EF6\u9762\u677F\u5165\u53E3",
+    featureNewtabPanelsDesc: "\u5B98\u65B9\u201C\u65B0\u6807\u7B7E\u9875\u201D\u53EA\u5217\u5B98\u65B9\u9762\u677F\u4E0E\u63A8\u8350\u7684\u5B98\u65B9\u63D2\u4EF6\uFF0C\u6B64\u529F\u80FD\u628A\u7B2C\u4E09\u65B9\u5E02\u573A\u63D2\u4EF6\uFF08headroom\u3001rtk \u7B49\uFF09\u7684\u9762\u677F\u5361\u7247\u52A0\u8FDB\u53BB\uFF0C\u70B9\u51FB\u5728\u4FA7\u8FB9\u9762\u677F\u6253\u5F00\u3002",
+    ntpDescSuffix: "\u63D2\u4EF6\u9762\u677F",
+    ntpNeedSession: "\u5148\u6253\u5F00\u4E00\u4E2A\u4EFB\u52A1\u4F1A\u8BDD\uFF0C\u518D\u4ECE\u65B0\u6807\u7B7E\u9875\u6253\u5F00\u63D2\u4EF6\u9762\u677F",
     tabShortcuts: "\u5FEB\u6377\u952E",
     hkTitle: "\u4F1A\u8BDD\u5FEB\u6377\u5207\u6362",
     hkAltZ: "\u5728\u5F53\u524D\u4E0E\u4E0A\u6B21\u4F7F\u7528\u7684\u4F1A\u8BDD\u95F4\u6765\u56DE\u5207\u6362",
@@ -675,6 +679,10 @@
     switcherUnseen: "unseen",
     switcherAttentionHint: "Running / finished but unseen tasks \xB7 {prev} / {next} or \u2191 / \u2193 to choose, Enter or release alt to switch",
     switcherAttentionEmpty: "No running or unseen tasks",
+    featureNewtabPanels: "Plugin panels on the new tab page",
+    featureNewtabPanelsDesc: 'The built-in "new tab page" only lists built-in panels and recommended official plugins; this adds cards for third-party marketplace plugin panels (headroom, rtk, \u2026) that open in the side pane.',
+    ntpDescSuffix: "plugin panel",
+    ntpNeedSession: "Open a task session first, then open plugin panels from the new tab page",
     tabShortcuts: "Shortcuts",
     hkTitle: "Session quick switch",
     hkAltZ: "Toggle between the current and the last-used session",
@@ -2842,10 +2850,10 @@
   function startImageMenu() {
     if (typeof window === "undefined") return;
     if (typeof navigator.clipboard?.write !== "function" || typeof window.ClipboardItem === "undefined") return;
-    let enabled6 = true;
+    let enabled7 = true;
     const refresh = () => {
       void getConfig().then((c) => {
-        enabled6 = !(c.features && c.features.imageCopy === false);
+        enabled7 = !(c.features && c.features.imageCopy === false);
       });
     };
     refresh();
@@ -2854,7 +2862,7 @@
       const img = copyTargetOf(e.target, e.clientX, e.clientY);
       if (!img) return;
       e.preventDefault();
-      if (enabled6) showMenu(e.clientX, e.clientY, img);
+      if (enabled7) showMenu(e.clientX, e.clientY, img);
       refresh();
     }, true);
   }
@@ -4000,6 +4008,11 @@
             settingRow(L.featureWsRunning, L.featureWsRunningDesc, f.wsRunningSpin !== false, async () => {
               const next = !(f.wsRunningSpin !== false);
               if (await setFeature("wsRunningSpin", next)) f.wsRunningSpin = next;
+              refreshRows();
+            }),
+            settingRow(L.featureNewtabPanels, L.featureNewtabPanelsDesc, f.newtabPanels !== false, async () => {
+              const next = !(f.newtabPanels !== false);
+              if (await setFeature("newtabPanels", next)) f.newtabPanels = next;
               refreshRows();
             }),
             (() => {
@@ -7417,6 +7430,191 @@
     window.addEventListener("blur", () => closePopup(false));
   }
 
+  // src/inject/features/newtab-panels.js
+  var GRID_HINTS = ["\u8FD0\u884C\u547D\u4EE4\u548C\u67E5\u770B\u8F93\u51FA", "Run commands and view output"];
+  var OFFICIAL_SUFFIX = "@zcode-plugins-official";
+  var OPEN_FN_MARK = "\u6253\u5F00\u63D2\u4EF6 UI";
+  var enabled3 = true;
+  var injectTimer = 0;
+  function eachFiber(visit) {
+    const rootEl = document.getElementById("root");
+    const key = rootEl && Object.keys(rootEl).find((k) => k.startsWith("__reactContainer$"));
+    if (!key) return;
+    let visited = 0;
+    const walk = (f) => {
+      if (!f || visited > 2e5) return;
+      visited++;
+      if (visit(f)) return true;
+      return walk(f.child) || walk(f.sibling);
+    };
+    walk(rootEl[key]);
+  }
+  function findOpenSidePane() {
+    let found = null;
+    eachFiber((f) => {
+      const et = f.elementType;
+      if (et && typeof et === "object" && typeof et.$$typeof === "symbol" && String(et.$$typeof).includes("react.context")) {
+        const val = f.memoizedProps && f.memoizedProps.value;
+        if (typeof val === "function" && val.toString().includes(OPEN_FN_MARK)) {
+          found = val;
+          return true;
+        }
+      }
+      return false;
+    });
+    return found;
+  }
+  function findBridge() {
+    let holder = null;
+    const seen = /* @__PURE__ */ new Set();
+    const scan4 = (o) => {
+      if (!o || typeof o !== "object" || seen.has(o) || holder) return;
+      seen.add(o);
+      if (typeof o.pluginUiBridgeService === "object" && o.pluginUiBridgeService) {
+        holder = o.pluginUiBridgeService;
+        return;
+      }
+      for (const v of Object.values(o)) if (v && typeof v === "object") scan4(v);
+    };
+    eachFiber((f) => {
+      for (const h2 of [f.memoizedProps, f.memoizedState]) {
+        if (!h2 || typeof h2 !== "object") continue;
+        scan4(h2);
+        if (holder) return true;
+      }
+      return false;
+    });
+    return holder;
+  }
+  function sessionScope() {
+    const rows = [...document.querySelectorAll("[data-task-item-key]")];
+    const cur = rows.find((e) => (e.className + "").includes("bg-selected")) || rows[rows.length - 1];
+    const key = cur ? cur.getAttribute("data-task-item-key") : "";
+    if (!key) return null;
+    const i = key.indexOf(":sess_");
+    return i > 0 ? { workspacePath: key.slice(0, i), sessionId: key.slice(i + 1) } : null;
+  }
+  async function thirdPartySurfaces(bridge, workspacePath) {
+    try {
+      const list = await bridge.listSurfaces({ workspacePath });
+      return (list || []).filter((s) => !String(s.pluginId || "").endsWith(OFFICIAL_SUFFIX));
+    } catch {
+      return [];
+    }
+  }
+  function surfaceTitle(s, locale) {
+    const title = s.title;
+    const pick = (obj) => {
+      const lang = (locale || "").split("-")[0];
+      return obj[locale] || lang && obj[lang] || Object.entries(obj).find(([k]) => k.toLowerCase().startsWith(lang || "\0"))?.[1] || obj.en || Object.values(obj)[0] || "";
+    };
+    if (typeof title === "string") return title;
+    if (title && typeof title === "object") {
+      return pick(title) || s.pluginName || s.id;
+    }
+    return s.pluginName || s.id;
+  }
+  var PANEL_ICON_PATHS = ['<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>'];
+  function findNewTabGrid() {
+    const item = document.querySelector("[data-side-pane-open-tab-item]");
+    if (!item || item.offsetParent === null) return null;
+    const grid = item.parentElement;
+    if (!grid || grid === document.body) return null;
+    const text = grid.textContent || "";
+    return GRID_HINTS.some((h2) => text.includes(h2)) ? grid : null;
+  }
+  async function injectPanels(grid) {
+    if (grid.dataset.zcodeproPanels) return;
+    const template = grid.querySelector("[data-side-pane-open-tab-item]");
+    if (!template) return;
+    const scope = sessionScope();
+    if (!scope) return;
+    const bridge = findBridge();
+    if (!bridge) return;
+    const surfaces = await thirdPartySurfaces(bridge, scope.workspacePath);
+    if (!surfaces.length) {
+      grid.dataset.zcodeproPanels = "1";
+      return;
+    }
+    grid.dataset.zcodeproPanels = "1";
+    const L = t();
+    const locale = isZhLocale() ? "zh-CN" : "en-US";
+    for (const s of surfaces) {
+      const card = template.cloneNode(true);
+      card.removeAttribute("data-side-pane-open-tab-item");
+      card.setAttribute("data-zcodepro-panel", s.id);
+      card.setAttribute("data-zcodepro-panel-name", s.pluginName || "");
+      const title = surfaceTitle(s, locale);
+      const desc = (s.pluginName || "") + " \xB7 " + L.ntpDescSuffix;
+      const titleEl = card.querySelector("span.font-semibold");
+      if (titleEl) titleEl.textContent = title;
+      const descEl = card.querySelector("span[title]");
+      if (descEl) {
+        descEl.textContent = desc;
+        descEl.setAttribute("title", desc);
+      }
+      const svg = card.querySelector("svg");
+      if (svg) {
+        svg.innerHTML = PANEL_ICON_PATHS[0];
+        svg.setAttribute("viewBox", "0 0 24 24");
+      }
+      card.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        const sc = sessionScope();
+        const open = findOpenSidePane();
+        if (!sc || !open) {
+          showToast(L.ntpNeedSession, "error");
+          return;
+        }
+        try {
+          open({
+            parentSessionId: sc.sessionId,
+            pluginId: s.pluginId,
+            surfaceId: s.id,
+            serverName: s.server,
+            resourceUri: s.resourceUri,
+            remoteSessionId: null,
+            title,
+            workspacePath: sc.workspacePath
+          });
+        } catch (e) {
+          console.warn("[zcodepro] \u6253\u5F00\u63D2\u4EF6\u9762\u677F\u5931\u8D25", e);
+          showToast(L.ntpNeedSession, "error");
+        }
+      });
+      grid.append(card);
+    }
+  }
+  function tryInject() {
+    if (!enabled3 || document.hidden) return;
+    const grid = findNewTabGrid();
+    if (!grid) return;
+    if (grid.dataset.zcodeproPanels && !grid.querySelector("[data-zcodepro-panel]")) {
+      delete grid.dataset.zcodeproPanels;
+    }
+    void injectPanels(grid);
+  }
+  function startNewtabPanels() {
+    ensureStyle();
+    const refreshEnabled = () => {
+      void getConfig().then((cfg) => {
+        enabled3 = cfg.features ? cfg.features.newtabPanels !== false : true;
+      }).catch(() => {
+      });
+    };
+    refreshEnabled();
+    window.addEventListener("zcodepro:config-changed", refreshEnabled);
+    const observer2 = new MutationObserver(() => {
+      if (injectTimer) return;
+      injectTimer = setTimeout(() => {
+        injectTimer = 0;
+        tryInject();
+      }, 300);
+    });
+    observer2.observe(document.body, { childList: true, subtree: true });
+    setInterval(tryInject, 5e3);
+  }
+
   // src/inject/features/title-lock.js
   var TASK_SEL2 = "[data-task-item-key]";
   var SCAN_DEBOUNCE_MS3 = 150;
@@ -7427,7 +7625,7 @@
   var MAP_REFRESH_MS = 6e4;
   var installed3 = false;
   var seenRows = /* @__PURE__ */ new WeakSet();
-  var enabled3 = true;
+  var enabled4 = true;
   var pinned = null;
   var resolved = false;
   var fetching = null;
@@ -7451,8 +7649,8 @@
       const res = await rpc("/pinned-titles");
       if (!res || !res.ok) return null;
       resolved = true;
-      enabled3 = res.enabled !== false;
-      if (!enabled3) {
+      enabled4 = res.enabled !== false;
+      if (!enabled4) {
         pinned = null;
         return null;
       }
@@ -7467,7 +7665,7 @@
     }
   }
   function isMismatch(item) {
-    if (!enabled3 || !pinned) return null;
+    if (!enabled4 || !pinned) return null;
     const key = item.getAttribute("data-task-item-key") || "";
     const want = pinned.get(sessIdOf(key));
     if (want === void 0) return null;
@@ -7485,7 +7683,7 @@
   }
   function scheduleEnforce(key, { immediate = false } = {}) {
     if (immediate) {
-      if (enabled3 && pinned) {
+      if (enabled4 && pinned) {
         const want = pinned.get(sessIdOf(key));
         if (want !== void 0) {
           for (const item of findRows(key)) {
@@ -7526,7 +7724,7 @@
     }
   }
   function scan3() {
-    if (!enabled3 || !pinned || pinned.size === 0) return;
+    if (!enabled4 || !pinned || pinned.size === 0) return;
     for (const item of document.querySelectorAll(TASK_SEL2)) {
       const key = isMismatch(item);
       if (!key) {
@@ -7572,7 +7770,7 @@
         return;
       }
       mapRefreshTimer = 0;
-      if (enabled3 && resolved) void fetchPinned().then((m) => {
+      if (enabled4 && resolved) void fetchPinned().then((m) => {
         if (m) scan3();
       });
     };
@@ -7618,7 +7816,7 @@
       renameCtx = null;
       return;
     }
-    if (!enabled3 || !pinned) return;
+    if (!enabled4 || !pinned) return;
     const want = pinned.get(sessIdOf(renameCtx.key));
     if (want === void 0) return;
     for (const el of document.querySelectorAll('[role="dialog"] input, [role="dialog"] textarea, [role="dialog"] [contenteditable="true"]')) {
@@ -7981,7 +8179,7 @@
   var SCAN_FALLBACK_MS5 = 5e3;
   var ROW_SEL = "[data-task-item-key]";
   var MENU_SEL = '[data-testid="task-new-button"], [data-testid="automations-open"], [data-testid="plugin-store-sidebar-open"], [data-testid="sidebar-search-open"], [data-slot="command"], [data-testid="desktop-top-nav-back"]';
-  var enabled4 = true;
+  var enabled5 = true;
   var rowEl = null;
   var origs = null;
   var syncTimer = 0;
@@ -8124,7 +8322,7 @@
     return scroll.getBoundingClientRect().width < NARROW_SIDEBAR_PX;
   }
   function sync() {
-    if (!enabled4) return;
+    if (!enabled5) return;
     const parts = findParts();
     if (!parts) {
       if (rowEl) rowEl.style.display = "none";
@@ -8186,8 +8384,8 @@
   }
   async function refreshConfig2() {
     const cfg = await getConfig(true).catch(() => null);
-    enabled4 = !cfg || !cfg.features || cfg.features.toolbarIcons !== false;
-    if (enabled4) sync();
+    enabled5 = !cfg || !cfg.features || cfg.features.toolbarIcons !== false;
+    if (enabled5) sync();
     else teardown();
   }
   function startToolbarIcons() {
@@ -8213,7 +8411,7 @@
   var STORE_KEY = "zcodepro:pinned-collapsed";
   var SYNC_DEBOUNCE_MS2 = 300;
   var SCAN_FALLBACK_MS6 = 5e3;
-  var enabled5 = true;
+  var enabled6 = true;
   var syncTimer2 = 0;
   function findPinnedHeader() {
     for (const h3 of document.querySelectorAll("h3")) {
@@ -8270,7 +8468,7 @@
     }
     h3.classList.add(HEAD_CLASS);
     h3.addEventListener("click", () => {
-      if (enabled5) toggle();
+      if (enabled6) toggle();
     });
     const btn = h("button", {
       type: "button",
@@ -8279,7 +8477,7 @@
       "aria-expanded": collapsed ? "false" : "true",
       onClick: (e) => {
         e.stopPropagation();
-        if (enabled5) toggle();
+        if (enabled6) toggle();
       }
     });
     btn.append(chevronSvg());
@@ -8287,7 +8485,7 @@
     return true;
   }
   function sync2() {
-    if (enabled5) apply2();
+    if (enabled6) apply2();
   }
   function scheduleSync2() {
     if (syncTimer2) return;
@@ -8316,8 +8514,8 @@
   }
   async function refreshConfig3() {
     const cfg = await getConfig(true).catch(() => null);
-    enabled5 = !cfg || !cfg.features || cfg.features.pinnedCollapse !== false;
-    if (enabled5) sync2();
+    enabled6 = !cfg || !cfg.features || cfg.features.pinnedCollapse !== false;
+    if (enabled6) sync2();
     else teardown2();
   }
   function startPinnedCollapse() {
@@ -8434,6 +8632,10 @@
       }
       try {
         startToolbarIcons();
+      } catch {
+      }
+      try {
+        startNewtabPanels();
       } catch {
       }
       try {
