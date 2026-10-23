@@ -355,6 +355,16 @@ export function openSettingsDialog() {
             if (await setFeature('imageCopy', next)) f.imageCopy = next;
             refreshRows();
           }),
+          settingRow(L.featureSandboxReclaim, L.featureSandboxReclaimDesc, f.sandboxReclaim !== false, async () => {
+            const next = !(f.sandboxReclaim !== false);
+            if (await setFeature('sandboxReclaim', next)) f.sandboxReclaim = next;
+            refreshRows();
+          }),
+          settingRow(L.featurePluginCardRetry, L.featurePluginCardRetryDesc, f.pluginCardRetry !== false, async () => {
+            const next = !(f.pluginCardRetry !== false);
+            if (await setFeature('pluginCardRetry', next)) f.pluginCardRetry = next;
+            refreshRows();
+          }),
           settingRow(L.featureWsRunning, L.featureWsRunningDesc, f.wsRunningSpin !== false, async () => {
             const next = !(f.wsRunningSpin !== false);
             if (await setFeature('wsRunningSpin', next)) f.wsRunningSpin = next;

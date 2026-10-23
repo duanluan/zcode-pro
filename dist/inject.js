@@ -257,6 +257,10 @@
     tbPluginStore: "\u63D2\u4EF6\u5E02\u573A",
     featurePinnedCollapse: "\u5DF2\u7F6E\u9876\u5206\u533A\u53EF\u6298\u53E0",
     featurePinnedCollapseDesc: "\u4FA7\u8FB9\u680F\u201C\u5DF2\u7F6E\u9876\u201D\u6807\u9898\u53EF\u70B9\u51FB\u6298\u53E0/\u5C55\u5F00\u5176\u4EFB\u52A1\u5217\u8868\uFF08\u4E0E\u201C\u9879\u76EE\u201D\u201C\u5206\u7EC4\u201D\u5206\u533A\u4E00\u81F4\uFF09\uFF0C\u72B6\u6001\u8BB0\u4F4F\u3002",
+    featureSandboxReclaim: "\u63D2\u4EF6\u754C\u9762\u6C99\u7BB1\u56DE\u6536",
+    featureSandboxReclaimDesc: "\u63D2\u4EF6\u5361\u7247\u6C99\u7BB1\u6570\u91CF\u8FBE\u5230\u4E0A\u9650\u65F6\u81EA\u52A8\u91CA\u653E\u6700\u65E9\u521B\u5EFA\u7684\uFF08\u6B63\u5728\u67E5\u770B\u7684\u6392\u6700\u540E\uFF09\uFF0C\u907F\u514D 64 \u4E2A\u540D\u989D\u8017\u5C3D\u540E\u65B0\u5361\u7247\u6253\u4E0D\u5F00\uFF1B\u88AB\u91CA\u653E\u7684\u65E7\u5361\u7247\u91CD\u65B0\u6253\u5F00\u6240\u5728\u4F1A\u8BDD\u5373\u6062\u590D\uFF08\u9884\u7B97\u53EF\u5728\u914D\u7F6E\u6587\u4EF6 sandboxReclaimBudget \u8C03\u6574\uFF09\u3002",
+    featurePluginCardRetry: "\u63D2\u4EF6\u5361\u7247\u81EA\u52A8\u91CD\u8BD5",
+    featurePluginCardRetryDesc: "\u56E0\u540D\u989D\u4E0A\u9650\u52A0\u8F7D\u5931\u8D25\u7684\u63D2\u4EF6\u5361\u7247\u81EA\u52A8\u70B9\u51FB\u201C\u91CD\u65B0\u52A0\u8F7D\u201D\uFF0C\u540D\u989D\u7A7A\u51FA\u540E\u81EA\u52A8\u6062\u590D\uFF0C\u65E0\u9700\u624B\u52A8\u8E72\u5B88\u3002",
     visionCardUi: "\u601D\u8003\u8FC7\u7A0B\u663E\u793A\u8BC6\u56FE\u5361\u7247",
     pinnedToggleAria: "\u6298\u53E0/\u5C55\u5F00\u5DF2\u7F6E\u9876",
     sidebarProjectSpacingName: "\u9879\u76EE\u95F4\u8DDD",
@@ -710,6 +714,10 @@
     tbPluginStore: "Plugin store",
     featurePinnedCollapse: "Collapsible Pinned section",
     featurePinnedCollapseDesc: 'The sidebar "Pinned" header collapses/expands its task list (like Projects and Groups); the state is remembered.',
+    featureSandboxReclaim: "Plugin card sandbox reclaim",
+    featureSandboxReclaimDesc: "Releases the oldest plugin-card sandboxes once the cap is hit (the one being viewed goes last), so new cards keep opening after the 64-slot pool fills up; released cards come back when their session is reopened (budget adjustable via sandboxReclaimBudget in the config file).",
+    featurePluginCardRetry: "Plugin card auto-retry",
+    featurePluginCardRetryDesc: 'Auto-clicks "Reload" on cards that failed the slot cap; they recover as soon as a slot frees up.',
     visionCardUi: "Vision cards",
     pinnedToggleAria: "Collapse/expand Pinned",
     sidebarProjectSpacingName: "Project spacing",
@@ -1102,20 +1110,20 @@
     }
   }
   function observeRadixPopups(onPopup) {
-    const seen = /* @__PURE__ */ new WeakSet();
+    const seen2 = /* @__PURE__ */ new WeakSet();
     const check = (node) => {
       if (!(node instanceof HTMLElement)) return;
       if (node.hasAttribute("data-radix-popper-content-wrapper")) {
         requestAnimationFrame(() => {
           const content = node.firstElementChild;
-          if (content && !seen.has(content)) {
-            seen.add(content);
+          if (content && !seen2.has(content)) {
+            seen2.add(content);
             onPopup(content);
           }
         });
       }
-      if (node.getAttribute && node.getAttribute("role") === "menu" && !seen.has(node)) {
-        seen.add(node);
+      if (node.getAttribute && node.getAttribute("role") === "menu" && !seen2.has(node)) {
+        seen2.add(node);
         requestAnimationFrame(() => {
           if (node.isConnected) onPopup(node);
         });
@@ -3096,7 +3104,7 @@
   function waitFor(getter, timeoutMs, step) {
     const start = Date.now();
     return new Promise((resolve, reject) => {
-      const tick4 = () => {
+      const tick6 = () => {
         let v = null;
         try {
           v = getter();
@@ -3110,9 +3118,9 @@
           reject(new Error(step));
           return;
         }
-        setTimeout(tick4, 120);
+        setTimeout(tick6, 120);
       };
-      tick4();
+      tick6();
     });
   }
   function setReactInputValue(input, value) {
@@ -3884,7 +3892,7 @@
       setState(L.upgradeFound.replaceAll("{v}", res.latest || ""));
       btn.textContent = L.upgradeNow;
     };
-    const tick4 = async () => {
+    const tick6 = async () => {
       const res = await rpc(endpoint + "/upgrade");
       if (!res.ok) {
         stopPoll();
@@ -3924,9 +3932,9 @@
       btn.textContent = L.upgradeStop;
       setState(L.upgradeRunning);
       timer = setInterval(() => {
-        void tick4();
+        void tick6();
       }, 1500);
-      void tick4();
+      void tick6();
     };
     void (async () => {
       const res = await rpc(endpoint + "/upgrade");
@@ -4133,6 +4141,16 @@
             settingRow(L.featureImageCopy, L.featureImageCopyDesc, f.imageCopy !== false, async () => {
               const next = !(f.imageCopy !== false);
               if (await setFeature("imageCopy", next)) f.imageCopy = next;
+              refreshRows();
+            }),
+            settingRow(L.featureSandboxReclaim, L.featureSandboxReclaimDesc, f.sandboxReclaim !== false, async () => {
+              const next = !(f.sandboxReclaim !== false);
+              if (await setFeature("sandboxReclaim", next)) f.sandboxReclaim = next;
+              refreshRows();
+            }),
+            settingRow(L.featurePluginCardRetry, L.featurePluginCardRetryDesc, f.pluginCardRetry !== false, async () => {
+              const next = !(f.pluginCardRetry !== false);
+              if (await setFeature("pluginCardRetry", next)) f.pluginCardRetry = next;
               refreshRows();
             }),
             settingRow(L.featureWsRunning, L.featureWsRunningDesc, f.wsRunningSpin !== false, async () => {
@@ -6806,11 +6824,11 @@
       const rootEl = document.getElementById("root");
       const containerKey = rootEl && Object.keys(rootEl).find((k) => k.startsWith("__reactContainer$"));
       if (!containerKey) return null;
-      const seen = /* @__PURE__ */ new Set();
+      const seen2 = /* @__PURE__ */ new Set();
       let found = null;
       const scanObj = (o) => {
-        if (!o || typeof o !== "object" || seen.has(o) || found) return;
-        seen.add(o);
+        if (!o || typeof o !== "object" || seen2.has(o) || found) return;
+        seen2.add(o);
         const ts = o.zcodeTaskService;
         if (ts && typeof ts === "object" && typeof ts.releaseWorkspacePreparation === "function") found = o;
       };
@@ -6949,11 +6967,11 @@
     }, 0);
   }
   function apply() {
-    const seen = /* @__PURE__ */ new Set();
+    const seen2 = /* @__PURE__ */ new Set();
     for (const row of document.querySelectorAll(WS_SEL())) {
       const path = rowPath(row);
       if (!path) continue;
-      seen.add(path);
+      seen2.add(path);
       const head = wsHead(row);
       const collapsed = !head || head.getAttribute("aria-expanded") === "false";
       const domRunning = !!(runningByWs.get(path) && runningByWs.get(path).size);
@@ -6964,7 +6982,7 @@
       setRunningIcon(icon2, running);
     }
     applySectionSpin();
-    for (const ws of [...runningByWs.keys()]) if (!seen.has(ws)) runningByWs.delete(ws);
+    for (const ws of [...runningByWs.keys()]) if (!seen2.has(ws)) runningByWs.delete(ws);
   }
   var headInfoCache = /* @__PURE__ */ new WeakMap();
   var PROJECT_HEAD_TEXTS = /* @__PURE__ */ new Set(["\u9879\u76EE", "projects"]);
@@ -7766,10 +7784,10 @@
   }
   function findBridge() {
     let holder = null;
-    const seen = /* @__PURE__ */ new Set();
+    const seen2 = /* @__PURE__ */ new Set();
     const scan5 = (o) => {
-      if (!o || typeof o !== "object" || seen.has(o) || holder) return;
-      seen.add(o);
+      if (!o || typeof o !== "object" || seen2.has(o) || holder) return;
+      seen2.add(o);
       if (typeof o.pluginUiBridgeService === "object" && o.pluginUiBridgeService) {
         holder = o.pluginUiBridgeService;
         return;
@@ -7951,10 +7969,10 @@
   }
   function findUsageService() {
     let found = null;
-    const seen = /* @__PURE__ */ new Set();
+    const seen2 = /* @__PURE__ */ new Set();
     const scan5 = (o) => {
-      if (!o || typeof o !== "object" || seen.has(o) || found) return;
-      seen.add(o);
+      if (!o || typeof o !== "object" || seen2.has(o) || found) return;
+      seen2.add(o);
       if (typeof o.usageStatsService === "object" && o.usageStatsService) {
         found = o.usageStatsService;
         return;
@@ -8481,9 +8499,9 @@
   var mapRefreshTimer = 0;
   function refreshMapSoon() {
     if (mapRefreshTimer) return;
-    const tick4 = () => {
+    const tick6 = () => {
       if (document.hidden) {
-        mapRefreshTimer = setTimeout(tick4, 1e4);
+        mapRefreshTimer = setTimeout(tick6, 1e4);
         return;
       }
       mapRefreshTimer = 0;
@@ -8491,7 +8509,7 @@
         if (m) scan4();
       });
     };
-    mapRefreshTimer = setTimeout(tick4, MAP_REFRESH_MS);
+    mapRefreshTimer = setTimeout(tick6, MAP_REFRESH_MS);
   }
   var editingKey = null;
   var bootDelay = 0;
@@ -8890,6 +8908,157 @@
     setInterval(loop, CHECK_MS);
   }
 
+  // src/inject/features/sandbox-reclaim.js
+  var CHECK_MS2 = 3e4;
+  var MIN_BUDGET = 8;
+  var MAX_BUDGET = 64;
+  var RETRY_COOLDOWN_MS = 10 * 6e4;
+  var SEEN_KEY = "zcodepro:sbx-seen";
+  var seen = /* @__PURE__ */ new Map();
+  function loadSeen() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(SEEN_KEY) || "{}");
+      for (const [id, v] of Object.entries(raw)) {
+        if (id && v && Number.isFinite(v.firstSeen)) seen.set(id, { initId: v.initId, firstSeen: v.firstSeen });
+      }
+    } catch {
+    }
+  }
+  var saveSeenTimer = null;
+  function saveSeenSoon() {
+    if (saveSeenTimer) return;
+    saveSeenTimer = setTimeout(() => {
+      saveSeenTimer = null;
+      try {
+        const out = {};
+        for (const [id, v] of seen) out[id] = v;
+        localStorage.setItem(SEEN_KEY, JSON.stringify(out));
+      } catch {
+      }
+    }, 2e3);
+  }
+  var cooldown = /* @__PURE__ */ new Map();
+  var disabledLogged = false;
+  function onPortsMessage(e) {
+    const d = e.data;
+    if (!d || d.type !== "zcode:plugin-sandbox-ports" || typeof d.sandboxId !== "string") return;
+    seen.set(d.sandboxId, { initId: Number(d.initId) || 0, firstSeen: Date.now() });
+    saveSeenSoon();
+  }
+  function extractSandboxId(wv) {
+    const m = /instance\/(sb-[0-9a-f]+)\//.exec(wv.getAttribute("src") || "");
+    return m ? m[1] : null;
+  }
+  function isVisible(wv) {
+    const root = wv.closest("[data-sandbox-page-root]");
+    if (!root) return wv.getClientRects().length > 0;
+    if (!root.getClientRects().length) return false;
+    return Number(getComputedStyle(root).opacity) > 0.5;
+  }
+  async function tick4() {
+    const cfg = await getConfig();
+    if ((cfg.features || {}).sandboxReclaim === false) {
+      seen.clear();
+      return;
+    }
+    const bridge = window.zcodePluginSandbox;
+    if (!bridge || typeof bridge.disposeSandbox !== "function") {
+      if (!disabledLogged) {
+        disabledLogged = true;
+        console.info("[zcodepro] sandbox-reclaim: \u5F53\u524D\u7A97\u53E3\u65E0 zcodePluginSandbox \u6865\uFF0C\u6C99\u7BB1\u56DE\u6536\u8DF3\u8FC7");
+      }
+      return;
+    }
+    let budget = Number(cfg.sandboxReclaimBudget);
+    if (!Number.isFinite(budget)) budget = 60;
+    budget = Math.min(MAX_BUDGET, Math.max(MIN_BUDGET, budget));
+    const now = Date.now();
+    const visible = /* @__PURE__ */ new Set();
+    for (const wv of document.querySelectorAll("webview")) {
+      const id = extractSandboxId(wv);
+      if (id) {
+        if (isVisible(wv)) visible.add(id);
+        if (!seen.has(id)) {
+          seen.set(id, { initId: void 0, firstSeen: now });
+          saveSeenSoon();
+        }
+      }
+    }
+    while (seen.size > budget) {
+      let pool = [...seen.keys()].filter((id2) => (cooldown.get(id2) || 0) <= now && !visible.has(id2));
+      if (!pool.length) pool = [...seen.keys()].filter((id2) => (cooldown.get(id2) || 0) <= now);
+      pool.sort((a, b) => ((seen.get(a) || {}).firstSeen || 0) - ((seen.get(b) || {}).firstSeen || 0));
+      if (!pool.length) break;
+      const id = pool[0];
+      const entry = seen.get(id);
+      try {
+        await bridge.disposeSandbox(id, entry && entry.initId);
+        console.info("[zcodepro] sandbox-reclaim: \u767B\u8BB0\u6570 " + seen.size + " \u8D85\u9884\u7B97 " + budget + "\uFF0C\u5DF2\u9A71\u9010\u6700\u65E9\u7684 " + id + (visible.has(id) ? "\uFF08\u53EF\u89C1\uFF0C\u5C5E\u515C\u5E95\uFF09" : ""));
+      } catch (err) {
+        console.warn("[zcodepro] sandbox-reclaim: \u91CA\u653E\u5931\u8D25 " + id, err);
+        seen.delete(id);
+        continue;
+      }
+      seen.delete(id);
+      saveSeenSoon();
+      cooldown.set(id, now + RETRY_COOLDOWN_MS);
+    }
+    if (cooldown.size > 256) {
+      for (const [k, v] of cooldown) {
+        if (v <= now) cooldown.delete(k);
+      }
+    }
+  }
+  function startSandboxReclaim() {
+    loadSeen();
+    window.addEventListener("message", onPortsMessage);
+    const loop = () => {
+      tick4().catch(() => {
+      });
+    };
+    loop();
+    setInterval(loop, CHECK_MS2);
+  }
+
+  // src/inject/features/plugin-card-retry.js
+  var SCAN_MS = 15e3;
+  var CLICK_INTERVAL_MS = 3e4;
+  var MARKERS = ["\u63D2\u4EF6\u754C\u9762"];
+  var lastClickAt = 0;
+  function failedRetryButtons() {
+    const out = [];
+    for (const btn of document.querySelectorAll("button")) {
+      if ((btn.textContent || "").trim() !== "\u91CD\u65B0\u52A0\u8F7D") continue;
+      let anc = btn;
+      for (let i = 0; i < 4 && anc.parentElement; i++) {
+        anc = anc.parentElement;
+        const ctx = anc.textContent || "";
+        if (MARKERS.some((m) => ctx.includes(m))) {
+          out.push(btn);
+          break;
+        }
+      }
+    }
+    return out;
+  }
+  async function tick5() {
+    const cfg = await getConfig();
+    if ((cfg.features || {}).pluginCardRetry === false) return;
+    const now = Date.now();
+    if (now - lastClickAt < CLICK_INTERVAL_MS) return;
+    for (const btn of failedRetryButtons()) {
+      lastClickAt = now;
+      btn.click();
+      break;
+    }
+  }
+  function startPluginCardRetry() {
+    setInterval(() => {
+      tick5().catch(() => {
+      });
+    }, SCAN_MS);
+  }
+
   // src/inject/features/toolbar-icons.js
   var HIDE_CLASS = "zcodepro-tb-hidden";
   var SYNC_DEBOUNCE_MS = 150;
@@ -9267,12 +9436,12 @@
       return;
     }
     const sig = status.updates.map((u) => `${u.name}:${u.installed}>${u.latest}`).join(",");
-    let seen = "";
+    let seen2 = "";
     try {
-      seen = window.localStorage.getItem(NOTIFIED_KEY) || "";
+      seen2 = window.localStorage.getItem(NOTIFIED_KEY) || "";
     } catch {
     }
-    if (seen === sig) return;
+    if (seen2 === sig) return;
     try {
       window.localStorage.setItem(NOTIFIED_KEY, sig);
     } catch {
@@ -9345,6 +9514,14 @@
       }
       try {
         startIdleReclaim();
+      } catch {
+      }
+      try {
+        startSandboxReclaim();
+      } catch {
+      }
+      try {
+        startPluginCardRetry();
       } catch {
       }
       try {

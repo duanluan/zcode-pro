@@ -667,8 +667,12 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         }
         try {
           const file = defaultVisionFile();
+          // 与磁盘旧配置合并（本块曾两次被并发改动覆盖回全量覆盖）：前端按自己
+          // 的字段重建整份配置，直接覆盖会丢插件新增、面板还不认识的键
+          //（cardSandboxBudget/cardUi/interceptMode 等）
+          const merged = { ...(readJsonFile(file) || {}), ...cfg };
           const tmp = file + '.tmp';
-          writeFileSync(tmp, JSON.stringify(cfg, null, 2) + '\n', 'utf-8');
+          writeFileSync(tmp, JSON.stringify(merged, null, 2) + '\n', 'utf-8');
           renameSync(tmp, file);
         } catch (err2) {
           json(res, 500, { ok: false, code: 'vision-write', error: '写入 zcode-vision.json 失败: ' + (err2?.message || err2) });
@@ -2566,6 +2570,8 @@ export function validateVisionConfig(raw) {
     // 识图卡片展示：只在调用方显式给值时透传（面板开关用）；缺省不写键，
     // 让 POST 的磁盘合并保留原值（zcode-pro 装机缺省 true 的补键逻辑见 GET /vision）
     ...(raw.cardUi !== undefined ? { cardUi: raw.cardUi === true } : {}),
+    // interceptMode（tool/inject）同 cardUi：显式给值才透传，缺省保持磁盘原值
+    ...(raw.interceptMode !== undefined && ['tool', 'inject'].includes(raw.interceptMode) ? { interceptMode: raw.interceptMode } : {}),
   };
   const names = new Set();
   for (const p of raw.proxies) {

@@ -17,6 +17,8 @@ import { startTitleLock } from './features/title-lock.js';
 import { startTitleGen } from './features/title-gen.js';
 import { startWsRunningSpin } from './features/ws-running.js';
 import { startIdleReclaim } from './features/idle-reclaim.js';
+import { startSandboxReclaim } from './features/sandbox-reclaim.js';
+import { startPluginCardRetry } from './features/plugin-card-retry.js';
 import { startToolbarIcons } from './features/toolbar-icons.js';
 import { startPinnedCollapse } from './features/pinned-collapse.js';
 import { startStyleAdjustments } from './features/styles.js';
@@ -60,6 +62,8 @@ import { ensureStyle } from './ui.js';
     try { startImageMenu(); } catch { /* ignore */ }
     try { startWsRunningSpin(); } catch { /* ignore */ }
     try { startIdleReclaim(); } catch { /* ignore */ }
+    try { startSandboxReclaim(); } catch { /* ignore */ }
+    try { startPluginCardRetry(); } catch { /* ignore */ }
     try { startToolbarIcons(); } catch { /* ignore */ }
     try { startNewtabPanels(); } catch { /* ignore */ }
     try { startStatusBar(); } catch { /* ignore */ }

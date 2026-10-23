@@ -27,7 +27,29 @@ const MIN_BUDGET = 8;
 const MAX_BUDGET = 64;
 const RETRY_COOLDOWN_MS = 10 * 60_000;  // 同一沙箱释放失败后的重试冷却
 
+const SEEN_KEY = 'zcodepro:sbx-seen'; // 登记簿持久化键（localStorage，跨 zcode-pro 重载保留）
 const seen = new Map();     // sandboxId → { initId, firstSeen }
+function loadSeen() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(SEEN_KEY) || '{}');
+    for (const [id, v] of Object.entries(raw)) {
+      if (id && v && Number.isFinite(v.firstSeen)) seen.set(id, { initId: v.initId, firstSeen: v.firstSeen });
+    }
+  } catch { /* 损坏则从零开始 */ }
+}
+let saveSeenTimer = null;
+function saveSeenSoon() {
+  // 防抖落盘：广播可能成串到达，逐条写 localStorage 没必要
+  if (saveSeenTimer) return;
+  saveSeenTimer = setTimeout(() => {
+    saveSeenTimer = null;
+    try {
+      const out = {};
+      for (const [id, v] of seen) out[id] = v;
+      localStorage.setItem(SEEN_KEY, JSON.stringify(out));
+    } catch { /* 写失败不影响运行 */ }
+  }, 2000);
+}
 const cooldown = new Map(); // sandboxId → 释放失败冷却截止时刻
 let disabledLogged = false;
 
@@ -37,6 +59,7 @@ function onPortsMessage(e) {
   // 端口广播≈沙箱创建时刻；页面刷新后宿主按幂等键复用同一沙箱并再次广播，
   // 创建时刻随之刷新（视作新名额重新排队）
   seen.set(d.sandboxId, { initId: Number(d.initId) || 0, firstSeen: Date.now() });
+  saveSeenSoon();
 }
 
 function extractSandboxId(wv) {
@@ -74,36 +97,41 @@ async function tick() {
   budget = Math.min(MAX_BUDGET, Math.max(MIN_BUDGET, budget));
 
   const now = Date.now();
-  const live = new Map(); // sandboxId → 是否可见
-  for (const wv of document.querySelectorAll('webview[data-zcode-retained-sandbox]')) {
+  // 存活计数以端口广播登记数（seen）为准：卡片滚出视口后宿主会把它收进停靠区并从
+  // 常驻 DOM 摘除（实测 DOM webview 数远小于宿主注册数），拿 DOM 数当触发条件
+  // 永远到不了预算、从不驱逐——名额就一直是满的。DOM 只用来标记"正在被看"：
+  const visible = new Set(); // 展示中的 sandboxId（驱逐时避开）
+  for (const wv of document.querySelectorAll('webview')) {
     const id = extractSandboxId(wv);
-    if (id) live.set(id, isVisible(wv));
-  }
-  // 端口广播登记过但 DOM 已无对应 webview 的条目（guest 已销毁）：清掉，防 Map 无限增长
-  for (const id of [...seen.keys()]) {
-    if (!live.has(id)) seen.delete(id);
-  }
-  // 重注入后端口广播没赶上（Map 为空）的兜底：首次观察到时按现在起算创建时刻
-  for (const id of live.keys()) {
-    if (!seen.has(id)) seen.set(id, { initId: undefined, firstSeen: now });
+    if (id) {
+      if (isVisible(wv)) visible.add(id);
+      // 漏听广播的名额（持久化损坏/清空过）：见到即补录，创建时刻从现在起算
+      if (!seen.has(id)) { seen.set(id, { initId: undefined, firstSeen: now }); saveSeenSoon(); }
+    }
   }
 
-  while (live.size > budget) {
-    // 驱逐顺序：不可见的按创建时间最早的 → 全可见时最早的可见沙箱
-    const candidates = [...live.entries()]
-      .filter(([id]) => (cooldown.get(id) || 0) <= now)
-      .sort((a, b) => (a[1] - b[1]) || ((seen.get(a[0]) || {}).firstSeen || 0) - ((seen.get(b[0]) || {}).firstSeen || 0));
-    if (!candidates.length) break;
-    const [id] = candidates[0];
+  while (seen.size > budget) {
+    // 驱逐顺序：不可见的按创建时间最早的 → 全都可见时最早的（保持原语义）
+    let pool = [...seen.keys()].filter((id) => (cooldown.get(id) || 0) <= now && !visible.has(id));
+    if (!pool.length) pool = [...seen.keys()].filter((id) => (cooldown.get(id) || 0) <= now);
+    pool.sort((a, b) => ((seen.get(a) || {}).firstSeen || 0) - ((seen.get(b) || {}).firstSeen || 0));
+    if (!pool.length) break;
+    const id = pool[0];
     const entry = seen.get(id);
     try {
       await bridge.disposeSandbox(id, entry && entry.initId);
-      console.info('[zcodepro] sandbox-reclaim: 沙箱满 ' + live.size + ' 个，已驱逐最早的 ' + id);
+      console.info('[zcodepro] sandbox-reclaim: 登记数 ' + seen.size + ' 超预算 ' + budget + '，已驱逐最早的 ' + id + (visible.has(id) ? '（可见，属兜底）' : ''));
     } catch (err) {
       console.warn('[zcodepro] sandbox-reclaim: 释放失败 ' + id, err);
+      // 失败也出账：死 id（如应用重启后的存量）不清会永远排最旧、堵住驱逐队列；
+      // 真活着的名额漏掉这一轮，下张卡创建时广播会重新入账
+      seen.delete(id);
+      continue;
     }
     seen.delete(id);
-    live.delete(id);
+    saveSeenSoon();
+    // 驱逐成功也设冷却：宿主侧真正释放是异步的，同轮连发多个 dispose 可能
+    // 在宿主来不及记账时重复命中；冷却让下一轮重新评估剩余数量
     cooldown.set(id, now + RETRY_COOLDOWN_MS);
   }
   if (cooldown.size > 256) {
@@ -114,6 +142,7 @@ async function tick() {
 }
 
 export function startSandboxReclaim() {
+  loadSeen();
   window.addEventListener('message', onPortsMessage);
   const loop = () => { tick().catch(() => { /* 单次巡检失败不影响后续 */ }); };
   loop();
