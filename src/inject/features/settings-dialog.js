@@ -375,16 +375,6 @@ export function openSettingsDialog() {
             if (await setFeature('newtabPanels', next)) f.newtabPanels = next;
             refreshRows();
           }),
-          settingRow(L.featureStatusBar, L.featureStatusBarDesc, f.statusBar !== false, async () => {
-            const next = !(f.statusBar !== false);
-            if (await setFeature('statusBar', next)) f.statusBar = next;
-            refreshRows();
-          }),
-          settingRow(L.featureTurnUsage, L.featureTurnUsageDesc, f.turnUsage !== false, async () => {
-            const next = !(f.turnUsage !== false);
-            if (await setFeature('turnUsage', next)) f.turnUsage = next;
-            refreshRows();
-          }),
           (() => {
             // 标题 = “自动更新 duanluan/zcode-plugins 插件”，仓库名可点击跳转仓库
             const repoLink = h('span', {
@@ -840,8 +830,28 @@ export function openSettingsDialog() {
         renderGroup(sbGlobalList, STATUS_GLOBAL_IDS);
       };
       renderSbItems();
+      const sbPaneRerender = () => { renderSbItems(); };
+      // 总开关：与其它设置行完全同款 settingRow（自带开关样式）；保存成功后
+      // 重建该行让开关视觉立即跟随
+      let masterRow = null;
+      const renderMaster = () => {
+        const next = masterRow ? !((config.features || {}).statusBar !== false) : ((config.features || {}).statusBar !== false);
+        const fresh = settingRow(L.sbMaster, L.sbMasterDesc, (config.features || {}).statusBar !== false, async () => {
+          const to = !((config.features || {}).statusBar !== false);
+          const res = await rpc('/config', { method: 'POST', body: { features: { statusBar: to } } });
+          clearConfigCache();
+          if (res.ok) { config.features = { ...(config.features || {}), statusBar: to }; }
+          window.dispatchEvent(new CustomEvent('zcodepro:config-changed'));
+          renderMaster();
+        });
+        fresh.setAttribute('data-zcodepro-sb-master', '1');
+        if (masterRow) masterRow.replaceWith(fresh);
+        masterRow = fresh;
+      };
+      renderMaster();
       paneStylesSub2.append(
-        h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.featureStatusBarDesc),
+        masterRow,
+        h('p', { class: 'mt-2 text-ui-sm/relaxed text-foreground-subtle' }, L.featureStatusBarDesc),
         h('div', { class: 'mt-3 mb-1 text-ui-sm font-medium' }, L.sbGroupSession),
         sbList,
         h('div', { class: 'mt-3 mb-1 text-ui-sm font-medium' }, L.sbGroupGlobal),

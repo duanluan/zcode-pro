@@ -286,20 +286,19 @@
     featureNewtabPanelsDesc: "\u5B98\u65B9\u201C\u65B0\u6807\u7B7E\u9875\u201D\u53EA\u5217\u5B98\u65B9\u9762\u677F\u4E0E\u63A8\u8350\u7684\u5B98\u65B9\u63D2\u4EF6\uFF0C\u6B64\u529F\u80FD\u628A\u7B2C\u4E09\u65B9\u5E02\u573A\u63D2\u4EF6\uFF08headroom\u3001rtk \u7B49\uFF09\u7684\u9762\u677F\u5361\u7247\u52A0\u8FDB\u53BB\uFF0C\u70B9\u51FB\u5728\u4FA7\u8FB9\u9762\u677F\u6253\u5F00\u3002",
     ntpDescSuffix: "\u63D2\u4EF6\u9762\u677F",
     ntpNeedSession: "\u5148\u6253\u5F00\u4E00\u4E2A\u4EFB\u52A1\u4F1A\u8BDD\uFF0C\u518D\u4ECE\u65B0\u6807\u7B7E\u9875\u6253\u5F00\u63D2\u4EF6\u9762\u677F",
-    featureStatusBar: "\u72B6\u6001\u680F\u7EDF\u8BA1",
     featureStatusBarDesc: "\u4E3B\u754C\u9762\u5E95\u90E8\u53F3\u4E0B\u89D2\u663E\u793A\u7EDF\u8BA1\u9879\uFF1A\u4E0A\u4E0B\u6587\u5360\u7528\u3001\u4F1A\u8BDD/\u4ECA\u65E5/\u7D2F\u8BA1 token\u3001\u4EFB\u52A1\u6570\u7B49\uFF1B\u5404\u9879\u7684\u987A\u5E8F\u4E0E\u663E\u9690\u5728\u201C\u6837\u5F0F \u2192 \u72B6\u6001\u680F\u201D\u91CC\u8C03\u6574\u3002",
     tabStylesPane: "\u6837\u5F0F\u8C03\u6574",
     tabStatusPane: "\u72B6\u6001\u680F",
     sbItemCtx: "\u4E0A\u4E0B\u6587\u5360\u7528",
     sbItemQuestions: "\u63D0\u95EE\u6B21\u6570",
+    sbMaster: "\u542F\u7528\u7EDF\u8BA1",
+    sbMasterDesc: "\u603B\u5F00\u5173\uFF1A\u5173\u95ED\u540E\u5E95\u90E8\u72B6\u6001\u680F\u4E0E\u6BCF\u8F6E\u56DE\u7B54\u7684\u7528\u91CF\u6807\u6CE8\u4E00\u8D77\u505C\u7528\u3002",
     sbGroupSession: "\u4F1A\u8BDD\u7EDF\u8BA1\uFF08\u8DDF\u968F\u5F53\u524D\u4F1A\u8BDD\uFF09",
     sbGroupGlobal: "\u603B\u7EDF\u8BA1",
     sbGroupTurn: "\u6BCF\u8F6E\u7EDF\u8BA1\uFF08\u56DE\u7B54\u672B\u5C3E\uFF09",
     sbLabelIn: "\u8F93\u5165",
     sbLabelOut: "\u8F93\u51FA",
     sbLabelCache: "\u7F13\u5B58",
-    featureTurnUsage: "\u6BCF\u8F6E\u56DE\u7B54 token \u7528\u91CF",
-    featureTurnUsageDesc: "\u5728\u6BCF\u6761\u56DE\u7B54\u672B\u5C3E\u64CD\u4F5C\u6309\u94AE\u7684\u65F6\u95F4\u540E\u9762\u663E\u793A\u8BE5\u8F6E\u7684\u8F93\u5165/\u8F93\u51FA token\uFF08\u672C\u5730\u8BB0\u5F55\u53EA\u4FDD\u7559\u6700\u8FD1\u82E5\u5E72\u8F6E\uFF0C\u5BF9\u4E0D\u4E0A\u65F6\u95F4\u7684\u65E7\u56DE\u7B54\u4E0D\u663E\u793A\uFF09\u3002",
     turnUsageTitle: "\u672C\u8F6E token",
     sbLabelQuestions: "\u63D0\u95EE",
     sbItemTodayTokens: "\u4ECA\u65E5 token",
@@ -743,20 +742,19 @@
     featureNewtabPanelsDesc: 'The built-in "new tab page" only lists built-in panels and recommended official plugins; this adds cards for third-party marketplace plugin panels (headroom, rtk, \u2026) that open in the side pane.',
     ntpDescSuffix: "plugin panel",
     ntpNeedSession: "Open a task session first, then open plugin panels from the new tab page",
-    featureStatusBar: "Status bar statistics",
     featureStatusBarDesc: 'Shows statistics at the bottom-right of the main view: context usage, session/today/total tokens, task count, etc.; reorder or hide each item under "Styles \u2192 Status bar".',
     tabStylesPane: "Styles",
     tabStatusPane: "Status bar",
     sbItemCtx: "Context usage",
     sbItemQuestions: "Questions asked",
+    sbMaster: "Enable statistics",
+    sbMasterDesc: "Master switch: turning this off disables both the status bar and per-turn labels.",
     sbGroupSession: "Session statistics (follows current session)",
     sbGroupGlobal: "Global statistics",
     sbGroupTurn: "Per-turn statistics (answer rows)",
     sbLabelIn: "in",
     sbLabelOut: "out",
     sbLabelCache: "cache",
-    featureTurnUsage: "Per-turn token usage",
-    featureTurnUsageDesc: "Shows that turn's in/out tokens after the time in each answer's action row (local records keep only the most recent turns; older answers without a match stay unlabelled).",
     turnUsageTitle: "Turn tokens",
     sbLabelQuestions: "asks",
     sbItemTodayTokens: "Today tokens",
@@ -4163,16 +4161,6 @@
               if (await setFeature("newtabPanels", next)) f.newtabPanels = next;
               refreshRows();
             }),
-            settingRow(L.featureStatusBar, L.featureStatusBarDesc, f.statusBar !== false, async () => {
-              const next = !(f.statusBar !== false);
-              if (await setFeature("statusBar", next)) f.statusBar = next;
-              refreshRows();
-            }),
-            settingRow(L.featureTurnUsage, L.featureTurnUsageDesc, f.turnUsage !== false, async () => {
-              const next = !(f.turnUsage !== false);
-              if (await setFeature("turnUsage", next)) f.turnUsage = next;
-              refreshRows();
-            }),
             (() => {
               const repoLink = h("span", {
                 class: "cursor-pointer underline-offset-4 hover:underline",
@@ -4717,8 +4705,30 @@
           renderGroup(sbGlobalList, STATUS_GLOBAL_IDS);
         };
         renderSbItems();
+        const sbPaneRerender = () => {
+          renderSbItems();
+        };
+        let masterRow = null;
+        const renderMaster = () => {
+          const next = masterRow ? !((config.features || {}).statusBar !== false) : (config.features || {}).statusBar !== false;
+          const fresh = settingRow(L.sbMaster, L.sbMasterDesc, (config.features || {}).statusBar !== false, async () => {
+            const to = !((config.features || {}).statusBar !== false);
+            const res = await rpc("/config", { method: "POST", body: { features: { statusBar: to } } });
+            clearConfigCache();
+            if (res.ok) {
+              config.features = { ...config.features || {}, statusBar: to };
+            }
+            window.dispatchEvent(new CustomEvent("zcodepro:config-changed"));
+            renderMaster();
+          });
+          fresh.setAttribute("data-zcodepro-sb-master", "1");
+          if (masterRow) masterRow.replaceWith(fresh);
+          masterRow = fresh;
+        };
+        renderMaster();
         paneStylesSub2.append(
-          h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.featureStatusBarDesc),
+          masterRow,
+          h("p", { class: "mt-2 text-ui-sm/relaxed text-foreground-subtle" }, L.featureStatusBarDesc),
           h("div", { class: "mt-3 mb-1 text-ui-sm font-medium" }, L.sbGroupSession),
           sbList,
           h("div", { class: "mt-3 mb-1 text-ui-sm font-medium" }, L.sbGroupGlobal),
@@ -8323,13 +8333,13 @@
   }
   function startTurnUsage() {
     void getConfig().then((cfg) => {
-      enabled5 = cfg.features ? cfg.features.turnUsage !== false : true;
+      enabled5 = cfg.features ? cfg.features.statusBar !== false : true;
     }).catch(() => {
     });
     refreshTurnItems();
     window.addEventListener("zcodepro:config-changed", () => {
       void getConfig().then((cfg) => {
-        enabled5 = cfg.features ? cfg.features.turnUsage !== false : true;
+        enabled5 = cfg.features ? cfg.features.statusBar !== false : true;
       }).catch(() => {
       });
       refreshTurnItems();

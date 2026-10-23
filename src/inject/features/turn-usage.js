@@ -178,10 +178,10 @@ async function tick() {
 }
 
 export function startTurnUsage() {
-  void getConfig().then((cfg) => { enabled = cfg.features ? cfg.features.turnUsage !== false : true; }).catch(() => {});
+  void getConfig().then((cfg) => { enabled = cfg.features ? cfg.features.statusBar !== false : true; }).catch(() => {});
   refreshTurnItems();
   window.addEventListener('zcodepro:config-changed', () => {
-    void getConfig().then((cfg) => { enabled = cfg.features ? cfg.features.turnUsage !== false : true; }).catch(() => {});
+    void getConfig().then((cfg) => { enabled = cfg.features ? cfg.features.statusBar !== false : true; }).catch(() => {});
     refreshTurnItems();
   });
   // 回答行出现即注入（去抖）；数据 5 秒刷新一次
