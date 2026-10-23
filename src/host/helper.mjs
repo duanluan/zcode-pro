@@ -17,7 +17,7 @@ import { reorderWorkspaceTasks, reorderGroupMembers } from './taskOrder.mjs';
 import { webdavRequest, webdavPutWithMkcol, webdavHttpText, parseWebdavListing, findCurl } from './webdav.mjs';
 import { resolveZcodeExecutable } from './paths.mjs';
 
-const VERSION = '1.2.1';
+const VERSION = '1.3.0';
 
 // 全局提示词固定在用户主目录：官方加载器按 HOME/USERPROFILE 拼 .zcode/AGENTS.md，
 // 不读 ZCODE_DATA_BASE_DIR（数据根迁走时全局指令仍在原位）。
@@ -1829,8 +1829,12 @@ export function mergeAliases(localRaw, remoteRaw) {
 function applyFeaturesPartial(base, partial) {
   const out = (base && typeof base === 'object') ? base : {};
   if (!partial || typeof partial !== 'object') return out;
-  for (const key of Object.keys(defaultConfig().features)) {
+  const known = new Set(Object.keys(defaultConfig().features));
+  for (const key of Object.keys(partial)) {
+    // 布尔特性一律可存（新特性未列入 defaultConfig 时不能被丢弃），
+    // 非布尔值只在已知键内接受
     if (typeof partial[key] === 'boolean') out[key] = partial[key];
+    else if (known.has(key)) out[key] = partial[key];
   }
   return out;
 }
