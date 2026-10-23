@@ -21,9 +21,12 @@ ZCode Pro enhances the ZCode desktop UI. No client files are modified; just laun
 | Task name prompt | When a new session starts answering, generates the task name with a provider and prompt you choose (following the current session and glm-5.3-flash by default; every question sent before the first answer counts), saved as a manual rename the built-in auto title never overrides; provider, model and prompt are editable in settings, with a test button |
 | Running indicator while collapsed | While any session is running, collapsed projects and the "Tasks" / "Pinned" section headers show the same loader the running task row uses; it disappears when all finish |
 | Idle project memory reclaim | Projects unused for a while with no running tasks release their memory automatically, and unused ones are reclaimed once after startup; sessions are untouched and reload when reopened (durations adjustable) |
+| Plugin card auto-retry | Auto-clicks "Reload" on cards that failed the 64-slot cap, so they recover as soon as a slot frees up | 
 | Plugin card sandbox reclaim | Releases the oldest plugin-card sandboxes once the cap is hit (the one being viewed goes last), so new cards keep opening after the 64-slot pool fills up; released cards come back when their session is reopened (cap adjustable) |
 | Sidebar menu in the top bar | Turns "New task / Search / Automations / Plugin store" into icon buttons in the top navigation bar: hover shows the name, highlighted while its view is open, shortcuts still work |
 | Plugin panels on the new tab page | The built-in "new tab page" only lists built-in panels and recommended official plugins; this adds cards for third-party marketplace plugin panels (headroom, rtk, …) that open in the side pane |
+| Status bar statistics | Shows statistics at the bottom-right of the main view: context usage (color-shifts when high), questions asked, today/total tokens and task count, all from official data; reorder or hide each item under Settings → Styles → Status bar |
+| Per-turn token usage | Shows that turn's in/out tokens and cache hit rate after the time in each answer's action row (local records keep only a recent window; older answers stay unlabelled) |
 | Collapsible Pinned section | The sidebar "Pinned" header collapses/expands its task list; the state is remembered |
 | File menu actions | Adds "Open with default app" and "Reveal in file manager" to file links in chat |
 | Copy image | Right-click an image in chat or the enlarged preview to copy it to the clipboard |

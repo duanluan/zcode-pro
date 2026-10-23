@@ -630,6 +630,56 @@ export function ensureStyle() {
       text-align: center;
       color: var(--color-muted-foreground, #888);
     }
+    /* 状态栏统计（status-bar.js）：输入框下方右对齐的一行小字，每项带 lucide 小图标。
+       上下间距由脚本按视图控制（status-bar.js：下方有内容时对称 7px，
+       下方是窗底留白时负 margin 压入贴底） */
+    .zcodepro-statusbar {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 14px 0;
+      font-size: 11px;
+      line-height: 1.4;
+      color: var(--color-muted-foreground, #888);
+      user-select: none;
+      pointer-events: none;
+    }
+    .zcodepro-statusbar span[data-tone='warn'] { color: var(--color-amber-500, #f59e0b); }
+    .zcodepro-statusbar span[data-tone='danger'] { color: var(--color-red-500, #ef4444); }
+    .zcodepro-statusbar-sep { opacity: 0.45; }
+    /* 会话组与全局组之间的分界竖线 */
+    .zcodepro-statusbar-groupsep {
+      width: 1px;
+      height: 10px;
+      background: currentColor;
+      opacity: 0.3;
+      margin: 0 2px;
+    }
+    /* 每项内部用 flex 对齐：图标、标签、数值垂直居中，间距统一 */
+    .zcodepro-statusbar span[title] {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      white-space: nowrap;
+    }
+    .zcodepro-sb-icon {
+      width: 12px;
+      height: 12px;
+      flex-shrink: 0;
+      opacity: 0.6;
+    }
+    .zcodepro-statusbar b { font-weight: 600; color: var(--color-foreground-subtle, #666); }
+    .zcodepro-statusbar i {
+      font-style: normal;
+      opacity: 0.7;
+      font-size: 10px;
+    }
+    /* 项内短标签（如“上下文”“累计”），弱化不抢数值 */
+    .zcodepro-statusbar em {
+      font-style: normal;
+      opacity: 0.75;
+    }
     .zcodepro-switcher-ws {
       font-size: 11px;
       color: var(--color-muted-foreground, #888);

@@ -270,6 +270,24 @@ export async function listTaskStatuses(dataRoot, ids) {
 }
 
 // 已重命名会话的标题表：task_id → title（title_overridden = 1 且未删除）。
+// 状态栏统计用：任务总数（未删除的会话行）
+export async function countTasks(dataRoot) {
+  const dbFile = taskIndexPath(dataRoot);
+  if (!existsSync(dbFile)) return 0;
+  const driver = await loadDriver();
+  if (!driver) return 0;
+  const sql = 'SELECT COUNT(*) AS n FROM tasks WHERE deleted = 0';
+  try {
+    if (driver.kind === 'node') {
+      const db = new driver.DatabaseSync(dbFile, { readOnly: true });
+      try { return Number(db.prepare(sql).get()?.n) || 0; } finally { db.close(); }
+    }
+    return Number(runCli(dbFile, sql + ';').stdout.trim()) || 0;
+  } catch {
+    return 0;
+  }
+}
+
 // 只读单条 SELECT，不开事务；库不存在或没有 SQLite 支持时返回空表，
 // 调用方（会话名锁定）自然降级为不干预。
 export async function listOverriddenTitles(dataRoot) {

@@ -11,7 +11,7 @@ import { basename, delimiter, dirname, isAbsolute, join, resolve, sep } from 'no
 import { homedir, tmpdir, userInfo } from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { readSettings, writeSettingsAtomic, remapSettingsPaths, isProjectOpenInTabs } from './settings.mjs';
-import { taskIndexPath, probeTaskIndexWritable, remapTaskIndexPaths, taskIndexDriverAvailable, listOverriddenTitles, listTaskWorkspaceMap, setTaskTitleIfNotOverridden, setCustomSessionTitle, isTaskTitleOverridden, reconcileCustomTitles, getTaskProviderModel, listVirtualProjects } from './taskIndex.mjs';
+import { taskIndexPath, probeTaskIndexWritable, remapTaskIndexPaths, taskIndexDriverAvailable, listOverriddenTitles, listTaskWorkspaceMap, setTaskTitleIfNotOverridden, setCustomSessionTitle, isTaskTitleOverridden, reconcileCustomTitles, getTaskProviderModel, listVirtualProjects, countTasks } from './taskIndex.mjs';
 import { pickFolderSystem } from './pickFolder.mjs';
 import { reorderWorkspaceTasks, reorderGroupMembers } from './taskOrder.mjs';
 import { webdavRequest, webdavPutWithMkcol, webdavHttpText, parseWebdavListing, findCurl } from './webdav.mjs';
@@ -348,6 +348,35 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
           }
           current.shortcuts = { ...(current.shortcuts || {}), ...patch };
         }
+        // 状态栏统计（设置 → 样式 → 状态栏）：items（任务统计项）与
+        // turnItems（每轮统计项）两个清单各自整表覆盖，谁在请求里就更新谁；
+        // id 白名单 + 去重保序，未知项丢弃
+        if (body && typeof body === 'object' && body.statusBar && typeof body.statusBar === 'object') {
+          const next = { ...(current.statusBar || {}) };
+          if (Array.isArray(body.statusBar.items)) {
+            const valid = new Set(['ctx', 'questions', 'todayTokens', 'totalTokens', 'tasks']);
+            const seen = new Set();
+            const items = [];
+            for (const it of body.statusBar.items) {
+              if (!it || !valid.has(it.id) || seen.has(it.id)) continue;
+              seen.add(it.id);
+              items.push({ id: it.id, on: it.on !== false });
+            }
+            next.items = items;
+          }
+          if (Array.isArray(body.statusBar.turnItems)) {
+            const turnValid = new Set(['turnIn', 'turnOut', 'turnCache']);
+            const tseen = new Set();
+            const turnItems = [];
+            for (const it of body.statusBar.turnItems) {
+              if (!it || !turnValid.has(it.id) || tseen.has(it.id)) continue;
+              tseen.add(it.id);
+              turnItems.push({ id: it.id, on: it.on !== false });
+            }
+            next.turnItems = turnItems;
+          }
+          current.statusBar = next;
+        }
         if (body && typeof body === 'object' && body.titleGen && typeof body.titleGen === 'object') {
           current.titleGen = mergeTitleGenConfig({ ...current.titleGen, ...body.titleGen });
         }
@@ -611,7 +640,17 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
       // —— zcode-vision 插件（图片视觉代理）：设置弹窗“视觉代理”标签页读写 ————
       if (req.method === 'GET' && url.pathname === '/vision') {
         const file = defaultVisionFile();
-        const parsed = readJsonFile(file);
+        let parsed = readJsonFile(file);
+        // 装了 zcode-pro 默认启用识图卡片（插件纯安装默认关，纯文本展示）：
+        // 只补从未写过的配置，用户显式设过 cardUi（含 false）不覆盖
+        if (parsed && typeof parsed === 'object' && !('cardUi' in parsed)) {
+          parsed = { ...parsed, cardUi: true };
+          try {
+            const tmp = file + '.tmp';
+            writeFileSync(tmp, JSON.stringify(parsed, null, 2) + '\n', 'utf-8');
+            renameSync(tmp, file);
+          } catch { /* 补写失败下次再试，不阻塞读取 */ }
+        }
         if (parsed === null && existsSync(file)) {
           json(res, 500, { ok: false, code: 'vision-read', error: 'zcode-vision.json 不是合法 JSON' });
           return;
@@ -1135,6 +1174,21 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         return;
       }
       // —— zcode-plugins 市场更新：读状态（带 30 分钟节流的市场同步）与执行更新 ————
+      // —— 状态栏统计（status-bar.js）：聚合 ~/.zcode/cli/rollout 的模型调用记录 ————
+      // model-io-*.jsonl 每行一次模型调用，response.usage 有分项 token；成本字段
+      // 官方未落本地，成本类统计项由注入侧按“无数据自动隐藏”处理
+      if (req.method === 'GET' && url.pathname === '/stats/usage') {
+        const sessionId = url.searchParams.get('session') || '';
+        const { global, recentTurns } = collectUsageStats(sessionId);
+        // 任务总数 60 秒缓存：状态栏每 2 秒请求一次，不必每次开关 SQLite
+        if (Date.now() - tasksCountAt > 60_000) {
+          tasksCountAt = Date.now();
+          tasksCountCache = await countTasks(dataRoot);
+        }
+        global.tasks = tasksCountCache;
+        json(res, 200, { ok: true, global, recentTurns });
+        return;
+      }
       if (req.method === 'GET' && url.pathname === '/plugins/status') {
         await ensureZcodePluginsMarketplace();
         // 有更新任务在执行或排队时跳过这里的节流同步（任务本身会同步市场并刷新
@@ -1178,6 +1232,18 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         }
         rejectStarted(err);
       });
+      // 启动即补视觉配置缺省键：装了 zcode-pro ⇒ cardUi=true（识图卡片开，缺省
+      // 才补、显式设过不动，规则同 GET /vision），不必等用户打开视觉设置页
+      try {
+        const vFile = defaultVisionFile();
+        const vParsed = readJsonFile(vFile);
+        if (vParsed && typeof vParsed === 'object' && !('cardUi' in vParsed)) {
+          vParsed.cardUi = true;
+          const vTmp = vFile + '.tmp';
+          writeFileSync(vTmp, JSON.stringify(vParsed, null, 2) + '\n', 'utf-8');
+          renameSync(vTmp, vFile);
+        }
+      } catch { /* 无配置或不可写不影响启动 */ }
       server.listen(port, '127.0.0.1', () => resolveStarted(server));
     };
     tryListen();
@@ -1186,6 +1252,101 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
 
 // 市场快照同步节流：helper 进程内 30 分钟最多主动 git pull 一次
 let lastMarketplaceSync = 0;
+let tasksCountAt = 0;
+let tasksCountCache = 0; // 任务总数缓存（/stats/usage 高频轮询，60 秒一刷）
+
+// —— 状态栏统计：rollout 模型调用记录聚合 ————
+// ~/.zcode/cli/rollout/model-io-*.jsonl 每行一次模型调用；usage 字段有两种键风格
+// （协议 camelCase 与原始 snake_case），两种都解析。文件小（个位数、每会话一个），
+// 按 mtime+size 缓存只重读变过的文件；聚合结果含按日分桶（本地时区）供“今日”用
+const usageFileCache = new Map(); // 文件名 → { mtime, size, recs: [{at, in, out, session, model}] }
+function rolloutRecords() {
+  const dir = join(homedir(), '.zcode', 'cli', 'rollout');
+  let names = [];
+  try { names = readdirSync(dir).filter((n) => n.startsWith('model-io-') && n.endsWith('.jsonl')); } catch { return []; }
+  const recs = [];
+  for (const name of names) {
+    const full = join(dir, name);
+    let st;
+    try { st = statSync(full); } catch { continue; }
+    const cached = usageFileCache.get(name);
+    if (cached && cached.mtime === st.mtimeMs && cached.size === st.size) {
+      recs.push(...cached.recs);
+      continue;
+    }
+    const parsed = [];
+    try {
+      for (const line of readFileSync(full, 'utf8').split('\n')) {
+        if (!line.trim()) continue;
+        let d;
+        try { d = JSON.parse(line); } catch { continue; }
+        const u = (d.response && d.response.usage) || d.usage;
+        if (!u) continue;
+        const num = (v) => Number(v) || 0;
+        // 两种键风格语义相反，必须分开处理：
+        // 协议格式（inputTokens）的总输入已含缓存读（官方 summary 证实）；
+        // 原始 API 格式（input_tokens，Anthropic 语义）三个字段分开、需相加
+        let input, cacheRead, cacheWrite;
+        if (u.inputTokens != null) {
+          input = num(u.inputTokens);
+          cacheRead = num(u.cacheReadTokens);
+          cacheWrite = num(u.cacheWriteTokens);
+        } else {
+          cacheRead = num(u.cache_read_input_tokens);
+          cacheWrite = num(u.cache_write_input_tokens);
+          input = num(u.input_tokens) + cacheRead + cacheWrite;
+        }
+        const output = num(u.outputTokens ?? u.output_tokens);
+        parsed.push({
+          at: d.completedAt || d.startedAt || '',
+          in: input, out: output,
+          cacheRead,
+          session: String(d.sessionId || ''),
+        });
+      }
+    } catch { /* 文件读失败跳过 */ }
+    usageFileCache.set(name, { mtime: st.mtimeMs, size: st.size, recs: parsed });
+    recs.push(...parsed);
+  }
+  return recs;
+}
+
+function collectUsageStats(sessionId) {
+  const recs = rolloutRecords();
+  const today = new Date();
+  const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const global = { todayTokens: 0, todayOut: 0, totalTokens: 0, totalOut: 0, tasks: 0, records: recs.length };
+  // 每轮用量按本地 HH:mm 分桶（回答末尾的显示时间与之匹配）；
+  // 本地记录只留最近几轮，注入侧只给能对上时间的回答显示
+  const byMinute = new Map();
+  for (const r of recs) {
+    const total = r.in + r.out;
+    global.totalTokens += total;
+    global.totalOut += r.out;
+    const day = String(r.at || '').slice(0, 10);
+    if (day === todayKey) { global.todayTokens += total; global.todayOut += r.out; }
+    // 每轮回答只统计主对话流的调用：起名等辅助请求是独立小上下文、
+    // 缓存从零开始，混进分钟桶会把命中率拉到个位数（全局统计仍全量计入）
+    if (total < 5000) continue;
+    // 指定会话时每轮桶只算该会话的调用——否则切到别的会话聊天后，
+    // 那些调用会被区间归属算进当前会话最后一行的头上
+    if (sessionId && r.session !== sessionId) continue;
+    const t = Date.parse(r.at);
+    if (!Number.isFinite(t)) continue;
+    const d = new Date(t);
+    // 键带日期（月-日 时:分）：注入侧按回答行的时间文本（今天/昨天/10-21 三种
+    // 形态）解析出同款键精确绑定，数值不随记录滚动移位
+    const hm = (d.getMonth() + 1) + '-' + d.getDate() + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    const bucket = byMinute.get(hm) || { hm, in: 0, out: 0, cacheRead: 0, ts: t };
+    bucket.in += r.in;
+    bucket.out += r.out;
+    bucket.cacheRead += r.cacheRead;
+    bucket.ts = Math.max(bucket.ts, t);
+    byMinute.set(hm, bucket);
+  }
+  const recentTurns = [...byMinute.values()].sort((a, b) => b.ts - a.ts).slice(0, 60);
+  return { global, recentTurns };
+}
 
 function readJsonFile(p) {
   try {
@@ -2402,6 +2563,9 @@ export function validateVisionConfig(raw) {
     skipMinutes: clampInt(raw.skipMinutes, 1, 10080, 30),
     // 主模型能看图时是否也拦截识别（false = 跳过；flash 主模型始终不触发，见插件）
     forceIntercept: raw.forceIntercept !== false,
+    // 识图卡片展示：只在调用方显式给值时透传（面板开关用）；缺省不写键，
+    // 让 POST 的磁盘合并保留原值（zcode-pro 装机缺省 true 的补键逻辑见 GET /vision）
+    ...(raw.cardUi !== undefined ? { cardUi: raw.cardUi === true } : {}),
   };
   const names = new Set();
   for (const p of raw.proxies) {

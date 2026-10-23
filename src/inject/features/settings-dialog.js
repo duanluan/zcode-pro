@@ -1,6 +1,6 @@
 // “ZCode Pro 增强设置”弹窗：功能开关 + 样式调整 + 运行状态。
 // 顶部标签页切换（视觉参考侧栏“分组/项目”切换）；配置写入 helper（~/.zcode/zcodepro.json）。
-import { h, t, rpc, getConfig, clearConfigCache, errText, HELPER_URL, isZhLocale, isNewProjectSidebar, DEFAULT_SHORTCUTS } from '../core.js';
+import { h, t, rpc, getConfig, clearConfigCache, errText, HELPER_URL, isZhLocale, isNewProjectSidebar, DEFAULT_SHORTCUTS, DEFAULT_STATUS_ITEMS, DEFAULT_TURN_ITEMS, STATUS_SESSION_IDS, STATUS_GLOBAL_IDS } from '../core.js';
 import { openDialog, dialogFooter, btnPrimary, btnSecondary, btnSmall, settingRow, ensureStyle, showToast, numberField, unitField } from '../ui.js';
 import { comboField, providerOptionsOf, modelOptionsOf, modelPlaceholderOf, isManualConn } from '../provider-fields.js';
 import { refreshAliases } from './alias.js';
@@ -365,6 +365,16 @@ export function openSettingsDialog() {
             if (await setFeature('newtabPanels', next)) f.newtabPanels = next;
             refreshRows();
           }),
+          settingRow(L.featureStatusBar, L.featureStatusBarDesc, f.statusBar !== false, async () => {
+            const next = !(f.statusBar !== false);
+            if (await setFeature('statusBar', next)) f.statusBar = next;
+            refreshRows();
+          }),
+          settingRow(L.featureTurnUsage, L.featureTurnUsageDesc, f.turnUsage !== false, async () => {
+            const next = !(f.turnUsage !== false);
+            if (await setFeature('turnUsage', next)) f.turnUsage = next;
+            refreshRows();
+          }),
           (() => {
             // 标题 = “自动更新 duanluan/zcode-plugins 插件”，仓库名可点击跳转仓库
             const repoLink = h('span', {
@@ -534,7 +544,7 @@ export function openSettingsDialog() {
           h('div', { class: 'shrink-0' }, btnSmall(L.hkReset, () => { void resetShortcuts(); }))),
         hkCard,
       );
-      const paneStyles = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
+      const paneStyles = h('div', { role: 'tabpanel', class: 'mt-2', style: 'display:none' });
       const panePerf = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
       const paneAgents = h('div', { role: 'tabpanel', class: 'mt-2', style: 'display:none' });
       const paneProxy = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
@@ -728,7 +738,125 @@ export function openSettingsDialog() {
         for (const c of fontCells) c.setOptions(list);
       })();
       renderToolbarSwitch();
-      paneStyles.append(
+      // “样式”标签页的二级结构：样式调整（原内容）/ 状态栏（统计项顺序与显隐）
+      const paneStylesSub1 = h('div', { class: 'mt-4' });
+      const paneStylesSub2 = h('div', { class: 'mt-4', style: 'display:none' });
+      const ITEM_NAMES = {
+        ctx: 'sbItemCtx', questions: 'sbItemQuestions',
+        todayTokens: 'sbItemTodayTokens', totalTokens: 'sbItemTotalTokens', tasks: 'sbItemTasks',
+      };
+      // 读取并归一化：会话组项在前、全局组项在后（组内保持保存的顺序），
+      // 保证状态栏两组之间只有一道竖线
+      const sbItems = () => {
+        const saved = config.statusBar && Array.isArray(config.statusBar.items) ? config.statusBar.items : null;
+        if (!saved) return DEFAULT_STATUS_ITEMS.map((x) => ({ ...x }));
+        const byId = new Map(saved.map((x) => [x.id, x]));
+        const list = saved.filter((x) => ITEM_NAMES[x.id]).map((x) => ({ on: x.on !== false, id: x.id }));
+        for (const d of DEFAULT_STATUS_ITEMS) if (!byId.has(d.id)) list.push({ ...d });
+        return [
+          ...list.filter((x) => STATUS_SESSION_IDS.has(x.id)),
+          ...list.filter((x) => STATUS_GLOBAL_IDS.has(x.id)),
+        ];
+      };
+      let sbSaving = false; // 保存进行中忽略后续点击：连点会基于旧配置覆盖掉上一次的改动
+      const saveSbItems = async (next) => {
+        if (sbSaving) return;
+        sbSaving = true;
+        try {
+        const res = await rpc('/config', { method: 'POST', body: { statusBar: { items: next } } });
+        clearConfigCache();
+        window.dispatchEvent(new CustomEvent('zcodepro:config-changed'));
+        if (!res.ok) { showToast(L.failed + ': ' + errText(res), 'error'); renderSbItems(); return; }
+        if (res.config && res.config.statusBar) config.statusBar = res.config.statusBar;
+        } finally { sbSaving = false; }
+        renderSbItems();
+      };
+      const sbList = h('div', { class: 'divide-y divide-border rounded-xl border border-border' });
+      const sbGlobalList = h('div', { class: 'divide-y divide-border rounded-xl border border-border' });
+      // 每轮统计节（输入/输出/缓存，只开关不排序——显示顺序固定）
+      const TURN_NAMES = { turnIn: 'sbLabelIn', turnOut: 'sbLabelOut', turnCache: 'sbLabelCache' };
+      const turnItems = () => {
+        const saved = config.statusBar && Array.isArray(config.statusBar.turnItems) ? config.statusBar.turnItems : null;
+        if (!saved) return DEFAULT_TURN_ITEMS.map((x) => ({ ...x }));
+        const byId = new Map(saved.map((x) => [x.id, x]));
+        const list = saved.filter((x) => TURN_NAMES[x.id]).map((x) => ({ on: x.on !== false, id: x.id }));
+        for (const d of DEFAULT_TURN_ITEMS) if (!byId.has(d.id)) list.push({ ...d });
+        return list;
+      };
+      const saveTurnItems = async (next) => {
+        if (sbSaving) return;
+        sbSaving = true;
+        try {
+        const res = await rpc('/config', { method: 'POST', body: { statusBar: { turnItems: next } } });
+        clearConfigCache();
+        window.dispatchEvent(new CustomEvent('zcodepro:config-changed'));
+        if (!res.ok) { showToast(L.failed + ': ' + errText(res), 'error'); renderSbItems(); return; }
+        if (res.config && res.config.statusBar) config.statusBar = res.config.statusBar;
+        } finally { sbSaving = false; }
+        renderSbItems();
+      };
+      const turnList = h('div', { class: 'divide-y divide-border rounded-xl border border-border' });
+      const renderSbItems = () => {
+        turnList.replaceChildren(...turnItems().map((it, i) => h('div', { class: 'flex items-center gap-2 px-3 py-2' },
+          h('span', { class: 'min-w-0 flex-1 truncate text-ui-sm text-foreground-subtle' }, L[TURN_NAMES[it.id]] || it.id),
+          btnSmall(it.on ? L.sbVisible : L.sbHidden, () => { void saveTurnItems(turnItems().map((x) => x.id === it.id ? { ...x, on: !x.on } : x)); }),
+          btnSmall('↑', () => { const a = turnItems(); if (i > 0) { [a[i - 1], a[i]] = [a[i], a[i - 1]]; void saveTurnItems(a); } }),
+          btnSmall('↓', () => { const a = turnItems(); if (i < a.length - 1) { [a[i], a[i + 1]] = [a[i + 1], a[i]]; void saveTurnItems(a); } }))));
+        // 两节各列各的组；↑/↓ 只在组内移动（跨组相邻的交换会被组过滤弹开）
+        const list = sbItems();
+        const renderGroup = (el, groupIds) => {
+          const idxs = list.map((x, i) => i).filter((i) => groupIds.has(list[i].id));
+          el.replaceChildren(...idxs.map((i) => {
+            const it = list[i];
+            const swap = (dir) => {
+              const a = sbItems();
+              // 找同组相邻项的索引再交换，天然不会越组
+              const same = a.map((x, j) => j).filter((j) => groupIds.has(a[j].id));
+              const pos = same.indexOf(i);
+              const other = same[pos + dir];
+              if (other == null) return;
+              [a[i], a[other]] = [a[other], a[i]];
+              void saveSbItems(a);
+            };
+            return h('div', { class: 'flex items-center gap-2 px-3 py-2' },
+              h('span', { class: 'min-w-0 flex-1 truncate text-ui-sm text-foreground-subtle' },
+                L[ITEM_NAMES[it.id]] || it.id),
+              btnSmall(it.on ? L.sbVisible : L.sbHidden, () => { void saveSbItems(sbItems().map((x, j) => j === i ? { ...x, on: !x.on } : x)); }),
+              btnSmall('↑', () => swap(-1)),
+              btnSmall('↓', () => swap(1)));
+          }));
+        };
+        renderGroup(sbList, STATUS_SESSION_IDS);
+        renderGroup(sbGlobalList, STATUS_GLOBAL_IDS);
+      };
+      renderSbItems();
+      paneStylesSub2.append(
+        h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.featureStatusBarDesc),
+        h('div', { class: 'mt-3 mb-1 text-ui-sm font-medium' }, L.sbGroupSession),
+        sbList,
+        h('div', { class: 'mt-3 mb-1 text-ui-sm font-medium' }, L.sbGroupGlobal),
+        sbGlobalList,
+        h('div', { class: 'mt-3 mb-1 text-ui-sm font-medium' }, L.sbGroupTurn),
+        turnList);
+      let stylesSubTab = 'styles';
+      const stylesSubTablist = h('div', { role: 'tablist', 'aria-orientation': 'horizontal', class: 'zcodepro-tablist' });
+      const renderStylesSubTabs = () => stylesSubTablist.replaceChildren(...[
+        ['styles', L.tabStylesPane],
+        ['status', L.tabStatusPane],
+      ].map(([id, label]) => h('button', {
+        type: 'button', role: 'tab', class: 'zcodepro-tab',
+        'aria-selected': String(stylesSubTab === id),
+        'data-state': stylesSubTab === id ? 'active' : 'inactive',
+        onClick: () => {
+          stylesSubTab = id;
+          paneStylesSub1.style.display = id === 'styles' ? '' : 'none';
+          paneStylesSub2.style.display = id === 'status' ? '' : 'none';
+          renderStylesSubTabs();
+        },
+      }, label)));
+      renderStylesSubTabs();
+      paneStyles.append(stylesSubTablist, paneStylesSub1, paneStylesSub2);
+      paneStylesSub1.append(
         toolbarSwitchWrap,
         h('div', { class: 'mt-2 flex flex-col gap-0.5 rounded-xl border border-border p-1' },
           ...fontCells.map((c) => h('div', { class: 'rounded-lg transition-colors hover:bg-surface-hover' }, c.el))),
@@ -1600,6 +1728,11 @@ export function openSettingsDialog() {
             modeBtn('fallback', L.visionModeFallback, L.visionModeFallbackDesc),
             modeBtn('pipeline', L.visionModePipeline, L.visionModePipelineDesc),
             h('div', { class: 'ml-auto flex items-center gap-4' },
+              settingRow(L.visionCardUi, '', visionCfg.cardUi !== false, async () => {
+                visionCfg.cardUi = !(visionCfg.cardUi !== false);
+                await persistVision();
+                renderVision();
+              }),
               settingRow(L.visionForceIntercept, '', visionCfg.forceIntercept !== false, async () => {
                 visionCfg.forceIntercept = !(visionCfg.forceIntercept !== false);
                 await persistVision();

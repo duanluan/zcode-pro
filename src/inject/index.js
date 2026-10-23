@@ -11,6 +11,8 @@ import { startAliasMigrationWatcher } from './features/alias-migration.js';
 import { startTaskOrderWatcher } from './features/task-order.js';
 import { startSessionSwitch } from './features/session-switch.js';
 import { startNewtabPanels } from './features/newtab-panels.js';
+import { startStatusBar } from './features/status-bar.js';
+import { startTurnUsage } from './features/turn-usage.js';
 import { startTitleLock } from './features/title-lock.js';
 import { startTitleGen } from './features/title-gen.js';
 import { startWsRunningSpin } from './features/ws-running.js';
@@ -60,6 +62,8 @@ import { ensureStyle } from './ui.js';
     try { startIdleReclaim(); } catch { /* ignore */ }
     try { startToolbarIcons(); } catch { /* ignore */ }
     try { startNewtabPanels(); } catch { /* ignore */ }
+    try { startStatusBar(); } catch { /* ignore */ }
+    try { startTurnUsage(); } catch { /* ignore */ }
     try { startPinnedCollapse(); } catch { /* ignore */ }
     try { startStyleAdjustments(); } catch { /* ignore */ }
     try { startSettingsEntry(); } catch { /* ignore */ }

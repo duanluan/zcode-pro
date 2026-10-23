@@ -42,6 +42,28 @@
     switchAttention: "r"
     // 打开运行中 / 未查看
   };
+  var STATUS_SESSION_IDS = /* @__PURE__ */ new Set(["ctx", "sessionCost", "questions"]);
+  var STATUS_GLOBAL_IDS = /* @__PURE__ */ new Set(["todayTokens", "todayCost", "totalTokens", "totalCost", "tasks"]);
+  var DEFAULT_TURN_ITEMS = [
+    { id: "turnIn", on: true },
+    // 输入
+    { id: "turnOut", on: true },
+    // 输出
+    { id: "turnCache", on: true }
+    // 缓存命中率
+  ];
+  var DEFAULT_STATUS_ITEMS = [
+    { id: "ctx", on: true },
+    // 上下文占用
+    { id: "questions", on: true },
+    // 提问次数
+    { id: "todayTokens", on: true },
+    // 今日 token（今天的会话记录完整，数据准确）
+    { id: "totalTokens", on: true },
+    // 累计 token（官方使用统计，全历史）
+    { id: "tasks", on: true }
+    // 任务总数
+  ];
   function zcodeAppVersion() {
     const v = liveBoot().zcodeVersion;
     return typeof v === "string" && v ? v : "";
@@ -235,6 +257,7 @@
     tbPluginStore: "\u63D2\u4EF6\u5E02\u573A",
     featurePinnedCollapse: "\u5DF2\u7F6E\u9876\u5206\u533A\u53EF\u6298\u53E0",
     featurePinnedCollapseDesc: "\u4FA7\u8FB9\u680F\u201C\u5DF2\u7F6E\u9876\u201D\u6807\u9898\u53EF\u70B9\u51FB\u6298\u53E0/\u5C55\u5F00\u5176\u4EFB\u52A1\u5217\u8868\uFF08\u4E0E\u201C\u9879\u76EE\u201D\u201C\u5206\u7EC4\u201D\u5206\u533A\u4E00\u81F4\uFF09\uFF0C\u72B6\u6001\u8BB0\u4F4F\u3002",
+    visionCardUi: "\u601D\u8003\u8FC7\u7A0B\u663E\u793A\u8BC6\u56FE\u5361\u7247",
     pinnedToggleAria: "\u6298\u53E0/\u5C55\u5F00\u5DF2\u7F6E\u9876",
     sidebarProjectSpacingName: "\u9879\u76EE\u95F4\u8DDD",
     sidebarProjectSpacingDesc: "\u4FA7\u8FB9\u680F\u4E2D\u76F8\u90BB\u9879\u76EE\u884C\u4E4B\u95F4\u7684\u89C6\u89C9\u95F4\u8DDD\uFF08\u542B\u884C\u5185\u7559\u767D\uFF09\uFF1B\u8BBE\u7F6E\u540E\u5404\u5206\u533A\uFF08\u5DF2\u7F6E\u9876/\u9879\u76EE/\u4EFB\u52A1\uFF09\u4E4B\u95F4\u7684\u95F4\u8DDD\u4E5F\u7EDF\u4E00\u4E3A\u8BE5\u503C\u3002",
@@ -259,6 +282,34 @@
     featureNewtabPanelsDesc: "\u5B98\u65B9\u201C\u65B0\u6807\u7B7E\u9875\u201D\u53EA\u5217\u5B98\u65B9\u9762\u677F\u4E0E\u63A8\u8350\u7684\u5B98\u65B9\u63D2\u4EF6\uFF0C\u6B64\u529F\u80FD\u628A\u7B2C\u4E09\u65B9\u5E02\u573A\u63D2\u4EF6\uFF08headroom\u3001rtk \u7B49\uFF09\u7684\u9762\u677F\u5361\u7247\u52A0\u8FDB\u53BB\uFF0C\u70B9\u51FB\u5728\u4FA7\u8FB9\u9762\u677F\u6253\u5F00\u3002",
     ntpDescSuffix: "\u63D2\u4EF6\u9762\u677F",
     ntpNeedSession: "\u5148\u6253\u5F00\u4E00\u4E2A\u4EFB\u52A1\u4F1A\u8BDD\uFF0C\u518D\u4ECE\u65B0\u6807\u7B7E\u9875\u6253\u5F00\u63D2\u4EF6\u9762\u677F",
+    featureStatusBar: "\u72B6\u6001\u680F\u7EDF\u8BA1",
+    featureStatusBarDesc: "\u4E3B\u754C\u9762\u5E95\u90E8\u53F3\u4E0B\u89D2\u663E\u793A\u7EDF\u8BA1\u9879\uFF1A\u4E0A\u4E0B\u6587\u5360\u7528\u3001\u4F1A\u8BDD/\u4ECA\u65E5/\u7D2F\u8BA1 token\u3001\u4EFB\u52A1\u6570\u7B49\uFF1B\u5404\u9879\u7684\u987A\u5E8F\u4E0E\u663E\u9690\u5728\u201C\u6837\u5F0F \u2192 \u72B6\u6001\u680F\u201D\u91CC\u8C03\u6574\u3002",
+    tabStylesPane: "\u6837\u5F0F\u8C03\u6574",
+    tabStatusPane: "\u72B6\u6001\u680F",
+    sbItemCtx: "\u4E0A\u4E0B\u6587\u5360\u7528",
+    sbItemQuestions: "\u63D0\u95EE\u6B21\u6570",
+    sbGroupSession: "\u4F1A\u8BDD\u7EDF\u8BA1\uFF08\u8DDF\u968F\u5F53\u524D\u4F1A\u8BDD\uFF09",
+    sbGroupGlobal: "\u603B\u7EDF\u8BA1",
+    sbGroupTurn: "\u6BCF\u8F6E\u7EDF\u8BA1\uFF08\u56DE\u7B54\u672B\u5C3E\uFF09",
+    sbLabelIn: "\u8F93\u5165",
+    sbLabelOut: "\u8F93\u51FA",
+    sbLabelCache: "\u7F13\u5B58",
+    featureTurnUsage: "\u6BCF\u8F6E\u56DE\u7B54 token \u7528\u91CF",
+    featureTurnUsageDesc: "\u5728\u6BCF\u6761\u56DE\u7B54\u672B\u5C3E\u64CD\u4F5C\u6309\u94AE\u7684\u65F6\u95F4\u540E\u9762\u663E\u793A\u8BE5\u8F6E\u7684\u8F93\u5165/\u8F93\u51FA token\uFF08\u672C\u5730\u8BB0\u5F55\u53EA\u4FDD\u7559\u6700\u8FD1\u82E5\u5E72\u8F6E\uFF0C\u5BF9\u4E0D\u4E0A\u65F6\u95F4\u7684\u65E7\u56DE\u7B54\u4E0D\u663E\u793A\uFF09\u3002",
+    turnUsageTitle: "\u672C\u8F6E token",
+    sbLabelQuestions: "\u63D0\u95EE",
+    sbItemTodayTokens: "\u4ECA\u65E5 token",
+    sbItemTasks: "\u4EFB\u52A1\u603B\u6570",
+    sbLabelCtx: "\u4E0A\u4E0B\u6587",
+    sbLabelTurns: "\u8C03\u7528",
+    sbLabelToday: "\u4ECA\u65E5",
+    sbLabelTasks: "\u4EFB\u52A1",
+    sbItemTotalTokens: "\u7D2F\u8BA1 token",
+    sbLabelTotal: "\u7D2F\u8BA1",
+    sbMoveUp: "\u4E0A\u79FB",
+    sbMoveDown: "\u4E0B\u79FB",
+    sbVisible: "\u663E\u793A",
+    sbHidden: "\u9690\u85CF",
     tabShortcuts: "\u5FEB\u6377\u952E",
     hkTitle: "\u4F1A\u8BDD\u5FEB\u6377\u5207\u6362",
     hkAltZ: "\u5728\u5F53\u524D\u4E0E\u4E0A\u6B21\u4F7F\u7528\u7684\u4F1A\u8BDD\u95F4\u6765\u56DE\u5207\u6362",
@@ -659,6 +710,7 @@
     tbPluginStore: "Plugin store",
     featurePinnedCollapse: "Collapsible Pinned section",
     featurePinnedCollapseDesc: 'The sidebar "Pinned" header collapses/expands its task list (like Projects and Groups); the state is remembered.',
+    visionCardUi: "Vision cards",
     pinnedToggleAria: "Collapse/expand Pinned",
     sidebarProjectSpacingName: "Project spacing",
     sidebarProjectSpacingDesc: "Visual spacing between adjacent project rows in the sidebar (row padding included); when set, section gaps (Pinned/Projects/Tasks) follow the same value.",
@@ -683,6 +735,34 @@
     featureNewtabPanelsDesc: 'The built-in "new tab page" only lists built-in panels and recommended official plugins; this adds cards for third-party marketplace plugin panels (headroom, rtk, \u2026) that open in the side pane.',
     ntpDescSuffix: "plugin panel",
     ntpNeedSession: "Open a task session first, then open plugin panels from the new tab page",
+    featureStatusBar: "Status bar statistics",
+    featureStatusBarDesc: 'Shows statistics at the bottom-right of the main view: context usage, session/today/total tokens, task count, etc.; reorder or hide each item under "Styles \u2192 Status bar".',
+    tabStylesPane: "Styles",
+    tabStatusPane: "Status bar",
+    sbItemCtx: "Context usage",
+    sbItemQuestions: "Questions asked",
+    sbGroupSession: "Session statistics (follows current session)",
+    sbGroupGlobal: "Global statistics",
+    sbGroupTurn: "Per-turn statistics (answer rows)",
+    sbLabelIn: "in",
+    sbLabelOut: "out",
+    sbLabelCache: "cache",
+    featureTurnUsage: "Per-turn token usage",
+    featureTurnUsageDesc: "Shows that turn's in/out tokens after the time in each answer's action row (local records keep only the most recent turns; older answers without a match stay unlabelled).",
+    turnUsageTitle: "Turn tokens",
+    sbLabelQuestions: "asks",
+    sbItemTodayTokens: "Today tokens",
+    sbItemTasks: "Tasks",
+    sbLabelCtx: "ctx",
+    sbLabelTurns: "calls",
+    sbLabelToday: "today",
+    sbLabelTasks: "tasks",
+    sbItemTotalTokens: "Total tokens",
+    sbLabelTotal: "total",
+    sbMoveUp: "Up",
+    sbMoveDown: "Down",
+    sbVisible: "shown",
+    sbHidden: "hidden",
     tabShortcuts: "Shortcuts",
     hkTitle: "Session quick switch",
     hkAltZ: "Toggle between the current and the last-used session",
@@ -1695,6 +1775,56 @@
       text-align: center;
       color: var(--color-muted-foreground, #888);
     }
+    /* \u72B6\u6001\u680F\u7EDF\u8BA1\uFF08status-bar.js\uFF09\uFF1A\u8F93\u5165\u6846\u4E0B\u65B9\u53F3\u5BF9\u9F50\u7684\u4E00\u884C\u5C0F\u5B57\uFF0C\u6BCF\u9879\u5E26 lucide \u5C0F\u56FE\u6807\u3002
+       \u4E0A\u4E0B\u95F4\u8DDD\u7531\u811A\u672C\u6309\u89C6\u56FE\u63A7\u5236\uFF08status-bar.js\uFF1A\u4E0B\u65B9\u6709\u5185\u5BB9\u65F6\u5BF9\u79F0 7px\uFF0C
+       \u4E0B\u65B9\u662F\u7A97\u5E95\u7559\u767D\u65F6\u8D1F margin \u538B\u5165\u8D34\u5E95\uFF09 */
+    .zcodepro-statusbar {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 14px 0;
+      font-size: 11px;
+      line-height: 1.4;
+      color: var(--color-muted-foreground, #888);
+      user-select: none;
+      pointer-events: none;
+    }
+    .zcodepro-statusbar span[data-tone='warn'] { color: var(--color-amber-500, #f59e0b); }
+    .zcodepro-statusbar span[data-tone='danger'] { color: var(--color-red-500, #ef4444); }
+    .zcodepro-statusbar-sep { opacity: 0.45; }
+    /* \u4F1A\u8BDD\u7EC4\u4E0E\u5168\u5C40\u7EC4\u4E4B\u95F4\u7684\u5206\u754C\u7AD6\u7EBF */
+    .zcodepro-statusbar-groupsep {
+      width: 1px;
+      height: 10px;
+      background: currentColor;
+      opacity: 0.3;
+      margin: 0 2px;
+    }
+    /* \u6BCF\u9879\u5185\u90E8\u7528 flex \u5BF9\u9F50\uFF1A\u56FE\u6807\u3001\u6807\u7B7E\u3001\u6570\u503C\u5782\u76F4\u5C45\u4E2D\uFF0C\u95F4\u8DDD\u7EDF\u4E00 */
+    .zcodepro-statusbar span[title] {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      white-space: nowrap;
+    }
+    .zcodepro-sb-icon {
+      width: 12px;
+      height: 12px;
+      flex-shrink: 0;
+      opacity: 0.6;
+    }
+    .zcodepro-statusbar b { font-weight: 600; color: var(--color-foreground-subtle, #666); }
+    .zcodepro-statusbar i {
+      font-style: normal;
+      opacity: 0.7;
+      font-size: 10px;
+    }
+    /* \u9879\u5185\u77ED\u6807\u7B7E\uFF08\u5982\u201C\u4E0A\u4E0B\u6587\u201D\u201C\u7D2F\u8BA1\u201D\uFF09\uFF0C\u5F31\u5316\u4E0D\u62A2\u6570\u503C */
+    .zcodepro-statusbar em {
+      font-style: normal;
+      opacity: 0.75;
+    }
     .zcodepro-switcher-ws {
       font-size: 11px;
       color: var(--color-muted-foreground, #888);
@@ -2504,10 +2634,10 @@
   }
   function handleProjectMenu(content) {
     if (content.querySelector("[data-zcodepro-item]")) return;
-    const items = itemsOf(content);
+    const items2 = itemsOf(content);
     const newUi = isNewProjectSidebar();
     const menuRow = newUi ? openMenuProjectRow() : null;
-    const anchor = newUi ? items.find((el) => el.getAttribute("data-testid") === "virtual-project-edit") : items.find(
+    const anchor = newUi ? items2.find((el) => el.getAttribute("data-testid") === "virtual-project-edit") : items2.find(
       (el) => el.hasAttribute("data-testid") && REMOVE_TEXTS.some((x) => itemText(el).startsWith(x))
     );
     if (!anchor) return;
@@ -2600,7 +2730,7 @@
     if (looksLikePath(p2)) return p2;
     return pathFromReactFiber(content);
   }
-  function appendMenuItem(content, template, anchor, { marker, label, icon, onPick }) {
+  function appendMenuItem(content, template, anchor, { marker, label, icon: icon2, onPick }) {
     const item = template.cloneNode(true);
     item.removeAttribute("data-testid");
     item.removeAttribute("data-highlighted");
@@ -2609,7 +2739,7 @@
     item.setAttribute("data-zcodepro-item", marker);
     for (const child of [...item.childNodes]) child.remove();
     const origIcon = template.querySelector("svg");
-    item.append(buildIcon(origIcon?.getAttribute("class") || "size-4", icon), document.createTextNode(label));
+    item.append(buildIcon(origIcon?.getAttribute("class") || "size-4", icon2), document.createTextNode(label));
     item.addEventListener("mouseenter", () => {
       for (const el of content.querySelectorAll('[role="menuitem"]')) el.removeAttribute("data-highlighted");
       item.setAttribute("data-highlighted", "");
@@ -2624,8 +2754,8 @@
   }
   function handleFileMenu(content) {
     if (content.dataset.zcodeproFileMenu) return;
-    const items = itemsOf(content);
-    const copyAbs = items.find((el) => COPY_ABS_TEXTS.some((x) => itemText(el).startsWith(x)));
+    const items2 = itemsOf(content);
+    const copyAbs = items2.find((el) => COPY_ABS_TEXTS.some((x) => itemText(el).startsWith(x)));
     if (!copyAbs) return;
     content.dataset.zcodeproFileMenu = "1";
     void (async () => {
@@ -2640,7 +2770,7 @@
         }).catch(() => {
         });
       };
-      const noApps = items.find((el) => NO_APPS_TEXTS.some((x) => itemText(el) === x)) || content.querySelector('[data-disabled][role="menuitem"]');
+      const noApps = items2.find((el) => NO_APPS_TEXTS.some((x) => itemText(el) === x)) || content.querySelector('[data-disabled][role="menuitem"]');
       const openAnchor = noApps && content.contains(noApps) ? noApps : copyAbs;
       appendMenuItem(content, copyAbs, openAnchor, {
         marker: "file-open-default",
@@ -2850,10 +2980,10 @@
   function startImageMenu() {
     if (typeof window === "undefined") return;
     if (typeof navigator.clipboard?.write !== "function" || typeof window.ClipboardItem === "undefined") return;
-    let enabled7 = true;
+    let enabled9 = true;
     const refresh = () => {
       void getConfig().then((c) => {
-        enabled7 = !(c.features && c.features.imageCopy === false);
+        enabled9 = !(c.features && c.features.imageCopy === false);
       });
     };
     refresh();
@@ -2862,7 +2992,7 @@
       const img = copyTargetOf(e.target, e.clientX, e.clientY);
       if (!img) return;
       e.preventDefault();
-      if (enabled7) showMenu(e.clientX, e.clientY, img);
+      if (enabled9) showMenu(e.clientX, e.clientY, img);
       refresh();
     }, true);
   }
@@ -2966,7 +3096,7 @@
   function waitFor(getter, timeoutMs, step) {
     const start = Date.now();
     return new Promise((resolve, reject) => {
-      const tick2 = () => {
+      const tick4 = () => {
         let v = null;
         try {
           v = getter();
@@ -2980,9 +3110,9 @@
           reject(new Error(step));
           return;
         }
-        setTimeout(tick2, 120);
+        setTimeout(tick4, 120);
       };
-      tick2();
+      tick4();
     });
   }
   function setReactInputValue(input, value) {
@@ -3754,7 +3884,7 @@
       setState(L.upgradeFound.replaceAll("{v}", res.latest || ""));
       btn.textContent = L.upgradeNow;
     };
-    const tick2 = async () => {
+    const tick4 = async () => {
       const res = await rpc(endpoint + "/upgrade");
       if (!res.ok) {
         stopPoll();
@@ -3794,9 +3924,9 @@
       btn.textContent = L.upgradeStop;
       setState(L.upgradeRunning);
       timer = setInterval(() => {
-        void tick2();
+        void tick4();
       }, 1500);
-      void tick2();
+      void tick4();
     };
     void (async () => {
       const res = await rpc(endpoint + "/upgrade");
@@ -4015,6 +4145,16 @@
               if (await setFeature("newtabPanels", next)) f.newtabPanels = next;
               refreshRows();
             }),
+            settingRow(L.featureStatusBar, L.featureStatusBarDesc, f.statusBar !== false, async () => {
+              const next = !(f.statusBar !== false);
+              if (await setFeature("statusBar", next)) f.statusBar = next;
+              refreshRows();
+            }),
+            settingRow(L.featureTurnUsage, L.featureTurnUsageDesc, f.turnUsage !== false, async () => {
+              const next = !(f.turnUsage !== false);
+              if (await setFeature("turnUsage", next)) f.turnUsage = next;
+              refreshRows();
+            }),
             (() => {
               const repoLink = h("span", {
                 class: "cursor-pointer underline-offset-4 hover:underline",
@@ -4047,7 +4187,7 @@
         const WECHAT_ID = "ai4only";
         const ns = "http://www.w3.org/2000/svg";
         const extIcon = () => {
-          const icon = h("svg", {
+          const icon2 = h("svg", {
             viewBox: "0 0 24 24",
             fill: "none",
             stroke: "currentColor",
@@ -4059,11 +4199,11 @@
           for (const d of ["M15 3h6v6", "M10 14 21 3", "M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"]) {
             const p2 = document.createElementNS(ns, "path");
             p2.setAttribute("d", d);
-            icon.append(p2);
+            icon2.append(p2);
           }
-          return icon;
+          return icon2;
         };
-        const communityCard = (title, desc, icon, onClick) => h(
+        const communityCard = (title, desc, icon2, onClick) => h(
           "div",
           {
             class: "flex cursor-pointer items-center justify-between gap-2 rounded-xl border border-border p-2 transition-colors hover:bg-surface-hover",
@@ -4075,7 +4215,7 @@
             h("div", { class: "truncate text-ui-sm font-medium text-foreground" }, title),
             h("div", { class: "mt-0.5 truncate text-ui-xs/relaxed text-foreground-subtle" }, desc)
           ),
-          icon()
+          icon2()
         );
         const communityCards = h(
           "div",
@@ -4218,7 +4358,7 @@
           ),
           hkCard
         );
-        const paneStyles = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
+        const paneStyles = h("div", { role: "tabpanel", class: "mt-2", style: "display:none" });
         const panePerf = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
         const paneAgents = h("div", { role: "tabpanel", class: "mt-2", style: "display:none" });
         const paneProxy = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
@@ -4433,7 +4573,162 @@
           for (const c of fontCells) c.setOptions(list);
         })();
         renderToolbarSwitch();
-        paneStyles.append(
+        const paneStylesSub1 = h("div", { class: "mt-4" });
+        const paneStylesSub2 = h("div", { class: "mt-4", style: "display:none" });
+        const ITEM_NAMES = {
+          ctx: "sbItemCtx",
+          questions: "sbItemQuestions",
+          todayTokens: "sbItemTodayTokens",
+          totalTokens: "sbItemTotalTokens",
+          tasks: "sbItemTasks"
+        };
+        const sbItems = () => {
+          const saved = config.statusBar && Array.isArray(config.statusBar.items) ? config.statusBar.items : null;
+          if (!saved) return DEFAULT_STATUS_ITEMS.map((x) => ({ ...x }));
+          const byId = new Map(saved.map((x) => [x.id, x]));
+          const list = saved.filter((x) => ITEM_NAMES[x.id]).map((x) => ({ on: x.on !== false, id: x.id }));
+          for (const d of DEFAULT_STATUS_ITEMS) if (!byId.has(d.id)) list.push({ ...d });
+          return [
+            ...list.filter((x) => STATUS_SESSION_IDS.has(x.id)),
+            ...list.filter((x) => STATUS_GLOBAL_IDS.has(x.id))
+          ];
+        };
+        let sbSaving = false;
+        const saveSbItems = async (next) => {
+          if (sbSaving) return;
+          sbSaving = true;
+          try {
+            const res = await rpc("/config", { method: "POST", body: { statusBar: { items: next } } });
+            clearConfigCache();
+            window.dispatchEvent(new CustomEvent("zcodepro:config-changed"));
+            if (!res.ok) {
+              showToast(L.failed + ": " + errText(res), "error");
+              renderSbItems();
+              return;
+            }
+            if (res.config && res.config.statusBar) config.statusBar = res.config.statusBar;
+          } finally {
+            sbSaving = false;
+          }
+          renderSbItems();
+        };
+        const sbList = h("div", { class: "divide-y divide-border rounded-xl border border-border" });
+        const sbGlobalList = h("div", { class: "divide-y divide-border rounded-xl border border-border" });
+        const TURN_NAMES = { turnIn: "sbLabelIn", turnOut: "sbLabelOut", turnCache: "sbLabelCache" };
+        const turnItems = () => {
+          const saved = config.statusBar && Array.isArray(config.statusBar.turnItems) ? config.statusBar.turnItems : null;
+          if (!saved) return DEFAULT_TURN_ITEMS.map((x) => ({ ...x }));
+          const byId = new Map(saved.map((x) => [x.id, x]));
+          const list = saved.filter((x) => TURN_NAMES[x.id]).map((x) => ({ on: x.on !== false, id: x.id }));
+          for (const d of DEFAULT_TURN_ITEMS) if (!byId.has(d.id)) list.push({ ...d });
+          return list;
+        };
+        const saveTurnItems = async (next) => {
+          if (sbSaving) return;
+          sbSaving = true;
+          try {
+            const res = await rpc("/config", { method: "POST", body: { statusBar: { turnItems: next } } });
+            clearConfigCache();
+            window.dispatchEvent(new CustomEvent("zcodepro:config-changed"));
+            if (!res.ok) {
+              showToast(L.failed + ": " + errText(res), "error");
+              renderSbItems();
+              return;
+            }
+            if (res.config && res.config.statusBar) config.statusBar = res.config.statusBar;
+          } finally {
+            sbSaving = false;
+          }
+          renderSbItems();
+        };
+        const turnList = h("div", { class: "divide-y divide-border rounded-xl border border-border" });
+        const renderSbItems = () => {
+          turnList.replaceChildren(...turnItems().map((it, i) => h(
+            "div",
+            { class: "flex items-center gap-2 px-3 py-2" },
+            h("span", { class: "min-w-0 flex-1 truncate text-ui-sm text-foreground-subtle" }, L[TURN_NAMES[it.id]] || it.id),
+            btnSmall(it.on ? L.sbVisible : L.sbHidden, () => {
+              void saveTurnItems(turnItems().map((x) => x.id === it.id ? { ...x, on: !x.on } : x));
+            }),
+            btnSmall("\u2191", () => {
+              const a = turnItems();
+              if (i > 0) {
+                [a[i - 1], a[i]] = [a[i], a[i - 1]];
+                void saveTurnItems(a);
+              }
+            }),
+            btnSmall("\u2193", () => {
+              const a = turnItems();
+              if (i < a.length - 1) {
+                [a[i], a[i + 1]] = [a[i + 1], a[i]];
+                void saveTurnItems(a);
+              }
+            })
+          )));
+          const list = sbItems();
+          const renderGroup = (el, groupIds) => {
+            const idxs = list.map((x, i) => i).filter((i) => groupIds.has(list[i].id));
+            el.replaceChildren(...idxs.map((i) => {
+              const it = list[i];
+              const swap = (dir) => {
+                const a = sbItems();
+                const same = a.map((x, j) => j).filter((j) => groupIds.has(a[j].id));
+                const pos = same.indexOf(i);
+                const other = same[pos + dir];
+                if (other == null) return;
+                [a[i], a[other]] = [a[other], a[i]];
+                void saveSbItems(a);
+              };
+              return h(
+                "div",
+                { class: "flex items-center gap-2 px-3 py-2" },
+                h(
+                  "span",
+                  { class: "min-w-0 flex-1 truncate text-ui-sm text-foreground-subtle" },
+                  L[ITEM_NAMES[it.id]] || it.id
+                ),
+                btnSmall(it.on ? L.sbVisible : L.sbHidden, () => {
+                  void saveSbItems(sbItems().map((x, j) => j === i ? { ...x, on: !x.on } : x));
+                }),
+                btnSmall("\u2191", () => swap(-1)),
+                btnSmall("\u2193", () => swap(1))
+              );
+            }));
+          };
+          renderGroup(sbList, STATUS_SESSION_IDS);
+          renderGroup(sbGlobalList, STATUS_GLOBAL_IDS);
+        };
+        renderSbItems();
+        paneStylesSub2.append(
+          h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.featureStatusBarDesc),
+          h("div", { class: "mt-3 mb-1 text-ui-sm font-medium" }, L.sbGroupSession),
+          sbList,
+          h("div", { class: "mt-3 mb-1 text-ui-sm font-medium" }, L.sbGroupGlobal),
+          sbGlobalList,
+          h("div", { class: "mt-3 mb-1 text-ui-sm font-medium" }, L.sbGroupTurn),
+          turnList
+        );
+        let stylesSubTab = "styles";
+        const stylesSubTablist = h("div", { role: "tablist", "aria-orientation": "horizontal", class: "zcodepro-tablist" });
+        const renderStylesSubTabs = () => stylesSubTablist.replaceChildren(...[
+          ["styles", L.tabStylesPane],
+          ["status", L.tabStatusPane]
+        ].map(([id, label]) => h("button", {
+          type: "button",
+          role: "tab",
+          class: "zcodepro-tab",
+          "aria-selected": String(stylesSubTab === id),
+          "data-state": stylesSubTab === id ? "active" : "inactive",
+          onClick: () => {
+            stylesSubTab = id;
+            paneStylesSub1.style.display = id === "styles" ? "" : "none";
+            paneStylesSub2.style.display = id === "status" ? "" : "none";
+            renderStylesSubTabs();
+          }
+        }, label)));
+        renderStylesSubTabs();
+        paneStyles.append(stylesSubTablist, paneStylesSub1, paneStylesSub2);
+        paneStylesSub1.append(
           toolbarSwitchWrap,
           h(
             "div",
@@ -5431,6 +5726,11 @@
               h(
                 "div",
                 { class: "ml-auto flex items-center gap-4" },
+                settingRow(L.visionCardUi, "", visionCfg.cardUi !== false, async () => {
+                  visionCfg.cardUi = !(visionCfg.cardUi !== false);
+                  await persistVision();
+                  renderVision();
+                }),
                 settingRow(L.visionForceIntercept, "", visionCfg.forceIntercept !== false, async () => {
                   visionCfg.forceIntercept = !(visionCfg.forceIntercept !== false);
                   await persistVision();
@@ -6659,9 +6959,9 @@
       const domRunning = !!(runningByWs.get(path) && runningByWs.get(path).size);
       const normP = (v) => String(v || "").replace(/[\\/]+$/, "");
       const running = enabled2 && collapsed && (activeProjectPaths.size ? [...activeProjectPaths].some((p2) => normP(p2) === normP(path)) : domRunning);
-      const icon = iconHolderOf(row);
-      icon?.classList.toggle("zcodepro-ws-running", running);
-      setRunningIcon(icon, running);
+      const icon2 = iconHolderOf(row);
+      icon2?.classList.toggle("zcodepro-ws-running", running);
+      setRunningIcon(icon2, running);
     }
     applySectionSpin();
     for (const ws of [...runningByWs.keys()]) if (!seen.has(ws)) runningByWs.delete(ws);
@@ -7467,19 +7767,19 @@
   function findBridge() {
     let holder = null;
     const seen = /* @__PURE__ */ new Set();
-    const scan4 = (o) => {
+    const scan5 = (o) => {
       if (!o || typeof o !== "object" || seen.has(o) || holder) return;
       seen.add(o);
       if (typeof o.pluginUiBridgeService === "object" && o.pluginUiBridgeService) {
         holder = o.pluginUiBridgeService;
         return;
       }
-      for (const v of Object.values(o)) if (v && typeof v === "object") scan4(v);
+      for (const v of Object.values(o)) if (v && typeof v === "object") scan5(v);
     };
     eachFiber((f) => {
       for (const h2 of [f.memoizedProps, f.memoizedState]) {
         if (!h2 || typeof h2 !== "object") continue;
-        scan4(h2);
+        scan5(h2);
         if (holder) return true;
       }
       return false;
@@ -7615,6 +7915,423 @@
     setInterval(tryInject, 5e3);
   }
 
+  // src/inject/features/status-bar.js
+  var enabled4 = true;
+  var items = DEFAULT_STATUS_ITEMS.map((x) => ({ ...x }));
+  var barEl = null;
+  var lastStats = null;
+  function readCtx() {
+    for (const el of document.querySelectorAll("[title], [aria-label]")) {
+      if (el.closest(".zcodepro-statusbar")) continue;
+      const text = el.getAttribute("title") || el.getAttribute("aria-label") || "";
+      if (!/上下文|context/i.test(text)) continue;
+      const m = text.match(/([\d][\d,]*)\s*\/[^0-9]*([\d][\d,]*)/);
+      if (!m) continue;
+      const used = Number(m[1].replace(/,/g, ""));
+      const size = Number(m[2].replace(/,/g, ""));
+      if (used > 0 && size > used) return { used, size };
+    }
+    return null;
+  }
+  var usageSvc = null;
+  var official = null;
+  var officialAt = 0;
+  function eachFiber2(visit) {
+    const rootEl = document.getElementById("root");
+    const key = rootEl && Object.keys(rootEl).find((k) => k.startsWith("__reactContainer$"));
+    if (!key) return;
+    let visited = 0;
+    const walk = (f) => {
+      if (!f || visited > 2e5) return false;
+      visited++;
+      if (visit(f)) return true;
+      return walk(f.child) || walk(f.sibling);
+    };
+    walk(rootEl[key]);
+  }
+  function findUsageService() {
+    let found = null;
+    const seen = /* @__PURE__ */ new Set();
+    const scan5 = (o) => {
+      if (!o || typeof o !== "object" || seen.has(o) || found) return;
+      seen.add(o);
+      if (typeof o.usageStatsService === "object" && o.usageStatsService) {
+        found = o.usageStatsService;
+        return;
+      }
+      for (const v of Object.values(o)) if (v && typeof v === "object") scan5(v);
+    };
+    eachFiber2((f) => {
+      for (const h2 of [f.memoizedProps, f.memoizedState]) {
+        if (!h2 || typeof h2 !== "object") continue;
+        scan5(h2);
+        if (found) return true;
+      }
+      return false;
+    });
+    return found;
+  }
+  function refreshOfficial() {
+    const period = official ? 5 * 6e4 : 3e4;
+    if (Date.now() - officialAt < period) return;
+    officialAt = Date.now();
+    void (async () => {
+      try {
+        if (!usageSvc) usageSvc = findUsageService();
+        if (!usageSvc || typeof usageSvc.getAppUsageSnapshot !== "function") return;
+        const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const [all, d7] = await Promise.all([
+          usageSvc.getAppUsageSnapshot({ range: "all", timeZone }),
+          usageSvc.getAppUsageSnapshot({ range: "7d", timeZone })
+        ]);
+        const now = /* @__PURE__ */ new Date();
+        const key = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0");
+        let todayTokens = 0;
+        const day = (d7 && Array.isArray(d7.dailyModelUsage) ? d7.dailyModelUsage : []).find((d) => d.date === key);
+        if (day) for (const m of day.models || []) todayTokens += Number(m.totalTokens) || 0;
+        official = {
+          todayTokens,
+          totalTokens: Number(all && all.summary && all.summary.totalTokens) || 0,
+          totalSessions: Number(all && all.summary && all.summary.totalSessions) || 0
+        };
+        renderBar();
+      } catch {
+        usageSvc = null;
+      }
+    })();
+  }
+  var GLOBAL_GROUP = /* @__PURE__ */ new Set(["todayTokens", "totalTokens", "tasks"]);
+  var SB_ICONS = {
+    ctx: '<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>',
+    asks: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
+    today: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
+    total: '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>',
+    tasks: '<rect x="3" y="5" width="6" height="6" rx="1"/><path d="m3 17 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/>',
+    coins: '<circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><path d="m16.71 13.88.7.71-2.82 2.82"/>'
+  };
+  var sbIcon = (name) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="zcodepro-sb-icon">${SB_ICONS[name]}</svg>`;
+  function fmtTokens(n) {
+    if (n >= 1e9) return (n / 1e9).toFixed(1) + "B";
+    if (n >= 1e6) return (n / 1e6).toFixed(1) + "M";
+    if (n >= 1e3) return (n / 1e3).toFixed(1) + "k";
+    return String(n);
+  }
+  function fmtNum(n) {
+    if (!isZhLocale()) return fmtTokens(n);
+    if (n < 1e4) return String(n);
+    if (n >= 1e8) {
+      const yi = Math.round(n / 1e8 * 10) / 10;
+      return (yi % 1 === 0 ? String(yi) : yi.toFixed(1)) + "\u4EBF";
+    }
+    const wan = Math.round(n / 1e4 * 10) / 10;
+    return (wan % 1 === 0 ? String(wan) : wan.toFixed(1)) + "\u4E07";
+  }
+  function itemContent(id, L) {
+    const g = lastStats && lastStats.global;
+    const label = (text) => `<em>${text}</em>`;
+    switch (id) {
+      case "ctx": {
+        const dom = readCtx();
+        if (dom) {
+          const pct = Math.round(dom.used / dom.size * 1e3) / 10;
+          const tone = pct >= 95 ? "danger" : pct >= 80 ? "warn" : "";
+          return {
+            html: sbIcon("ctx") + label(L.sbLabelCtx) + `<b>${fmtNum(dom.used)}/${fmtNum(dom.size)}${isZhLocale() ? "\uFF08" : "("}${pct}%${isZhLocale() ? "\uFF09" : ")"}</b>`,
+            title: `${L.sbItemCtx}\uFF1A${dom.used.toLocaleString()} / ${dom.size.toLocaleString()}`,
+            tone
+          };
+        }
+        return null;
+      }
+      case "questions": {
+        const nav = document.querySelector('[data-testid="v4-turn-navigator"]');
+        const n = nav ? Number(nav.getAttribute("data-item-count")) : 0;
+        return n > 0 ? { html: sbIcon("asks") + label(L.sbLabelQuestions) + String(n), title: L.sbItemQuestions } : null;
+      }
+      case "todayTokens": {
+        const n = official ? official.todayTokens : g ? g.todayTokens : 0;
+        return n > 0 ? { html: sbIcon("today") + label(L.sbLabelToday) + fmtNum(n), title: L.sbItemTodayTokens } : null;
+      }
+      case "totalTokens": {
+        const n = official ? official.totalTokens : g ? g.totalTokens : 0;
+        return n > 0 ? { html: sbIcon("total") + label(L.sbLabelTotal) + fmtNum(n), title: L.sbItemTotalTokens } : null;
+      }
+      case "tasks": {
+        const n = official ? official.totalSessions : g ? g.tasks : 0;
+        return n > 0 ? { html: sbIcon("tasks") + label(L.sbLabelTasks) + String(n), title: L.sbItemTasks } : null;
+      }
+      default:
+        return null;
+    }
+  }
+  function renderBar() {
+    const ta = document.querySelector("textarea, [contenteditable=true]");
+    const host = ta && (ta.closest("form") || ta.parentElement);
+    if (!enabled4 || !host || !host.parentElement) {
+      if (barEl) barEl.remove();
+      barEl = null;
+      return;
+    }
+    if (!barEl || !barEl.isConnected) {
+      if (!barEl) {
+        barEl = document.createElement("div");
+        barEl.className = "zcodepro-statusbar";
+      }
+      host.parentElement.insertBefore(barEl, host.nextSibling);
+    }
+    const hasSession = !![...document.querySelectorAll("[data-task-item-key]")].find((e) => (e.className + "").includes("bg-selected"));
+    barEl.style.marginBottom = hasSession ? "-14px" : "0";
+    barEl.style.paddingBottom = hasSession ? "0" : "7px";
+    const L = t();
+    const parts = [];
+    let lastGroup = "";
+    for (const it of items) {
+      if (!it.on) continue;
+      const c = itemContent(it.id, L);
+      if (!c) continue;
+      const group = GLOBAL_GROUP.has(it.id) ? "g" : "s";
+      if (lastGroup && group !== lastGroup) parts.push('<span class="zcodepro-statusbar-groupsep"></span>');
+      lastGroup = group;
+      parts.push(`<span title="${c.title.replace(/"/g, "&quot;")}"${c.tone ? ` data-tone="${c.tone}"` : ""}>${c.html}</span>`);
+    }
+    const SEP = '<span class="zcodepro-statusbar-sep">\xB7</span>';
+    const GROUPSEP = '<span class="zcodepro-statusbar-groupsep"></span>';
+    barEl.innerHTML = parts.reduce((acc, p, i) => {
+      if (i === 0) return p;
+      if (p === GROUPSEP || parts[i - 1] === GROUPSEP) return acc + p;
+      return acc + SEP + p;
+    }, "");
+    barEl.style.display = parts.length ? "" : "none";
+  }
+  async function tick() {
+    if (!enabled4 || document.hidden) return;
+    refreshOfficial();
+    const res = await rpc("/stats/usage").catch(() => null);
+    if (res && res.ok) lastStats = res;
+    renderBar();
+  }
+  function startStatusBar() {
+    ensureStyle();
+    const refreshCfg = () => {
+      void getConfig().then((cfg) => {
+        enabled4 = cfg.features ? cfg.features.statusBar !== false : true;
+        const saved = cfg.statusBar && Array.isArray(cfg.statusBar.items) ? cfg.statusBar.items : null;
+        if (saved) {
+          const byId = new Map(saved.map((x) => [x.id, x]));
+          const list = saved.filter((x) => DEFAULT_STATUS_ITEMS.some((d) => d.id === x.id)).map((x) => ({ ...x }));
+          const known = new Set(list.map((x) => x.id));
+          for (const d of DEFAULT_STATUS_ITEMS) {
+            if (!known.has(d.id)) list.push({ ...d });
+          }
+          items = [
+            ...list.filter((x) => !GLOBAL_GROUP.has(x.id)),
+            ...list.filter((x) => GLOBAL_GROUP.has(x.id))
+          ];
+        } else {
+          items = DEFAULT_STATUS_ITEMS.map((x) => ({ ...x }));
+        }
+        renderBar();
+      }).catch(() => {
+      });
+    };
+    refreshCfg();
+    window.addEventListener("zcodepro:config-changed", refreshCfg);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) void tick();
+    });
+    setInterval(() => {
+      void tick();
+    }, 2e3);
+    let rerenderTimer = 0;
+    new MutationObserver(() => {
+      if (rerenderTimer) return;
+      rerenderTimer = setTimeout(() => {
+        rerenderTimer = 0;
+        renderBar();
+      }, 300);
+    }).observe(document.body, { childList: true, subtree: true });
+  }
+
+  // src/inject/features/turn-usage.js
+  var enabled5 = true;
+  var recentTurns = [];
+  var scanTimer = 0;
+  var turnCfg = [
+    { id: "turnIn", on: true },
+    { id: "turnOut", on: true },
+    { id: "turnCache", on: true }
+  ];
+  var refreshTurnItems = () => {
+    void getConfig().then((cfg) => {
+      const saved = cfg.statusBar && Array.isArray(cfg.statusBar.turnItems) ? cfg.statusBar.turnItems : null;
+      if (!saved) return;
+      const known = new Set(turnCfg.map((x) => x.id));
+      const list = saved.filter((x) => x && known.has(x.id)).map((x) => ({ id: x.id, on: x.on !== false }));
+      for (const d of turnCfg) if (!list.some((x) => x.id === d.id)) list.push({ ...d });
+      turnCfg = list;
+    }).catch(() => {
+    });
+  };
+  var ICONS = {
+    up: '<path d="m5 12 7-7 7 7"/><path d="M12 19V5"/>',
+    down: '<path d="M12 5v14"/><path d="m19 12-7 7-7-7"/>',
+    cache: '<path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>'
+  };
+  var icon = (name) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;vertical-align:-1.5px;opacity:.6">${ICONS[name]}</svg>`;
+  function fmt(n) {
+    if (!isZhLocale()) {
+      if (n >= 1e9) return (n / 1e9).toFixed(1) + "B";
+      if (n >= 1e6) return (n / 1e6).toFixed(1) + "M";
+      if (n >= 1e3) return (n / 1e3).toFixed(1) + "k";
+      return String(n);
+    }
+    if (n >= 1e8) return (n / 1e8).toFixed(1) + "\u4EBF";
+    if (n >= 1e4) {
+      const wan = Math.round(n / 1e4 * 10) / 10;
+      return (wan % 1 === 0 ? String(wan) : wan.toFixed(1)) + "\u4E07";
+    }
+    return String(n);
+  }
+  function findRows() {
+    const rows = [];
+    for (const btn of document.querySelectorAll('[data-testid^="v4-copy-"]')) {
+      const row = btn.parentElement;
+      if (!row || row.dataset.zcodeproTurn) continue;
+      if (!row.querySelector('[data-testid^="v4-feedback-"]')) continue;
+      const timeEl = [...row.querySelectorAll("span")].find((s) => /\d{1,2}:\d{2}$/.test((s.textContent || "").trim()));
+      if (timeEl) {
+        const ts = rowTimeTs((timeEl.textContent || "").trim());
+        if (ts != null) rows.push({ row, ts });
+      }
+    }
+    return rows;
+  }
+  function currentSessionId() {
+    const rows = [...document.querySelectorAll("[data-task-item-key]")];
+    const cur = rows.find((e) => (e.className + "").includes("bg-selected")) || rows[rows.length - 1];
+    const key = cur ? cur.getAttribute("data-task-item-key") : "";
+    const i = key.lastIndexOf(":sess");
+    return i > 0 ? key.slice(i + 1) : "";
+  }
+  function injectRow(row, bucket) {
+    row.dataset.zcodeproTurn = "1";
+    if (!bucket || bucket.in + bucket.out <= 0) return;
+    const L = t();
+    const el = document.createElement("span");
+    el.dataset.zcodeproTurnSpan = "1";
+    el.className = "select-none text-ui-sm text-foreground-subtlest";
+    el.style.whiteSpace = "nowrap";
+    el.style.display = "inline-flex";
+    el.style.alignItems = "center";
+    el.style.gap = "4px";
+    el.style.marginLeft = "10px";
+    const cachePct = bucket.in > 0 && bucket.cacheRead > 0 ? (bucket.cacheRead / bucket.in * 100).toFixed(2) : "";
+    const group = (html) => `<span style="display:inline-flex;align-items:center;gap:2px">${html}</span>`;
+    const em = (text) => `<em style="font-style:normal;opacity:.75">${text}</em>`;
+    const DOT = '<span style="opacity:.45">\xB7</span>';
+    const sections = [];
+    for (const s of turnCfg) {
+      if (!s.on) continue;
+      if (s.id === "turnIn") sections.push(group(icon("up") + em(L.sbLabelIn) + fmt(bucket.in)));
+      else if (s.id === "turnOut") sections.push(group(icon("down") + em(L.sbLabelOut) + fmt(bucket.out)));
+      else if (s.id === "turnCache" && cachePct) sections.push(group(icon("cache") + em(L.sbLabelCache) + cachePct + "%"));
+    }
+    if (!sections.length) {
+      delete row.dataset.zcodeproTurn;
+      el.remove();
+      return;
+    }
+    const VBAR = '<span style="display:inline-block;width:1px;height:10px;background:currentColor;opacity:.3;margin:0 5px"></span>';
+    el.innerHTML = VBAR + sections.join(DOT);
+    el.title = `${L.turnUsageTitle}\uFF1A${L.sbLabelIn} ${bucket.in.toLocaleString()} / ${L.sbLabelOut} ${bucket.out.toLocaleString()}` + (bucket.cacheRead > 0 ? ` / ${L.sbLabelCache} ${bucket.cacheRead.toLocaleString()}` : "");
+    row.append(el);
+  }
+  function rowTimeTs(text) {
+    const now = /* @__PURE__ */ new Date();
+    let m = text.match(/^(\d{1,2}):(\d{2})$/);
+    if (m) return new Date(now.getFullYear(), now.getMonth(), now.getDate(), +m[1], +m[2]).getTime();
+    m = text.match(/^昨天\s*(\d{1,2}):(\d{2})$/);
+    if (m) {
+      const y = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+      return new Date(y.getFullYear(), y.getMonth(), y.getDate(), +m[1], +m[2]).getTime();
+    }
+    m = text.match(/^(\d{1,2})\/(\d{1,2})\s*(\d{1,2}):(\d{2})$/);
+    if (m) return new Date(now.getFullYear(), +m[1] - 1, +m[2], +m[3], +m[4]).getTime();
+    return null;
+  }
+  var lastSid = "";
+  function scan3() {
+    if (!enabled5) return;
+    const sid = currentSessionId();
+    if (sid !== lastSid) {
+      lastSid = sid;
+      recentTurns = [];
+      void tick2();
+    }
+    for (const el of document.querySelectorAll('[data-zcodepro-turn-span], span[title^="\u672C\u8F6E"], span[title^="Turn"]')) el.remove();
+    for (const row of document.querySelectorAll("[data-zcodepro-turn]")) delete row.dataset.zcodeproTurn;
+    if (document.hidden || !recentTurns.length) return;
+    const rows = findRows().sort((a, b) => a.ts - b.ts);
+    if (!rows.length) return;
+    const agg = rows.map(() => ({ in: 0, out: 0, cacheRead: 0 }));
+    const dayOf = (t2) => {
+      const d = new Date(t2);
+      return d.getFullYear() * 1e4 + (d.getMonth() + 1) * 100 + d.getDate();
+    };
+    for (const b of recentTurns) {
+      let owner = -1;
+      for (let i = 0; i < rows.length; i++) {
+        if (rows[i].ts <= b.ts) owner = i;
+        else break;
+      }
+      if (owner < 0) continue;
+      if (dayOf(rows[owner].ts) !== dayOf(b.ts)) continue;
+      agg[owner].in += b.in;
+      agg[owner].out += b.out;
+      agg[owner].cacheRead += b.cacheRead;
+    }
+    for (let i = 0; i < rows.length; i++) {
+      if (agg[i].in + agg[i].out > 0) injectRow(rows[i].row, agg[i]);
+    }
+  }
+  async function tick2() {
+    if (!enabled5 || document.hidden) return;
+    const sid = currentSessionId();
+    const res = await rpc("/stats/usage" + (sid ? "?session=" + encodeURIComponent(sid) : "")).catch(() => null);
+    if (res && res.ok && Array.isArray(res.recentTurns)) {
+      recentTurns = res.recentTurns;
+      scan3();
+    }
+  }
+  function startTurnUsage() {
+    void getConfig().then((cfg) => {
+      enabled5 = cfg.features ? cfg.features.turnUsage !== false : true;
+    }).catch(() => {
+    });
+    refreshTurnItems();
+    window.addEventListener("zcodepro:config-changed", () => {
+      void getConfig().then((cfg) => {
+        enabled5 = cfg.features ? cfg.features.turnUsage !== false : true;
+      }).catch(() => {
+      });
+      refreshTurnItems();
+    });
+    const observer2 = new MutationObserver(() => {
+      if (scanTimer) return;
+      scanTimer = setTimeout(() => {
+        scanTimer = 0;
+        scan3();
+      }, 1200);
+    });
+    observer2.observe(document.body, { childList: true, subtree: true });
+    setInterval(() => {
+      void tick2();
+    }, 5e3);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) void tick2();
+    });
+  }
+
   // src/inject/features/title-lock.js
   var TASK_SEL2 = "[data-task-item-key]";
   var SCAN_DEBOUNCE_MS3 = 150;
@@ -7625,7 +8342,7 @@
   var MAP_REFRESH_MS = 6e4;
   var installed3 = false;
   var seenRows = /* @__PURE__ */ new WeakSet();
-  var enabled4 = true;
+  var enabled6 = true;
   var pinned = null;
   var resolved = false;
   var fetching = null;
@@ -7640,7 +8357,7 @@
     const t2 = item.querySelector('[class*="truncate"]');
     return t2 ? [t2] : [];
   }
-  function findRows(key) {
+  function findRows2(key) {
     return [...document.querySelectorAll(`${TASK_SEL2}[data-task-item-key="${CSS.escape(key)}"]`)];
   }
   async function fetchPinned() {
@@ -7649,8 +8366,8 @@
       const res = await rpc("/pinned-titles");
       if (!res || !res.ok) return null;
       resolved = true;
-      enabled4 = res.enabled !== false;
-      if (!enabled4) {
+      enabled6 = res.enabled !== false;
+      if (!enabled6) {
         pinned = null;
         return null;
       }
@@ -7665,7 +8382,7 @@
     }
   }
   function isMismatch(item) {
-    if (!enabled4 || !pinned) return null;
+    if (!enabled6 || !pinned) return null;
     const key = item.getAttribute("data-task-item-key") || "";
     const want = pinned.get(sessIdOf(key));
     if (want === void 0) return null;
@@ -7683,10 +8400,10 @@
   }
   function scheduleEnforce(key, { immediate = false } = {}) {
     if (immediate) {
-      if (enabled4 && pinned) {
+      if (enabled6 && pinned) {
         const want = pinned.get(sessIdOf(key));
         if (want !== void 0) {
-          for (const item of findRows(key)) {
+          for (const item of findRows2(key)) {
             for (const el of titleElsOf(item)) writeTitle(el, want);
           }
         }
@@ -7702,7 +8419,7 @@
         const want = map.get(sessIdOf(key));
         if (want === void 0) return;
         let wrote = false;
-        for (const item of findRows(key)) {
+        for (const item of findRows2(key)) {
           if (isMismatch(item) !== key) continue;
           for (const el of titleElsOf(item)) writeTitle(el, want);
           wrote = true;
@@ -7718,13 +8435,13 @@
     if (!map) return;
     const want = map.get(sessIdOf(key));
     if (want === void 0) return;
-    for (const item of findRows(key)) {
+    for (const item of findRows2(key)) {
       if (isMismatch(item) !== key) continue;
       for (const el of titleElsOf(item)) writeTitle(el, want);
     }
   }
-  function scan3() {
-    if (!enabled4 || !pinned || pinned.size === 0) return;
+  function scan4() {
+    if (!enabled6 || !pinned || pinned.size === 0) return;
     for (const item of document.querySelectorAll(TASK_SEL2)) {
       const key = isMismatch(item);
       if (!key) {
@@ -7758,23 +8475,23 @@
     if (scanDebounce3) return;
     scanDebounce3 = setTimeout(() => {
       scanDebounce3 = 0;
-      scan3();
+      scan4();
     }, SCAN_DEBOUNCE_MS3);
   }
   var mapRefreshTimer = 0;
   function refreshMapSoon() {
     if (mapRefreshTimer) return;
-    const tick2 = () => {
+    const tick4 = () => {
       if (document.hidden) {
-        mapRefreshTimer = setTimeout(tick2, 1e4);
+        mapRefreshTimer = setTimeout(tick4, 1e4);
         return;
       }
       mapRefreshTimer = 0;
-      if (enabled4 && resolved) void fetchPinned().then((m) => {
-        if (m) scan3();
+      if (enabled6 && resolved) void fetchPinned().then((m) => {
+        if (m) scan4();
       });
     };
-    mapRefreshTimer = setTimeout(tick2, MAP_REFRESH_MS);
+    mapRefreshTimer = setTimeout(tick4, MAP_REFRESH_MS);
   }
   var editingKey = null;
   var bootDelay = 0;
@@ -7788,16 +8505,16 @@
   }
   async function bootstrap() {
     const map = await fetchPinned();
-    if (map) scan3();
+    if (map) scan4();
   }
   function setRowTitle(key, text) {
-    for (const item of findRows(key)) {
+    for (const item of findRows2(key)) {
       for (const el of titleElsOf(item)) writeTitle(el, text);
     }
   }
   function refreshPinnedTitles() {
     return fetchPinned().then((m) => {
-      if (m) scan3();
+      if (m) scan4();
     });
   }
   var RENAME_CTX_VALID_MS = 15e3;
@@ -7816,7 +8533,7 @@
       renameCtx = null;
       return;
     }
-    if (!enabled4 || !pinned) return;
+    if (!enabled6 || !pinned) return;
     const want = pinned.get(sessIdOf(renameCtx.key));
     if (want === void 0) return;
     for (const el of document.querySelectorAll('[role="dialog"] input, [role="dialog"] textarea, [role="dialog"] [contenteditable="true"]')) {
@@ -7854,10 +8571,10 @@
     }, true);
     scheduleBootRetry();
     setInterval(() => {
-      if (!document.hidden) scan3();
+      if (!document.hidden) scan4();
     }, SCAN_FALLBACK_MS3);
     document.addEventListener("visibilitychange", () => {
-      if (!document.hidden) scan3();
+      if (!document.hidden) scan4();
     });
     window.addEventListener("zcodepro:config-changed", () => {
       void bootstrap();
@@ -7873,7 +8590,7 @@
       if (editingKey === null) return;
       editingKey = null;
       void fetchPinned().then((m) => {
-        if (m) scan3();
+        if (m) scan4();
       });
     });
   }
@@ -8104,7 +8821,7 @@
     await reclaim(ws);
     blockUntil.set(ws, Date.now() + cooldownMs);
   }
-  async function tick() {
+  async function tick3() {
     const cfg = await getConfig();
     if ((cfg.features || {}).idleReclaim === false) {
       idleSince.clear();
@@ -8166,7 +8883,7 @@
   }
   function startIdleReclaim() {
     const loop = () => {
-      tick().catch(() => {
+      tick3().catch(() => {
       });
     };
     loop();
@@ -8179,7 +8896,7 @@
   var SCAN_FALLBACK_MS5 = 5e3;
   var ROW_SEL = "[data-task-item-key]";
   var MENU_SEL = '[data-testid="task-new-button"], [data-testid="automations-open"], [data-testid="plugin-store-sidebar-open"], [data-testid="sidebar-search-open"], [data-slot="command"], [data-testid="desktop-top-nav-back"]';
-  var enabled5 = true;
+  var enabled7 = true;
   var rowEl = null;
   var origs = null;
   var syncTimer = 0;
@@ -8287,8 +9004,8 @@
       }
     });
     const newBtn = mk("newTask", parts.newTask, "span.truncate", L.tbNewTask);
-    const icon = iconOf(parts.newTask);
-    if (icon) newBtn.append(icon);
+    const icon2 = iconOf(parts.newTask);
+    if (icon2) newBtn.append(icon2);
     const searchBtn = mk("search", parts.search, "span.truncate", L.tbSearch);
     const sIcon = iconOf(parts.search);
     if (sIcon) searchBtn.append(sIcon);
@@ -8322,7 +9039,7 @@
     return scroll.getBoundingClientRect().width < NARROW_SIDEBAR_PX;
   }
   function sync() {
-    if (!enabled5) return;
+    if (!enabled7) return;
     const parts = findParts();
     if (!parts) {
       if (rowEl) rowEl.style.display = "none";
@@ -8384,8 +9101,8 @@
   }
   async function refreshConfig2() {
     const cfg = await getConfig(true).catch(() => null);
-    enabled5 = !cfg || !cfg.features || cfg.features.toolbarIcons !== false;
-    if (enabled5) sync();
+    enabled7 = !cfg || !cfg.features || cfg.features.toolbarIcons !== false;
+    if (enabled7) sync();
     else teardown();
   }
   function startToolbarIcons() {
@@ -8411,7 +9128,7 @@
   var STORE_KEY = "zcodepro:pinned-collapsed";
   var SYNC_DEBOUNCE_MS2 = 300;
   var SCAN_FALLBACK_MS6 = 5e3;
-  var enabled6 = true;
+  var enabled8 = true;
   var syncTimer2 = 0;
   function findPinnedHeader() {
     for (const h3 of document.querySelectorAll("h3")) {
@@ -8468,7 +9185,7 @@
     }
     h3.classList.add(HEAD_CLASS);
     h3.addEventListener("click", () => {
-      if (enabled6) toggle();
+      if (enabled8) toggle();
     });
     const btn = h("button", {
       type: "button",
@@ -8477,7 +9194,7 @@
       "aria-expanded": collapsed ? "false" : "true",
       onClick: (e) => {
         e.stopPropagation();
-        if (enabled6) toggle();
+        if (enabled8) toggle();
       }
     });
     btn.append(chevronSvg());
@@ -8485,7 +9202,7 @@
     return true;
   }
   function sync2() {
-    if (enabled6) apply2();
+    if (enabled8) apply2();
   }
   function scheduleSync2() {
     if (syncTimer2) return;
@@ -8514,8 +9231,8 @@
   }
   async function refreshConfig3() {
     const cfg = await getConfig(true).catch(() => null);
-    enabled6 = !cfg || !cfg.features || cfg.features.pinnedCollapse !== false;
-    if (enabled6) sync2();
+    enabled8 = !cfg || !cfg.features || cfg.features.pinnedCollapse !== false;
+    if (enabled8) sync2();
     else teardown2();
   }
   function startPinnedCollapse() {
@@ -8636,6 +9353,14 @@
       }
       try {
         startNewtabPanels();
+      } catch {
+      }
+      try {
+        startStatusBar();
+      } catch {
+      }
+      try {
+        startTurnUsage();
       } catch {
       }
       try {

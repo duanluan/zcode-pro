@@ -48,6 +48,28 @@ export const DEFAULT_SHORTCUTS = {
   switchAttention: 'r',  // 打开运行中 / 未查看
 };
 
+// 状态栏任务统计项的两个组：会话级跟随当前会话，全局级始终显示；
+// 设置里两节各自排序，保存时归一化为会话组在前（状态栏两组间一道竖线）
+export const STATUS_SESSION_IDS = new Set(['ctx', 'sessionCost', 'questions']);
+export const STATUS_GLOBAL_IDS = new Set(['todayTokens', 'todayCost', 'totalTokens', 'totalCost', 'tasks']);
+
+// 状态栏统计项的默认清单（顺序即默认显示顺序）；设置 → 样式 → 状态栏里
+// 可调顺序与显隐，配置存在 config.statusBar.items（整表覆盖）
+// 每轮回答统计项（turn-usage.js）：回答末尾标注的三段，各自可显隐（顺序固定）
+export const DEFAULT_TURN_ITEMS = [
+  { id: 'turnIn', on: true },      // 输入
+  { id: 'turnOut', on: true },     // 输出
+  { id: 'turnCache', on: true },   // 缓存命中率
+];
+
+export const DEFAULT_STATUS_ITEMS = [
+  { id: 'ctx', on: true },            // 上下文占用
+  { id: 'questions', on: true },     // 提问次数
+  { id: 'todayTokens', on: true },    // 今日 token（今天的会话记录完整，数据准确）
+  { id: 'totalTokens', on: true },    // 累计 token（官方使用统计，全历史）
+  { id: 'tasks', on: true },         // 任务总数
+];
+
 // —— ZCode 版本判断（按官方版本启用/停用功能）——
 // 版本来源：启动器从 app.asar 读出后写进 bootstrap（window.__ZCODEPRO__.zcodeVersion），
 // helper 的 /config 响应也附加同名字段。读不到时为空串，各判断保持旧行为。
@@ -245,6 +267,7 @@ const zh = {
   tbPluginStore: '插件市场',
   featurePinnedCollapse: '已置顶分区可折叠',
   featurePinnedCollapseDesc: '侧边栏“已置顶”标题可点击折叠/展开其任务列表（与“项目”“分组”分区一致），状态记住。',
+  visionCardUi: '思考过程显示识图卡片',
   pinnedToggleAria: '折叠/展开已置顶',
   sidebarProjectSpacingName: '项目间距',
   sidebarProjectSpacingDesc: '侧边栏中相邻项目行之间的视觉间距（含行内留白）；设置后各分区（已置顶/项目/任务）之间的间距也统一为该值。',
@@ -269,6 +292,34 @@ const zh = {
   featureNewtabPanelsDesc: '官方“新标签页”只列官方面板与推荐的官方插件，此功能把第三方市场插件（headroom、rtk 等）的面板卡片加进去，点击在侧边面板打开。',
   ntpDescSuffix: '插件面板',
   ntpNeedSession: '先打开一个任务会话，再从新标签页打开插件面板',
+  featureStatusBar: '状态栏统计',
+  featureStatusBarDesc: '主界面底部右下角显示统计项：上下文占用、会话/今日/累计 token、任务数等；各项的顺序与显隐在“样式 → 状态栏”里调整。',
+  tabStylesPane: '样式调整',
+  tabStatusPane: '状态栏',
+  sbItemCtx: '上下文占用',
+  sbItemQuestions: '提问次数',
+  sbGroupSession: '会话统计（跟随当前会话）',
+  sbGroupGlobal: '总统计',
+  sbGroupTurn: '每轮统计（回答末尾）',
+  sbLabelIn: '输入',
+  sbLabelOut: '输出',
+  sbLabelCache: '缓存',
+  featureTurnUsage: '每轮回答 token 用量',
+  featureTurnUsageDesc: '在每条回答末尾操作按钮的时间后面显示该轮的输入/输出 token（本地记录只保留最近若干轮，对不上时间的旧回答不显示）。',
+  turnUsageTitle: '本轮 token',
+  sbLabelQuestions: '提问',
+  sbItemTodayTokens: '今日 token',
+  sbItemTasks: '任务总数',
+  sbLabelCtx: '上下文',
+  sbLabelTurns: '调用',
+  sbLabelToday: '今日',
+  sbLabelTasks: '任务',
+  sbItemTotalTokens: '累计 token',
+  sbLabelTotal: '累计',
+  sbMoveUp: '上移',
+  sbMoveDown: '下移',
+  sbVisible: '显示',
+  sbHidden: '隐藏',
   tabShortcuts: '快捷键',
   hkTitle: '会话快捷切换',
   hkAltZ: '在当前与上次使用的会话间来回切换',
@@ -670,6 +721,7 @@ const en = {
   tbPluginStore: 'Plugin store',
   featurePinnedCollapse: 'Collapsible Pinned section',
   featurePinnedCollapseDesc: 'The sidebar "Pinned" header collapses/expands its task list (like Projects and Groups); the state is remembered.',
+  visionCardUi: 'Vision cards',
   pinnedToggleAria: 'Collapse/expand Pinned',
   sidebarProjectSpacingName: 'Project spacing',
   sidebarProjectSpacingDesc: 'Visual spacing between adjacent project rows in the sidebar (row padding included); when set, section gaps (Pinned/Projects/Tasks) follow the same value.',
@@ -694,6 +746,34 @@ const en = {
   featureNewtabPanelsDesc: "The built-in \"new tab page\" only lists built-in panels and recommended official plugins; this adds cards for third-party marketplace plugin panels (headroom, rtk, …) that open in the side pane.",
   ntpDescSuffix: 'plugin panel',
   ntpNeedSession: 'Open a task session first, then open plugin panels from the new tab page',
+  featureStatusBar: 'Status bar statistics',
+  featureStatusBarDesc: 'Shows statistics at the bottom-right of the main view: context usage, session/today/total tokens, task count, etc.; reorder or hide each item under "Styles → Status bar".',
+  tabStylesPane: 'Styles',
+  tabStatusPane: 'Status bar',
+  sbItemCtx: 'Context usage',
+  sbItemQuestions: 'Questions asked',
+  sbGroupSession: 'Session statistics (follows current session)',
+  sbGroupGlobal: 'Global statistics',
+  sbGroupTurn: 'Per-turn statistics (answer rows)',
+  sbLabelIn: 'in',
+  sbLabelOut: 'out',
+  sbLabelCache: 'cache',
+  featureTurnUsage: 'Per-turn token usage',
+  featureTurnUsageDesc: "Shows that turn's in/out tokens after the time in each answer's action row (local records keep only the most recent turns; older answers without a match stay unlabelled).",
+  turnUsageTitle: 'Turn tokens',
+  sbLabelQuestions: 'asks',
+  sbItemTodayTokens: 'Today tokens',
+  sbItemTasks: 'Tasks',
+  sbLabelCtx: 'ctx',
+  sbLabelTurns: 'calls',
+  sbLabelToday: 'today',
+  sbLabelTasks: 'tasks',
+  sbItemTotalTokens: 'Total tokens',
+  sbLabelTotal: 'total',
+  sbMoveUp: 'Up',
+  sbMoveDown: 'Down',
+  sbVisible: 'shown',
+  sbHidden: 'hidden',
   tabShortcuts: 'Shortcuts',
   hkTitle: 'Session quick switch',
   hkAltZ: 'Toggle between the current and the last-used session',
