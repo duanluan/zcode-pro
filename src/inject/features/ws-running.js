@@ -374,8 +374,10 @@ const SEC_SPIN_CLASS = 'zcodepro-ws-sec-spin';
 // 尾斜杠两种形式各查一次），任一非终态会话即“有任务在跑”。10 秒节流缓存；
 // 接口不可用（≤3.15.x）时无缓存，分区头退回 DOM 检测
 let anyActiveCache = { at: 0, value: null, busy: false };
-// 活跃按分区归属：task = “任务”分区（非项目工作区），project = “项目”分区
-const sectionActive = { task: false, project: false };
+// 活跃按分区归属：task = “任务”分区（非项目工作区），project = “项目”分区，
+// pinned = “已置顶”标题（置顶区任务，需单独判定——不与 task/project 混用，
+// 否则别的分区有活跃时已置顶头也会亮）
+const sectionActive = { task: false, project: false, pinned: false };
 // 权威扫描发现的有活跃任务的项目路径集合（全部 root）；项目行折叠态判定用
 let activeProjectPaths = new Set();
 // 周期复查：缓存到期就无条件重扫（不看当前值）——只在 true 时扫会有两个缺口：
@@ -390,6 +392,7 @@ function globalAnyActive() {
   anyActiveCache.busy = true;
   sectionActive.task = false;
   sectionActive.project = false;
+  sectionActive.pinned = false;
   activeProjectPaths = new Set();
   void (async () => {
     let hit = null;
@@ -465,11 +468,42 @@ function globalAnyActive() {
             if (projName) for (const p2 of projectPaths.get(projName) || []) activeProjectPaths.add(p2);
           }
         }
-        // 任务侧再加一道 DOM 确认：非项目任务行上必须真有 loader 在转——
-        // 侧栏显示的就是真相，syncer 报告的活跃（尤其历史残留工作区）不足为凭
+        // 任务侧加一道 DOM 确认：非项目任务行上真有 loader 在转才亮——侧栏
+        // 显示的就是真相，syncer 报告的活跃（尤其历史残留工作区）不足为凭。
+        // 但“任务”分区折叠后行整体卸载（DOM 检测失效），此时退回只信权威扫描
+        //（否则分区折叠后头永远不亮——用户实测回归）
         const taskDomRunning = !!document.querySelector('[data-task-item-key]:not(section[data-project-id] *) svg[class*="lucide-loader"]');
-        if (taskDomRunning && [...byKind.task].some(live)) sectionActive.task = true;
-        if ([...byKind.project].some(live)) sectionActive.project = true;
+        const taskLive = [...byKind.task].some(live);
+        const projLive = [...byKind.project].some(live);
+        // 分区头亮灯各管各的：任务头只看非项目工作区，项目头只看项目工作区。
+        // 折叠后行不在场（DOM 检测失效），只信权威扫描；DOM 确认仅在非项目
+        // 任务行在场（分区展开着）时用来否决 syncer 卡滞误报
+        if (taskLive) sectionActive.task = true;
+        if (projLive) sectionActive.project = true;
+        if (!taskDomRunning && taskLive
+          && document.querySelector('[data-task-item-key]:not(section[data-project-id] *)')) {
+          // 非项目任务行在场但全没 loader（分区展开着）→ syncer 卡滞误报
+          sectionActive.task = false;
+        }
+        // 已置顶区单独判定：取“已置顶”标题（h3）旁边列表容器内的任务行
+        // （不在任何 data-project-id 分区里），它们的 id 有活跃才亮已置顶头
+        // ——跟 task/project 分区的活跃无关
+        for (const h3 of document.querySelectorAll('h3')) {
+          const list = h3.nextElementSibling;
+          if (!list) continue;
+          for (const el of list.querySelectorAll('[data-task-item-key]')) {
+            if (el.closest('section[data-project-id]')) continue;
+            const k = el.getAttribute('data-task-item-key') || '';
+            const id = k.slice(k.indexOf(':sess_') + 1);
+            const base = k.slice(0, k.lastIndexOf(':')).replace(/[\/]+$/, '');
+            const ids = byKindByPath.get(base) || [];
+            if (ids.map(String).includes(id) && ids.some(live)) {
+              sectionActive.pinned = true;
+              break;
+            }
+          }
+          if (sectionActive.pinned) break;
+        }
         hit = sectionActive.task || sectionActive.project;
       }
     } catch { /* 查询失败保持旧值 */ }
@@ -500,7 +534,9 @@ function applySectionSpin() {
       expanded = !list || list.offsetHeight > 0;
     }
     if (!kind) return; // 折叠后解析不到归属且无缓存：跳过（不动现有图标）
-    const scoped = kind === 'project' ? sectionActive.project : sectionActive.task;
+    // 已置顶标题（h3）单独看 pinned scope，不复用 task 的
+    const scoped = head.tagName === 'H3' ? sectionActive.pinned
+      : kind === 'project' ? sectionActive.project : sectionActive.task;
     // 折叠态一律只信权威扫描：DOM 检测在折叠后不可靠（容器卸载后解析会落到
     // 别的分区，多目录项目的行匹配也套不上），且权威扫描周期覆盖刷新
     const want = !expanded && scoped;

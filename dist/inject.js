@@ -7024,7 +7024,7 @@
   }
   var SEC_SPIN_CLASS = "zcodepro-ws-sec-spin";
   var anyActiveCache = { at: 0, value: null, busy: false };
-  var sectionActive = { task: false, project: false };
+  var sectionActive = { task: false, project: false, pinned: false };
   var activeProjectPaths = /* @__PURE__ */ new Set();
   setInterval(() => {
     if (!anyActiveCache.busy && Date.now() - anyActiveCache.at >= 1e4) globalAnyActive();
@@ -7035,6 +7035,7 @@
     anyActiveCache.busy = true;
     sectionActive.task = false;
     sectionActive.project = false;
+    sectionActive.pinned = false;
     activeProjectPaths = /* @__PURE__ */ new Set();
     void (async () => {
       let hit = null;
@@ -7102,8 +7103,29 @@
             }
           }
           const taskDomRunning = !!document.querySelector('[data-task-item-key]:not(section[data-project-id] *) svg[class*="lucide-loader"]');
-          if (taskDomRunning && [...byKind.task].some(live)) sectionActive.task = true;
-          if ([...byKind.project].some(live)) sectionActive.project = true;
+          const taskLive = [...byKind.task].some(live);
+          const projLive = [...byKind.project].some(live);
+          if (taskLive) sectionActive.task = true;
+          if (projLive) sectionActive.project = true;
+          if (!taskDomRunning && taskLive && document.querySelector("[data-task-item-key]:not(section[data-project-id] *)")) {
+            sectionActive.task = false;
+          }
+          for (const h3 of document.querySelectorAll("h3")) {
+            const list = h3.nextElementSibling;
+            if (!list) continue;
+            for (const el of list.querySelectorAll("[data-task-item-key]")) {
+              if (el.closest("section[data-project-id]")) continue;
+              const k = el.getAttribute("data-task-item-key") || "";
+              const id = k.slice(k.indexOf(":sess_") + 1);
+              const base = k.slice(0, k.lastIndexOf(":")).replace(/[\/]+$/, "");
+              const ids = byKindByPath.get(base) || [];
+              if (ids.map(String).includes(id) && ids.some(live)) {
+                sectionActive.pinned = true;
+                break;
+              }
+            }
+            if (sectionActive.pinned) break;
+          }
           hit = sectionActive.task || sectionActive.project;
         }
       } catch {
@@ -7128,7 +7150,7 @@
         expanded = !list || list.offsetHeight > 0;
       }
       if (!kind) return;
-      const scoped = kind === "project" ? sectionActive.project : sectionActive.task;
+      const scoped = head.tagName === "H3" ? sectionActive.pinned : kind === "project" ? sectionActive.project : sectionActive.task;
       const want = !expanded && scoped;
       const existing = head.querySelector(":scope > ." + SEC_SPIN_CLASS);
       if (want && !existing) {
