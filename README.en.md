@@ -10,38 +10,63 @@ ZCode Pro enhances the ZCode desktop UI. No client files are modified; just laun
 
 ## ✨ Features
 
-| Feature | Description |
-| --- | --- |
-| Custom project alias | Show a custom name for a project in the sidebar; UI-only, revert anytime; renaming is built into ZCode ≥ 3.16.1 (project menu "Edit project") — the feature disables itself there and offers to migrate existing aliases |
-| Switch project folder | Point a project at another folder; sidebar, tabs and task history follow. Stop running tasks before switching; historical checkpoints still reference the original path; retired on ZCode ≥ 3.16.1, where a project can hold multiple directories natively |
-| Open folder / Copy path | Project "More" menu: open the project directory in the file manager, or copy its path |
-| Session drag ordering | Reorder sessions in Pinned, Projects and Groups; persists across refreshes |
-| Session quick switch | `alt+z` toggles between the current and the last session; hold `alt` and press `x` (up) / `c` (down) to pick from recent sessions (10 shown initially, pressing `c` at the bottom loads 5 more), `alt+e` opens the last 10 directly, `alt+r` opens running / finished-but-unseen tasks; arrow keys also move the highlight, release `alt` or press `Enter` to switch (like `alt+tab`); the five trigger keys are customizable in Settings → Shortcuts |
-| Keep renamed session titles | Sessions you renamed keep their custom title; auto-generated titles no longer overwrite it in the sidebar |
-| Task name prompt | When a new session starts answering, generates the task name with a provider and prompt you choose (following the current session and glm-5.3-flash by default; every question sent before the first answer counts), saved as a manual rename the built-in auto title never overrides; provider, model and prompt are editable in settings, with a test button |
-| Running indicator while collapsed | While any session is running, collapsed projects and the "Tasks" / "Pinned" section headers show the same loader the running task row uses; it disappears when all finish |
-| Idle project memory reclaim | Projects unused for a while with no running tasks release their memory automatically, and unused ones are reclaimed once after startup; sessions are untouched and reload when reopened (durations adjustable) |
-| Plugin card auto-retry | Auto-clicks "Reload" on cards that failed the 64-slot cap, so they recover as soon as a slot frees up | 
-| Plugin card sandbox reclaim | Releases the oldest plugin-card sandboxes once the cap is hit (the one being viewed goes last), so new cards keep opening after the 64-slot pool fills up; released cards come back when their session is reopened (cap adjustable) |
-| Sidebar menu in the top bar | Turns "New task / Search / Automations / Plugin store" into icon buttons in the top navigation bar: hover shows the name, highlighted while its view is open, shortcuts still work |
-| Plugin panels on the new tab page | The built-in "new tab page" only lists built-in panels and recommended official plugins; this adds cards for third-party marketplace plugin panels (headroom, rtk, …) that open in the side pane |
-| Status bar statistics | Shows statistics at the bottom-right of the main view: context usage (color-shifts when high), questions asked, today/total tokens and task count, all from official data; reorder or hide each item under Settings → Styles → Status bar |
-| Per-turn token usage | Shows that turn's in/out tokens and cache hit rate after the time in each answer's action row (local records keep only a recent window; older answers stay unlabelled) |
-| Collapsible Pinned section | The sidebar "Pinned" header collapses/expands its task list; the state is remembered |
-| File menu actions | Adds "Open with default app" and "Reveal in file manager" to file links in chat |
-| Copy image | Right-click an image in chat or the enlarged preview to copy it to the clipboard |
-| UI style adjustments | Fine-tune paragraph spacing, content width, line heights, list/quote/table spacing and cell padding; focusing an input highlights the affected areas; applies instantly |
-| Sidebar spacing | Fine-tune sidebar project spacing and task spacing; applies instantly |
-| Font adjustment | Custom UI font (all interface text except the terminal), question font and answer font; applies instantly |
-| Global prompt | Edit default instructions shared by all projects; applies to new sessions |
-| Software proxy | Set an HTTP proxy for plugin updates/installs and tool upgrades, with connectivity test |
-| Settings sync | Manually back up ZCode Pro settings and model settings to WebDAV, or restore them on a new computer; transfers only on click |
-| Vision proxy | Automatically hand images to vision models for recognition when the main model cannot see them, and feed the descriptions to the main model; visual chain editor (zcode-vision plugin) |
-| rtk compression | Manage rewrite hints and the command whitelist; check and upgrade the rtk program (rtk plugin) |
-| Headroom | Manage compression device, power-save switching and proxy status; check and upgrade the headroom program (headroom plugin) |
-| Plugin updates | Check and update zcode-plugins marketplace plugins in one click, optional auto-update on startup |
+Grouped by where each feature lives in the settings window: the category column is the tab, entries with `·` (e.g. "Behavior · Global prompt") are sub-tabs, in the same order as the screenshots in the Settings section below.
+
+| Category | Feature | Description |
+| --- | --- | --- |
+| Features | Project menu actions (open folder / copy path) | Project "More" menu: open the project directory in the file manager, or copy its path |
+| | ~~Custom project alias~~ (retired) | Show a custom name for a project in the sidebar; UI-only, revert anytime; renaming is built into ZCode ≥ 3.16.1 (project menu "Edit project") — the feature disables itself there and offers to migrate existing aliases |
+| | ~~Switch project folder~~ (retired) | Point a project at another folder; sidebar, tabs and task history follow. Stop running tasks before switching; historical checkpoints still reference the original path; retired on ZCode ≥ 3.16.1, where a project can hold multiple directories natively |
+| | Session drag ordering | Reorder sessions in Pinned, Projects and Groups; persists across refreshes |
+| | Session quick switch | `alt+z` toggles between the current and the last session; hold `alt` and press `x` (up) / `c` (down) to pick from recent sessions (10 shown initially, pressing `c` at the bottom loads 5 more), `alt+e` opens the last 10 directly, `alt+r` opens running / finished-but-unseen tasks; arrow keys also move the highlight, release `alt` or press `Enter` to switch (like `alt+tab`); the five trigger keys are customizable in Settings → Shortcuts |
+| | Keep renamed session titles | Sessions you renamed keep their custom title; auto-generated titles no longer overwrite it in the sidebar |
+| | Collapsible Pinned section | The sidebar "Pinned" header collapses/expands its task list; the state is remembered |
+| | File menu actions | Adds "Open with default app" and "Reveal in file manager" to file links in chat |
+| | Copy image | Right-click an image in chat or the enlarged preview to copy it to the clipboard |
+| | Plugin card sandbox reclaim | Releases the oldest plugin-card sandboxes once the cap is hit (the one being viewed goes last), so new cards keep opening after the 64-slot pool fills up; released cards come back when their session is reopened (cap adjustable) |
+| | Plugin card auto-retry | Auto-clicks "Reload" on cards that failed the 64-slot cap, so they recover as soon as a slot frees up |
+| | Running indicator while collapsed | While any session is running, collapsed projects and the "Tasks" / "Pinned" section headers show the same loader the running task row uses; it disappears when all finish |
+| | Plugin panels on the new tab page | The built-in "new tab page" only lists built-in panels and recommended official plugins; this adds cards for third-party marketplace plugin panels (headroom, rtk, …) that open in the side pane |
+| | Plugin updates | Check and update zcode-plugins marketplace plugins in one click, optional auto-update on startup |
+| Shortcuts | Shortcut customization | Rebind the five session quick switch trigger keys (`alt+z` / `x` / `c` / `e` / `r` by default) one by one: click "Modify" and press a new key (letters/digits only, conflicts rejected); reset all to defaults in one click |
+| Behavior · Global prompt | Global prompt | Edit default instructions shared by all projects; applies to new sessions |
+| Behavior · Task title prompt | Task name prompt | When a new session starts answering, generates the task name with a provider and prompt you choose (following the current session and glm-5.3-flash by default; every question sent before the first answer counts), saved as a manual rename the built-in auto title never overrides; provider, model and prompt are editable in settings, with a test button |
+| Styles · UI tweaks | Sidebar menu in the top bar | Turns "New task / Search / Automations / Plugin store" into icon buttons in the top navigation bar: hover shows the name, highlighted while its view is open, shortcuts still work |
+| | Font adjustment | Custom UI font (all interface text except the terminal), question font and answer font; applies instantly |
+| | Sidebar spacing | Fine-tune sidebar project spacing and task spacing; applies instantly |
+| | UI style adjustments | Fine-tune paragraph spacing, content width, line heights, list/quote/table spacing and cell padding; focusing an input highlights the affected areas; applies instantly |
+| Styles · Status bar | Status bar statistics | Shows statistics at the bottom-right of the main view: context usage (color-shifts when high), questions asked, today/total tokens and task count, all from official data; reorder or hide each item under Settings → Styles → Status bar |
+| | Per-turn token usage | Shows that turn's in/out tokens and cache hit rate after the time in each answer's action row (local records keep only a recent window; older answers stay unlabelled) |
+| Performance | Idle project memory reclaim | Projects unused for a while with no running tasks release their memory automatically, and unused ones are reclaimed once after startup; sessions are untouched and reload when reopened (durations adjustable) |
+| Proxy | Software proxy | Set an HTTP proxy for plugin updates/installs and tool upgrades, with connectivity test |
+| Sync | Settings sync | Manually back up ZCode Pro settings and model settings to WebDAV, or restore them on a new computer; transfers only on click |
+| Vision | Vision proxy | Automatically hand images to vision models for recognition when the main model cannot see them, and feed the descriptions to the main model; visual chain editor (zcode-vision plugin) |
+| Headroom | Headroom | Manage compression device, power-save switching and proxy status; check and upgrade the headroom program (headroom plugin) |
+| rtk | rtk compression | Manage rewrite hints and the command whitelist; check and upgrade the rtk program (rtk plugin) |
 
 All features can be toggled or adjusted in the settings window; works on both ZCode 3.16.1 and 3.15.x.
+
+## 🎛 Settings
+
+Right-click the settings button (gear) at the bottom of the ZCode sidebar to open the settings window:
+
+| Features | Shortcuts | Behavior · Global prompt |
+| --- | --- | --- |
+| <img src="docs/settings/01-features.png" width="280"> | <img src="docs/settings/02-shortcuts.png" width="280"> | <img src="docs/settings/03-behavior-global-prompt.png" width="280"> |
+
+| Behavior · Task title prompt | Styles · UI tweaks | Styles · Status bar |
+| --- | --- | --- |
+| <img src="docs/settings/04-behavior-task-title.png" width="280"> | <img src="docs/settings/05-style-tweaks.png" width="280"> | <img src="docs/settings/06-style-status-bar.png" width="280"> |
+
+| Performance | Proxy | Sync |
+| --- | --- | --- |
+| <img src="docs/settings/07-performance.png" width="280"> | <img src="docs/settings/08-proxy.png" width="280"> | <img src="docs/settings/09-sync.png" width="280"> |
+
+| Vision | Headroom | rtk |
+| --- | --- | --- |
+| <img src="docs/settings/10-vision.png" width="280"> | <img src="docs/settings/11-headroom.png" width="280"> | <img src="docs/settings/12-rtk.png" width="280"> |
+
+> The last three tabs (Vision / Headroom / rtk) come from the plugins of the same name; when a plugin is missing, the tab shows a one-click install card and switches to the full panel once installed.
 
 ## 📦 Installation
 
