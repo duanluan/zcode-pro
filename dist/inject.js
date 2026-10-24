@@ -5469,6 +5469,7 @@
           forceIntercept: true
         };
         let visionCfg = visionRes.ok && visionRes.config && typeof visionRes.config === "object" ? structuredClone(visionRes.config) : null;
+        let visionAutoInitTried = false;
         let visionSaveTimer = null;
         const persistVision = async () => {
           visionCfg.chain = visionCfg.proxies.map((p) => (p.name || "").trim()).filter(Boolean);
@@ -5539,6 +5540,14 @@
             return;
           }
           if (!visionCfg) {
+            if (!visionAutoInitTried && visionRes.hook) {
+              visionAutoInitTried = true;
+              void (async () => {
+                const res = await rpc("/vision", { method: "POST", body: { config: VISION_DEFAULT_CFG } });
+                if (res.ok) visionCfg = structuredClone(res.config);
+                renderVision();
+              })();
+            }
             const initBtn = btnSmall(L.visionAddProxy, async () => {
               const res = await rpc("/vision", { method: "POST", body: { config: VISION_DEFAULT_CFG } });
               if (res.ok) {

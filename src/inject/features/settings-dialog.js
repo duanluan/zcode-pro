@@ -1534,6 +1534,8 @@ export function openSettingsDialog() {
       let visionCfg = visionRes.ok && visionRes.config && typeof visionRes.config === 'object'
         ? structuredClone(visionRes.config)
         : null;
+      // 自动初始化只试一次（每次打开弹窗）：写盘失败回退手动“添加代理”卡
+      let visionAutoInitTried = false;
       let visionSaveTimer = null;
       const persistVision = async () => {
         visionCfg.chain = visionCfg.proxies.map((p) => (p.name || '').trim()).filter(Boolean);
@@ -1600,6 +1602,16 @@ export function openSettingsDialog() {
           return;
         }
         if (!visionCfg) {
+          // 插件已装但配置文件未建（刚装完第一次打开的面板状态）：自动写入默认链，
+          // 不再要求手动点一次“添加代理”；先照常渲染手动卡兜底，写盘成功后整面重绘
+          if (!visionAutoInitTried && visionRes.hook) {
+            visionAutoInitTried = true;
+            void (async () => {
+              const res = await rpc('/vision', { method: 'POST', body: { config: VISION_DEFAULT_CFG } });
+              if (res.ok) visionCfg = structuredClone(res.config);
+              renderVision();
+            })();
+          }
           const initBtn = btnSmall(L.visionAddProxy, async () => {
             const res = await rpc('/vision', { method: 'POST', body: { config: VISION_DEFAULT_CFG } });
             if (res.ok) { visionCfg = structuredClone(res.config); renderVision(); }

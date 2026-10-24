@@ -140,8 +140,9 @@ export function defaultConfig() {
       lastPushAt: null,
       lastPullAt: null,
     },
-    // 一次性迁移标记：migrateConfigOnce 执行过哪些纠偏（见 startHelper），
-    // 有标记的迁移不再重复，用户此后手动改回的设置不再被覆盖
+    // 一次性迁移标记：记录弹窗类迁移做过没有（目前只有别名迁移的
+    // aliasRenameDismissed，经 /config POST 写入），有标记的迁移不再重复，
+    // 用户此后手动改回的设置不再被覆盖
     migrations: {},
   };
 }
@@ -185,19 +186,9 @@ export function saveConfig(configFile, config) {
   renameSync(tmp, configFile);
 }
 
-// 一次性配置迁移：升级后对历史设置做纠偏，执行过的迁移记入 migrations 标记，
-// 之后不再重复（用户手动改回的设置不会被再次覆盖）。失败静默、下次启动再试。
-// - wsRunningSpinOff：“折叠项目运行提示”实验性功能会在后台周期性短暂展开
-//   项目复核运行状态，新版本不再默认开启，历史开启过的用户升级后强制关闭一次
-function migrateConfigOnce(configFile) {
-  try {
-    const config = loadConfig(configFile);
-    if (config.migrations && config.migrations.wsRunningSpinOff) return;
-    config.features = { ...config.features, wsRunningSpin: false };
-    config.migrations = { ...(config.migrations || {}), wsRunningSpinOff: true };
-    saveConfig(configFile, config);
-  } catch { /* 配置不可读/不可写时跳过，下次启动再试 */ }
-}
+// 一次性配置迁移已移除（原 wsRunningSpinOff）：旧实验版“折叠项目运行提示”
+// 会后台周期性短暂展开项目，当时给无标记的配置强制关过一次；该功能 1.3.1
+// 已重写，迁移对新装机（首启无配置文件、首存后才建）误伤为默认关闭，故删。
 
 function json(res, status, obj) {
   const body = JSON.stringify(obj);
@@ -267,7 +258,6 @@ function titleGenLog(dataRoot, line) {
 export function startHelper({ port, token, dataRoot, state, agentsFile = defaultAgentsFile() }) {
   const configFile = join(dataRoot, 'zcodepro.json');
   const settingsFile = join(dataRoot, 'v2', 'setting.json');
-  migrateConfigOnce(configFile);
   const bootConfig = loadConfig(configFile);
   activeProxyUrl = String(bootConfig.proxy || '').trim();
   activeProxyScopes = { ...bootConfig.proxyScopes };
