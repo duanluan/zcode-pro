@@ -96,7 +96,7 @@
   var zh = {
     settingsTitle: "ZCode Pro",
     tabFeatures: "\u529F\u80FD",
-    tabStyles: "\u6837\u5F0F",
+    tabStyles: "\u5916\u89C2",
     tabProxy: "\u4EE3\u7406",
     tabBehavior: "\u884C\u4E3A",
     tabAgents: "\u5168\u5C40\u63D0\u793A\u8BCD",
@@ -177,8 +177,6 @@
     syncVerDeleteDesc: "\u5C06\u5220\u9664\u4E91\u7AEF\u7684\u8FD9\u4EFD\u5907\u4EFD\uFF0C\u4E0D\u53EF\u6062\u590D\uFF1A",
     syncVerDeleted: "\u5DF2\u5220\u9664\u4E91\u7AEF\u5907\u4EFD",
     syncVerSaved: "\u5DF2\u4FDD\u5B58\u5230",
-    devMode: "\u5F00\u53D1\u6A21\u5F0F",
-    devModeRowDesc: "\u5F00\u542F\u540E\u51FA\u73B0\u201C\u91CD\u8F7D ZCode Pro\u201D\u6309\u94AE\uFF1B\u4E5F\u53EF\u7ED9\u542F\u52A8\u5668\u8BBE\u73AF\u5883\u53D8\u91CF ZCODEPRO_DEV=1 \u542F\u7528\u3002\u6B64\u6807\u7B7E\u9875\u4EC5\u5728\u5F00\u53D1\u6A21\u5F0F\u751F\u6548\u65F6\u663E\u793A\u3002",
     devModeDesc: "\u5F00\u53D1\u8C03\u8BD5\u7528\uFF1A\u6539\u5B8C zcode-pro \u4EE3\u7801\u540E\u4E0D\u5FC5\u91CD\u542F ZCode\uFF0C\u70B9\u201C\u91CD\u8F7D ZCode Pro\u201D\u5373\u53EF\u52A0\u8F7D\u65B0\u4EE3\u7801\u3002\u6D41\u7A0B\u4E3A\u81EA\u52A8\u6784\u5EFA\uFF08\u9700\u5728\u6E90\u7801\u76EE\u5F55\u8FD0\u884C\uFF09\u2192 \u4EE5\u65B0\u8FDB\u7A0B\u91CD\u542F ZCode Pro\uFF08\u672C\u5730\u52A9\u624B\u4E0E\u6CE8\u5165\u811A\u672C\u90FD\u6362\u65B0\uFF09\u2192 \u6240\u6709 ZCode \u7A97\u53E3\u81EA\u52A8\u5237\u65B0\u5E76\u91CD\u65B0\u6CE8\u5165\uFF1BZCode \u672C\u4F53\u4E0E\u5DF2\u6253\u5F00\u7684\u4F1A\u8BDD\u4E0D\u53D7\u5F71\u54CD\u3002",
     devReload: "\u91CD\u8F7D ZCode Pro",
     devReloading: "\u91CD\u8F7D\u4E2D\u2026",
@@ -286,13 +284,60 @@
     featureNewtabPanelsDesc: "\u5B98\u65B9\u201C\u65B0\u6807\u7B7E\u9875\u201D\u53EA\u5217\u5B98\u65B9\u9762\u677F\u4E0E\u63A8\u8350\u7684\u5B98\u65B9\u63D2\u4EF6\uFF0C\u6B64\u529F\u80FD\u628A\u7B2C\u4E09\u65B9\u5E02\u573A\u63D2\u4EF6\uFF08headroom\u3001rtk \u7B49\uFF09\u7684\u9762\u677F\u5361\u7247\u52A0\u8FDB\u53BB\uFF0C\u70B9\u51FB\u5728\u4FA7\u8FB9\u9762\u677F\u6253\u5F00\u3002",
     ntpDescSuffix: "\u63D2\u4EF6\u9762\u677F",
     ntpNeedSession: "\u5148\u6253\u5F00\u4E00\u4E2A\u4EFB\u52A1\u4F1A\u8BDD\uFF0C\u518D\u4ECE\u65B0\u6807\u7B7E\u9875\u6253\u5F00\u63D2\u4EF6\u9762\u677F",
-    featureStatusBarDesc: "\u4E3B\u754C\u9762\u5E95\u90E8\u53F3\u4E0B\u89D2\u663E\u793A\u7EDF\u8BA1\u9879\uFF1A\u4E0A\u4E0B\u6587\u5360\u7528\u3001\u4F1A\u8BDD/\u4ECA\u65E5/\u7D2F\u8BA1 token\u3001\u4EFB\u52A1\u6570\u7B49\uFF1B\u5404\u9879\u7684\u987A\u5E8F\u4E0E\u663E\u9690\u5728\u201C\u6837\u5F0F \u2192 \u72B6\u6001\u680F\u201D\u91CC\u8C03\u6574\u3002",
-    tabStylesPane: "\u6837\u5F0F\u8C03\u6574",
+    featureStatusBarDesc: "\u63D0\u95EE\u8F93\u5165\u6846\u53F3\u4E0B\u89D2\u548C\u6BCF\u8F6E\u56DE\u7B54\u6700\u540E\u663E\u793A\u7EDF\u8BA1\u9879\u3002",
+    tabStylesPane: "\u6837\u5F0F",
     tabStatusPane: "\u72B6\u6001\u680F",
+    themeColorsPane: "\u4E3B\u9898",
+    themeBgRegions: "\u5206\u533A\u80CC\u666F",
+    themeBgRegionFollow: "\u65E0\u80CC\u666F",
+    themeBgRegionLeft: "\u5DE6\u4FA7\u8FB9\u680F",
+    themeBgRegionCenter: "\u4E2D\u95F4\u533A\u57DF",
+    themeBgRegionRight: "\u53F3\u4FA7\u8FB9\u680F",
+    themeBgPane: "\u80CC\u666F\u56FE",
+    themeSkinTitle: "\u76AE\u80A4",
+    themeSkinDesc: "\u77E5\u540D\u7F16\u8F91\u5668\u4E3B\u9898\u914D\u8272\uFF0C\u660E\u6697\u4E24\u5957\u53D8\u4F53\u8DDF\u968F ZCode \u5F53\u524D\u660E\u6697\u81EA\u52A8\u5207\u6362\uFF1B\u9ED8\u8BA4\u4FDD\u6301 ZCode \u539F\u6837\uFF0C\u81EA\u5B9A\u4E49\u5728\u4E0B\u65B9\u81EA\u884C\u8C03\u8272\u3002",
+    themeSkinCustom: "\u81EA\u5B9A\u4E49",
+    themeCustomTitle: "\u81EA\u5B9A\u4E49\u4E3B\u9898",
+    themeCustomHint: "\u6539\u989C\u8272\u5373\u5B9E\u65F6\u751F\u6548\uFF08\u81EA\u52A8\u5207\u5230\u81EA\u5B9A\u4E49\u76AE\u80A4\uFF09\uFF1B\u6BCF\u5957\u542B\u660E\u3001\u6697\u4E24\u4E2A\u53D8\u4F53\uFF0C\u4E94\u4E2A\u951A\u70B9\u8272\u6D3E\u751F\u6574\u5957\u754C\u9762\u914D\u8272\u3002",
+    themeCustomLight: "\u660E\u8272\u53D8\u4F53",
+    themeCustomDark: "\u6697\u8272\u53D8\u4F53",
+    themeCustomBg: "\u80CC\u666F",
+    themeCustomCard: "\u5361\u7247",
+    themeCustomFg: "\u6B63\u6587",
+    themeCustomMuted: "\u6B21\u7EA7\u6587\u5B57",
+    themeCustomAccent: "\u5F3A\u8C03\u8272",
+    themeBgDesc: "\u80CC\u666F\u6765\u6E90\u53EF\u9009\u672C\u5730\u56FE\u5E93\u3001\u6587\u4EF6\u5939\uFF08\u5B9A\u65F6\u8F6E\u6362\uFF09\u6216\u7F51\u5740\uFF08\u5B9A\u65F6\u5237\u65B0\uFF09\uFF0C\u5DE6\u680F / \u4E2D\u680F / \u53F3\u680F\u53EF\u5206\u533A\u72EC\u7ACB\u8BBE\u7F6E\uFF1B\u4FA7\u680F\u3001\u4F1A\u8BDD\u6D41\u3001\u8F93\u5165\u6846\u900F\u51FA\u80CC\u666F\uFF0C\u5F39\u7A97\u83DC\u5355\u4FDD\u6301\u4E0D\u900F\u660E\u4FDD\u53EF\u8BFB\u3002\u672C\u5730\u56FE\u5E93\u968F WebDAV \u540C\u6B65\u4E0A\u4F20\uFF08\u8986\u76D6\u5F0F\uFF0C\u4E0D\u7559\u5386\u53F2\u7248\u672C\uFF09\u3002",
+    themeBgModeNone: "\u65E0\u80CC\u666F",
+    themeBgModeLibrary: "\u672C\u5730\u56FE\u5E93",
+    themeBgModeFolder: "\u6587\u4EF6\u5939",
+    themeBgModeUrl: "\u7F51\u5740",
+    themeBgLibrary: "\u6211\u7684\u56FE\u5E93",
+    themeBgUpload: "\u4E0A\u4F20\u56FE\u7247",
+    themeBgEmpty: "\u8FD8\u6CA1\u6709\u4E0A\u4F20\u56FE\u7247\uFF0C\u652F\u6301 png / jpg / webp / gif / bmp / avif\uFF0C\u5355\u5F20 10MB \u4EE5\u5185",
+    themeBgDelete: "\u5220\u9664",
+    themeBgNoneHint: "\u9009\u62E9\u4E00\u79CD\u80CC\u666F\u6765\u6E90\uFF1B\u6587\u4EF6\u5939\u53EF\u5B9A\u65F6\u8F6E\u6362\uFF0C\u7F51\u5740\u53EF\u914D\u5408\u968F\u673A\u56FE API \u5B9A\u65F6\u5237\u65B0\u3002",
+    themeBgFolderPick: "\u6D4F\u89C8",
+    themeBgFolderPickTitle: "\u9009\u62E9\u80CC\u666F\u56FE\u6587\u4EF6\u5939",
+    themeBgFolderHint: "\u9009\u62E9\u4E00\u4E2A\u88C5\u58C1\u7EB8\u7684\u6587\u4EF6\u5939\uFF0C\u56FE\u7247\u539F\u5730\u8BFB\u53D6\u4E0D\u590D\u5236\u3002",
+    themeBgFolderRandom: "\u968F\u673A\u987A\u5E8F",
+    themeBgIntervalHint: "\u5207\u6362\u95F4\u9694\uFF08\u5206\u949F\uFF09",
+    themeBgIntervalUnit: "\u5206\u949F\uFF0C0 = \u4E0D\u5207\u6362",
+    themeBgFolderCount: "\u6587\u4EF6\u5939\u91CC\u6709 {n} \u5F20\u56FE\u7247\uFF0C\u5B9A\u65F6\u8F6E\u6362\u4E2D\u3002",
+    themeBgFolderMissing: "\u6587\u4EF6\u5939\u4E0D\u5B58\u5728\u6216\u91CC\u9762\u6CA1\u6709\u56FE\u7247\u3002",
+    themeBgUrlHint: "\u5B9A\u65F6\u5237\u65B0\u9002\u5408\u968F\u673A\u56FE API\uFF08\u6BCF\u6B21\u8BF7\u6C42\u8FD4\u56DE\u4E0D\u540C\u56FE\uFF09\uFF1B\u5237\u65B0\u65F6\u5E26\u7F13\u5B58\u53C2\u6570\u907F\u514D\u547D\u4E2D\u7F13\u5B58\u3002",
+    themeBgUrlIntervalHint: "\u5237\u65B0\u95F4\u9694\uFF08\u5206\u949F\uFF09",
+    themeBgUrlInvalid: "\u7F51\u5740\u9700\u4EE5 http(s):// \u5F00\u5934",
+    themeBgFit: "\u7F29\u653E\u65B9\u5F0F",
+    themeBgFitCover: "\u586B\u6EE1",
+    themeBgFitContain: "\u9002\u5E94",
+    themeBgFitFill: "\u62C9\u4F38",
+    themeBgFitTile: "\u5E73\u94FA",
+    themeVisibility: "\u80CC\u666F\u53EF\u89C1\u5EA6",
+    themeBgDeletedActive: "\u5F53\u524D\u80CC\u666F\u5DF2\u5220\u9664\uFF0C\u5DF2\u81EA\u52A8\u505C\u7528\u80CC\u666F",
     sbItemCtx: "\u4E0A\u4E0B\u6587\u5360\u7528",
     sbItemQuestions: "\u63D0\u95EE\u6B21\u6570",
     sbMaster: "\u542F\u7528\u7EDF\u8BA1",
-    sbMasterDesc: "\u603B\u5F00\u5173\uFF1A\u5173\u95ED\u540E\u5E95\u90E8\u72B6\u6001\u680F\u4E0E\u6BCF\u8F6E\u56DE\u7B54\u7684\u7528\u91CF\u6807\u6CE8\u4E00\u8D77\u505C\u7528\u3002",
+    sbMasterDesc: "\u603B\u5F00\u5173\uFF1A\u5173\u95ED\u540E\u8F93\u5165\u6846\u53F3\u4E0B\u89D2\u7684\u7EDF\u8BA1\u884C\u4E0E\u6BCF\u8F6E\u56DE\u7B54\u7684\u7528\u91CF\u6807\u6CE8\u4E00\u8D77\u505C\u7528\u3002",
     sbGroupSession: "\u4F1A\u8BDD\u7EDF\u8BA1\uFF08\u8DDF\u968F\u5F53\u524D\u4F1A\u8BDD\uFF09",
     sbGroupGlobal: "\u603B\u7EDF\u8BA1",
     sbGroupTurn: "\u6BCF\u8F6E\u7EDF\u8BA1\uFF08\u56DE\u7B54\u672B\u5C3E\uFF09",
@@ -505,7 +550,7 @@
     aliasMigrateDesc: "\u5F53\u524D ZCode \u5DF2\u652F\u6301\u4FEE\u6539\u9879\u76EE\u540D\u79F0\uFF08\u9879\u76EE\u201C\u66F4\u591A\u201D\u83DC\u5355 \u2192 \u7F16\u8F91\u9879\u76EE\uFF09\uFF0C\u81EA\u5B9A\u4E49\u522B\u540D\u529F\u80FD\u5DF2\u505C\u7528\u3002\u53EF\u628A\u5DF2\u4FDD\u5B58\u7684\u522B\u540D\u5199\u5165\u5B98\u65B9\u9879\u76EE\u540D\u79F0\uFF0C\u52FE\u9009\u8981\u8FC1\u79FB\u7684\u9879\u76EE\uFF1B\u8FC1\u79FB\u53EA\u6539\u9879\u76EE\u540D\u79F0\uFF0C\u78C1\u76D8\u76EE\u5F55\u4E0D\u53D7\u5F71\u54CD\u3002",
     aliasMigrateItemHint: "\u8FC1\u79FB\u540E\u5C06\u4F5C\u4E3A\u9879\u76EE\u540D\u79F0\u4FDD\u5B58\uFF08\u53EF\u968F\u65F6\u5728\u201C\u7F16\u8F91\u9879\u76EE\u201D\u4E2D\u518D\u6539\uFF09\u3002\u4EC5\u65E0\u6807\u8BB0\u7684\u6761\u76EE\u53EF\u52FE\u9009\uFF1B\u5DF2\u8FC1\u79FB\u3001\u5DF2\u5E76\u5165\u3001\u9879\u76EE\u5DF2\u5220\u9664\u3001\u672C\u673A\u4E0D\u5B58\u5728\uFF08\u65E7\u673A\u5668\u8DEF\u5F84\uFF09\u4EE5\u53CA\u9879\u76EE\u5DF2\u91CD\u547D\u540D\u7684\u90FD\u4E0D\u53EF\u52FE\u9009\u2014\u2014\u8981\u6539\u8FD9\u4E9B\u9879\u76EE\u7684\u540D\u5B57\uFF0C\u76F4\u63A5\u7528\u9879\u76EE\u201C\u66F4\u591A\u201D\u83DC\u5355\u91CC\u7684\u201C\u7F16\u8F91\u9879\u76EE\u201D\u3002",
     aliasMigrateStateDone: "\u5DF2\u8FC1\u79FB",
-    aliasMigrateStateMerged: "\u5DF2\u5E76\u5165\u300C{name}\u300D",
+    aliasMigrateStateMerged: "\u5DF2\u5E76\u5165\u201C{name}\u201D",
     aliasMigrateStateDeleted: "\u9879\u76EE\u5DF2\u5220\u9664",
     aliasMigrateStateMissing: "\u672C\u673A\u4E0D\u5B58\u5728",
     aliasMigrateStateRenamed: "\u9879\u76EE\u5DF2\u91CD\u547D\u540D",
@@ -552,7 +597,7 @@
   var en = {
     settingsTitle: "ZCode Pro",
     tabFeatures: "Features",
-    tabStyles: "Styles",
+    tabStyles: "Appearance",
     tabProxy: "Proxy",
     tabBehavior: "Behavior",
     tabAgents: "Global Prompt",
@@ -633,8 +678,6 @@
     syncVerDeleteDesc: "This backup will be deleted from the server and cannot be recovered: ",
     syncVerDeleted: "Backup deleted from the server.",
     syncVerSaved: "Saved to",
-    devMode: "Developer mode",
-    devModeRowDesc: 'Shows the "Reload ZCode Pro" button; can also be enabled with the ZCODEPRO_DEV=1 environment variable. This tab is visible only while developer mode is active.',
     devModeDesc: 'For development: after changing zcode-pro code, click "Reload ZCode Pro" instead of restarting ZCode. It builds automatically (when running from the source repo), restarts the ZCode Pro launcher process (fresh helper and injected script), and every ZCode window refreshes and re-injects. The ZCode app itself and all sessions stay untouched.',
     devReload: "Reload ZCode Pro",
     devReloading: "Reloading\u2026",
@@ -742,13 +785,60 @@
     featureNewtabPanelsDesc: 'The built-in "new tab page" only lists built-in panels and recommended official plugins; this adds cards for third-party marketplace plugin panels (headroom, rtk, \u2026) that open in the side pane.',
     ntpDescSuffix: "plugin panel",
     ntpNeedSession: "Open a task session first, then open plugin panels from the new tab page",
-    featureStatusBarDesc: 'Shows statistics at the bottom-right of the main view: context usage, session/today/total tokens, task count, etc.; reorder or hide each item under "Styles \u2192 Status bar".',
+    featureStatusBarDesc: "Shows statistics at the bottom-right of the input box and at the end of each answer.",
     tabStylesPane: "Styles",
     tabStatusPane: "Status bar",
+    themeColorsPane: "Theme",
+    themeBgRegions: "Regional backgrounds",
+    themeBgRegionFollow: "None",
+    themeBgRegionLeft: "Left sidebar",
+    themeBgRegionCenter: "Center area",
+    themeBgRegionRight: "Right sidebar",
+    themeBgPane: "Background",
+    themeSkinTitle: "Skins",
+    themeSkinDesc: 'Famous editor theme palettes; light and dark variants follow ZCode\u2019s current mode automatically; "Default" keeps ZCode as-is, "Custom" is tuned below.',
+    themeSkinCustom: "Custom",
+    themeCustomTitle: "Custom theme",
+    themeCustomHint: "Color changes apply live (auto-switches to the custom skin); light and dark variants, five anchor colors derive the whole palette.",
+    themeCustomLight: "Light variant",
+    themeCustomDark: "Dark variant",
+    themeCustomBg: "Background",
+    themeCustomCard: "Card",
+    themeCustomFg: "Text",
+    themeCustomMuted: "Muted text",
+    themeCustomAccent: "Accent",
+    themeBgDesc: "Sources: local library, folder (rotate on a timer) or URL (refresh on a timer); left / center / right regions can each have their own. Sidebar, chat and composer reveal the background while menus and dialogs stay opaque. The library uploads with the zcode-pro sync group (overwrite, no history versions).",
+    themeBgModeNone: "None",
+    themeBgModeLibrary: "Library",
+    themeBgModeFolder: "Folder",
+    themeBgModeUrl: "URL",
+    themeBgLibrary: "My library",
+    themeBgUpload: "Upload",
+    themeBgEmpty: "No images yet. png / jpg / webp / gif / bmp / avif, up to 10MB each",
+    themeBgDelete: "Delete",
+    themeBgNoneHint: "Pick a background source; folders rotate on a timer, URLs refresh on a timer for random-image APIs.",
+    themeBgFolderPick: "Browse",
+    themeBgFolderPickTitle: "Choose a wallpaper folder",
+    themeBgFolderHint: "Pick a folder of wallpapers; images are read in place, not copied.",
+    themeBgFolderRandom: "Random order",
+    themeBgIntervalHint: "Switch interval (minutes)",
+    themeBgIntervalUnit: "min, 0 = off",
+    themeBgFolderCount: "{n} images in the folder, rotating on the timer.",
+    themeBgFolderMissing: "Folder missing or contains no images.",
+    themeBgUrlHint: "Timed refresh suits random-image APIs (each request returns a new image); a cache-buster is appended on refresh.",
+    themeBgUrlIntervalHint: "Refresh interval (minutes)",
+    themeBgUrlInvalid: "URL must start with http(s)://",
+    themeBgFit: "Fit",
+    themeBgFitCover: "Fill",
+    themeBgFitContain: "Fit",
+    themeBgFitFill: "Stretch",
+    themeBgFitTile: "Tile",
+    themeVisibility: "Background visibility",
+    themeBgDeletedActive: "Active background was deleted; background disabled",
     sbItemCtx: "Context usage",
     sbItemQuestions: "Questions asked",
     sbMaster: "Enable statistics",
-    sbMasterDesc: "Master switch: turning this off disables both the status bar and per-turn labels.",
+    sbMasterDesc: "Master switch: turning this off disables both the input-box statistics and per-turn labels.",
     sbGroupSession: "Session statistics (follows current session)",
     sbGroupGlobal: "Global statistics",
     sbGroupTurn: "Per-turn statistics (answer rows)",
@@ -1604,6 +1694,32 @@
       color: var(--color-foreground, #111);
       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
     }
+    /* \u4E3B\u9898\uFF08\u6837\u5F0F \u2192 \u4E3B\u9898\uFF09\uFF1A\u76AE\u80A4\u5361\u7247\uFF08\u8272\u5757\u9884\u89C8 + \u540D\u79F0\uFF09\u4E0E\u80CC\u666F\u7F29\u7565\u56FE */
+    .zcodepro-skin-card {
+      display: flex; flex-direction: column; gap: 6px;
+      padding: 8px; border: 1px solid var(--color-card-border, #8883);
+      border-radius: 10px; background: transparent; cursor: pointer; text-align: left;
+      transition: border-color 0.15s ease, background-color 0.15s ease;
+    }
+    .zcodepro-skin-card:hover { background-color: color-mix(in oklab, var(--color-foreground, #888) 6%, transparent); }
+    .zcodepro-skin-card[data-state="active"] { border-color: var(--color-primary, #333); }
+    .zcodepro-skin-swatches { display: flex; height: 18px; border-radius: 5px; overflow: hidden; }
+    .zcodepro-skin-swatches > span { flex: 1; }
+    .zcodepro-bg-card {
+      position: relative; width: 100%; aspect-ratio: 16 / 9;
+      border-radius: 8px; border: 2px solid transparent; padding: 0;
+      background-size: cover; background-position: center; cursor: pointer; overflow: hidden;
+    }
+    .zcodepro-bg-card:hover { filter: brightness(1.15); }
+    .zcodepro-bg-card[data-state="active"] { border-color: var(--color-primary, #333); }
+    .zcodepro-bg-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .zcodepro-bg-del {
+      position: absolute; top: 4px; right: 4px; width: 20px; height: 20px;
+      border-radius: 6px; border: none; cursor: pointer; font-size: 11px; line-height: 1;
+      color: #fff; background: rgba(0, 0, 0, 0.55);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .zcodepro-bg-del:hover { background: rgba(220, 38, 38, 0.85); }
     /* \u7D27\u51D1\u5C0F\u6309\u94AE\uFF1A\u51E0\u4F55/\u914D\u8272\u5199\u5165\u81EA\u6709\u89C4\u5219\u5E76\u53D6\u4E3B\u9898\u53D8\u91CF\uFF08\u9AD8\u5EA6=24px\uFF0C\u4E0E\u6807\u7B7E\u9875\u4E00\u81F4\uFF09 */
     .zcodepro-btn-sm {
       display: inline-flex;
@@ -3806,6 +3922,473 @@
     if (hlEl) hlEl.textContent = "";
   }
 
+  // src/inject/features/theme.js
+  var SC = (light, dark, lightA, darkA) => ({ light, dark, lightA, darkA });
+  var SCALES = {
+    dracula: SC(
+      ["#fefeff", "#f5f4f9", "#f1f0f6", "#edebf4", "#dedee4", "#c4c3cb", "#aaa9b3", "#885cdb", "#9a6ff0", "#af85ff", "#5f5c77", "#2b2a3a"],
+      ["#21222c", "#282a36", "#2d303d", "#343746", "#484b59", "#656873", "#80828a", "#aa80e5", "#bd93f9", "#d3a9ff", "#7b89b3", "#f8f8f2"],
+      ["#2b2a3a03", "#2b2a3a06", "#2b2a3a0f", "#2b2a3a17", "#2b2a3a1f", "#2b2a3a26", "#2b2a3a31", "#2b2a3a44", "#2b2a3a72", "#2b2a3a7c", "#2b2a3a9b", "#2b2a3adf"],
+      ["#f8f8f203", "#f8f8f206", "#f8f8f20f", "#f8f8f217", "#f8f8f21f", "#f8f8f226", "#f8f8f231", "#f8f8f244", "#f8f8f272", "#f8f8f27c", "#f8f8f29b", "#f8f8f2df"]
+    ),
+    nord: SC(
+      ["#fbfcfe", "#f2f5f9", "#eef2f7", "#eaeff5", "#dce0e5", "#c3c7cd", "#aaaeb6", "#4d6f99", "#5e81ac", "#7296c2", "#576377", "#2e3440"],
+      ["#272c36", "#2e3440", "#343a48", "#3b4252", "#4e5564", "#686e7c", "#808692", "#75adbd", "#88c0d0", "#9ed7e7", "#8e9ab0", "#eceff4"],
+      ["#2e344003", "#2e344006", "#2e34400f", "#2e344017", "#2e34401f", "#2e344026", "#2e344031", "#2e344044", "#2e344072", "#2e34407c", "#2e34409b", "#2e3440df"],
+      ["#eceff403", "#eceff406", "#eceff40f", "#eceff417", "#eceff41f", "#eceff426", "#eceff431", "#eceff444", "#eceff472", "#eceff47c", "#eceff49b", "#eceff4df"]
+    ),
+    tokyonight: SC(
+      ["#fafbfe", "#eef0f6", "#e9ebf2", "#e3e6ef", "#d9dce5", "#c0c5d1", "#a8aebd", "#2d488e", "#3d59a1", "#506eb8", "#5a6684", "#2f3a55"],
+      ["#13141d", "#1a1b26", "#1e212f", "#24283b", "#34394f", "#4b516a", "#606784", "#688fe3", "#7aa2f7", "#8fb8ff", "#8893c3", "#c0caf5"],
+      ["#2f3a5503", "#2f3a5506", "#2f3a550f", "#2f3a5517", "#2f3a551f", "#2f3a5526", "#2f3a5531", "#2f3a5544", "#2f3a5572", "#2f3a557c", "#2f3a559b", "#2f3a55df"],
+      ["#c0caf503", "#c0caf506", "#c0caf50f", "#c0caf517", "#c0caf51f", "#c0caf526", "#c0caf531", "#c0caf544", "#c0caf572", "#c0caf57c", "#c0caf59b", "#c0caf5df"]
+    ),
+    catppuccin: SC(
+      ["#fbfcfe", "#eff1f5", "#eaecf1", "#e4e7ed", "#dde0e6", "#c8cbd5", "#b4b7c3", "#6174e8", "#7287fd", "#869dff", "#73768c", "#4c4f69"],
+      ["#181825", "#1e1e2e", "#262738", "#313244", "#424357", "#595c71", "#6e7289", "#a1abea", "#b4befe", "#cad5ff", "#979cb5", "#cdd6f4"],
+      ["#4c4f6903", "#4c4f6906", "#4c4f690f", "#4c4f6917", "#4c4f691f", "#4c4f6926", "#4c4f6931", "#4c4f6944", "#4c4f6972", "#4c4f697c", "#4c4f699b", "#4c4f69df"],
+      ["#cdd6f403", "#cdd6f406", "#cdd6f40f", "#cdd6f417", "#cdd6f41f", "#cdd6f426", "#cdd6f431", "#cdd6f444", "#cdd6f472", "#cdd6f47c", "#cdd6f49b", "#cdd6f4df"]
+    ),
+    gruvbox: SC(
+      ["#fefbf0", "#f8f2dd", "#f5eed4", "#f3eacc", "#e3decb", "#cbc5b5", "#b3aea0", "#8e6b00", "#a07d0a", "#b6922e", "#706558", "#3c3836"],
+      ["#1d2021", "#282828", "#312f2e", "#3c3836", "#4f4944", "#696256", "#807867", "#c38600", "#d79921", "#eeaf40", "#a1927f", "#ebdbb2"],
+      ["#3c383603", "#3c383606", "#3c38360f", "#3c383617", "#3c38361f", "#3c383626", "#3c383631", "#3c383644", "#3c383672", "#3c38367c", "#3c38369b", "#3c3836df"],
+      ["#ebdbb203", "#ebdbb206", "#ebdbb20f", "#ebdbb217", "#ebdbb21f", "#ebdbb226", "#ebdbb231", "#ebdbb244", "#ebdbb272", "#ebdbb27c", "#ebdbb29b", "#ebdbb2df"]
+    ),
+    onedark: SC(
+      ["#fcfdff", "#f4f6fa", "#f0f3f8", "#edf0f6", "#dfe1e6", "#c6c8ce", "#adb0b7", "#3870c4", "#4a82d8", "#5f98f0", "#606774", "#333842"],
+      ["#21252b", "#282c34", "#2d313a", "#333842", "#404550", "#525863", "#626874", "#4e9cdb", "#61afef", "#77c6ff", "#6a717e", "#abb2bf"],
+      ["#33384203", "#33384206", "#3338420f", "#33384217", "#3338421f", "#33384226", "#33384231", "#33384244", "#33384272", "#3338427c", "#3338429b", "#333842df"],
+      ["#abb2bf03", "#abb2bf06", "#abb2bf0f", "#abb2bf17", "#abb2bf1f", "#abb2bf26", "#abb2bf31", "#abb2bf44", "#abb2bf72", "#abb2bf7c", "#abb2bf9b", "#abb2bfdf"]
+    ),
+    solarized: SC(
+      ["#fffbf0", "#fdf6e3", "#fcf4dd", "#fbf1d7", "#ebe8d8", "#d7d7ca", "#c2c6bc", "#0078be", "#268bd2", "#41a1ea", "#889899", "#586e75"],
+      ["#00212b", "#002b36", "#03303b", "#073642", "#1b424d", "#31525b", "#446168", "#008e86", "#2aa198", "#47b7ae", "#62777d", "#93a1a1"],
+      ["#586e7503", "#586e7506", "#586e750f", "#586e7517", "#586e751f", "#586e7526", "#586e7531", "#586e7544", "#586e7572", "#586e757c", "#586e759b", "#586e75df"],
+      ["#93a1a103", "#93a1a106", "#93a1a10f", "#93a1a117", "#93a1a11f", "#93a1a126", "#93a1a131", "#93a1a144", "#93a1a172", "#93a1a17c", "#93a1a19b", "#93a1a1df"]
+    ),
+    rosepine: SC(
+      ["#fffaf3", "#faf4ed", "#f8f1ea", "#f6efe8", "#e8e3e1", "#d3ced3", "#bfbac5", "#7e6896", "#907aa9", "#a58fbf", "#837d93", "#575279"],
+      ["#141220", "#191724", "#1c1a28", "#1f1d2e", "#323143", "#4e4d60", "#69677b", "#b194d3", "#c4a7e7", "#dbbdff", "#817e99", "#e0def4"],
+      ["#57527903", "#57527906", "#5752790f", "#57527917", "#5752791f", "#57527926", "#57527931", "#57527944", "#57527972", "#5752797c", "#5752799b", "#575279df"],
+      ["#e0def403", "#e0def406", "#e0def40f", "#e0def417", "#e0def41f", "#e0def426", "#e0def431", "#e0def444", "#e0def472", "#e0def47c", "#e0def49b", "#e0def4df"]
+    ),
+    everforest: SC(
+      ["#fefdf5", "#faf7ec", "#f8f4e8", "#f6f2e4", "#e7e6dd", "#d2d2cb", "#bcbeb9", "#588c47", "#6a9e59", "#7fb46e", "#76827b", "#4f585e"],
+      ["#272e33", "#2d353b", "#30393f", "#343f44", "#454e50", "#5d625f", "#73756d", "#95ad6e", "#a7c080", "#bdd796", "#a7aea2", "#d3c6aa"],
+      ["#4f585e03", "#4f585e06", "#4f585e0f", "#4f585e17", "#4f585e1f", "#4f585e26", "#4f585e31", "#4f585e44", "#4f585e72", "#4f585e7c", "#4f585e9b", "#4f585edf"],
+      ["#d3c6aa03", "#d3c6aa06", "#d3c6aa0f", "#d3c6aa17", "#d3c6aa1f", "#d3c6aa26", "#d3c6aa31", "#d3c6aa44", "#d3c6aa72", "#d3c6aa7c", "#d3c6aa9b", "#d3c6aadf"]
+    ),
+    nightowl: SC(
+      ["#fdfdfe", "#f6f7f9", "#f3f4f7", "#f0f2f5", "#e2e3e7", "#cbcbd2", "#b3b4bd", "#2253c2", "#3366d6", "#477cee", "#64667c", "#403f53"],
+      ["#010e1c", "#011627", "#072033", "#122d42", "#284054", "#445a6e", "#5f7285", "#7097ea", "#82aaff", "#97c1ff", "#778ea7", "#d6deeb"],
+      ["#403f5303", "#403f5306", "#403f530f", "#403f5317", "#403f531f", "#403f5326", "#403f5331", "#403f5344", "#403f5372", "#403f537c", "#403f539b", "#403f53df"],
+      ["#d6deeb03", "#d6deeb06", "#d6deeb0f", "#d6deeb17", "#d6deeb1f", "#d6deeb26", "#d6deeb31", "#d6deeb44", "#d6deeb72", "#d6deeb7c", "#d6deeb9b", "#d6deebdf"]
+    ),
+    kanagawa: SC(
+      ["#fcf9f0", "#f4f1e8", "#f0ede4", "#edeae1", "#e1ded5", "#cac8c0", "#b4b2aa", "#2d4d95", "#3d5fa8", "#5074bf", "#72726a", "#43443e"],
+      ["#16161d", "#1f1f28", "#24242f", "#2a2a37", "#3c3c46", "#57565a", "#6f6d6c", "#6c8ac4", "#7e9cd8", "#93b2ef", "#848277", "#dcd7ba"],
+      ["#43443e03", "#43443e06", "#43443e0f", "#43443e17", "#43443e1f", "#43443e26", "#43443e31", "#43443e44", "#43443e72", "#43443e7c", "#43443e9b", "#43443edf"],
+      ["#dcd7ba03", "#dcd7ba06", "#dcd7ba0f", "#dcd7ba17", "#dcd7ba1f", "#dcd7ba26", "#dcd7ba31", "#dcd7ba44", "#dcd7ba72", "#dcd7ba7c", "#dcd7ba9b", "#dcd7badf"]
+    )
+  };
+  var THEME_SKINS = [
+    {
+      id: "default",
+      zh: "\u9ED8\u8BA4",
+      en: "Default",
+      preview: ["#f8f8f8", "#ffffff", "#ececee", "#dfdfdf", "#8b8b8b", "#18181b", "#9a9a9a", "#18181b"]
+    },
+    { id: "dracula", hue: "dracula", zh: "\u5FB7\u53E4\u62C9", en: "Dracula" },
+    { id: "nord", hue: "nord", zh: "\u6781\u591C", en: "Nord" },
+    { id: "tokyonight", hue: "tokyonight", zh: "\u4E1C\u4EAC\u591C", en: "Tokyo Night" },
+    { id: "catppuccin", hue: "catppuccin", zh: "\u5976\u5496", en: "Catppuccin" },
+    { id: "gruvbox", hue: "gruvbox", zh: "\u6696\u5CA9", en: "Gruvbox" },
+    { id: "onedark", hue: "onedark", zh: "One Dark", en: "One Dark" },
+    { id: "solarized", hue: "solarized", zh: "\u65E5\u6652", en: "Solarized" },
+    { id: "rosepine", hue: "rosepine", zh: "\u73AB\u7470\u677E", en: "Ros\xE9 Pine" },
+    { id: "everforest", hue: "everforest", zh: "\u5E38\u7EFF", en: "Everforest" },
+    { id: "nightowl", hue: "nightowl", zh: "\u591C\u67AD", en: "Night Owl" },
+    { id: "kanagawa", hue: "kanagawa", zh: "\u795E\u5948\u5DDD", en: "Kanagawa" }
+  ];
+  for (const s of THEME_SKINS) {
+    if (!s.hue) continue;
+    const L = SCALES[s.hue].light;
+    s.preview = [L[1], L[0], L[3], L[5], L[8], L[9], L[10], L[11]];
+  }
+  var THEME_SKIN_IDS = THEME_SKINS.map((s) => s.id);
+  var hexA = (hex, alphaHex) => `#${hex.slice(1)}${alphaHex}`;
+  function skinVars(s, isDark) {
+    if (!s) return null;
+    const fg = s[11];
+    return {
+      "--color-background": s[1],
+      "--color-background-win-alt": s[3],
+      "--color-background-alt": `color-mix(in oklab, ${s[1]} ${isDark ? 60 : 70}%, transparent)`,
+      "--color-sidebar": s[isDark ? 1 : 2],
+      "--color-header": s[isDark ? 2 : 0],
+      "--color-panel": s[isDark ? 2 : 0],
+      "--color-card": s[isDark ? 3 : 0],
+      "--color-card-selected": s[isDark ? 4 : 1],
+      "--color-input": s[isDark ? 3 : 0],
+      "--color-input-focused": s[isDark ? 3 : 0],
+      "--color-menu": s[isDark ? 3 : 0],
+      "--color-menu-hover": s[isDark ? 4 : 2],
+      "--color-popover": s[isDark ? 3 : 0],
+      "--color-popover-header": s[isDark ? 2 : 1],
+      "--color-highspeed-composer-surface": s[isDark ? 0 : 1],
+      "--color-tab-active": s[isDark ? 1 : 0],
+      "--color-foreground": fg,
+      "--color-foreground-subtle": s[10],
+      "--color-foreground-subtlest": `color-mix(in oklab, ${s[10]} 60%, transparent)`,
+      "--color-foreground-inverse": isDark ? "#101010" : "#ffffff",
+      "--color-popover-foreground": fg,
+      "--color-tooltip-foreground": fg,
+      "--color-brand": fg,
+      "--color-primary": fg,
+      "--color-primary-foreground": isDark ? "#101010" : "#ffffff",
+      "--color-accent": s[2],
+      "--color-highspeed-accent": s[8],
+      "--highspeed-sidebar-model-icon": s[8],
+      "--highspeed-sidebar-model-gradient": `linear-gradient(90deg,${s[7]} 0%,${s[8]} 50%,${s[9]} 100%)`,
+      "--color-hover": hexA(fg, isDark ? "12" : "0f"),
+      "--color-surface-hover": hexA(fg, isDark ? "12" : "0f"),
+      "--color-border": hexA(fg, "1a"),
+      "--color-border-hover": hexA(fg, "26"),
+      "--color-card-border": hexA(fg, "1a"),
+      "--color-input-border": hexA(fg, "1a"),
+      "--color-input-border-hover": hexA(fg, "26"),
+      "--color-input-border-focused": hexA(fg, "26"),
+      "--color-popover-border": hexA(fg, "1a"),
+      "--color-tab-border": hexA(fg, "1a"),
+      "--color-highspeed-composer-border-pre-animation": hexA(fg, "1a")
+    };
+  }
+  var CUSTOM_DEFAULTS = {
+    light: { bg: "#f7f8fa", card: "#ffffff", fg: "#24262b", muted: "#6b7280", accent: "#6366f1" },
+    dark: { bg: "#18181d", card: "#232329", fg: "#e8e8ec", muted: "#9494a0", accent: "#8b8ff5" }
+  };
+  var mixOf = (x, t2, y) => `color-mix(in oklab, ${x} ${Math.round((1 - t2) * 100)}%, ${y} ${Math.round(t2 * 100)}%)`;
+  function anchorsScale(a, isDark) {
+    const { bg, card, fg, muted, accent } = a;
+    return isDark ? [
+      mixOf(bg, 0.12, "#000"),
+      // 0 最深（输入区）
+      bg,
+      // 1 背景
+      mixOf(bg, 0.45, card),
+      // 2 顶栏/面板
+      card,
+      // 3 卡片/输入
+      mixOf(card, 0.12, fg),
+      // 4 选中/悬停
+      mixOf(card, 0.28, fg),
+      // 5
+      mixOf(card, 0.42, fg),
+      // 6
+      mixOf(accent, 0.14, "#000"),
+      // 7
+      accent,
+      // 8 品牌级
+      mixOf(accent, 0.18, "#fff"),
+      // 9
+      mixOf(muted, 0.18, fg),
+      // 10 次级文字
+      fg
+      // 11 主文字
+    ] : [
+      card,
+      // 0 最浅（顶栏/卡片）
+      bg,
+      // 1 背景
+      mixOf(bg, 0.05, fg),
+      // 2 侧栏
+      mixOf(bg, 0.11, fg),
+      // 3 winAlt
+      mixOf(bg, 0.17, fg),
+      // 4 悬停
+      mixOf(bg, 0.26, fg),
+      // 5
+      mixOf(bg, 0.36, fg),
+      // 6
+      mixOf(accent, 0.14, "#000"),
+      accent,
+      mixOf(accent, 0.18, "#fff"),
+      mixOf(muted, 0.18, fg),
+      fg
+    ];
+  }
+  var skinStyleEl = null;
+  var bgStyleEl = null;
+  var injectedKeys = /* @__PURE__ */ new Set();
+  var classObserver = null;
+  var currentTheme = { skin: "default", custom: null, bg: { mode: "none", visibility: 0.8 } };
+  var lastModeSig = "";
+  var bgTimer = null;
+  var regionStyleEl = null;
+  var regionTimers = [];
+  var regionFolderIdx = { left: -1, center: -1, right: -1 };
+  var REGION_SELECTORS = {
+    left: 'div[class*="workspace-sidebar-panel-width"]',
+    center: '[data-testid="conversation-column"]',
+    right: '[data-testid="conversation-column"] ~ [data-testid="browser"]'
+  };
+  var folderIdx = -1;
+  var urlTick = 0;
+  var applySeq = 0;
+  var SURFACE_TOKENS = [
+    "--color-background",
+    "--color-background-win-alt",
+    "--color-sidebar",
+    "--color-header",
+    "--color-panel",
+    "--color-card",
+    "--color-card-selected",
+    "--color-input",
+    "--color-input-focused",
+    "--color-highspeed-composer-surface"
+  ];
+  var isDarkMode = () => document.documentElement.classList.contains("theme-zai-dark") || document.documentElement.classList.contains("dark");
+  var probeEl = null;
+  function resolvedColor(token) {
+    try {
+      if (!probeEl || !probeEl.isConnected) {
+        probeEl = document.createElement("div");
+        probeEl.style.display = "none";
+        (document.body || document.documentElement).append(probeEl);
+      }
+      probeEl.style.color = "";
+      probeEl.style.color = `var(${token})`;
+      const v = getComputedStyle(probeEl).color;
+      return /^rgba?\(/.test(v) ? v : "";
+    } catch {
+      return "";
+    }
+  }
+  function ensureEl(id) {
+    let el = document.getElementById(id);
+    if (!el || !el.isConnected) {
+      el = document.createElement("style");
+      el.id = id;
+      (document.head || document.documentElement).append(el);
+    }
+    return el;
+  }
+  function applySkin(skinId, custom) {
+    skinStyleEl = ensureEl("__zcodepro_skin__");
+    const root = document.documentElement;
+    for (const id of [...THEME_SKIN_IDS, "custom"]) root.classList.remove("zcodepro-skin-" + id);
+    const preset = THEME_SKINS.find((s) => s.id === skinId && s.hue);
+    const isCustom = skinId === "custom";
+    if (!preset && !isCustom) {
+      skinStyleEl.textContent = "";
+      return;
+    }
+    const cls = preset ? preset.id : "custom";
+    root.classList.add("zcodepro-skin-" + cls);
+    const scaleOf = (isDark) => {
+      if (isCustom) {
+        const dflt = CUSTOM_DEFAULTS[isDark ? "dark" : "light"];
+        const src = custom && custom[isDark ? "dark" : "light"] || {};
+        const a = {};
+        for (const k of ["bg", "card", "fg", "muted", "accent"]) {
+          a[k] = /^#[0-9a-f]{6}$/i.test(src[k]) ? src[k] : dflt[k];
+        }
+        return anchorsScale(a, isDark);
+      }
+      const sc = SCALES[preset.hue];
+      return isDark ? sc.dark : sc.light;
+    };
+    const rules = (isDark) => {
+      const vars = skinVars(scaleOf(isDark), isDark);
+      return vars ? Object.entries(vars).map(([k, v]) => `${k}:${v};`).join("") : "";
+    };
+    const sb = (isDark) => {
+      const fg = scaleOf(isDark)[11];
+      return `::-webkit-scrollbar-thumb{background-color:${hexA(fg, "59")} !important;}::-webkit-scrollbar-thumb:hover{background-color:${hexA(fg, "8c")} !important;}`;
+    };
+    skinStyleEl.textContent = `html.theme-zai-light.zcodepro-skin-${cls}{${rules(false)}}html.theme-zai-dark.zcodepro-skin-${cls},html.dark.zcodepro-skin-${cls}{${rules(true)}}html.theme-zai-light.zcodepro-skin-${cls}{${sb(false)}}html.theme-zai-dark.zcodepro-skin-${cls},html.dark.zcodepro-skin-${cls}{${sb(true)}}`;
+  }
+  function clearBgOverrides() {
+    const root = document.documentElement;
+    for (const k of injectedKeys) root.style.removeProperty(k);
+    injectedKeys = /* @__PURE__ */ new Set();
+  }
+  async function applyBackground(bg) {
+    const seq = ++applySeq;
+    bgStyleEl = ensureEl("__zcodepro_bg__");
+    const root = document.documentElement;
+    if (bgTimer) {
+      clearInterval(bgTimer);
+      bgTimer = null;
+    }
+    root.classList.remove("zcodepro-bg-on");
+    clearBgOverrides();
+    const bgActive = !!(bg && bg.mode && bg.mode !== "none");
+    const anyRegion = !!(bg && bg.regions && (bg.regions.left || bg.regions.center || bg.regions.right));
+    if (!bgActive) bgStyleEl.textContent = "";
+    if (!bgActive && !anyRegion) {
+      await applyRegionBackgrounds(bg);
+      return;
+    }
+    const visibility = typeof bg.visibility === "number" && Number.isFinite(bg.visibility) ? Math.min(1, Math.max(0, bg.visibility)) : 0.8;
+    const alpha = 1 - visibility;
+    const resolvedBg = resolvedColor("--color-background");
+    const mHex = resolvedBg.match(/^rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)/);
+    const rgb = mHex ? [Math.round(+mHex[1]), Math.round(+mHex[2]), Math.round(+mHex[3])].join(",") : isDarkMode() ? "13,13,13" : "248,248,248";
+    const panelMix = Math.min(100, Math.round(alpha * 100) + 10);
+    if (panelMix < 100) {
+      for (const t2 of SURFACE_TOKENS) {
+        const v = resolvedColor(t2);
+        if (v) {
+          root.style.setProperty(t2, `color-mix(in srgb, ${v} ${panelMix}%, transparent)`);
+          injectedKeys.add(t2);
+        }
+      }
+    }
+    await applyRegionBackgrounds(bg, { mask, rgb, alpha, fit: bg.fit, visibility, seq });
+    if (seq !== applySeq) return;
+    if (!bgActive) return;
+    const FIT_CSS = {
+      cover: "background-size:100% 100%,cover !important;background-repeat:no-repeat !important;",
+      contain: "background-size:100% 100%,contain !important;background-repeat:no-repeat !important;",
+      fill: "background-size:100% 100%,100% 100% !important;background-repeat:no-repeat !important;",
+      tile: "background-size:100% 100%,auto !important;background-repeat:no-repeat,repeat !important;"
+    };
+    const fitCss = FIT_CSS[bg.fit] || FIT_CSS.cover;
+    const setImage = (image) => {
+      bgStyleEl.textContent = `html.zcodepro-bg-on{background-color:rgb(${rgb}) !important;background-image:linear-gradient(rgba(${rgb},${alpha}),rgba(${rgb},${alpha})),${image} !important;${fitCss}background-position:center !important;}`;
+      root.classList.add("zcodepro-bg-on");
+    };
+    const helperUrl = liveBoot().helperUrl || HELPER_URL;
+    if (bg.mode === "library") {
+      if (!bg.file) {
+        bgStyleEl.textContent = "";
+        return;
+      }
+      setImage(`url("${helperUrl}/bg/file/${encodeURIComponent(bg.file)}")`);
+      return;
+    }
+    if (bg.mode === "folder") {
+      const res = await rpc("/bg/folder/list");
+      if (seq !== applySeq) return;
+      const files = res.ok && Array.isArray(res.files) ? res.files.filter((f) => f && f.name) : [];
+      if (!files.length) {
+        bgStyleEl.textContent = "";
+        root.classList.remove("zcodepro-bg-on");
+        return;
+      }
+      const pick = () => {
+        let idx = 0;
+        if (bg.folderRandom) idx = files.length > 1 ? Math.floor(Math.random() * files.length) : 0;
+        else {
+          folderIdx = (folderIdx + 1) % files.length;
+          idx = folderIdx;
+        }
+        setImage(`url("${helperUrl}/bg/folder/file/${encodeURIComponent(files[idx].name)}")`);
+      };
+      pick();
+      const ms = Math.max(0, Number(bg.intervalMin) || 0) * 6e4;
+      if (ms >= 3e4) bgTimer = setInterval(pick, ms);
+      return;
+    }
+    if (bg.mode === "url") {
+      const u0 = /^https?:\/\/\S+$/i.test(bg.url || "") && !/[<>"'\\]/.test(bg.url) ? bg.url : "";
+      if (!u0) {
+        bgStyleEl.textContent = "";
+        return;
+      }
+      const bust = () => {
+        urlTick += 1;
+        const sep = u0.includes("?") ? "&" : "?";
+        setImage(`url("${u0}${sep}_zcp=${urlTick}")`);
+      };
+      bust();
+      const ms = Math.max(0, Number(bg.intervalMin) || 0) * 6e4;
+      if (ms >= 3e4) bgTimer = setInterval(bust, ms);
+    }
+  }
+  async function applyRegionBackgrounds(bg, pre) {
+    regionStyleEl = ensureEl("__zcodepro_bg_regions__");
+    for (const t2 of regionTimers) clearInterval(t2);
+    regionTimers = [];
+    const rules = /* @__PURE__ */ new Map();
+    const flush = () => {
+      regionStyleEl.textContent = [...rules.values()].join("");
+    };
+    const alpha = pre ? pre.alpha : 0.2;
+    const rgb = pre ? pre.rgb : "13,13,13";
+    const FIT_CSS = {
+      cover: "100% 100%,cover",
+      contain: "100% 100%,contain",
+      fill: "100% 100%,100% 100%",
+      tile: "100% 100%,auto"
+    };
+    const sizeVal = FIT_CSS[bg && bg.fit] || FIT_CSS.cover;
+    const repeatVal = bg && bg.fit === "tile" ? "no-repeat,repeat" : "no-repeat";
+    const helperUrl = liveBoot().helperUrl || HELPER_URL;
+    const safeUrl = (u) => /^https?:\/\/\S+$/i.test(u || "") && !/[<>"'\\]/.test(u) ? u : "";
+    const addRule = (region, image) => {
+      if (!image) return;
+      rules.set(region, `${REGION_SELECTORS[region]}{background-image:linear-gradient(rgba(${rgb},${alpha}),rgba(${rgb},${alpha})),${image} !important;background-size:${sizeVal} !important;background-position:center !important;background-repeat:${repeatVal} !important;}`);
+    };
+    const seq = applySeq;
+    for (const region of ["left", "center", "right"]) {
+      const r = bg && bg.regions && bg.regions[region];
+      if (!r) continue;
+      if (r.mode === "library") {
+        if (r.file) addRule(region, `url("${helperUrl}/bg/file/${encodeURIComponent(r.file)}")`);
+      } else if (r.mode === "url") {
+        const u = safeUrl(r.url);
+        if (u) addRule(region, `url("${u}")`);
+      } else if (r.mode === "folder" && r.folder) {
+        const res = await rpc("/bg/folder/list?dir=" + encodeURIComponent(r.folder));
+        if (seq !== applySeq) return;
+        const files = res.ok && !res.missing && Array.isArray(res.files) ? res.files.filter((f) => f && f.name) : [];
+        if (!files.length) continue;
+        const pick = () => {
+          let idx = 0;
+          if (bg.folderRandom !== false) idx = files.length > 1 ? Math.floor(Math.random() * files.length) : 0;
+          else {
+            regionFolderIdx[region] = (regionFolderIdx[region] + 1) % files.length;
+            idx = regionFolderIdx[region];
+          }
+          addRule(region, `url("${helperUrl}/bg/folder/file/${encodeURIComponent(files[idx].name)}")`);
+          flush();
+        };
+        pick();
+        const ms = Math.max(0, Number(bg.intervalMin) || 0) * 6e4;
+        if (ms >= 3e4) regionTimers.push(setInterval(pick, ms));
+      }
+    }
+    flush();
+  }
+  function applyAll(theme) {
+    if (theme && typeof theme === "object") currentTheme = theme;
+    applySkin(currentTheme.skin || "default", currentTheme.custom);
+    void applyBackground(currentTheme.bg);
+  }
+  function startTheme() {
+    if (!document.head && !document.documentElement) return;
+    applyAll({ skin: "default", custom: null, bg: { mode: "none", visibility: 0.8 } });
+    void getConfig().then((cfg) => applyAll(cfg.theme)).catch(() => {
+    });
+    window.addEventListener("zcodepro:config-changed", () => {
+      void getConfig(true).then((cfg) => applyAll(cfg.theme)).catch(() => {
+      });
+    });
+    if (!classObserver) {
+      lastModeSig = isDarkMode() ? "d" : "l";
+      classObserver = new MutationObserver(() => {
+        const sig = isDarkMode() ? "d" : "l";
+        if (sig === lastModeSig) return;
+        lastModeSig = sig;
+        applyAll(currentTheme);
+      });
+      classObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    }
+  }
+
   // src/inject/features/settings-dialog.js
   function openExternal(url) {
     try {
@@ -4581,6 +5164,8 @@
         renderToolbarSwitch();
         const paneStylesSub1 = h("div", { class: "mt-4" });
         const paneStylesSub2 = h("div", { class: "mt-4", style: "display:none" });
+        const paneStylesSub3 = h("div", { class: "mt-4", style: "display:none" });
+        const paneStylesSub4 = h("div", { class: "mt-4", style: "display:none" });
         const ITEM_NAMES = {
           ctx: "sbItemCtx",
           questions: "sbItemQuestions",
@@ -4736,11 +5321,478 @@
           h("div", { class: "mt-3 mb-1 text-ui-sm font-medium" }, L.sbGroupTurn),
           turnList
         );
+        let themeCfg = structuredClone(config.theme || {});
+        themeCfg.skin = themeCfg.skin || "default";
+        themeCfg.custom = {
+          light: themeCfg.custom && themeCfg.custom.light || {},
+          dark: themeCfg.custom && themeCfg.custom.dark || {}
+        };
+        themeCfg.bg = {
+          mode: "none",
+          file: "",
+          folder: "",
+          folderRandom: true,
+          url: "",
+          intervalMin: 0,
+          fit: "cover",
+          visibility: 0.8,
+          ...themeCfg.bg || {}
+        };
+        themeCfg.bg.regions = themeCfg.bg.regions && typeof themeCfg.bg.regions === "object" ? themeCfg.bg.regions : {};
+        let bgFiles = [];
+        let bgLoading = false;
+        let folderInfo = { count: 0, dir: "" };
+        const themeInputCls = "h-8 w-full rounded-lg border border-border bg-input px-2.5 text-ui-sm text-foreground outline-none transition-shadow placeholder:text-foreground-subtle focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40";
+        const numField = (val, min, max, commit, title) => {
+          const n = h("input", {
+            type: "number",
+            min: String(min),
+            max: String(max),
+            step: "1",
+            title,
+            class: "h-7 w-24 rounded-lg border border-border bg-input px-2 text-right text-ui-xs tabular-nums text-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
+          });
+          n.value = String(val);
+          n.addEventListener("change", () => {
+            const v = Math.max(min, Math.min(max, Math.round(Number(n.value) || 0)));
+            n.value = String(v);
+            commit(v);
+          });
+          return n;
+        };
+        const bgUrl = (name) => `${HELPER_URL}/bg/file/${encodeURIComponent(name)}`;
+        const saveTheme = async (patch) => {
+          themeCfg = {
+            skin: patch.skin !== void 0 ? patch.skin : themeCfg.skin,
+            custom: patch.custom !== void 0 ? patch.custom : themeCfg.custom,
+            bg: { ...themeCfg.bg, ...patch.bg || {} }
+          };
+          const res = await rpc("/config", { method: "POST", body: { theme: themeCfg } });
+          clearConfigCache();
+          window.dispatchEvent(new CustomEvent("zcodepro:config-changed"));
+          if (!res.ok) showToast(L.failed + ": " + errText(res), "error");
+          renderThemeColors();
+          renderThemeBg();
+        };
+        const refreshBgFiles = async () => {
+          bgLoading = true;
+          renderThemeBg();
+          const res = await rpc("/bg");
+          bgLoading = false;
+          if (res.ok && Array.isArray(res.files)) bgFiles = res.files;
+          if (themeCfg.bg.mode === "library" && themeCfg.bg.file && !bgFiles.some((f) => f.name === themeCfg.bg.file)) {
+            themeCfg = { ...themeCfg, bg: { ...themeCfg.bg, file: "" } };
+            await saveTheme({ bg: { file: "" } });
+            showToast(L.themeBgDeletedActive, "success");
+            return;
+          }
+          renderThemeBg();
+        };
+        const refreshFolderInfo = async () => {
+          if (!themeCfg.bg.folder) {
+            folderInfo = { count: 0, dir: "" };
+            renderThemeBg();
+            return;
+          }
+          const res = await rpc("/bg/folder/list");
+          folderInfo = res.ok && !res.missing && Array.isArray(res.files) ? { count: res.files.length, dir: res.dir || themeCfg.bg.folder } : { count: 0, dir: themeCfg.bg.folder };
+          renderThemeBg();
+        };
+        const bgInput = h("input", { type: "file", accept: ".png,.jpg,.jpeg,.webp,.gif,.bmp,.avif", multiple: "", style: "display:none" });
+        bgInput.addEventListener("change", () => {
+          const files = [...bgInput.files || []];
+          bgInput.value = "";
+          if (!files.length) return;
+          void (async () => {
+            let first = themeCfg.bg.file;
+            for (const f of files) {
+              const dataUrl = await new Promise((resolve) => {
+                const r = new FileReader();
+                r.onload = () => resolve(String(r.result || ""));
+                r.onerror = () => resolve("");
+                r.readAsDataURL(f);
+              });
+              if (!dataUrl) continue;
+              const res = await rpc("/bg", { method: "POST", body: { name: f.name, data: dataUrl } });
+              if (!res.ok) {
+                showToast(L.failed + ": " + errText(res), "error");
+                continue;
+              }
+              if (Array.isArray(res.files)) bgFiles = res.files;
+              if (!first) first = f.name;
+            }
+            if (first && first !== themeCfg.bg.file) await saveTheme({ bg: { file: first } });
+            else renderThemeBg();
+          })();
+        });
+        let customSaveTimer = null;
+        const CUSTOM_FIELDS = [
+          ["bg", "themeCustomBg"],
+          ["card", "themeCustomCard"],
+          ["fg", "themeCustomFg"],
+          ["muted", "themeCustomMuted"],
+          ["accent", "themeCustomAccent"]
+        ];
+        const customVal = (mode, k) => themeCfg.custom[mode] && /^#[0-9a-f]{6}$/i.test(themeCfg.custom[mode][k] || "") ? themeCfg.custom[mode][k] : CUSTOM_DEFAULTS[mode][k];
+        const customInput = (mode, k, label) => {
+          const inp = h("input", {
+            type: "color",
+            value: customVal(mode, k),
+            title: label,
+            style: "width:30px;height:22px;padding:0;border:1px solid var(--color-card-border);border-radius:5px;background:transparent;cursor:pointer"
+          });
+          inp.addEventListener("input", () => {
+            const next = {
+              light: { ...themeCfg.custom.light },
+              dark: { ...themeCfg.custom.dark }
+            };
+            next[mode][k] = inp.value.toLowerCase();
+            clearTimeout(customSaveTimer);
+            customSaveTimer = setTimeout(() => {
+              void saveTheme({ skin: "custom", custom: next });
+            }, 250);
+          });
+          return h("label", { class: "flex items-center gap-1.5 text-ui-xs text-foreground-subtle" }, inp, label);
+        };
+        const customSwatch = (mode) => [
+          customVal(mode, "bg"),
+          customVal(mode, "card"),
+          customVal(mode, "fg"),
+          customVal(mode, "muted"),
+          customVal(mode, "accent")
+        ];
+        const renderThemeColors = () => {
+          paneStylesSub3.replaceChildren(
+            h("div", { class: "mb-1 text-ui-sm font-medium" }, L.themeSkinTitle),
+            h("p", { class: "mb-2 text-ui-xs/relaxed text-foreground-subtle" }, L.themeSkinDesc),
+            // 4 列 × 3 行可视，超出滚动；色条 8 块（底/卡片/加深面/边框/强调×2/次级文字/正文）
+            h(
+              "div",
+              { class: "grid grid-cols-4 gap-2", style: "max-height:13.5rem;overflow-y:auto;" },
+              ...THEME_SKINS.map((skin) => h(
+                "button",
+                {
+                  type: "button",
+                  class: "zcodepro-skin-card",
+                  "data-state": themeCfg.skin === skin.id ? "active" : "inactive",
+                  onClick: () => void saveTheme({ skin: skin.id })
+                },
+                h(
+                  "div",
+                  { class: "zcodepro-skin-swatches" },
+                  ...skin.preview.map((c) => h("span", { style: `background:${c}` }))
+                ),
+                h("span", { class: "text-ui-xs text-foreground" }, isZhLocale() ? skin.zh : skin.en)
+              )),
+              h(
+                "button",
+                {
+                  type: "button",
+                  class: "zcodepro-skin-card",
+                  "data-state": themeCfg.skin === "custom" ? "active" : "inactive",
+                  onClick: () => void saveTheme({ skin: "custom" })
+                },
+                h(
+                  "div",
+                  { class: "zcodepro-skin-swatches" },
+                  ...customSwatch("light").map((c) => h("span", { style: `background:${c}` })),
+                  ...customSwatch("dark").map((c) => h("span", { style: `background:${c}` }))
+                ),
+                h("span", { class: "text-ui-xs text-foreground" }, L.themeSkinCustom)
+              )
+            ),
+            h("div", { class: "mt-3 mb-1 text-ui-sm font-medium" }, L.themeCustomTitle),
+            h("p", { class: "mb-2 text-ui-xs/relaxed text-foreground-subtle" }, L.themeCustomHint),
+            h(
+              "div",
+              { class: "grid grid-cols-2 gap-3" },
+              ...["light", "dark"].map((mode) => h(
+                "div",
+                { class: "rounded-xl border border-border p-2" },
+                h(
+                  "div",
+                  { class: "mb-1.5 text-ui-xs font-medium text-foreground-subtle" },
+                  mode === "light" ? L.themeCustomLight : L.themeCustomDark
+                ),
+                h(
+                  "div",
+                  { class: "flex flex-col gap-1.5" },
+                  ...CUSTOM_FIELDS.map(([k, key]) => customInput(mode, k, L[key]))
+                )
+              ))
+            )
+          );
+        };
+        const setRegion = (region, value) => {
+          void saveTheme({ bg: { regions: { ...themeCfg.bg.regions, [region]: value } } });
+        };
+        const regionRow = (region, label) => {
+          const cur = themeCfg.bg.regions[region] || null;
+          const mode = cur ? cur.mode : null;
+          const rBtn = (id, text) => h("button", {
+            type: "button",
+            class: "zcodepro-tab",
+            "data-state": mode === id ? "active" : "inactive",
+            onClick: () => {
+              if (id === null) {
+                setRegion(region, null);
+                return;
+              }
+              const keep = themeCfg.bg.regions[region];
+              setRegion(region, { mode: id, file: keep && keep.file || "", folder: keep && keep.folder || "", url: keep && keep.url || "" });
+            }
+          }, text);
+          let valueCtrl = null;
+          if (mode === "library") {
+            const sel = h("select", { class: "h-7 max-w-40 rounded-lg border border-border bg-input px-1.5 text-ui-xs text-foreground outline-none" });
+            sel.append(h("option", { value: "" }, "\u2014"));
+            for (const f of bgFiles) sel.append(h("option", { value: f.name }, f.name));
+            sel.value = cur && cur.file || "";
+            sel.addEventListener("change", () => setRegion(region, { ...cur, file: sel.value }));
+            valueCtrl = sel;
+          } else if (mode === "folder") {
+            const inp = h("input", { type: "text", value: cur && cur.folder || "", class: themeInputCls.replace("h-8", "h-7"), placeholder: "/path/to/wallpapers" });
+            inp.addEventListener("change", () => {
+              if (inp.value.trim()) setRegion(region, { ...cur, folder: inp.value.trim() });
+            });
+            valueCtrl = inp;
+          } else if (mode === "url") {
+            const inp = h("input", { type: "url", value: cur && cur.url || "", class: themeInputCls.replace("h-8", "h-7"), placeholder: "https://..." });
+            inp.addEventListener("change", () => {
+              if (/^https?:\/\/\S+$/.test(inp.value.trim())) setRegion(region, { ...cur, url: inp.value.trim() });
+            });
+            valueCtrl = inp;
+          }
+          return h(
+            "div",
+            { class: "flex flex-wrap items-center gap-2" },
+            h("span", { class: "w-16 shrink-0 text-ui-xs text-foreground" }, label),
+            h(
+              "div",
+              { class: "flex flex-wrap gap-1" },
+              rBtn(null, L.themeBgRegionFollow),
+              rBtn("library", L.themeBgModeLibrary),
+              rBtn("folder", L.themeBgModeFolder),
+              rBtn("url", L.themeBgModeUrl)
+            ),
+            valueCtrl || h("span", { class: "text-ui-xs text-foreground-subtle" }, "")
+          );
+        };
+        const renderThemeBg = () => {
+          const vis = Math.round((themeCfg.bg.visibility ?? 0.8) * 100);
+          const visLabel = h("span", { class: "w-10 text-right text-ui-xs tabular-nums text-foreground-subtle" }, vis + "%");
+          const visRange = h("input", {
+            type: "range",
+            min: "0",
+            max: "100",
+            step: "5",
+            value: String(vis),
+            class: "zcodepro-range",
+            "aria-label": L.themeVisibility,
+            style: "flex:1"
+          });
+          let visTimer = null;
+          visRange.addEventListener("input", () => {
+            const v = Number(visRange.value);
+            visLabel.textContent = v + "%";
+            clearTimeout(visTimer);
+            visTimer = setTimeout(() => {
+              void saveTheme({ bg: { visibility: v / 100 } });
+            }, 300);
+          });
+          const modeBtn = (id, label) => h("button", {
+            type: "button",
+            class: "zcodepro-tab",
+            "data-state": themeCfg.bg.mode === id ? "active" : "inactive",
+            onClick: () => void saveTheme({ bg: { mode: id } })
+          }, label);
+          const folderInput = h("input", { type: "text", value: themeCfg.bg.folder, class: themeInputCls, placeholder: "/path/to/wallpapers" });
+          const applyFolder = async (dir) => {
+            const v = (dir || "").trim();
+            if (!v) return;
+            const res = await rpc("/bg/folder", { method: "POST", body: { dir: v } });
+            if (!res.ok) {
+              showToast(L.failed + ": " + errText(res), "error");
+              renderThemeBg();
+              return;
+            }
+            folderInfo = { count: (res.files || []).length, dir: res.dir || v };
+            await saveTheme({ bg: { mode: "folder", folder: v } });
+          };
+          folderInput.addEventListener("change", () => {
+            void applyFolder(folderInput.value);
+          });
+          const browseBtn = btnSmall(L.themeBgFolderPick, () => {
+            void (async () => {
+              browseBtn.disabled = true;
+              try {
+                const res = await rpc("/pick-folder?start=" + encodeURIComponent(themeCfg.bg.folder || "") + "&title=" + encodeURIComponent(L.themeBgFolderPickTitle));
+                if (res && res.ok && res.path) {
+                  folderInput.value = res.path;
+                  await applyFolder(res.path);
+                }
+              } finally {
+                browseBtn.disabled = false;
+              }
+            })();
+          });
+          const randomCheck = h("input", { type: "checkbox" });
+          randomCheck.checked = themeCfg.bg.folderRandom !== false;
+          randomCheck.addEventListener("change", () => {
+            void saveTheme({ bg: { folderRandom: randomCheck.checked } });
+          });
+          const urlInput = h("input", { type: "url", value: themeCfg.bg.url, class: themeInputCls, placeholder: "https://..." });
+          urlInput.addEventListener("change", () => {
+            const v = urlInput.value.trim();
+            if (!v) {
+              void saveTheme({ bg: { mode: "none", url: "" } });
+              return;
+            }
+            if (!/^https?:\/\/\S+$/.test(v)) {
+              showToast(L.themeBgUrlInvalid, "error");
+              renderThemeBg();
+              return;
+            }
+            void saveTheme({ bg: { mode: "url", url: v } });
+          });
+          const libCard = (f) => {
+            const del = h("button", {
+              type: "button",
+              class: "zcodepro-bg-del",
+              title: L.themeBgDelete,
+              onClick: (ev) => {
+                ev.stopPropagation();
+                void (async () => {
+                  const res = await rpc("/bg/delete", { method: "POST", body: { name: f.name } });
+                  if (!res.ok) {
+                    showToast(L.failed + ": " + errText(res), "error");
+                    return;
+                  }
+                  if (Array.isArray(res.files)) bgFiles = res.files;
+                  await refreshBgFiles();
+                })();
+              }
+            }, "\u2715");
+            return h("button", {
+              type: "button",
+              class: "zcodepro-bg-card",
+              "data-state": themeCfg.bg.mode === "library" && themeCfg.bg.file === f.name ? "active" : "inactive",
+              title: f.name,
+              onClick: () => void saveTheme({ bg: { mode: "library", file: themeCfg.bg.file === f.name ? "" : f.name } })
+            }, h("img", { src: bgUrl(f.name), alt: "", loading: "lazy" }), del);
+          };
+          const section = (titleText, body2) => h(
+            "div",
+            { class: "mt-3" },
+            h("div", { class: "mb-1.5 text-ui-xs font-medium text-foreground-subtle" }, titleText),
+            body2
+          );
+          const modeArea = themeCfg.bg.mode === "library" ? [
+            section(L.themeBgLibrary + (bgFiles.length ? `\uFF08${bgFiles.length}\uFF09` : ""), h(
+              "div",
+              { class: "flex flex-col gap-2" },
+              h(
+                "div",
+                { class: "flex items-center justify-between gap-2" },
+                h("span", { class: "text-ui-xs/relaxed text-foreground-subtle" }, bgLoading ? "\u2026" : bgFiles.length ? "" : L.themeBgEmpty),
+                btnSmall(L.themeBgUpload, () => bgInput.click())
+              ),
+              bgFiles.length ? h(
+                "div",
+                { class: "grid grid-cols-4 gap-2", style: "max-height:13.5rem;overflow-y:auto;" },
+                ...bgFiles.map(libCard)
+              ) : null
+            ))
+          ] : themeCfg.bg.mode === "folder" ? [
+            section(L.themeBgModeFolder, h(
+              "div",
+              { class: "flex flex-col gap-2" },
+              h("div", { class: "flex items-center gap-2" }, folderInput, browseBtn),
+              h(
+                "div",
+                { class: "flex items-center gap-2" },
+                h("label", { class: "flex items-center gap-1.5 text-ui-xs text-foreground-subtle" }, randomCheck, L.themeBgFolderRandom),
+                numField(themeCfg.bg.intervalMin, 0, 1440, (v) => {
+                  void saveTheme({ bg: { intervalMin: v } });
+                }, L.themeBgIntervalHint),
+                h("span", { class: "text-ui-xs text-foreground-subtle" }, L.themeBgIntervalUnit)
+              ),
+              h(
+                "p",
+                { class: "text-ui-xs/relaxed text-foreground-subtle" },
+                themeCfg.bg.folder ? folderInfo.count > 0 ? L.themeBgFolderCount.replaceAll("{n}", String(folderInfo.count)) : L.themeBgFolderMissing : L.themeBgFolderHint
+              )
+            ))
+          ] : themeCfg.bg.mode === "url" ? [
+            section(L.themeBgModeUrl, h(
+              "div",
+              { class: "flex flex-col gap-2" },
+              urlInput,
+              h(
+                "div",
+                { class: "flex items-center gap-2" },
+                numField(themeCfg.bg.intervalMin, 0, 1440, (v) => {
+                  void saveTheme({ bg: { intervalMin: v } });
+                }, L.themeBgUrlIntervalHint),
+                h("span", { class: "text-ui-xs text-foreground-subtle" }, L.themeBgIntervalUnit)
+              ),
+              h("p", { class: "text-ui-xs/relaxed text-foreground-subtle" }, L.themeBgUrlHint)
+            ))
+          ] : [h("p", { class: "mt-3 text-ui-xs/relaxed text-foreground-subtle" }, L.themeBgNoneHint)];
+          const fitBtn = (id, label) => h("button", {
+            type: "button",
+            class: "zcodepro-tab",
+            "data-state": (themeCfg.bg.fit || "cover") === id ? "active" : "inactive",
+            onClick: () => void saveTheme({ bg: { fit: id } })
+          }, label);
+          paneStylesSub4.replaceChildren(
+            h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.themeBgDesc),
+            h(
+              "div",
+              { class: "mt-2 flex flex-wrap gap-1" },
+              modeBtn("none", L.themeBgModeNone),
+              modeBtn("library", L.themeBgModeLibrary),
+              modeBtn("folder", L.themeBgModeFolder),
+              modeBtn("url", L.themeBgModeUrl)
+            ),
+            ...modeArea,
+            section(L.themeBgRegions, h(
+              "div",
+              { class: "flex flex-col gap-2" },
+              regionRow("left", L.themeBgRegionLeft),
+              regionRow("center", L.themeBgRegionCenter),
+              regionRow("right", L.themeBgRegionRight)
+            )),
+            h(
+              "div",
+              { class: "mt-3 flex flex-wrap items-center gap-2" },
+              h("span", { class: "text-ui-xs font-medium text-foreground-subtle" }, L.themeBgFit),
+              fitBtn("cover", L.themeBgFitCover),
+              fitBtn("contain", L.themeBgFitContain),
+              fitBtn("fill", L.themeBgFitFill),
+              fitBtn("tile", L.themeBgFitTile)
+            ),
+            h(
+              "div",
+              { class: "mt-3 flex items-center gap-3" },
+              h("span", { class: "shrink-0 text-ui-xs font-medium text-foreground-subtle" }, L.themeVisibility),
+              visRange,
+              visLabel
+            ),
+            bgInput
+          );
+        };
+        renderThemeColors();
+        renderThemeBg();
+        void refreshBgFiles();
+        void refreshFolderInfo();
         let stylesSubTab = "styles";
         const stylesSubTablist = h("div", { role: "tablist", "aria-orientation": "horizontal", class: "zcodepro-tablist" });
         const renderStylesSubTabs = () => stylesSubTablist.replaceChildren(...[
           ["styles", L.tabStylesPane],
-          ["status", L.tabStatusPane]
+          ["status", L.tabStatusPane],
+          ["colors", L.themeColorsPane],
+          ["bgimg", L.themeBgPane]
         ].map(([id, label]) => h("button", {
           type: "button",
           role: "tab",
@@ -4751,11 +5803,13 @@
             stylesSubTab = id;
             paneStylesSub1.style.display = id === "styles" ? "" : "none";
             paneStylesSub2.style.display = id === "status" ? "" : "none";
+            paneStylesSub3.style.display = id === "colors" ? "" : "none";
+            paneStylesSub4.style.display = id === "bgimg" ? "" : "none";
             renderStylesSubTabs();
           }
         }, label)));
         renderStylesSubTabs();
-        paneStyles.append(stylesSubTablist, paneStylesSub1, paneStylesSub2);
+        paneStyles.append(stylesSubTablist, paneStylesSub1, paneStylesSub2, paneStylesSub3, paneStylesSub4);
         paneStylesSub1.append(
           toolbarSwitchWrap,
           h(
@@ -5399,15 +6453,6 @@
           ),
           h("p", { class: "mt-2 text-ui-xs/relaxed text-foreground-subtle" }, L.syncHint)
         );
-        const persistDevMode = async (v) => {
-          const res = await rpc("/config", { method: "POST", body: { devMode: v } });
-          if (!res.ok) {
-            showToast(L.failed + ": " + errText(res), "error");
-            return false;
-          }
-          if (res.config) config.devMode = res.config.devMode;
-          return true;
-        };
         const devReloadBtn = btnSmall(L.devReload, () => {
           void runDevReload();
         }, "shrink-0", "primary");
@@ -5425,33 +6470,24 @@
             }
           }, 2e3);
         };
-        const devModeWrap = h("div");
-        const renderDevPane = () => {
-          const dev = config.devMode === true;
-          devModeWrap.replaceChildren(
-            h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.devModeDesc),
+        paneDebug.append(
+          h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.devModeDesc),
+          h(
+            "div",
+            { class: "mt-3 rounded-xl border border-border" },
             h(
               "div",
-              { class: "mt-3 divide-y divide-border rounded-xl border border-border" },
-              settingRow(L.devMode, L.devModeRowDesc, dev, async () => {
-                if (await persistDevMode(!dev)) renderDevPane();
-              }),
-              ...dev ? [h(
+              { class: "flex items-center justify-between gap-2 px-2 py-1.5" },
+              h(
                 "div",
-                { class: "flex items-center justify-between gap-2 px-2 py-1.5" },
-                h(
-                  "div",
-                  { class: "min-w-0" },
-                  h("div", { class: "text-ui-sm font-medium text-foreground" }, L.devReload),
-                  h("div", { class: "mt-0.5 text-ui-xs/relaxed text-foreground-subtle" }, L.devReloadDesc)
-                ),
-                devReloadBtn
-              )] : []
+                { class: "min-w-0" },
+                h("div", { class: "text-ui-sm font-medium text-foreground" }, L.devReload),
+                h("div", { class: "mt-0.5 text-ui-xs/relaxed text-foreground-subtle" }, L.devReloadDesc)
+              ),
+              devReloadBtn
             )
-          );
-        };
-        renderDevPane();
-        paneDebug.append(devModeWrap);
+          )
+        );
         const VISION_DEFAULT_PROMPT = "\u8BF7\u8BE6\u7EC6\u63CF\u8FF0\u8FD9\u5F20\u56FE\u7247\u7684\u5168\u90E8\u5185\u5BB9\u3002\u82E5\u662F\u754C\u9762\u6216\u56FE\u8868\u622A\u56FE\uFF0C\u8BF7\u5148\u628A\u6240\u6709\u9519\u8BEF\u3001\u8B66\u544A\u3001\u5F02\u5E38\u72B6\u6001\u9010\u5B57\u5F15\u7528\u51FA\u6765\uFF08\u542B\u5B8C\u6574\u539F\u6587\uFF09\uFF0C\u518D\u63CF\u8FF0\u6574\u4F53\u5E03\u5C40\u3001\u6587\u5B57\u4E0E\u5173\u952E\u6570\u636E\u3002";
         const VISION_DEFAULT_CFG = {
           enabled: true,
@@ -9587,6 +10623,10 @@
       }
       try {
         startStyleAdjustments();
+      } catch {
+      }
+      try {
+        startTheme();
       } catch {
       }
       try {

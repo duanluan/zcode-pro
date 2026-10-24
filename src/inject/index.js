@@ -22,6 +22,7 @@ import { startPluginCardRetry } from './features/plugin-card-retry.js';
 import { startToolbarIcons } from './features/toolbar-icons.js';
 import { startPinnedCollapse } from './features/pinned-collapse.js';
 import { startStyleAdjustments } from './features/styles.js';
+import { startTheme } from './features/theme.js';
 import { startPluginUpdateCheck } from './features/plugin-updates.js';
 import { ensureStyle } from './ui.js';
 
@@ -70,6 +71,7 @@ import { ensureStyle } from './ui.js';
     try { startTurnUsage(); } catch { /* ignore */ }
     try { startPinnedCollapse(); } catch { /* ignore */ }
     try { startStyleAdjustments(); } catch { /* ignore */ }
+    try { startTheme(); } catch { /* ignore */ }
     try { startSettingsEntry(); } catch { /* ignore */ }
     // 插件更新检查慢（可能 git pull），异步进行，不阻塞其他功能
     try { void startPluginUpdateCheck(); } catch { /* ignore */ }

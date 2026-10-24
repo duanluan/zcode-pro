@@ -1,4 +1,4 @@
-// “ZCode Pro 增强设置”弹窗：功能开关 + 样式调整 + 运行状态。
+// “ZCode Pro 增强设置”弹窗：功能开关 + 外观 + 运行状态。
 // 顶部标签页切换（视觉参考侧栏“分组/项目”切换）；配置写入 helper（~/.zcode/zcodepro.json）。
 import { h, t, rpc, getConfig, clearConfigCache, errText, HELPER_URL, isZhLocale, isNewProjectSidebar, DEFAULT_SHORTCUTS, DEFAULT_STATUS_ITEMS, DEFAULT_TURN_ITEMS, STATUS_SESSION_IDS, STATUS_GLOBAL_IDS } from '../core.js';
 import { openDialog, dialogFooter, btnPrimary, btnSecondary, btnSmall, settingRow, ensureStyle, showToast, numberField, unitField } from '../ui.js';
@@ -6,6 +6,7 @@ import { comboField, providerOptionsOf, modelOptionsOf, modelPlaceholderOf, isMa
 import { refreshAliases } from './alias.js';
 import { migrationCard } from './alias-migration.js';
 import { applyStyles, STYLE_DEFAULTS, showStyleHighlight, hideStyleHighlight } from './styles.js';
+import { THEME_SKINS, CUSTOM_DEFAULTS } from './theme.js';
 import { copyToClipboard, hCopyIcon } from './copy-path.js';
 
 // 调宿主桥在系统浏览器打开外链；宿主没暴露该能力时静默忽略
@@ -438,7 +439,7 @@ export function openSettingsDialog() {
             if (await copyToClipboard(WECHAT_ID)) showToast(L.wechatIdCopied);
           }));
 
-      // 标签页切换：功能（现有内容）/ 样式调整 / 全局提示词 / 视觉代理
+      // 标签页切换：功能（现有内容）/ 外观 / 全局提示词 / 视觉代理
       let activeTab = 'features';
       // 插件更新卡片：显示 duanluan-zcode-plugins 市场状态，一键更新（helper /plugins/* 端点）；
       // 状态异步加载，打开弹窗不等待
@@ -587,7 +588,7 @@ export function openSettingsDialog() {
       };
       renderTabs();
 
-      // “样式调整”：一行两项、相关项同行；无描述文字，悬停名称显示 tip；
+      // “样式”：一行两项、相关项同行；无描述文字，悬停名称显示 tip；
       // 数字框滚轮/手输调节，改完即存即生效
       const savedStyles = config.styles || {};
       let saveTimer = null;
@@ -738,9 +739,12 @@ export function openSettingsDialog() {
         for (const c of fontCells) c.setOptions(list);
       })();
       renderToolbarSwitch();
-      // “样式”标签页的二级结构：样式调整（原内容）/ 状态栏（统计项顺序与显隐）
+      // “外观”标签页的二级结构：样式（原内容）/ 状态栏（统计项顺序与显隐）/
+      // 主题（皮肤与自定义主题）/ 背景图（图库、文件夹轮换、网址）
       const paneStylesSub1 = h('div', { class: 'mt-4' });
       const paneStylesSub2 = h('div', { class: 'mt-4', style: 'display:none' });
+      const paneStylesSub3 = h('div', { class: 'mt-4', style: 'display:none' });
+      const paneStylesSub4 = h('div', { class: 'mt-4', style: 'display:none' });
       const ITEM_NAMES = {
         ctx: 'sbItemCtx', questions: 'sbItemQuestions',
         todayTokens: 'sbItemTodayTokens', totalTokens: 'sbItemTotalTokens', tasks: 'sbItemTasks',
@@ -858,11 +862,342 @@ export function openSettingsDialog() {
         sbGlobalList,
         h('div', { class: 'mt-3 mb-1 text-ui-sm font-medium' }, L.sbGroupTurn),
         turnList);
+      // —— “颜色”子页（paneStylesSub3）：预设皮肤卡片 + 自定义主题编辑 ——
+      // —— “背景图”子页（paneStylesSub4）：无背景 / 图库 / 文件夹轮换 / 网址 ——
+      let themeCfg = structuredClone(config.theme || {});
+      themeCfg.skin = themeCfg.skin || 'default';
+      themeCfg.custom = {
+        light: (themeCfg.custom && themeCfg.custom.light) || {},
+        dark: (themeCfg.custom && themeCfg.custom.dark) || {},
+      };
+      themeCfg.bg = {
+        mode: 'none', file: '', folder: '', folderRandom: true, url: '', intervalMin: 0, fit: 'cover', visibility: 0.8,
+        ...(themeCfg.bg || {}),
+      };
+      themeCfg.bg.regions = (themeCfg.bg.regions && typeof themeCfg.bg.regions === 'object') ? themeCfg.bg.regions : {};
+      let bgFiles = [];
+      let bgLoading = false;
+      let folderInfo = { count: 0, dir: '' };
+      const themeInputCls = 'h-8 w-full rounded-lg border border-border bg-input px-2.5 text-ui-sm text-foreground outline-none transition-shadow placeholder:text-foreground-subtle focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40';
+      const numField = (val, min, max, commit, title) => {
+        const n = h('input', {
+          type: 'number', min: String(min), max: String(max), step: '1', title,
+          class: 'h-7 w-24 rounded-lg border border-border bg-input px-2 text-right text-ui-xs tabular-nums text-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40',
+        });
+        n.value = String(val);
+        n.addEventListener('change', () => {
+          const v = Math.max(min, Math.min(max, Math.round(Number(n.value) || 0)));
+          n.value = String(v);
+          commit(v);
+        });
+        return n;
+      };
+      const bgUrl = (name) => `${HELPER_URL}/bg/file/${encodeURIComponent(name)}`;
+      const saveTheme = async (patch) => {
+        themeCfg = {
+          skin: patch.skin !== undefined ? patch.skin : themeCfg.skin,
+          custom: patch.custom !== undefined ? patch.custom : themeCfg.custom,
+          bg: { ...themeCfg.bg, ...(patch.bg || {}) },
+        };
+        const res = await rpc('/config', { method: 'POST', body: { theme: themeCfg } });
+        clearConfigCache();
+        window.dispatchEvent(new CustomEvent('zcodepro:config-changed'));
+        if (!res.ok) showToast(L.failed + ': ' + errText(res), 'error');
+        renderThemeColors();
+        renderThemeBg();
+      };
+      const refreshBgFiles = async () => {
+        bgLoading = true;
+        renderThemeBg();
+        const res = await rpc('/bg');
+        bgLoading = false;
+        if (res.ok && Array.isArray(res.files)) bgFiles = res.files;
+        // 图库模式下当前文件可能已被删（同步/手动删除）：自动回无背景并提示一次
+        if (themeCfg.bg.mode === 'library' && themeCfg.bg.file
+          && !bgFiles.some((f) => f.name === themeCfg.bg.file)) {
+          themeCfg = { ...themeCfg, bg: { ...themeCfg.bg, file: '' } };
+          await saveTheme({ bg: { file: '' } });
+          showToast(L.themeBgDeletedActive, 'success');
+          return;
+        }
+        renderThemeBg();
+      };
+      const refreshFolderInfo = async () => {
+        if (!themeCfg.bg.folder) { folderInfo = { count: 0, dir: '' }; renderThemeBg(); return; }
+        const res = await rpc('/bg/folder/list');
+        folderInfo = res.ok && !res.missing && Array.isArray(res.files)
+          ? { count: res.files.length, dir: res.dir || themeCfg.bg.folder }
+          : { count: 0, dir: themeCfg.bg.folder };
+        renderThemeBg();
+      };
+      // 上传：多选文件逐张转 base64 传 helper；第一张上传且当前无背景时自动选为当前
+      const bgInput = h('input', { type: 'file', accept: '.png,.jpg,.jpeg,.webp,.gif,.bmp,.avif', multiple: '', style: 'display:none' });
+      bgInput.addEventListener('change', () => {
+        const files = [...bgInput.files || []];
+        bgInput.value = '';
+        if (!files.length) return;
+        void (async () => {
+          let first = themeCfg.bg.file;
+          for (const f of files) {
+            const dataUrl = await new Promise((resolve) => {
+              const r = new FileReader();
+              r.onload = () => resolve(String(r.result || ''));
+              r.onerror = () => resolve('');
+              r.readAsDataURL(f);
+            });
+            if (!dataUrl) continue;
+            const res = await rpc('/bg', { method: 'POST', body: { name: f.name, data: dataUrl } });
+            if (!res.ok) { showToast(L.failed + ': ' + errText(res), 'error'); continue; }
+            if (Array.isArray(res.files)) bgFiles = res.files;
+            if (!first) first = f.name;
+          }
+          if (first && first !== themeCfg.bg.file) await saveTheme({ bg: { file: first } });
+          else renderThemeBg();
+        })();
+      });
+      // 自定义主题：改色即保存并切到自定义皮肤（实时生效）；250ms 防抖收拖拽连发
+      let customSaveTimer = null;
+      const CUSTOM_FIELDS = [
+        ['bg', 'themeCustomBg'], ['card', 'themeCustomCard'], ['fg', 'themeCustomFg'],
+        ['muted', 'themeCustomMuted'], ['accent', 'themeCustomAccent'],
+      ];
+      const customVal = (mode, k) => (themeCfg.custom[mode] && /^#[0-9a-f]{6}$/i.test(themeCfg.custom[mode][k] || '')
+        ? themeCfg.custom[mode][k] : CUSTOM_DEFAULTS[mode][k]);
+      const customInput = (mode, k, label) => {
+        const inp = h('input', {
+          type: 'color', value: customVal(mode, k), title: label,
+          style: 'width:30px;height:22px;padding:0;border:1px solid var(--color-card-border);border-radius:5px;background:transparent;cursor:pointer',
+        });
+        inp.addEventListener('input', () => {
+          const next = {
+            light: { ...themeCfg.custom.light },
+            dark: { ...themeCfg.custom.dark },
+          };
+          next[mode][k] = inp.value.toLowerCase();
+          clearTimeout(customSaveTimer);
+          customSaveTimer = setTimeout(() => { void saveTheme({ skin: 'custom', custom: next }); }, 250);
+        });
+        return h('label', { class: 'flex items-center gap-1.5 text-ui-xs text-foreground-subtle' }, inp, label);
+      };
+      const customSwatch = (mode) => [
+        customVal(mode, 'bg'), customVal(mode, 'card'), customVal(mode, 'fg'),
+        customVal(mode, 'muted'), customVal(mode, 'accent'),
+      ];
+      const renderThemeColors = () => {
+        paneStylesSub3.replaceChildren(
+          h('div', { class: 'mb-1 text-ui-sm font-medium' }, L.themeSkinTitle),
+          h('p', { class: 'mb-2 text-ui-xs/relaxed text-foreground-subtle' }, L.themeSkinDesc),
+          // 4 列 × 3 行可视，超出滚动；色条 8 块（底/卡片/加深面/边框/强调×2/次级文字/正文）
+          h('div', { class: 'grid grid-cols-4 gap-2', style: 'max-height:13.5rem;overflow-y:auto;' },
+            ...THEME_SKINS.map((skin) => h('button', {
+              type: 'button', class: 'zcodepro-skin-card',
+              'data-state': themeCfg.skin === skin.id ? 'active' : 'inactive',
+              onClick: () => void saveTheme({ skin: skin.id }),
+            },
+              h('div', { class: 'zcodepro-skin-swatches' },
+                ...skin.preview.map((c) => h('span', { style: `background:${c}` }))),
+              h('span', { class: 'text-ui-xs text-foreground' }, isZhLocale() ? skin.zh : skin.en))),
+            h('button', {
+              type: 'button', class: 'zcodepro-skin-card',
+              'data-state': themeCfg.skin === 'custom' ? 'active' : 'inactive',
+              onClick: () => void saveTheme({ skin: 'custom' }),
+            },
+              h('div', { class: 'zcodepro-skin-swatches' },
+                ...customSwatch('light').map((c) => h('span', { style: `background:${c}` })),
+                ...customSwatch('dark').map((c) => h('span', { style: `background:${c}` }))),
+              h('span', { class: 'text-ui-xs text-foreground' }, L.themeSkinCustom))),
+          h('div', { class: 'mt-3 mb-1 text-ui-sm font-medium' }, L.themeCustomTitle),
+          h('p', { class: 'mb-2 text-ui-xs/relaxed text-foreground-subtle' }, L.themeCustomHint),
+          h('div', { class: 'grid grid-cols-2 gap-3' },
+            ...['light', 'dark'].map((mode) => h('div', { class: 'rounded-xl border border-border p-2' },
+              h('div', { class: 'mb-1.5 text-ui-xs font-medium text-foreground-subtle' },
+                mode === 'light' ? L.themeCustomLight : L.themeCustomDark),
+              h('div', { class: 'flex flex-col gap-1.5' },
+                ...CUSTOM_FIELDS.map(([k, key]) => customInput(mode, k, L[key])))))),
+        );
+      };
+      // 分区背景行：跟随全局 / 图库（下拉选图）/ 文件夹 / 网址
+      const setRegion = (region, value) => {
+        void saveTheme({ bg: { regions: { ...themeCfg.bg.regions, [region]: value } } });
+      };
+      const regionRow = (region, label) => {
+        const cur = themeCfg.bg.regions[region] || null;
+        const mode = cur ? cur.mode : null;
+        const rBtn = (id, text) => h('button', {
+          type: 'button', class: 'zcodepro-tab',
+          'data-state': mode === id ? 'active' : 'inactive',
+          onClick: () => {
+            if (id === null) { setRegion(region, null); return; }
+            const keep = themeCfg.bg.regions[region];
+            setRegion(region, { mode: id, file: keep && keep.file || '', folder: keep && keep.folder || '', url: keep && keep.url || '' });
+          },
+        }, text);
+        let valueCtrl = null;
+        if (mode === 'library') {
+          const sel = h('select', { class: 'h-7 max-w-40 rounded-lg border border-border bg-input px-1.5 text-ui-xs text-foreground outline-none' });
+          sel.append(h('option', { value: '' }, '—'));
+          for (const f of bgFiles) sel.append(h('option', { value: f.name }, f.name));
+          sel.value = (cur && cur.file) || '';
+          sel.addEventListener('change', () => setRegion(region, { ...cur, file: sel.value }));
+          valueCtrl = sel;
+        } else if (mode === 'folder') {
+          const inp = h('input', { type: 'text', value: (cur && cur.folder) || '', class: themeInputCls.replace('h-8', 'h-7'), placeholder: '/path/to/wallpapers' });
+          inp.addEventListener('change', () => { if (inp.value.trim()) setRegion(region, { ...cur, folder: inp.value.trim() }); });
+          valueCtrl = inp;
+        } else if (mode === 'url') {
+          const inp = h('input', { type: 'url', value: (cur && cur.url) || '', class: themeInputCls.replace('h-8', 'h-7'), placeholder: 'https://...' });
+          inp.addEventListener('change', () => { if (/^https?:\/\/\S+$/.test(inp.value.trim())) setRegion(region, { ...cur, url: inp.value.trim() }); });
+          valueCtrl = inp;
+        }
+        return h('div', { class: 'flex flex-wrap items-center gap-2' },
+          h('span', { class: 'w-16 shrink-0 text-ui-xs text-foreground' }, label),
+          h('div', { class: 'flex flex-wrap gap-1' },
+            rBtn(null, L.themeBgRegionFollow), rBtn('library', L.themeBgModeLibrary),
+            rBtn('folder', L.themeBgModeFolder), rBtn('url', L.themeBgModeUrl)),
+          valueCtrl || h('span', { class: 'text-ui-xs text-foreground-subtle' }, ''));
+      };
+      const renderThemeBg = () => {
+        const vis = Math.round((themeCfg.bg.visibility ?? 0.8) * 100);
+        const visLabel = h('span', { class: 'w-10 text-right text-ui-xs tabular-nums text-foreground-subtle' }, vis + '%');
+        const visRange = h('input', {
+          type: 'range', min: '0', max: '100', step: '5', value: String(vis),
+          class: 'zcodepro-range', 'aria-label': L.themeVisibility, style: 'flex:1',
+        });
+        let visTimer = null;
+        visRange.addEventListener('input', () => {
+          const v = Number(visRange.value);
+          visLabel.textContent = v + '%';
+          clearTimeout(visTimer);
+          visTimer = setTimeout(() => { void saveTheme({ bg: { visibility: v / 100 } }); }, 300);
+        });
+        const modeBtn = (id, label) => h('button', {
+          type: 'button', class: 'zcodepro-tab',
+          'data-state': themeCfg.bg.mode === id ? 'active' : 'inactive',
+          onClick: () => void saveTheme({ bg: { mode: id } }),
+        }, label);
+        // 文件夹路径输入 + 浏览（系统对话框）；确认时先校验目录再保存
+        const folderInput = h('input', { type: 'text', value: themeCfg.bg.folder, class: themeInputCls, placeholder: '/path/to/wallpapers' });
+        const applyFolder = async (dir) => {
+          const v = (dir || '').trim();
+          if (!v) return;
+          const res = await rpc('/bg/folder', { method: 'POST', body: { dir: v } });
+          if (!res.ok) {
+            showToast(L.failed + ': ' + errText(res), 'error');
+            renderThemeBg();
+            return;
+          }
+          folderInfo = { count: (res.files || []).length, dir: res.dir || v };
+          await saveTheme({ bg: { mode: 'folder', folder: v } });
+        };
+        folderInput.addEventListener('change', () => { void applyFolder(folderInput.value); });
+        const browseBtn = btnSmall(L.themeBgFolderPick, () => {
+          void (async () => {
+            browseBtn.disabled = true;
+            try {
+              const res = await rpc('/pick-folder?start=' + encodeURIComponent(themeCfg.bg.folder || '') + '&title=' + encodeURIComponent(L.themeBgFolderPickTitle));
+              if (res && res.ok && res.path) {
+                folderInput.value = res.path;
+                await applyFolder(res.path);
+              }
+            } finally { browseBtn.disabled = false; }
+          })();
+        });
+        const randomCheck = h('input', { type: 'checkbox' });
+        randomCheck.checked = themeCfg.bg.folderRandom !== false;
+        randomCheck.addEventListener('change', () => { void saveTheme({ bg: { folderRandom: randomCheck.checked } }); });
+        // 网址输入：change 提交；空值回无背景
+        const urlInput = h('input', { type: 'url', value: themeCfg.bg.url, class: themeInputCls, placeholder: 'https://...' });
+        urlInput.addEventListener('change', () => {
+          const v = urlInput.value.trim();
+          if (!v) { void saveTheme({ bg: { mode: 'none', url: '' } }); return; }
+          if (!/^https?:\/\/\S+$/.test(v)) { showToast(L.themeBgUrlInvalid, 'error'); renderThemeBg(); return; }
+          void saveTheme({ bg: { mode: 'url', url: v } });
+        });
+        const libCard = (f) => {
+          const del = h('button', {
+            type: 'button', class: 'zcodepro-bg-del', title: L.themeBgDelete,
+            onClick: (ev) => {
+              ev.stopPropagation();
+              void (async () => {
+                const res = await rpc('/bg/delete', { method: 'POST', body: { name: f.name } });
+                if (!res.ok) { showToast(L.failed + ': ' + errText(res), 'error'); return; }
+                if (Array.isArray(res.files)) bgFiles = res.files;
+                await refreshBgFiles();
+              })();
+            },
+          }, '✕');
+          return h('button', {
+            type: 'button', class: 'zcodepro-bg-card',
+            'data-state': themeCfg.bg.mode === 'library' && themeCfg.bg.file === f.name ? 'active' : 'inactive',
+            title: f.name,
+            onClick: () => void saveTheme({ bg: { mode: 'library', file: themeCfg.bg.file === f.name ? '' : f.name } }),
+          }, h('img', { src: bgUrl(f.name), alt: '', loading: 'lazy' }), del);
+        };
+        const section = (titleText, body) => h('div', { class: 'mt-3' },
+          h('div', { class: 'mb-1.5 text-ui-xs font-medium text-foreground-subtle' }, titleText), body);
+        const modeArea = themeCfg.bg.mode === 'library' ? [
+          section(L.themeBgLibrary + (bgFiles.length ? `（${bgFiles.length}）` : ''), h('div', { class: 'flex flex-col gap-2' },
+            h('div', { class: 'flex items-center justify-between gap-2' },
+              h('span', { class: 'text-ui-xs/relaxed text-foreground-subtle' }, bgLoading ? '…' : (bgFiles.length ? '' : L.themeBgEmpty)),
+              btnSmall(L.themeBgUpload, () => bgInput.click())),
+            bgFiles.length ? h('div', { class: 'grid grid-cols-4 gap-2', style: 'max-height:13.5rem;overflow-y:auto;' },
+              ...bgFiles.map(libCard)) : null)),
+        ] : themeCfg.bg.mode === 'folder' ? [
+          section(L.themeBgModeFolder, h('div', { class: 'flex flex-col gap-2' },
+            h('div', { class: 'flex items-center gap-2' }, folderInput, browseBtn),
+            h('div', { class: 'flex items-center gap-2' },
+              h('label', { class: 'flex items-center gap-1.5 text-ui-xs text-foreground-subtle' }, randomCheck, L.themeBgFolderRandom),
+              numField(themeCfg.bg.intervalMin, 0, 1440, (v) => { void saveTheme({ bg: { intervalMin: v } }); }, L.themeBgIntervalHint)
+                , h('span', { class: 'text-ui-xs text-foreground-subtle' }, L.themeBgIntervalUnit)),
+            h('p', { class: 'text-ui-xs/relaxed text-foreground-subtle' },
+              themeCfg.bg.folder
+                ? (folderInfo.count > 0 ? L.themeBgFolderCount.replaceAll('{n}', String(folderInfo.count)) : L.themeBgFolderMissing)
+                : L.themeBgFolderHint))),
+        ] : themeCfg.bg.mode === 'url' ? [
+          section(L.themeBgModeUrl, h('div', { class: 'flex flex-col gap-2' },
+            urlInput,
+            h('div', { class: 'flex items-center gap-2' },
+              numField(themeCfg.bg.intervalMin, 0, 1440, (v) => { void saveTheme({ bg: { intervalMin: v } }); }, L.themeBgUrlIntervalHint),
+              h('span', { class: 'text-ui-xs text-foreground-subtle' }, L.themeBgIntervalUnit)),
+            h('p', { class: 'text-ui-xs/relaxed text-foreground-subtle' }, L.themeBgUrlHint))),
+        ] : [h('p', { class: 'mt-3 text-ui-xs/relaxed text-foreground-subtle' }, L.themeBgNoneHint)];
+        const fitBtn = (id, label) => h('button', {
+          type: 'button', class: 'zcodepro-tab',
+          'data-state': (themeCfg.bg.fit || 'cover') === id ? 'active' : 'inactive',
+          onClick: () => void saveTheme({ bg: { fit: id } }),
+        }, label);
+        paneStylesSub4.replaceChildren(
+          h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.themeBgDesc),
+          h('div', { class: 'mt-2 flex flex-wrap gap-1' },
+            modeBtn('none', L.themeBgModeNone), modeBtn('library', L.themeBgModeLibrary),
+            modeBtn('folder', L.themeBgModeFolder), modeBtn('url', L.themeBgModeUrl)),
+          ...modeArea,
+          section(L.themeBgRegions, h('div', { class: 'flex flex-col gap-2' },
+            regionRow('left', L.themeBgRegionLeft),
+            regionRow('center', L.themeBgRegionCenter),
+            regionRow('right', L.themeBgRegionRight))),
+          h('div', { class: 'mt-3 flex flex-wrap items-center gap-2' },
+            h('span', { class: 'text-ui-xs font-medium text-foreground-subtle' }, L.themeBgFit),
+            fitBtn('cover', L.themeBgFitCover), fitBtn('contain', L.themeBgFitContain),
+            fitBtn('fill', L.themeBgFitFill), fitBtn('tile', L.themeBgFitTile)),
+          h('div', { class: 'mt-3 flex items-center gap-3' },
+            h('span', { class: 'shrink-0 text-ui-xs font-medium text-foreground-subtle' }, L.themeVisibility),
+            visRange, visLabel),
+          bgInput,
+        );
+      };
+      renderThemeColors();
+      renderThemeBg();
+      void refreshBgFiles();
+      void refreshFolderInfo();
+
       let stylesSubTab = 'styles';
       const stylesSubTablist = h('div', { role: 'tablist', 'aria-orientation': 'horizontal', class: 'zcodepro-tablist' });
       const renderStylesSubTabs = () => stylesSubTablist.replaceChildren(...[
         ['styles', L.tabStylesPane],
         ['status', L.tabStatusPane],
+        ['colors', L.themeColorsPane],
+        ['bgimg', L.themeBgPane],
       ].map(([id, label]) => h('button', {
         type: 'button', role: 'tab', class: 'zcodepro-tab',
         'aria-selected': String(stylesSubTab === id),
@@ -871,11 +1206,13 @@ export function openSettingsDialog() {
           stylesSubTab = id;
           paneStylesSub1.style.display = id === 'styles' ? '' : 'none';
           paneStylesSub2.style.display = id === 'status' ? '' : 'none';
+          paneStylesSub3.style.display = id === 'colors' ? '' : 'none';
+          paneStylesSub4.style.display = id === 'bgimg' ? '' : 'none';
           renderStylesSubTabs();
         },
       }, label)));
       renderStylesSubTabs();
-      paneStyles.append(stylesSubTablist, paneStylesSub1, paneStylesSub2);
+      paneStyles.append(stylesSubTablist, paneStylesSub1, paneStylesSub2, paneStylesSub3, paneStylesSub4);
       paneStylesSub1.append(
         toolbarSwitchWrap,
         h('div', { class: 'mt-2 flex flex-col gap-0.5 rounded-xl border border-border p-1' },
@@ -1468,18 +1805,11 @@ export function openSettingsDialog() {
         h('p', { class: 'mt-2 text-ui-xs/relaxed text-foreground-subtle' }, L.syncHint),
       );
 
-      // “调试”：开发模式开关 + 重载按钮。重载 = 构建 → 换新启动器进程（新 helper
-      // 代码与新注入脚本）→ 各 ZCode 窗口检测到换代自动整页刷新重新注入；
-      // ZCode 本体与所有会话不受影响，不用重启 ZCode
-      const persistDevMode = async (v) => {
-        const res = await rpc('/config', { method: 'POST', body: { devMode: v } });
-        if (!res.ok) {
-          showToast(L.failed + ': ' + errText(res), 'error');
-          return false;
-        }
-        if (res.config) config.devMode = res.config.devMode;
-        return true;
-      };
+      // “调试”：重载按钮。重载 = 构建 → 换新启动器进程（新 helper 代码与新注入
+      // 脚本）→ 各 ZCode 窗口检测到换代自动整页刷新重新注入；ZCode 本体与所有
+      // 会话不受影响，不用重启 ZCode。标签页本身只在开发模式生效时显示（环境
+      // 变量 ZCODEPRO_DEV=1 或配置文件 devMode），不放开关——关掉开关标签页就
+      // 消失，再也点不回来，没意义
       const devReloadBtn = btnSmall(L.devReload, () => { void runDevReload(); }, 'shrink-0', 'primary');
       const runDevReload = async () => {
         devReloadBtn.disabled = true;
@@ -1490,25 +1820,15 @@ export function openSettingsDialog() {
         // 就自己刷新，宁可多刷一次也不能停在旧代码 + 失效 token 上
         setTimeout(() => { try { location.reload(); } catch { /* ignore */ } }, 2000);
       };
-      const devModeWrap = h('div');
-      const renderDevPane = () => {
-        const dev = config.devMode === true;
-        devModeWrap.replaceChildren(
-          h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.devModeDesc),
-          h('div', { class: 'mt-3 divide-y divide-border rounded-xl border border-border' },
-            settingRow(L.devMode, L.devModeRowDesc, dev, async () => {
-              if (await persistDevMode(!dev)) renderDevPane();
-            }),
-            ...(dev ? [h('div', { class: 'flex items-center justify-between gap-2 px-2 py-1.5' },
-              h('div', { class: 'min-w-0' },
-                h('div', { class: 'text-ui-sm font-medium text-foreground' }, L.devReload),
-                h('div', { class: 'mt-0.5 text-ui-xs/relaxed text-foreground-subtle' }, L.devReloadDesc)),
-              devReloadBtn)] : []),
-          ),
-        );
-      };
-      renderDevPane();
-      paneDebug.append(devModeWrap);
+      paneDebug.append(
+        h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.devModeDesc),
+        h('div', { class: 'mt-3 rounded-xl border border-border' },
+          h('div', { class: 'flex items-center justify-between gap-2 px-2 py-1.5' },
+            h('div', { class: 'min-w-0' },
+              h('div', { class: 'text-ui-sm font-medium text-foreground' }, L.devReload),
+              h('div', { class: 'mt-0.5 text-ui-xs/relaxed text-foreground-subtle' }, L.devReloadDesc)),
+            devReloadBtn)),
+      );
 
       // “视觉代理”：编辑 ~/.zcode/zcode-vision.json（zcode-vision 插件与 /vision-* 命令共用同一文件）。
       // 代理列表顺序即执行链；结构性改动（开关/模式/排序/删增）即时保存，文本输入防抖保存。

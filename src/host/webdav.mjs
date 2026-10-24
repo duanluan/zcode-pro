@@ -6,7 +6,7 @@
 // ZCODEPRO_SYNC_FORCE_FETCH=1 可强制走 fetch（排障/测试用）。
 import { spawn, spawnSync } from 'node:child_process';
 import { mkdtemp } from 'node:fs/promises'; // fs 的 mkdtemp 是回调版，await 它会把 undefined 当回调
-import { readFileSync, rmSync } from 'node:fs';
+import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -88,15 +88,17 @@ function fetchErrText(err) {
 // curl 不可用时的兜底实现：返回值约定与 curl 版一致（{ ok, httpCode, body, error,
 // redirectUrl }，HTTP 4xx/5xx 也算 ok）。凭据走 Authorization 头；proxyUrl 在这条
 // 路径不生效（fetch 不读代理环境变量，调用方仍照传以免改签名）；redirect 不跟随
-// （对齐 curl 不带 -L），302 的目标地址放 redirectUrl
-async function fetchWebdavRequest({ method, url, login = '', password = '', uploadFile = null, timeoutMs = 45000, headers = [] }) {
+//（对齐 curl 不带 -L），302 的目标地址放 redirectUrl。
+// downloadFile：GET 二进制落到文件（背景图库同步下载用），此时 body 为空串。
+// contentType：PUT 的 Content-Type，缺省 application/json（历史行为），null = 不带
+async function fetchWebdavRequest({ method, url, login = '', password = '', uploadFile = null, timeoutMs = 45000, headers = [], contentType, downloadFile = null }) {
   // curl 路径的 headers 是 ["Depth: 1"] 字符串数组，fetch 要对象：按第一个冒号拆开
   const hdrs = {};
   for (const h of headers) {
     const i = h.indexOf(':');
     if (i > 0) hdrs[h.slice(0, i).trim()] = h.slice(i + 1).trim();
   }
-  if (method === 'PUT') hdrs['Content-Type'] = 'application/json';
+  if (method === 'PUT') hdrs['Content-Type'] = contentType !== undefined ? contentType : 'application/json';
   if (login || password) hdrs['Authorization'] = 'Basic ' + Buffer.from(`${login}:${password}`).toString('base64');
   try {
     const res = await fetch(url, {
@@ -106,6 +108,10 @@ async function fetchWebdavRequest({ method, url, login = '', password = '', uplo
       signal: AbortSignal.timeout(Math.max(10000, timeoutMs)),
       body: method === 'PUT' && uploadFile ? readFileSync(uploadFile) : undefined,
     });
+    if (downloadFile) {
+      writeFileSync(downloadFile, Buffer.from(await res.arrayBuffer()));
+      return { ok: true, httpCode: res.status, body: '', error: '', redirectUrl: res.headers.get('location') || '' };
+    }
     const body = await res.text().catch(() => '');
     return { ok: true, httpCode: res.status, body, error: '', redirectUrl: res.headers.get('location') || '' };
   } catch (err) {
@@ -118,20 +124,22 @@ async function fetchWebdavRequest({ method, url, login = '', password = '', uplo
 // 返回 { ok, httpCode, body, error, redirectUrl }：ok 表示 curl 本身执行成功
 // （HTTP 4xx/5xx 也算 ok，由调用方看 httpCode 分支）；error 为中文原因；
 // redirectUrl 为重定向目标（请求不跟随重定向，302 时才有值）。
-export async function webdavRequest({ method, url, login = '', password = '', uploadFile = null, proxyUrl = '', timeoutMs = 45000, headers = [] }) {
+export async function webdavRequest({ method, url, login = '', password = '', uploadFile = null, proxyUrl = '', timeoutMs = 45000, headers = [], contentType, downloadFile = null }) {
   const curl = findCurl();
-  if (!curl) return fetchWebdavRequest({ method, url, login, password, uploadFile, timeoutMs, headers });
+  if (!curl) return fetchWebdavRequest({ method, url, login, password, uploadFile, timeoutMs, headers, contentType, downloadFile });
   const dir = await mkdtemp(join(tmpdir(), 'zcodepro-webdav-'));
   const bodyFile = join(dir, 'body');
   try {
     const args = ['-sS', '--connect-timeout', '10', '--max-time', String(Math.max(10, Math.ceil(timeoutMs / 1000))),
-      '-w', '%{http_code} %{redirect_url}', '-o', bodyFile, '--config', '-'];
+      '-w', '%{http_code} %{redirect_url}', '-o', downloadFile || bodyFile, '--config', '-'];
     for (const hd of headers) {
       // 头只能是这里拼好的固定字符串（Depth: 1 等），带换行的一律丢弃
       if (typeof hd === 'string' && hd && !/[\r\n]/.test(hd)) args.push('-H', hd);
     }
     if (method === 'PUT' && uploadFile) {
-      args.push('-H', 'Content-Type: application/json', '-T', uploadFile);
+      const ct = contentType !== undefined ? contentType : 'application/json';
+      if (ct) args.push('-H', 'Content-Type: ' + ct);
+      args.push('-T', uploadFile);
     } else {
       args.push('-X', method);
     }
@@ -171,9 +179,9 @@ export async function webdavRequest({ method, url, login = '', password = '', up
 
 // PUT 前确保云端目录存在：409（父目录缺失）时逐段 MKCOL 再重试一次。
 // 已存在的目录 MKCOL 多半回 405，忽略即可——这里是尽力而为，最终成败仍看 PUT。
-export async function webdavPutWithMkcol({ url, login, password, uploadFile, proxyUrl, timeoutMs }) {
+export async function webdavPutWithMkcol({ url, login, password, uploadFile, proxyUrl, timeoutMs, contentType }) {
   const auth = { login, password, proxyUrl };
-  const first = await webdavRequest({ method: 'PUT', url, uploadFile, ...auth, timeoutMs });
+  const first = await webdavRequest({ method: 'PUT', url, uploadFile, contentType, ...auth, timeoutMs });
   if (!first.ok || (first.httpCode >= 200 && first.httpCode < 300) || first.httpCode !== 409) return first;
   try {
     const u = new URL(url);
@@ -185,7 +193,7 @@ export async function webdavPutWithMkcol({ url, login, password, uploadFile, pro
       await webdavRequest({ method: 'MKCOL', url: cur, ...auth, timeoutMs: 15000 });
     }
   } catch { /* URL 解析失败：直接重试原 PUT */ }
-  return webdavRequest({ method: 'PUT', url, uploadFile, ...auth, timeoutMs });
+  return webdavRequest({ method: 'PUT', url, uploadFile, contentType, ...auth, timeoutMs });
 }
 
 // 解析 PROPFIND（Depth: 1）的 multistatus 响应，只取文件条目：各网盘的命名空间

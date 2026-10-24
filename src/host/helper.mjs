@@ -35,6 +35,97 @@ function defaultRtkDir() {
   return process.env.RTK_DIR || join(homedir(), '.zcode-rtk');
 }
 
+// 主题功能的背景图库：用户上传的图片都存这里，helper 以 /bg/file/<name> 提供，
+// 注入 CSS 直接引用该 URL（CSS url() 带不了 token 头，该路由免鉴权，见下）
+const BG_DIR_NAME = 'backgrounds';
+function backgroundsDir(dataRoot) {
+  return join(dataRoot, BG_DIR_NAME);
+}
+// 背景图上传约束：只收常见位图格式，单张 ≤10MB，图库 ≤50 张（防塞爆磁盘与同步）
+const BG_EXT = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp', '.avif']);
+const BG_MAX_BYTES = 10 * 1024 * 1024;
+const BG_MAX_COUNT = 50;
+const BG_MIME = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.gif': 'image/gif', '.bmp': 'image/bmp', '.avif': 'image/avif' };
+// 文件名安全化：去路径分隔符与控制字符，空白折叠，保留扩展名；非法返回 null
+function sanitizeBgName(raw) {
+  if (typeof raw !== 'string') return null;
+  const name = raw.replace(/[\r\n\t\/\\]/g, '').replace(/\s+/g, ' ').trim();
+  if (!name || name.startsWith('.') || name.length > 120) return null;
+  const ext = name.slice(name.lastIndexOf('.')).toLowerCase();
+  if (!BG_EXT.has(ext)) return null;
+  return name;
+}
+function listBgFiles(dataRoot) {
+  const dir = backgroundsDir(dataRoot);
+  try {
+    return readdirSync(dir)
+      .map((name) => { const st = statSync(join(dir, name)); return { name, size: st.size, mtime: st.mtimeMs }; })
+      .filter((f) => BG_EXT.has(f.name.slice(f.name.lastIndexOf('.')).toLowerCase()))
+      .sort((a, b) => b.mtime - a.mtime);
+  } catch { return []; } // 目录不存在 = 空图库
+}
+
+// 主题配置（设置 → 外观 → 主题/背景图）：skin 为皮肤 id（default = 不覆盖，
+// custom = 用 custom 锚点色现算色阶）；bg.mode 选背景来源——none 无背景 /
+// library 本地图库（file 为当前文件）/ folder 文件夹（定时切换，folderRandom
+// 随机或顺序）/ url 网址（intervalMin 针对随机图 API 定时刷新）；visibility
+// 为图片可见度 0-1。主题功能未发过版，无旧结构需要迁移
+const THEME_SKINS = new Set(['default', 'dracula', 'nord', 'tokyonight', 'catppuccin', 'gruvbox', 'onedark', 'solarized', 'rosepine', 'everforest', 'nightowl', 'kanagawa', 'custom']);
+const BG_MODES = new Set(['none', 'library', 'folder', 'url']);
+const BG_FITS = new Set(['cover', 'contain', 'fill', 'tile']);
+const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
+const CUSTOM_KEYS = ['bg', 'card', 'fg', 'muted', 'accent'];
+function mergeCustomSkin(saved) {
+  const out = {};
+  for (const mode of ['light', 'dark']) {
+    const src = saved && typeof saved === 'object' && saved[mode] && typeof saved[mode] === 'object' ? saved[mode] : {};
+    out[mode] = {};
+    for (const k of CUSTOM_KEYS) out[mode][k] = HEX_COLOR.test(src[k]) ? src[k].toLowerCase() : null;
+  }
+  return out;
+}
+function str(v, max) {
+  return typeof v === 'string' && v.length <= max ? v : null;
+}
+// 分区背景来源（bg.regions.left/center/right）：null = 跟随全局；
+// folder 轮换复用全局的 intervalMin 与 folderRandom
+function mergeBgRegion(src) {
+  if (!src || typeof src !== 'object') return null;
+  const mode = src.mode === 'library' || src.mode === 'folder' || src.mode === 'url' ? src.mode : null;
+  if (!mode) return null;
+  return {
+    mode,
+    file: mode === 'library' ? (str(src.file, 200) || '') : '',
+    folder: mode === 'folder' ? (str(src.folder, 4096) || '') : '',
+    url: mode === 'url' ? (str(src.url, 2000) || '').trim() : '',
+  };
+}
+export function mergeThemeConfig(saved) {
+  const t = saved && typeof saved === 'object' ? saved : {};
+  const bg = t.bg && typeof t.bg === 'object' ? t.bg : {};
+  const vis = Number(bg.visibility);
+  const cfg = {
+    skin: THEME_SKINS.has(t.skin) ? t.skin : 'default',
+    custom: mergeCustomSkin(t.custom),
+    bg: {
+      mode: BG_MODES.has(bg.mode) ? bg.mode : 'none',
+      file: str(bg.file, 200) || '',
+      folder: str(bg.folder, 4096) || '',
+      folderRandom: bg.folderRandom !== false,
+      url: (str(bg.url, 2000) || '').trim(),
+      intervalMin: Number.isFinite(Number(bg.intervalMin)) ? Math.min(1440, Math.max(0, Math.round(Number(bg.intervalMin)))) : 0,
+      fit: BG_FITS.has(bg.fit) ? bg.fit : 'cover',
+      visibility: Number.isFinite(vis) ? Math.min(1, Math.max(0, vis)) : 0.8,
+      regions: {
+        left: mergeBgRegion(bg.regions && bg.regions.left),
+        center: mergeBgRegion(bg.regions && bg.regions.center),
+        right: mergeBgRegion(bg.regions && bg.regions.right),
+      },
+    },
+  };
+  return cfg;
+}
+
 // headroom 插件的配置文件（与 /hr-* 命令、钩子共用，headroom-lib.sh 按 HOME 定位）
 function defaultHeadroomFile() {
   return join(homedir(), '.zcode', 'headroom.json');
@@ -140,6 +231,7 @@ export function defaultConfig() {
       lastPushAt: null,
       lastPullAt: null,
     },
+    theme: mergeThemeConfig(undefined),
     // 一次性迁移标记：记录弹窗类迁移做过没有（目前只有别名迁移的
     // aliasRenameDismissed，经 /config POST 写入），有标记的迁移不再重复，
     // 用户此后手动改回的设置不再被覆盖
@@ -163,6 +255,7 @@ export function loadConfig(configFile) {
       aliases: { ...((saved.aliases && typeof saved.aliases === 'object') ? saved.aliases : {}) },
       headroomRoutes: { ...((saved.headroomRoutes && typeof saved.headroomRoutes === 'object' && !Array.isArray(saved.headroomRoutes)) ? saved.headroomRoutes : {}) },
       titleGen: mergeTitleGenConfig(saved.titleGen),
+      theme: mergeThemeConfig(saved.theme),
       proxyScopes: mergeProxyScopes(saved.proxyScopes),
       devMode: saved.devMode === true,
       // devActive 每次读取时重算（保存时会随配置一起写入文件，但读取方不用保存的值）：
@@ -201,13 +294,13 @@ function json(res, status, obj) {
   res.end(body);
 }
 
-function readBody(req) {
+function readBody(req, limitBytes = 1 << 20) {
   return new Promise((resolveBody, rejectBody) => {
     const chunks = [];
     let size = 0;
     req.on('data', (c) => {
       size += c.length;
-      if (size > 1 << 20) { rejectBody(new Error('请求体过大')); req.destroy(); return; }
+      if (size > limitBytes) { rejectBody(new Error('请求体过大')); req.destroy(); return; }
       chunks.push(c);
     });
     req.on('end', () => {
@@ -274,6 +367,44 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
       }
       if (req.method === 'OPTIONS') {
         json(res, 204, {});
+        return;
+      }
+      // 背景图取文件：CSS url() 发不了自定义头，该路由在 token 校验之前放行。
+      // 仅 Host 校验（127.0.0.1，防 DNS rebinding）+ 文件名白名单目录内取图，
+      // 不接受路径参数之外的任何输入。文件夹模式从配置的目录里取（同样免 token）
+      const serveBgFile = (name, dir, res2) => {
+        const safe = sanitizeBgName(name);
+        const file = safe && join(dir, safe);
+        if (!file || !existsSync(file)) {
+          res2.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+          res2.end('not found');
+          return;
+        }
+        try {
+          const buf = readFileSync(file);
+          res2.writeHead(200, {
+            'Content-Type': BG_MIME[safe.slice(safe.lastIndexOf('.')).toLowerCase()] || 'application/octet-stream',
+            'Cache-Control': 'no-cache',
+            'Access-Control-Allow-Origin': '*',
+          });
+          res2.end(buf);
+        } catch {
+          res2.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
+          res2.end('read error');
+        }
+      };
+      if (req.method === 'GET' && url.pathname.startsWith('/bg/file/')) {
+        serveBgFile(decodeURIComponent(url.pathname.slice('/bg/file/'.length)), backgroundsDir(dataRoot), res);
+        return;
+      }
+      if (req.method === 'GET' && url.pathname.startsWith('/bg/folder/file/')) {
+        const dir = loadConfig(configFile).theme.bg.folder;
+        if (!dir) {
+          res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+          res.end('no folder');
+          return;
+        }
+        serveBgFile(decodeURIComponent(url.pathname.slice('/bg/folder/file/'.length)), dir, res);
         return;
       }
       if (token && req.headers['x-zcodepro-token'] !== token) {
@@ -367,6 +498,29 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
           }
           current.statusBar = next;
         }
+        // 主题（设置 → 样式 → 颜色/背景图）：按字段合并，白名单校验在
+        // mergeThemeConfig；library 的 file 与 folder 的目录可能指向已不存在的
+        // 目标（图已删/目录移走/同步后缺失），注入层按“取不到 = 无背景”降级
+        if (body && typeof body === 'object' && body.theme && typeof body.theme === 'object') {
+          const bt = body.theme;
+          const cur = current.theme;
+          const next = {
+            skin: bt.skin !== undefined ? bt.skin : cur.skin,
+            custom: bt.custom !== undefined ? bt.custom : cur.custom,
+            bg: {
+              mode: bt.bg && bt.bg.mode !== undefined ? bt.bg.mode : cur.bg.mode,
+              file: bt.bg && bt.bg.file !== undefined ? bt.bg.file : cur.bg.file,
+              folder: bt.bg && bt.bg.folder !== undefined ? bt.bg.folder : cur.bg.folder,
+              folderRandom: bt.bg && bt.bg.folderRandom !== undefined ? bt.bg.folderRandom : cur.bg.folderRandom,
+              url: bt.bg && bt.bg.url !== undefined ? bt.bg.url : cur.bg.url,
+              intervalMin: bt.bg && bt.bg.intervalMin !== undefined ? bt.bg.intervalMin : cur.bg.intervalMin,
+              fit: bt.bg && bt.bg.fit !== undefined ? bt.bg.fit : cur.bg.fit,
+              visibility: bt.bg && bt.bg.visibility !== undefined ? bt.bg.visibility : cur.bg.visibility,
+              regions: bt.bg && bt.bg.regions !== undefined ? bt.bg.regions : cur.bg.regions,
+            },
+          };
+          current.theme = mergeThemeConfig(next);
+        }
         if (body && typeof body === 'object' && body.titleGen && typeof body.titleGen === 'object') {
           current.titleGen = mergeTitleGenConfig({ ...current.titleGen, ...body.titleGen });
         }
@@ -380,6 +534,117 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         }
         saveConfig(configFile, current);
         json(res, 200, { ok: true, config: current });
+        return;
+      }
+      // —— 主题背景图库：列表 / base64 上传 / 删除（取文件见上方免 token 的 /bg/file）——
+      if (req.method === 'GET' && url.pathname === '/bg') {
+        json(res, 200, { ok: true, files: listBgFiles(dataRoot), maxCount: BG_MAX_COUNT });
+        return;
+      }
+      if (req.method === 'POST' && url.pathname === '/bg') {
+        // 图片走 base64（约为原文件的 1.34 倍），上限放宽到 16MB；
+        // 其余端点维持 1MB
+        const body = await readBody(req, 16 << 20);
+        const name = sanitizeBgName(body?.name);
+        const data = typeof body?.data === 'string' ? body.data : '';
+        if (!name) {
+          json(res, 400, { ok: false, code: 'bg-name', error: '背景图文件名需以 png/jpg/jpeg/webp/gif/bmp/avif 结尾，且不含路径' });
+          return;
+        }
+        if (!/^data:image\/[a-z+]+;base64,/.test(data)) {
+          json(res, 400, { ok: false, code: 'bg-data', error: '背景图数据需为 data:image/*;base64 格式' });
+          return;
+        }
+        const b64 = data.slice(data.indexOf(',') + 1);
+        const buf = Buffer.from(b64, 'base64');
+        if (!buf.length || buf.length > BG_MAX_BYTES) {
+          json(res, 400, { ok: false, code: 'bg-size', error: `背景图需在 10MB 以内（收到 ${(buf.length / 1048576).toFixed(1)}MB）` });
+          return;
+        }
+        const dir = backgroundsDir(dataRoot);
+        const existing = listBgFiles(dataRoot);
+        if (!existsSync(join(dir, name)) && existing.length >= BG_MAX_COUNT) {
+          json(res, 400, { ok: false, code: 'bg-count', error: `图库最多 ${BG_MAX_COUNT} 张，请先删除一些再上传` });
+          return;
+        }
+        // 图片解码校验：文件头魔数匹配扩展名（防止把可执行文件改名成 png 上传）
+        const magicOk = {
+          '.png': buf.slice(0, 8).toString('hex') === '89504e470d0a1a0a',
+          '.jpg': buf[0] === 0xff && buf[1] === 0xd8,
+          '.jpeg': buf[0] === 0xff && buf[1] === 0xd8,
+          '.gif': buf.slice(0, 3).toString('ascii') === 'GIF',
+          '.webp': buf.slice(0, 4).toString('ascii') === 'RIFF' && buf.slice(8, 12).toString('ascii') === 'WEBP',
+          '.bmp': buf[0] === 0x42 && buf[1] === 0x4d,
+          '.avif': buf.slice(4, 8).toString('ascii') === 'ftyp',
+        }[name.slice(name.lastIndexOf('.')).toLowerCase()];
+        if (!magicOk) {
+          json(res, 400, { ok: false, code: 'bg-magic', error: '图片内容与扩展名不符' });
+          return;
+        }
+        try {
+          mkdirSync(dir, { recursive: true });
+          const tmp = join(dir, name + '.tmp');
+          writeFileSync(tmp, buf);
+          renameSync(tmp, join(dir, name));
+        } catch (errBg) {
+          json(res, 500, { ok: false, code: 'bg-write', error: '写入背景图失败: ' + (errBg?.message || errBg) });
+          return;
+        }
+        json(res, 200, { ok: true, files: listBgFiles(dataRoot) });
+        return;
+      }
+      if (req.method === 'POST' && url.pathname === '/bg/delete') {
+        const body = await readBody(req);
+        const name = sanitizeBgName(body?.name);
+        if (!name) { json(res, 400, { ok: false, code: 'bg-name', error: '非法文件名' }); return; }
+        try {
+          const file = join(backgroundsDir(dataRoot), name);
+          if (existsSync(file)) unlinkSync(file);
+        } catch (errBg) {
+          json(res, 500, { ok: false, code: 'bg-delete', error: '删除背景图失败: ' + (errBg?.message || errBg) });
+          return;
+        }
+        json(res, 200, { ok: true, files: listBgFiles(dataRoot) });
+        return;
+      }
+      // —— 文件夹背景：设置/刷新列表（目录本身存 theme.bg.folder，文件原地读
+      // 取不复制）；切换由注入层定时驱动（随机或顺序）
+      const listFolderBg = (dir) => {
+        const st = statSync(dir);
+        if (!st.isDirectory()) return { error: '不是文件夹：' + dir };
+        const files = readdirSync(dir)
+          .filter((name) => BG_EXT.has(name.slice(name.lastIndexOf('.')).toLowerCase()))
+          .map((name) => { const s = statSync(join(dir, name)); return { name, size: s.size, mtime: s.mtimeMs }; })
+          .sort((a, b) => a.name.localeCompare(b.name));
+        return { files };
+      };
+      if (req.method === 'POST' && url.pathname === '/bg/folder') {
+        const body = await readBody(req);
+        const dir = typeof body?.dir === 'string' ? body.dir.trim() : '';
+        if (!dir || dir.length > 4096) { json(res, 400, { ok: false, code: 'bg-folder', error: '文件夹路径无效' }); return; }
+        if (!isAbsolute(dir)) { json(res, 400, { ok: false, code: 'bg-folder', error: '文件夹路径需为绝对路径（以 / 或盘符开头）' }); return; }
+        if (!existsSync(dir)) { json(res, 404, { ok: false, code: 'bg-folder', error: '文件夹不存在：' + dir }); return; }
+        try {
+          const r = listFolderBg(dir);
+          if (r.error) { json(res, 400, { ok: false, code: 'bg-folder', error: r.error }); return; }
+          json(res, 200, { ok: true, files: r.files, dir });
+        } catch (errBg) {
+          json(res, 500, { ok: false, code: 'bg-folder', error: '读取文件夹失败: ' + (errBg?.message || errBg) });
+          return;
+        }
+        return;
+      }
+      if (req.method === 'GET' && url.pathname === '/bg/folder/list') {
+        // dir 查询参数：分区背景列自己目录时传入；缺省列全局设置的目录
+        const qDir = url.searchParams.get('dir');
+        const dir = (qDir && qDir.length <= 4096) ? qDir : loadConfig(configFile).theme.bg.folder;
+        if (!dir || !existsSync(dir)) { json(res, 200, { ok: true, files: [], missing: true, dir: dir || '' }); return; }
+        try {
+          const r = listFolderBg(dir);
+          json(res, 200, r.error ? { ok: true, files: [], missing: true, dir } : { ok: true, files: r.files, dir });
+        } catch {
+          json(res, 200, { ok: true, files: [], missing: true, dir });
+        }
         return;
       }
       // 空闲项目内存回收（idle-reclaim.js）：判断各项目的会话进程（zcode-cli）是否
@@ -1041,7 +1306,7 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
           json(res, r.status || 500, { ok: false, code: r.code || 'sync-run', error: r.error });
           return;
         }
-        json(res, 200, { ok: true, direction, applied: r.applied, ...(typeof r.pruned === 'number' ? { pruned: r.pruned } : {}), sync: loadConfig(configFile).sync });
+        json(res, 200, { ok: true, direction, applied: r.applied, ...(typeof r.pruned === 'number' ? { pruned: r.pruned } : {}), ...(r.bg ? { bg: r.bg } : {}), sync: loadConfig(configFile).sync });
         return;
       }
       // —— 同步连通性测试（“测试”按钮）：用表单当前值逐步验证（可先测再存），不写入配置文件 ——
@@ -1489,6 +1754,87 @@ function syncFileUrlByName(sync, fileName) {
   return syncBaseDir(sync) + '/' + encodeURIComponent(fileName);
 }
 
+// —— 背景图库随 zcodepro 组同步：镜像语义，覆盖式、无历史版本 ——
+// 上传 = 本地图全部传上去（同名同大小跳过），云端多余删除；
+// 下载 = 云端图全部落到本机（同名同大小跳过），本地多余删除
+function syncBgDirUrl(sync) {
+  return syncBaseDir(sync) + '/' + BG_DIR_NAME;
+}
+function syncBgFileUrl(sync, name) {
+  return syncBgDirUrl(sync) + '/' + encodeURIComponent(name);
+}
+// 云端图库列表：目录不存在（404）视为空库；条目按扩展名白名单过滤
+async function syncBgListRemote(sync, proxyUrl) {
+  const list = await webdavRequest({ method: 'PROPFIND', url: syncBgDirUrl(sync) + '/', login: sync.login, password: sync.password, proxyUrl, headers: ['Depth: 1'], timeoutMs: 30000 });
+  if (!list.ok) return { error: list.error, code: 'sync-request', status: 502 };
+  if (list.httpCode === 404) return { files: [] };
+  if (list.httpCode < 200 || list.httpCode >= 300) return { error: webdavHttpText(list.httpCode), code: 'sync-request', status: 502 };
+  return { files: parseWebdavListing(list.body).filter((f) => BG_EXT.has(f.name.slice(f.name.lastIndexOf('.')).toLowerCase())) };
+}
+async function syncBgPush({ sync, proxyUrl, dataRoot }) {
+  const localFiles = listBgFiles(dataRoot);
+  const remote = await syncBgListRemote(sync, proxyUrl);
+  if (remote.error) return remote;
+  const remoteByName = new Map(remote.files.map((f) => [f.name, f]));
+  const dir = backgroundsDir(dataRoot);
+  const uploaded = [];
+  for (const f of localFiles) {
+    const r = remoteByName.get(f.name);
+    if (r && r.size === f.size) continue;
+    const ext = f.name.slice(f.name.lastIndexOf('.')).toLowerCase();
+    const put = await webdavPutWithMkcol({
+      url: syncBgFileUrl(sync, f.name), login: sync.login, password: sync.password,
+      uploadFile: join(dir, f.name), proxyUrl, timeoutMs: 120000,
+      contentType: BG_MIME[ext] || 'application/octet-stream',
+    });
+    if (!put.ok) return { code: 'sync-request', status: 502, error: put.error };
+    if (put.httpCode < 200 || put.httpCode >= 300) return { code: 'sync-request', status: 502, error: webdavHttpText(put.httpCode) };
+    uploaded.push(f.name);
+  }
+  const deleted = [];
+  const localNames = new Set(localFiles.map((f) => f.name));
+  for (const f of remote.files) {
+    if (localNames.has(f.name)) continue;
+    const del = await webdavRequest({ method: 'DELETE', url: syncBgFileUrl(sync, f.name), login: sync.login, password: sync.password, proxyUrl, timeoutMs: 30000 });
+    if (!del.ok) return { code: 'sync-request', status: 502, error: del.error };
+    if (del.httpCode === 404) continue; // 已被并发清掉
+    if (del.httpCode < 200 || del.httpCode >= 300) return { code: 'sync-request', status: 502, error: webdavHttpText(del.httpCode) };
+    deleted.push(f.name);
+  }
+  return { uploaded, deleted, count: localFiles.length };
+}
+async function syncBgPull({ sync, proxyUrl, dataRoot }) {
+  const remote = await syncBgListRemote(sync, proxyUrl);
+  if (remote.error) return remote;
+  const localFiles = listBgFiles(dataRoot);
+  const localByName = new Map(localFiles.map((f) => [f.name, f]));
+  const dir = backgroundsDir(dataRoot);
+  mkdirSync(dir, { recursive: true });
+  const downloaded = [];
+  for (const f of remote.files) {
+    const name = sanitizeBgName(f.name);
+    if (!name) continue; // 云端的异常文件名条目不镜像
+    const l = localByName.get(name);
+    if (l && l.size === f.size) continue;
+    const tmp = join(dir, name + '.tmp');
+    const get = await webdavRequest({ method: 'GET', url: syncBgFileUrl(sync, name), login: sync.login, password: sync.password, proxyUrl, timeoutMs: 120000, downloadFile: tmp });
+    const bad = !get.ok || get.httpCode < 200 || get.httpCode >= 300;
+    if (bad) {
+      try { if (existsSync(tmp)) unlinkSync(tmp); } catch { /* ignore */ }
+      return { code: 'sync-request', status: 502, error: get.ok ? webdavHttpText(get.httpCode) : get.error };
+    }
+    renameSync(tmp, join(dir, name));
+    downloaded.push(name);
+  }
+  const deleted = [];
+  const remoteNames = new Set(remote.files.map((f) => f.name));
+  for (const f of localFiles) {
+    if (remoteNames.has(f.name)) continue;
+    try { unlinkSync(join(dir, f.name)); deleted.push(f.name); } catch { /* ignore */ }
+  }
+  return { downloaded, deleted, count: remote.files.length };
+}
+
 // 信封校验：云端文件必须是 { app: 'zcode-pro', kind, format, data } 且组别与文件名
 // 前缀一致；4MB 上限挡住异常大文件
 function parseSyncEnvelope(body, kind, label) {
@@ -1605,7 +1951,14 @@ async function runSyncPush({ dataRoot, configFile, config, sync, proxyUrl }) {
   saveConfig(configFile, config);
   // 上传成功后清理超出保留个数的旧历史版本（best-effort，失败不影响上传结果）
   const pruned = await pruneSyncHistory(sync, proxyUrl, keep);
-  return { applied: pushed, pruned };
+  // 背景图库镜像上传（勾了 zcodepro 组才传；设置文档已传走，图库失败单独报错，重试幂等）
+  let bg = null;
+  if (sync.include.zcodepro) {
+    const r = await syncBgPush({ sync, proxyUrl, dataRoot });
+    if (r.error) return r;
+    bg = r;
+  }
+  return { applied: pushed, pruned, bg };
 }
 
 // 下载：把云端所选组应用到本机（各组独立文件，勾选几组读几组，可只覆盖模型设置）。
@@ -1625,7 +1978,16 @@ async function runSyncPull({ dataRoot, configFile, config, sync, proxyUrl }) {
     return { code: 'sync-remote-missing', status: 404, error: '云端没有同步数据，请先在其他电脑上传' };
   }
   sync.lastPullAt = Date.now();
-  return applySyncDocs({ docs, dataRoot, configFile, config, sync });
+  const applied = await applySyncDocs({ docs, dataRoot, configFile, config, sync });
+  if (applied && applied.error) return applied;
+  // 背景图库镜像下载（勾了 zcodepro 组才拉；设置文档已应用，图库失败单独报错，重试幂等）
+  let bg = null;
+  if (sync.include.zcodepro) {
+    const r = await syncBgPull({ sync, proxyUrl, dataRoot });
+    if (r.error) return r;
+    bg = r;
+  }
+  return { ...applied, bg };
 }
 
 // 把云端读到的各组数据落到本机（runSyncPull 与按文件的历史版本导入共用）：

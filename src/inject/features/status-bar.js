@@ -21,7 +21,7 @@ function readCtx() {
     if (el.closest('.zcodepro-statusbar')) continue;
     const text = el.getAttribute('title') || el.getAttribute('aria-label') || '';
     if (!/上下文|context/i.test(text)) continue;
-    // 格式为「已用 497,101 / 总量 1,000,000」：斜杠后可能带“总量”等文字再接数字
+    // 格式为“已用 497,101 / 总量 1,000,000”：斜杠后可能带“总量”等文字再接数字
     const m = text.match(/([\d][\d,]*)\s*\/[^0-9]*([\d][\d,]*)/);
     if (!m) continue;
     const used = Number(m[1].replace(/,/g, ''));

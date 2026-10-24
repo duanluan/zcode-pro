@@ -453,6 +453,32 @@ export function ensureStyle() {
       color: var(--color-foreground, #111);
       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
     }
+    /* 主题（样式 → 主题）：皮肤卡片（色块预览 + 名称）与背景缩略图 */
+    .zcodepro-skin-card {
+      display: flex; flex-direction: column; gap: 6px;
+      padding: 8px; border: 1px solid var(--color-card-border, #8883);
+      border-radius: 10px; background: transparent; cursor: pointer; text-align: left;
+      transition: border-color 0.15s ease, background-color 0.15s ease;
+    }
+    .zcodepro-skin-card:hover { background-color: color-mix(in oklab, var(--color-foreground, #888) 6%, transparent); }
+    .zcodepro-skin-card[data-state="active"] { border-color: var(--color-primary, #333); }
+    .zcodepro-skin-swatches { display: flex; height: 18px; border-radius: 5px; overflow: hidden; }
+    .zcodepro-skin-swatches > span { flex: 1; }
+    .zcodepro-bg-card {
+      position: relative; width: 100%; aspect-ratio: 16 / 9;
+      border-radius: 8px; border: 2px solid transparent; padding: 0;
+      background-size: cover; background-position: center; cursor: pointer; overflow: hidden;
+    }
+    .zcodepro-bg-card:hover { filter: brightness(1.15); }
+    .zcodepro-bg-card[data-state="active"] { border-color: var(--color-primary, #333); }
+    .zcodepro-bg-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .zcodepro-bg-del {
+      position: absolute; top: 4px; right: 4px; width: 20px; height: 20px;
+      border-radius: 6px; border: none; cursor: pointer; font-size: 11px; line-height: 1;
+      color: #fff; background: rgba(0, 0, 0, 0.55);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .zcodepro-bg-del:hover { background: rgba(220, 38, 38, 0.85); }
     /* 紧凑小按钮：几何/配色写入自有规则并取主题变量（高度=24px，与标签页一致） */
     .zcodepro-btn-sm {
       display: inline-flex;
