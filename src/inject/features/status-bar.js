@@ -10,6 +10,7 @@ let enabled = true;
 let items = DEFAULT_STATUS_ITEMS.map((x) => ({ ...x }));
 let barEl = null;
 let lastStats = null; // /stats/usage 响应缓存（失败保旧值）
+let lastRenderedHtml = null; // renderBar 去重：内容没变不重写 DOM
 
 // —— 工具 ——
 
@@ -187,12 +188,14 @@ function renderBar() {
   if (!enabled || !host || !host.parentElement) {
     if (barEl) barEl.remove();
     barEl = null;
+    lastRenderedHtml = null; // 元素没了，去重基线同步清空，重建后首渲染不被跳过
     return;
   }
   if (!barEl || !barEl.isConnected) {
     if (!barEl) {
       barEl = document.createElement('div');
       barEl.className = 'zcodepro-statusbar';
+      lastRenderedHtml = null; // 新元素：内容基线作废
     }
     host.parentElement.insertBefore(barEl, host.nextSibling);
   }
@@ -219,19 +222,29 @@ function renderBar() {
   // 组内项之间用 ·，跨组竖线两侧不再叠加 ·
   const SEP = '<span class="zcodepro-statusbar-sep">·</span>';
   const GROUPSEP = '<span class="zcodepro-statusbar-groupsep"></span>';
-  barEl.innerHTML = parts.reduce((acc, p, i) => {
+  // 数值没变就不重写 DOM：每 2 秒 tick 全量重建会在流式渲染期持续触发布局
+  //（CPU 剖析中 renderBar 是我们唯一上榜的函数）
+  const html = parts.reduce((acc, p, i) => {
     if (i === 0) return p;
     if (p === GROUPSEP || parts[i - 1] === GROUPSEP) return acc + p;
     return acc + SEP + p;
   }, '');
   barEl.style.display = parts.length ? '' : 'none';
+  if (html === lastRenderedHtml) return;
+  lastRenderedHtml = html;
+  barEl.innerHTML = html;
 }
 
 async function tick() {
   if (!enabled || document.hidden) return;
   refreshOfficial();
-  const res = await rpc('/stats/usage').catch(() => null);
-  if (res && res.ok) lastStats = res;
+  // 全局项优先取官方快照（5 分钟一更）：就绪后不再每 2 秒拉本地聚合——
+  // helper 侧聚合每次都要遍历全部 rollout 记录（稳态实测约 13ms/次），
+  // 官方不可用（刚启动/接口失败）时才回退本地轮询
+  if (!official) {
+    const res = await rpc('/stats/usage').catch(() => null);
+    if (res && res.ok) lastStats = res;
+  }
   renderBar();
 }
 

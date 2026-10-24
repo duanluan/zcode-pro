@@ -206,17 +206,21 @@ export function openSettingsDialog() {
         }, '✕');
         titleEl.replaceChildren(titleLeft, closeX);
       }
-      const health = await rpc('/health');
-      const config = await getConfig(true);
-      const agentsRes = await rpc('/agents');
-      const visionRes = await rpc('/vision');
-      const titleGenRes = await rpc('/title-gen');
-      const titleGenProvidersRes = await rpc('/title-gen/providers');
+      // 八个只读请求相互独立：并行取（串行时 headroom 的版本探测一项就约
+      // 700ms，弹窗打开明显卡顿）
+      const [health, config, agentsRes, visionRes, titleGenRes, titleGenProvidersRes, rtkRes, headroomRes] = await Promise.all([
+        rpc('/health'),
+        getConfig(true),
+        rpc('/agents'),
+        rpc('/vision'),
+        rpc('/title-gen'),
+        rpc('/title-gen/providers'),
+        rpc('/rtk'),
+        rpc('/headroom'),
+      ]);
       // 供应商表（含各供应商可选模型）：视觉代理的模型下拉也用这份
       const titleGenProviders = titleGenProvidersRes.ok && Array.isArray(titleGenProvidersRes.providers)
         ? titleGenProvidersRes.providers : [];
-      const rtkRes = await rpc('/rtk');
-      const headroomRes = await rpc('/headroom');
 
       const setFeature = async (key, value) => {
         const res = await rpc('/config', { method: 'POST', body: { features: { [key]: value } } });

@@ -25,17 +25,28 @@ export function rpc(path, options = {}) {
     .catch((err) => ({ ok: false, error: String(err && err.message || err) }));
 }
 
-// 配置缓存：菜单每次打开时拉取，保证设置弹窗里的开关即时生效
+// 配置缓存：菜单每次打开时拉取，保证设置弹窗里的开关即时生效。
+// 并发合并：config-changed 事件的多个监听方会同时 getConfig(true)（绕过
+// 缓存），不合并时一次保存触发 N 个并发全量拉取（每个都是 helper 读盘+序列化）
 let configCache = { value: null, at: 0 };
+let configInflight = null;
 export async function getConfig(force = false) {
   const now = Date.now();
   if (!force && configCache.value && now - configCache.at < 3000) return configCache.value;
-  const res = await rpc('/config');
-  if (res.ok && res.config) {
-    configCache = { value: res.config, at: now };
-    return res.config;
-  }
-  return configCache.value || { features: {} };
+  if (configInflight) return configInflight;
+  configInflight = (async () => {
+    try {
+      const res = await rpc('/config');
+      if (res.ok && res.config) {
+        configCache = { value: res.config, at: Date.now() };
+        return res.config;
+      }
+      return configCache.value || { features: {} };
+    } finally {
+      configInflight = null;
+    }
+  })();
+  return configInflight;
 }
 export function clearConfigCache() { configCache = { value: null, at: 0 }; }
 

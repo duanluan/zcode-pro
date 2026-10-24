@@ -5,7 +5,7 @@
 import { createServer } from 'node:http';
 import { execFile, spawn, spawnSync } from 'node:child_process';
 import { createDecipheriv, createHash } from 'node:crypto';
-import { appendFileSync, chmodSync, copyFileSync, createWriteStream, existsSync, mkdirSync, readdirSync, readFileSync, readlinkSync, realpathSync, renameSync, rmSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
+import { appendFileSync, chmodSync, closeSync, copyFileSync, createWriteStream, existsSync, mkdirSync, openSync, readdirSync, readFileSync, readlinkSync, readSync, realpathSync, renameSync, rmSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { mkdtemp } from 'node:fs/promises'; // 注意：fs 的 mkdtemp 是回调版，await 它会把 undefined 当回调
 import { basename, delimiter, dirname, isAbsolute, join, resolve, sep } from 'node:path';
 import { homedir, tmpdir, userInfo } from 'node:os';
@@ -17,7 +17,7 @@ import { reorderWorkspaceTasks, reorderGroupMembers } from './taskOrder.mjs';
 import { webdavRequest, webdavPutWithMkcol, webdavHttpText, parseWebdavListing, findCurl } from './webdav.mjs';
 import { resolveZcodeExecutable } from './paths.mjs';
 
-const VERSION = '1.3.1';
+const VERSION = '1.4.0';
 
 // 全局提示词固定在用户主目录：官方加载器按 HOME/USERPROFILE 拼 .zcode/AGENTS.md，
 // 不读 ZCODE_DATA_BASE_DIR（数据根迁走时全局指令仍在原位）。
@@ -1519,10 +1519,70 @@ let tasksCountCache = 0; // 任务总数缓存（/stats/usage 高频轮询，60 
 // （协议 camelCase 与原始 snake_case），两种都解析。文件小（个位数、每会话一个），
 // 按 mtime+size 缓存只重读变过的文件；聚合结果含按日分桶（本地时区）供“今日”用
 const usageFileCache = new Map(); // 文件名 → { mtime, size, recs: [{at, in, out, session, model}] }
+// 解析一段 rollout 文本为记录；completeBytes = 已完整解析的整行字节数
+//（末行若是不完整 JSON（写入中途）不计入，调用方据此决定偏移推进量）
+function parseRolloutLines(text) {
+  const recs = [];
+  let completeBytes = 0;
+  let consumed = 0;
+  const parts = text.split('\n');
+  for (let pi = 0; pi < parts.length; pi++) {
+    const line = parts[pi];
+    const isTail = pi === parts.length - 1; // 末段无换行结尾
+    const lineBytes = Buffer.byteLength(line, 'utf8') + 1; // +1 换行（末段实际没有，不影响“不推进”语义）
+    if (!line.trim()) {
+      if (!isTail) { consumed += lineBytes; completeBytes = consumed; }
+      continue;
+    }
+    let d;
+    try {
+      d = JSON.parse(line);
+    } catch {
+      // 只有末段解析失败才视为“写入中途的半行”：偏移停在整行边界等下次补齐；
+      // 中间的坏行（崩溃残留等）按旧行为跳过继续，不能截断后面的全部数据
+      if (isTail) break;
+      consumed += lineBytes;
+      completeBytes = consumed;
+      continue;
+    }
+    const u = (d.response && d.response.usage) || d.usage;
+    if (u) {
+      const num = (v) => Number(v) || 0;
+      // 两种键风格语义相反，必须分开处理：
+      // 协议格式（inputTokens）的总输入已含缓存读（官方 summary 证实）；
+      // 原始 API 格式（input_tokens，Anthropic 语义）三个字段分开、需相加
+      let input, cacheRead, cacheWrite;
+      if (u.inputTokens != null) {
+        input = num(u.inputTokens);
+        cacheRead = num(u.cacheReadTokens);
+        cacheWrite = num(u.cacheWriteTokens);
+      } else {
+        cacheRead = num(u.cache_read_input_tokens);
+        cacheWrite = num(u.cache_write_input_tokens);
+        input = num(u.input_tokens) + cacheRead + cacheWrite;
+      }
+      const output = num(u.outputTokens ?? u.output_tokens);
+      recs.push({
+        at: d.completedAt || d.startedAt || '',
+        in: input, out: output,
+        cacheRead,
+        session: String(d.sessionId || ''),
+      });
+    }
+    consumed += isTail ? Buffer.byteLength(line, 'utf8') : lineBytes;
+    completeBytes = consumed;
+  }
+  return { recs, completeBytes };
+}
+
 function rolloutRecords() {
   const dir = join(homedir(), '.zcode', 'cli', 'rollout');
   let names = [];
   try { names = readdirSync(dir).filter((n) => n.startsWith('model-io-') && n.endsWith('.jsonl')); } catch { return []; }
+  // 缓存条目随文件淘汰：会话记录滚动删除后残留条目不再增长（虽小但是纯泄漏）
+  for (const k of usageFileCache.keys()) {
+    if (!names.includes(k)) usageFileCache.delete(k);
+  }
   const recs = [];
   for (const name of names) {
     const full = join(dir, name);
@@ -1533,38 +1593,37 @@ function rolloutRecords() {
       recs.push(...cached.recs);
       continue;
     }
-    const parsed = [];
+    // 追加式增量解析：jsonl 只追加（流式输出期间当前会话文件持续增长，整文件
+    // 重读重解析一次可达数十毫秒）。从上次已完整解析的偏移续读新增部分；末行
+    // 若是写入中途的半行会被丢弃且偏移不推进，下次变化时重读该行
+    if (cached && st.size > cached.size && st.mtimeMs >= cached.mtimeMs) {
+      const fd = openSync(full, 'r');
+      let tail = '';
+      try {
+        const buf = Buffer.alloc(st.size - cached.size);
+        readSync(fd, buf, 0, buf.length, cached.size);
+        tail = buf.toString('utf8');
+      } catch { tail = ''; } finally { closeSync(fd); }
+      const { recs: added, completeBytes } = parseRolloutLines(tail);
+      usageFileCache.set(name, {
+        mtime: st.mtimeMs,
+        size: cached.size + completeBytes,
+        recs: cached.recs.concat(added),
+      });
+      recs.push(...cached.recs, ...added);
+      continue;
+    }
+    let parsed = [];
+    let parsedBytes = st.size;
     try {
-      for (const line of readFileSync(full, 'utf8').split('\n')) {
-        if (!line.trim()) continue;
-        let d;
-        try { d = JSON.parse(line); } catch { continue; }
-        const u = (d.response && d.response.usage) || d.usage;
-        if (!u) continue;
-        const num = (v) => Number(v) || 0;
-        // 两种键风格语义相反，必须分开处理：
-        // 协议格式（inputTokens）的总输入已含缓存读（官方 summary 证实）；
-        // 原始 API 格式（input_tokens，Anthropic 语义）三个字段分开、需相加
-        let input, cacheRead, cacheWrite;
-        if (u.inputTokens != null) {
-          input = num(u.inputTokens);
-          cacheRead = num(u.cacheReadTokens);
-          cacheWrite = num(u.cacheWriteTokens);
-        } else {
-          cacheRead = num(u.cache_read_input_tokens);
-          cacheWrite = num(u.cache_write_input_tokens);
-          input = num(u.input_tokens) + cacheRead + cacheWrite;
-        }
-        const output = num(u.outputTokens ?? u.output_tokens);
-        parsed.push({
-          at: d.completedAt || d.startedAt || '',
-          in: input, out: output,
-          cacheRead,
-          session: String(d.sessionId || ''),
-        });
-      }
+      const text = readFileSync(full, 'utf8');
+      const r = parseRolloutLines(text);
+      parsed = r.recs;
+      // 全量读不存在半行截断（readFileSync 拿到的是当下完整内容），但保守起见
+      // 同样只把已完整解析的字节数记为偏移
+      parsedBytes = Math.min(r.completeBytes, Buffer.byteLength(text, 'utf8'));
     } catch { /* 文件读失败跳过 */ }
-    usageFileCache.set(name, { mtime: st.mtimeMs, size: st.size, recs: parsed });
+    usageFileCache.set(name, { mtime: st.mtimeMs, size: parsedBytes, recs: parsed });
     recs.push(...parsed);
   }
   return recs;
@@ -1572,6 +1631,9 @@ function rolloutRecords() {
 
 function collectUsageStats(sessionId) {
   const recs = rolloutRecords();
+  // 分钟桶只服务每轮统计（必须带 session）；不带 session 的调用（状态栏
+  // 回退路径）只要全局累计，跳过分桶省去全记录遍历与 60 桶序列化
+  const wantTurns = !!sessionId;
   const today = new Date();
   const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   const global = { todayTokens: 0, todayOut: 0, totalTokens: 0, totalOut: 0, tasks: 0, records: recs.length };
@@ -1586,10 +1648,10 @@ function collectUsageStats(sessionId) {
     if (day === todayKey) { global.todayTokens += total; global.todayOut += r.out; }
     // 每轮回答只统计主对话流的调用：起名等辅助请求是独立小上下文、
     // 缓存从零开始，混进分钟桶会把命中率拉到个位数（全局统计仍全量计入）
-    if (total < 5000) continue;
+    if (!wantTurns || total < 5000) continue;
     // 指定会话时每轮桶只算该会话的调用——否则切到别的会话聊天后，
     // 那些调用会被区间归属算进当前会话最后一行的头上
-    if (sessionId && r.session !== sessionId) continue;
+    if (r.session !== sessionId) continue;
     const t = Date.parse(r.at);
     if (!Number.isFinite(t)) continue;
     const d = new Date(t);
@@ -3302,11 +3364,25 @@ function findBinFile(names, extraCandidates) {
 }
 
 // 执行 --version 并提取首个版本号（原样输出如 "rtk 0.49.0"、"headroom, version 0.37.0"）
+// 二进制版本缓存（路径+mtime+size）：--version 要 spawn 进程（headroom 的
+// Python CLI 冷启约 600ms），版本只在二进制被升级（mtime/size 变化）时才可能变
+const binVersionCache = new Map();
 async function binVersionOf(bin) {
+  let key = null;
+  try {
+    const st = statSync(bin);
+    key = bin + ':' + st.mtimeMs + ':' + st.size;
+  } catch { key = null; }
+  if (key && binVersionCache.has(key)) return binVersionCache.get(key);
   const r = await execCapture(bin, ['--version'], 10000);
-  if (!r.ok) return null;
   const m = /(\d+(?:\.\d+){1,3}(?:[A-Za-z0-9.+-]*)?)/.exec(r.output);
-  return m ? m[1] : null;
+  const v = r.ok && m ? m[1] : null;
+  if (key) {
+    binVersionCache.set(key, v);
+    // 同一路径的旧键失效（防升级后多代堆积）
+    for (const k of binVersionCache.keys()) if (k.startsWith(bin + ':') && k !== key) binVersionCache.delete(k);
+  }
+  return v;
 }
 
 // 升级任务快照/创建/停止：任务在 helper 进程内后台执行，面板轮询展示进度

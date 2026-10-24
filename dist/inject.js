@@ -17,15 +17,24 @@
     }).then((r) => r.json()).catch((err) => ({ ok: false, error: String(err && err.message || err) }));
   }
   var configCache = { value: null, at: 0 };
+  var configInflight = null;
   async function getConfig(force = false) {
     const now = Date.now();
     if (!force && configCache.value && now - configCache.at < 3e3) return configCache.value;
-    const res = await rpc("/config");
-    if (res.ok && res.config) {
-      configCache = { value: res.config, at: now };
-      return res.config;
-    }
-    return configCache.value || { features: {} };
+    if (configInflight) return configInflight;
+    configInflight = (async () => {
+      try {
+        const res = await rpc("/config");
+        if (res.ok && res.config) {
+          configCache = { value: res.config, at: Date.now() };
+          return res.config;
+        }
+        return configCache.value || { features: {} };
+      } finally {
+        configInflight = null;
+      }
+    })();
+    return configInflight;
   }
   function clearConfigCache() {
     configCache = { value: null, at: 0 };
@@ -4592,15 +4601,17 @@
           }, "\u2715");
           titleEl.replaceChildren(titleLeft, closeX);
         }
-        const health = await rpc("/health");
-        const config = await getConfig(true);
-        const agentsRes = await rpc("/agents");
-        const visionRes = await rpc("/vision");
-        const titleGenRes = await rpc("/title-gen");
-        const titleGenProvidersRes = await rpc("/title-gen/providers");
+        const [health, config, agentsRes, visionRes, titleGenRes, titleGenProvidersRes, rtkRes, headroomRes] = await Promise.all([
+          rpc("/health"),
+          getConfig(true),
+          rpc("/agents"),
+          rpc("/vision"),
+          rpc("/title-gen"),
+          rpc("/title-gen/providers"),
+          rpc("/rtk"),
+          rpc("/headroom")
+        ]);
         const titleGenProviders = titleGenProvidersRes.ok && Array.isArray(titleGenProvidersRes.providers) ? titleGenProvidersRes.providers : [];
-        const rtkRes = await rpc("/rtk");
-        const headroomRes = await rpc("/headroom");
         const setFeature = async (key, value) => {
           const res = await rpc("/config", { method: "POST", body: { features: { [key]: value } } });
           clearConfigCache();
@@ -9015,6 +9026,7 @@
   var items = DEFAULT_STATUS_ITEMS.map((x) => ({ ...x }));
   var barEl = null;
   var lastStats = null;
+  var lastRenderedHtml = null;
   function readCtx() {
     for (const el of document.querySelectorAll("[title], [aria-label]")) {
       if (el.closest(".zcodepro-statusbar")) continue;
@@ -9165,12 +9177,14 @@
     if (!enabled4 || !host || !host.parentElement) {
       if (barEl) barEl.remove();
       barEl = null;
+      lastRenderedHtml = null;
       return;
     }
     if (!barEl || !barEl.isConnected) {
       if (!barEl) {
         barEl = document.createElement("div");
         barEl.className = "zcodepro-statusbar";
+        lastRenderedHtml = null;
       }
       host.parentElement.insertBefore(barEl, host.nextSibling);
     }
@@ -9191,18 +9205,23 @@
     }
     const SEP = '<span class="zcodepro-statusbar-sep">\xB7</span>';
     const GROUPSEP = '<span class="zcodepro-statusbar-groupsep"></span>';
-    barEl.innerHTML = parts.reduce((acc, p, i) => {
+    const html = parts.reduce((acc, p, i) => {
       if (i === 0) return p;
       if (p === GROUPSEP || parts[i - 1] === GROUPSEP) return acc + p;
       return acc + SEP + p;
     }, "");
     barEl.style.display = parts.length ? "" : "none";
+    if (html === lastRenderedHtml) return;
+    lastRenderedHtml = html;
+    barEl.innerHTML = html;
   }
   async function tick() {
     if (!enabled4 || document.hidden) return;
     refreshOfficial();
-    const res = await rpc("/stats/usage").catch(() => null);
-    if (res && res.ok) lastStats = res;
+    if (!official) {
+      const res = await rpc("/stats/usage").catch(() => null);
+      if (res && res.ok) lastStats = res;
+    }
     renderBar();
   }
   function startStatusBar() {
