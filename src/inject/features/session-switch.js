@@ -7,7 +7,7 @@
 // 事件驱动扫描（会话行增删/选中标记移动才触发）+ 低频兜底轮询——
 // 点击、新建任务自动跳转等任何方式的切换都能捕捉，聊天区流式输出不产生扫描。
 // 目标条目在折叠项目下时先展开项目行再点击（展开先例见 pinned-expand.js）。
-import { h, t, getConfig, DEFAULT_SHORTCUTS } from '../core.js';
+import { h, t, rpc, getConfig, DEFAULT_SHORTCUTS } from '../core.js';
 import { ensureStyle, showToast } from '../ui.js';
 import { findProjectRow } from './ws-rows.js';
 import { wsRunningKeys } from './ws-running.js';
@@ -52,9 +52,9 @@ function firstLineOf(item) {
 }
 
 function workspaceOf(key) {
-  // 键格式 <workspace_path>:<sess_id>；sess 段固定以 "sess_" 开头，按其定位分隔符
-  // （Windows 盘符路径里也有冒号，不能按第一个 ':' 切）
-  const i = key.indexOf(':sess_');
+  // 键格式 <workspace_path>:<task_id>；task_id 有 sess_ 与 session_ 两种前缀
+  // （新版应用为 session_），按最后一个 ':' 切（ws-running.js 同款）
+  const i = key.lastIndexOf(':');
   return i > 0 ? key.slice(0, i) : key;
 }
 
@@ -115,7 +115,11 @@ function scheduleScan() {
 
 // 切到指定会话：条目不在 DOM（项目折叠）时先展开项目行，等条目出现再点击
 async function switchTo(key) {
-  const find = () => document.querySelector(`[data-task-item-key="${CSS.escape(key)}"]`);
+  // 权威扫描拼出的键（工作区前缀无尾斜杠）可能与行键（可能带尾斜杠）不同形，
+  // 精确匹配落空时按会话 id 后缀兜底（会话 id 全局唯一，不会命中别的会话）
+  const id = key.slice(key.lastIndexOf(':') + 1);
+  const find = () => document.querySelector(`[data-task-item-key="${CSS.escape(key)}"]`)
+    || (id ? document.querySelector(`[data-task-item-key$=":${CSS.escape(id)}"]`) : null);
   let item = find();
   if (!item) {
     const ws = workspaceOf(key);
@@ -138,17 +142,26 @@ async function switchTo(key) {
 
 // attention 弹窗的列表：正在运行或运行完未查看的任务。MRU 只记录切入过的
 // 会话，而“未查看”的任务可能从未切入，不在 MRU 里——这部分（先运行中、
-// 再未查看，各按发现序）追加在 MRU 命中项之后
+// 再未查看，各按发现序）追加在 MRU 命中项之后。
+// 同一会话有两种键形（行在场与否决定：DOM 行键可能带尾斜杠、权威拼的键
+// 不带），按会话 id 去重——同一会话只出一行，运行中的键形优先（标签按它
+// 判定才是“运行中”，点击也命中在场行）
 function attentionList() {
   const run = wsRunningKeys();
+  const idOf = (k) => k.slice(k.lastIndexOf(':') + 1);
+  const runKeyById = new Map([...run].map((k) => [idOf(k), k]));
   const listed = new Set();
   const head = [];
   for (const k of mru) {
-    if (run.has(k) || unseen.has(k)) { head.push(k); listed.add(k); }
+    const id = idOf(k);
+    if (listed.has(id)) continue;
+    const runForm = runKeyById.get(id);
+    if (run.has(k) || unseen.has(k) || runForm) { head.push(runForm || k); listed.add(id); }
   }
   const tail = [];
-  for (const k of run) if (!listed.has(k)) { tail.push(k); listed.add(k); }
-  for (const k of unseen) if (!listed.has(k)) { tail.push(k); listed.add(k); }
+  const push = (k) => { const id = idOf(k); if (listed.has(id)) return; listed.add(id); tail.push(k); };
+  for (const k of run) push(k);
+  for (const k of unseen) push(k);
   return [...head, ...tail];
 }
 
@@ -171,8 +184,25 @@ function closePopup(commit) {
 function findTitle(key) {
   const item = document.querySelector(`[data-task-item-key="${CSS.escape(key)}"]`);
   if (item) titles.set(key, firstLineOf(item));
-  const id = key.slice(key.indexOf(':sess_') + 1);
+  const id = key.slice(key.lastIndexOf(':') + 1);
   return titles.get(key) || `sess ${id.slice(0, 8)}`;
+}
+
+// 折叠项目的会话行不在场，标题缓存里没有：打开 attention 弹窗时按会话 id 批量
+// 查任务索引（helper /task-statuses 附带 title）；查不到保持 "sess xxx" 兜底
+async function fetchMissingTitles(keys) {
+  const sessIdOf = (k) => k.slice(k.lastIndexOf(':') + 1);
+  const missing = keys.filter((k) => {
+    const id = sessIdOf(k);
+    return id && !titles.get(k) && !document.querySelector(`[data-task-item-key$=":${CSS.escape(id)}"]`);
+  });
+  if (!missing.length) return;
+  const st = await rpc('/task-statuses?ids=' + encodeURIComponent(missing.map(sessIdOf).join(','))).catch(() => null);
+  if (!st || !st.ok || !st.available || !st.statuses) return;
+  for (const k of missing) {
+    const rec = st.statuses[sessIdOf(k)];
+    if (rec && rec.title) titles.set(k, String(rec.title));
+  }
 }
 
 // 项目显示名：优先自定义别名（与侧栏一致），无别名退回目录名
@@ -220,6 +250,8 @@ async function openPopup(mode = 'mru') {
   movedSinceOpen = false;
   const cfg = await getConfig().catch(() => null);
   aliasesCache = (cfg && cfg.aliases && typeof cfg.aliases === 'object') ? cfg.aliases : {};
+  // attention 模式的行可能整段来自权威扫描（折叠项目），先补齐它们的标题再渲染
+  if (mode === 'attention') await fetchMissingTitles(attentionList()).catch(() => {});
   ensureStyle();
   const L = t();
   popupEl = h('div', {
@@ -288,8 +320,13 @@ export function startSessionSwitch() {
     if (document.hidden) return;
     const now = wsRunningKeys();
     if (lastRunKeys) {
+      // 按会话 id 判“从运行集合消失”：同一会话的键形会随行挂载/卸载在
+      // “权威拼的键”与“DOM 行键”之间切换，按整键比较会把键形切换误判成
+      // 运行结束，生成一行点不动的“未查看”幽灵行
+      const idOf = (k) => k.slice(k.lastIndexOf(':') + 1);
+      const nowIds = new Set([...now].map(idOf));
       for (const k of lastRunKeys) {
-        if (!now.has(k) && k !== current) unseen.add(k);
+        if (!nowIds.has(idOf(k)) && k !== current) unseen.add(k);
       }
     }
     lastRunKeys = now;

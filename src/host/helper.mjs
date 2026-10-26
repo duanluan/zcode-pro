@@ -11,7 +11,7 @@ import { basename, delimiter, dirname, isAbsolute, join, resolve, sep } from 'no
 import { homedir, tmpdir, userInfo } from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { readSettings, writeSettingsAtomic, remapSettingsPaths, isProjectOpenInTabs } from './settings.mjs';
-import { taskIndexPath, probeTaskIndexWritable, remapTaskIndexPaths, taskIndexDriverAvailable, listOverriddenTitles, listTaskWorkspaceMap, setTaskTitleIfNotOverridden, setCustomSessionTitle, isTaskTitleOverridden, reconcileCustomTitles, getTaskProviderModel, listVirtualProjects, countTasks } from './taskIndex.mjs';
+import { taskIndexPath, probeTaskIndexWritable, remapTaskIndexPaths, taskIndexDriverAvailable, listOverriddenTitles, listTaskWorkspaceMap, listTaskStatuses, setTaskTitleIfNotOverridden, setCustomSessionTitle, isTaskTitleOverridden, reconcileCustomTitles, getTaskProviderModel, listVirtualProjects, countTasks } from './taskIndex.mjs';
 import { pickFolderSystem } from './pickFolder.mjs';
 import { reorderWorkspaceTasks, reorderGroupMembers } from './taskOrder.mjs';
 import { webdavRequest, webdavPutWithMkcol, webdavHttpText, parseWebdavListing, findCurl } from './webdav.mjs';
@@ -705,6 +705,17 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         json(res, 200, data
           ? { ok: true, available: true, ...data }
           : { ok: true, available: false, projects: [], deletedRoots: [] });
+        return;
+      }
+      if (req.method === 'GET' && url.pathname === '/task-statuses') {
+        // 批量会话终态 + 标题：注入侧剔除 syncer 卡滞的误报、alt+r 弹窗显示
+        // 折叠项目会话标题都用它。读不到时 available=false，调用方按未确认处理
+        const ids = (url.searchParams.get('ids') || '')
+          .split(',').map((s) => s.trim()).filter(Boolean).slice(0, 200);
+        const statuses = ids.length ? await listTaskStatuses(dataRoot, ids) : {};
+        json(res, 200, statuses !== null
+          ? { ok: true, available: true, statuses }
+          : { ok: true, available: false, statuses: {} });
         return;
       }
       if (req.method === 'GET' && url.pathname === '/projects') {

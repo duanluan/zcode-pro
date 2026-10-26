@@ -87,7 +87,9 @@ function sessionScope() {
   const cur = rows.find((e) => (e.className + '').includes('bg-selected')) || rows[rows.length - 1];
   const key = cur ? cur.getAttribute('data-task-item-key') : '';
   if (!key) return null;
-  const i = key.indexOf(':sess_');
+  // task_id 有 sess_ 与 session_ 两种前缀，按最后一个 ':' 切（Windows 盘符的
+  // ':' 在最前，id 段在最后且自身不含 ':'）
+  const i = key.lastIndexOf(':');
   return i > 0 ? { workspacePath: key.slice(0, i), sessionId: key.slice(i + 1) } : null;
 }
 

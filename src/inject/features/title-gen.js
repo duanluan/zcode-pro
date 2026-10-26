@@ -32,8 +32,9 @@ const attempted = new Set(); // 已处理过（成功或失败）的会话 id，
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function sessIdOf(key) {
-  // 会话键格式 <workspace_path>:<sess_id>；sess 段固定以 "sess_" 开头（见 session-switch.js）
-  const i = key.indexOf(':sess_');
+  // 会话键格式 <workspace_path>:<task_id>；task_id 有 sess_ 与 session_ 两种
+  // 前缀，按最后一个 ':' 切（见 session-switch.js 的 workspaceOf）
+  const i = key.lastIndexOf(':');
   return i > 0 ? key.slice(i + 1) : '';
 }
 

@@ -478,7 +478,7 @@
     headroomDesc: "Headroom \u63D2\u4EF6\uFF1A\u672C\u5730\u538B\u7F29\u4EE3\u7406\u9A7B\u7559 127.0.0.1\uFF08\u9ED8\u8BA4 8787 \u7AEF\u53E3\uFF09\uFF0C\u538B\u7F29\u53D1\u5F80\u6A21\u578B\u7684\u4E0A\u4E0B\u6587\u4EE5\u7701 token\uFF08/hr-* \u547D\u4EE4\u7F16\u8F91\u540C\u4E00\u914D\u7F6E\uFF09\u3002\u5207\u6362\u8BBE\u5907\u4F1A\u91CD\u542F\u4EE3\u7406\uFF0C\u6B63\u5728\u5904\u7406\u7684\u8BF7\u6C42\u53EF\u80FD\u4E2D\u65AD\u4E00\u6B21\u3002",
     headroomBinMissing: "\u672A\u627E\u5230 headroom \u7A0B\u5E8F\uFF0C\u4EE3\u7406\u65E0\u6CD5\u542F\u52A8\uFF1B\u5B89\u88C5 headroom \u540E\u4EE5\u4E0B\u8BBE\u7F6E\u81EA\u52A8\u751F\u6548",
     hrInstallBin: "\u5B89\u88C5 headroom \u672C\u4F53",
-    hrBinInstalled: "headroom \u672C\u4F53\u5DF2\u5B89\u88C5\uFF1B\u91CD\u65B0\u6253\u5F00\u4F1A\u8BDD\u540E\u4EE3\u7406\u53EF\u7528\uFF08SessionStart \u94A9\u5B50\u81EA\u52A8\u62C9\u8D77\uFF09",
+    hrBinInstalled: "headroom \u672C\u4F53\u5DF2\u5B89\u88C5\uFF1B\u91CD\u65B0\u6253\u5F00\u5E94\u7528\u6216\u4F1A\u8BDD\u540E\u4EE3\u7406\u53EF\u7528\uFF08SessionStart \u94A9\u5B50\u81EA\u52A8\u62C9\u8D77\uFF09",
     headroomInstallTitle: "\u672A\u5B89\u88C5 headroom \u63D2\u4EF6",
     headroomInstallDesc: "\u4ECE zcode-plugins \u5E02\u573A\u5B89\u88C5\u540E\u5373\u53EF\u5728\u6B64\u7BA1\u7406\u538B\u7F29\u4EE3\u7406\uFF1B\u91CD\u542F\u4F1A\u8BDD\u540E\u751F\u6548\u3002",
     headroomInstall: "\u5B89\u88C5",
@@ -990,7 +990,7 @@
     headroomDesc: "Headroom plugin: a local compression proxy on 127.0.0.1 (port 8787 by default) that compresses context sent to the model to save tokens (/hr-* commands edit the same file). Switching the device restarts the proxy, so requests in progress may be interrupted once.",
     headroomBinMissing: "The headroom program was not found, so the proxy cannot start. The settings below take effect once it is installed.",
     hrInstallBin: "Install headroom binary",
-    hrBinInstalled: "headroom installed; reopen a session and the hook will start the proxy automatically",
+    hrBinInstalled: "headroom installed; reopen the app or a session and the proxy will start automatically",
     headroomInstallTitle: "headroom plugin not installed",
     headroomInstallDesc: "Install it from the zcode-plugins marketplace to manage the compression proxy here; takes effect after a session restart.",
     headroomInstall: "Install",
@@ -8044,7 +8044,7 @@
     }
   }
   function workspaceOf(key) {
-    const i = key.indexOf(":sess_");
+    const i = key.lastIndexOf(":");
     return i > 0 ? key.slice(0, i) : key;
   }
   function wsHead(row) {
@@ -8182,6 +8182,7 @@
   var anyActiveCache = { at: 0, value: null, busy: false };
   var sectionActive = { task: false, project: false, pinned: false };
   var activeProjectPaths = /* @__PURE__ */ new Set();
+  var authActiveByWs = /* @__PURE__ */ new Map();
   setInterval(() => {
     if (!anyActiveCache.busy && Date.now() - anyActiveCache.at >= 1e4) globalAnyActive();
   }, 1e4);
@@ -8193,6 +8194,7 @@
     sectionActive.project = false;
     sectionActive.pinned = false;
     activeProjectPaths = /* @__PURE__ */ new Set();
+    authActiveByWs = /* @__PURE__ */ new Map();
     void (async () => {
       let hit = null;
       try {
@@ -8244,12 +8246,24 @@
           const allIds = [...byKind.task, ...byKind.project];
           const st = allIds.length ? await rpc("/task-statuses?ids=" + encodeURIComponent(allIds.join(","))).catch(() => null) : null;
           const TERMINAL = /* @__PURE__ */ new Set(["completed", "error", "interrupted"]);
+          const recOf = (id) => st && st.ok && st.available ? st.statuses[id] : void 0;
           const live = (id) => {
-            const rec = st && st.ok && st.available ? st.statuses[id] : void 0;
+            const rec = recOf(id);
             if (rec === void 0) return true;
             if (!TERMINAL.has(rec.status)) return true;
             return Date.now() - rec.updatedAt < 3e5;
           };
+          const liveSession = (id) => {
+            const rec = recOf(id);
+            if (rec === void 0) return !!domRowKeyOf(id);
+            if (!TERMINAL.has(rec.status)) return true;
+            return Date.now() - rec.updatedAt < 3e5;
+          };
+          authActiveByWs = /* @__PURE__ */ new Map();
+          for (const [base, ids] of byKindByPath) {
+            const liveIds = ids.filter(liveSession);
+            if (liveIds.length) authActiveByWs.set(base, liveIds);
+          }
           activeProjectPaths = /* @__PURE__ */ new Set();
           for (const [base, ids] of byKindByPath) {
             if (!projPaths.has(base)) continue;
@@ -8272,7 +8286,7 @@
             for (const el of list.querySelectorAll("[data-task-item-key]")) {
               if (el.closest("section[data-project-id]")) continue;
               const k = el.getAttribute("data-task-item-key") || "";
-              const id = k.slice(k.indexOf(":sess_") + 1);
+              const id = k.slice(k.lastIndexOf(":") + 1);
               const base = k.slice(0, k.lastIndexOf(":")).replace(/[\/]+$/, "");
               const ids = byKindByPath.get(base) || [];
               if (ids.map(String).includes(id) && ids.some(live)) {
@@ -8423,9 +8437,23 @@
       current: curKey ? workspaceOf(curKey) || null : null
     };
   }
+  function domRowKeyOf(id) {
+    if (!id) return "";
+    try {
+      const el = document.querySelector(`[data-task-item-key$=":${CSS.escape(id)}"]`);
+      return el && el.getAttribute("data-task-item-key") || "";
+    } catch {
+      return "";
+    }
+  }
   function wsRunningKeys() {
     const keys = /* @__PURE__ */ new Set();
-    for (const set of runningByWs.values()) for (const k of set) keys.add(k);
+    for (const set of runningByWs.values()) {
+      for (const k of set) if (!k.endsWith(":active")) keys.add(k);
+    }
+    for (const [base, ids] of authActiveByWs) {
+      for (const id of ids) keys.add(domRowKeyOf(id) || `${base}:${id}`);
+    }
     return keys;
   }
   async function verifyWorkspaceNotRunning(ws) {
@@ -8621,7 +8649,7 @@
     return (tEl ? tEl.textContent : (item.innerText || "").split("\n")[0])?.trim() || "";
   }
   function workspaceOf2(key) {
-    const i = key.indexOf(":sess_");
+    const i = key.lastIndexOf(":");
     return i > 0 ? key.slice(0, i) : key;
   }
   function findCurrent() {
@@ -8672,7 +8700,8 @@
     }, SCAN_DEBOUNCE_MS2);
   }
   async function switchTo(key) {
-    const find = () => document.querySelector(`[data-task-item-key="${CSS.escape(key)}"]`);
+    const id = key.slice(key.lastIndexOf(":") + 1);
+    const find = () => document.querySelector(`[data-task-item-key="${CSS.escape(key)}"]`) || (id ? document.querySelector(`[data-task-item-key$=":${CSS.escape(id)}"]`) : null);
     let item = find();
     if (!item) {
       const ws = workspaceOf2(key);
@@ -8690,23 +8719,28 @@
   }
   function attentionList() {
     const run = wsRunningKeys();
+    const idOf = (k) => k.slice(k.lastIndexOf(":") + 1);
+    const runKeyById = new Map([...run].map((k) => [idOf(k), k]));
     const listed = /* @__PURE__ */ new Set();
     const head = [];
     for (const k of mru) {
-      if (run.has(k) || unseen.has(k)) {
-        head.push(k);
-        listed.add(k);
+      const id = idOf(k);
+      if (listed.has(id)) continue;
+      const runForm = runKeyById.get(id);
+      if (run.has(k) || unseen.has(k) || runForm) {
+        head.push(runForm || k);
+        listed.add(id);
       }
     }
     const tail = [];
-    for (const k of run) if (!listed.has(k)) {
+    const push = (k) => {
+      const id = idOf(k);
+      if (listed.has(id)) return;
+      listed.add(id);
       tail.push(k);
-      listed.add(k);
-    }
-    for (const k of unseen) if (!listed.has(k)) {
-      tail.push(k);
-      listed.add(k);
-    }
+    };
+    for (const k of run) push(k);
+    for (const k of unseen) push(k);
     return [...head, ...tail];
   }
   function activeList() {
@@ -8727,8 +8761,22 @@
   function findTitle(key) {
     const item = document.querySelector(`[data-task-item-key="${CSS.escape(key)}"]`);
     if (item) titles.set(key, firstLineOf(item));
-    const id = key.slice(key.indexOf(":sess_") + 1);
+    const id = key.slice(key.lastIndexOf(":") + 1);
     return titles.get(key) || `sess ${id.slice(0, 8)}`;
+  }
+  async function fetchMissingTitles(keys) {
+    const sessIdOf3 = (k) => k.slice(k.lastIndexOf(":") + 1);
+    const missing = keys.filter((k) => {
+      const id = sessIdOf3(k);
+      return id && !titles.get(k) && !document.querySelector(`[data-task-item-key$=":${CSS.escape(id)}"]`);
+    });
+    if (!missing.length) return;
+    const st = await rpc("/task-statuses?ids=" + encodeURIComponent(missing.map(sessIdOf3).join(","))).catch(() => null);
+    if (!st || !st.ok || !st.available || !st.statuses) return;
+    for (const k of missing) {
+      const rec = st.statuses[sessIdOf3(k)];
+      if (rec && rec.title) titles.set(k, String(rec.title));
+    }
   }
   function projLabelOf(key, aliases2) {
     const ws = workspaceOf2(key);
@@ -8783,6 +8831,8 @@
     movedSinceOpen = false;
     const cfg = await getConfig().catch(() => null);
     aliasesCache = cfg && cfg.aliases && typeof cfg.aliases === "object" ? cfg.aliases : {};
+    if (mode === "attention") await fetchMissingTitles(attentionList()).catch(() => {
+    });
     ensureStyle();
     const L = t();
     popupEl = h(
@@ -8856,8 +8906,10 @@
       if (document.hidden) return;
       const now = wsRunningKeys();
       if (lastRunKeys) {
+        const idOf = (k) => k.slice(k.lastIndexOf(":") + 1);
+        const nowIds = new Set([...now].map(idOf));
         for (const k of lastRunKeys) {
-          if (!now.has(k) && k !== current) unseen.add(k);
+          if (!nowIds.has(idOf(k)) && k !== current) unseen.add(k);
         }
       }
       lastRunKeys = now;
@@ -8997,7 +9049,7 @@
     const cur = rows.find((e) => (e.className + "").includes("bg-selected")) || rows[rows.length - 1];
     const key = cur ? cur.getAttribute("data-task-item-key") : "";
     if (!key) return null;
-    const i = key.indexOf(":sess_");
+    const i = key.lastIndexOf(":");
     return i > 0 ? { workspacePath: key.slice(0, i), sessionId: key.slice(i + 1) } : null;
   }
   async function thirdPartySurfaces(bridge, workspacePath) {
@@ -9562,7 +9614,7 @@
   var fetching = null;
   var pendingKeys = /* @__PURE__ */ new Set();
   function sessIdOf(key) {
-    const i = key.indexOf(":sess_");
+    const i = key.lastIndexOf(":");
     return i > 0 ? key.slice(i + 1) : key;
   }
   function titleElsOf(item) {
@@ -9823,7 +9875,7 @@
   var attempted = /* @__PURE__ */ new Set();
   var sleep2 = (ms) => new Promise((r) => setTimeout(r, ms));
   function sessIdOf2(key) {
-    const i = key.indexOf(":sess_");
+    const i = key.lastIndexOf(":");
     return i > 0 ? key.slice(i + 1) : "";
   }
   function currentKey() {

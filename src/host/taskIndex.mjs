@@ -241,8 +241,9 @@ export async function listVirtualProjects(dataRoot) {
   }
 }
 
-// 批量查会话终态：task_id → task_status。分区头运行判定用它剔除官方 syncer
-// 卡滞的报告（会话已完成但内存态仍报活跃时，任务行 loader 会一直卡转）。
+// 批量查会话终态：task_id → { status, updatedAt, title }。分区头运行判定用它
+// 剔除官方 syncer 卡滞的报告（会话已完成但内存态仍报活跃时，任务行 loader 会
+// 一直卡转）；title 供 alt+r 弹窗显示折叠项目（行不在场）会话的标题。
 // 读不到（库缺失/无驱动）返回 null，调用方按未确认处理
 export async function listTaskStatuses(dataRoot, ids) {
   const out = {};
@@ -252,17 +253,19 @@ export async function listTaskStatuses(dataRoot, ids) {
   if (!driver) return null;
   const esc = (v) => "'" + String(v).replace(/'/g, "''") + "'";
   const inList = ids.map((id) => esc(id)).join(', ');
-  const sql = `SELECT task_id, task_status, updated_at FROM tasks WHERE task_id IN (${inList})`;
+  const sql = `SELECT task_id, task_status, updated_at, title FROM tasks WHERE task_id IN (${inList})`;
   try {
     let rows;
     if (driver.kind === 'node') {
       const db = new driver.DatabaseSync(dbFile, { readOnly: true });
       try { rows = db.prepare(sql).all(); } finally { db.close(); }
     } else {
-      rows = runCli(dbFile, sql + ';').stdout.split('\n').filter(Boolean)
-        .map((l) => { const [id, st, at] = l.split('|'); return { task_id: id, task_status: st, updated_at: at }; });
+      // 标题可含任意字符（含分隔符），CLI 路径走 JSON 聚合，不做分隔符切分
+      const agg = runCli(dbFile,
+        `SELECT coalesce(json_group_array(json_object('task_id', task_id, 'task_status', task_status, 'updated_at', updated_at, 'title', title)), '[]') FROM tasks WHERE task_id IN (${inList});`);
+      rows = JSON.parse(agg.stdout.trim() || '[]');
     }
-    for (const r of rows) out[String(r.task_id)] = { status: String(r.task_status || ''), updatedAt: Number(r.updated_at) || 0 };
+    for (const r of rows) out[String(r.task_id)] = { status: String(r.task_status || ''), updatedAt: Number(r.updated_at) || 0, title: String(r.title || '') };
     return out;
   } catch {
     return null;

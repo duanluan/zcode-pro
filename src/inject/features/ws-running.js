@@ -15,6 +15,9 @@
 // 探查调度：只在“捕获到运行中”后复核（20 秒首查、其后每 60 秒）。不做启动
 // 普查：应用重启后所有会话本就处于停止状态，无运行可发现；且启动期界面还在
 // 恢复，探查会打扰（实测首启会出现项目逐个展开又收起的干扰）。
+// alt+r“运行中”列表另有一路权威来源：全局扫描（globalAnyActive）确认的活跃
+// 会话直接并入运行键集合（wsRunningKeys）——折叠期间启动、刷新后仍折叠的
+// 会话行从未在场，上面的 DOM 三层机制都看不到它们。
 // 开关：helper wsRunningSpin（默认 true）。
 import { rpc } from '../core.js';
 import { projectRows, findProjectRow, rowPath, projectRowSelector } from './ws-rows.js';
@@ -191,9 +194,10 @@ export async function authoritativeIdle(ws) {
 
 
 function workspaceOf(key) {
-  // 会话键格式 <workspace_path>:<sess_id>；sess 段固定以 "sess_" 开头，
-  // 按它定位分隔符（Windows 盘符路径里也有冒号，不能按第一个 ':' 切）
-  const i = key.indexOf(':sess_');
+  // 会话键格式 <workspace_path>:<task_id>；task_id 有 sess_ 与 session_ 两种
+  // 前缀（新版应用为 session_），不能按 ':sess_' 定位分隔符——取最后一个 ':'
+  // （Windows 盘符路径的 ':' 在最前，id 段在最后且自身不含 ':'）
+  const i = key.lastIndexOf(':');
   return i > 0 ? key.slice(0, i) : key;
 }
 
@@ -380,6 +384,10 @@ let anyActiveCache = { at: 0, value: null, busy: false };
 const sectionActive = { task: false, project: false, pinned: false };
 // 权威扫描发现的有活跃任务的项目路径集合（全部 root）；项目行折叠态判定用
 let activeProjectPaths = new Set();
+// 权威扫描确认的活跃会话（工作区路径 → 通过终态过滤的会话 id）：alt+r 弹窗的
+// 运行中列表以此补 DOM 之外的盲区——折叠期间启动、页面刷新后仍折叠的会话行
+// 从未在场，runningByWs 里没有它们的键，三层 DOM 机制都看不到
+let authActiveByWs = new Map();
 // 周期复查：缓存到期就无条件重扫（不看当前值）——只在 true 时扫会有两个缺口：
 // 空闲后新任务启动无人触发（折叠分区头不亮）；任务结束但数据库完成状态尚未
 // 写入的过渡窗口里旧值一直被沿用。每 10 秒全量一次，扫描本身是内存级过滤
@@ -394,6 +402,7 @@ function globalAnyActive() {
   sectionActive.project = false;
   sectionActive.pinned = false;
   activeProjectPaths = new Set();
+  authActiveByWs = new Map();
   void (async () => {
     let hit = null;
     try {
@@ -452,12 +461,28 @@ function globalAnyActive() {
         // 不回滚（实测本会话 interrupted 后复跑）——终态但 updated_at 近 5 分钟内
         // 有动静的按真活跃；长期不动的才是 syncer 卡滞误报
         const TERMINAL = new Set(['completed', 'error', 'interrupted']);
+        const recOf = (id) => (st && st.ok && st.available ? st.statuses[id] : undefined);
         const live = (id) => {
-          const rec = st && st.ok && st.available ? st.statuses[id] : undefined;
+          const rec = recOf(id);
           if (rec === undefined) return true;
           if (!TERMINAL.has(rec.status)) return true;
           return Date.now() - rec.updatedAt < 300_000;
         };
+        // 权威活跃会话（按工作区）：alt+r 弹窗从这里补折叠项目的真实会话键。
+        // 只收“确认是会话”的 id——任务索引认识的、或侧栏行在场的；两者都不
+        // 满足的（listActiveTaskIds 混入的非会话标识、索引尚未记录的新会话）
+        // 不进弹窗，否则会出现点了切不过去的幽灵行
+        const liveSession = (id) => {
+          const rec = recOf(id);
+          if (rec === undefined) return !!domRowKeyOf(id);
+          if (!TERMINAL.has(rec.status)) return true;
+          return Date.now() - rec.updatedAt < 300_000;
+        };
+        authActiveByWs = new Map();
+        for (const [base, ids] of byKindByPath) {
+          const liveIds = ids.filter(liveSession);
+          if (liveIds.length) authActiveByWs.set(base, liveIds);
+        }
         // 活跃的项目路径集合（项目行折叠态判定用）：按 root→项目聚合，
         // 该项目任一 root 上有活跃任务即记入
         activeProjectPaths = new Set();
@@ -494,7 +519,7 @@ function globalAnyActive() {
           for (const el of list.querySelectorAll('[data-task-item-key]')) {
             if (el.closest('section[data-project-id]')) continue;
             const k = el.getAttribute('data-task-item-key') || '';
-            const id = k.slice(k.indexOf(':sess_') + 1);
+            const id = k.slice(k.lastIndexOf(':') + 1);
             const base = k.slice(0, k.lastIndexOf(':')).replace(/[\/]+$/, '');
             const ids = byKindByPath.get(base) || [];
             if (ids.map(String).includes(id) && ids.some(live)) {
@@ -595,7 +620,8 @@ async function peek(ws, opts) {
       } else {
         let set = runningByWs.get(ws);
         if (!set) { set = new Set(); runningByWs.set(ws, set); }
-        set.add(ws + ':active'); // 占位键：apply 只看集合大小
+        set.add(ws + ':active'); // 占位键：apply 只看集合大小；真实会话键由
+                                 // wsRunningKeys 从权威扫描集合补，占位键不进弹窗
         schedulePeek(ws, PEEK_REPEAT_MS);
       }
       apply();
@@ -676,10 +702,31 @@ export function wsRunningSnapshot() {
   };
 }
 
-// 当前所有运行中会话键的集合（会话切换的 alt+r 以此筛“正在运行”的任务）
+// 按会话 id 找在场任务行并返回它的行键：行键的工作区前缀可能带尾斜杠，权威
+// 拼出的键与 DOM 实际键可能不同形——行在场时一律用 DOM 的真实键，弹窗里同
+// 一会话不会出现两行，切换与读标题也按真实键命中（会话 id 全局唯一，后缀
+// 匹配不会撞到别的会话）
+function domRowKeyOf(id) {
+  if (!id) return '';
+  try {
+    const el = document.querySelector(`[data-task-item-key$=":${CSS.escape(id)}"]`);
+    return (el && el.getAttribute('data-task-item-key')) || '';
+  } catch { return ''; }
+}
+
+// 当前所有运行中会话键的集合（会话切换的 alt+r 以此筛“正在运行”的任务）：
+// DOM 记录（runningByWs）+ 权威扫描确认的活跃会话两者取并集——折叠项目里
+// 启动、页面刷新后仍折叠的会话行从未在场，只有权威扫描知道它们。
+// peek 的 ":active" 占位键不是真实会话，不进弹窗（图标的连续性由 apply 的
+// 权威路径保证，占位键只维持 runningByWs 非空这一路回退）
 export function wsRunningKeys() {
   const keys = new Set();
-  for (const set of runningByWs.values()) for (const k of set) keys.add(k);
+  for (const set of runningByWs.values()) {
+    for (const k of set) if (!k.endsWith(':active')) keys.add(k);
+  }
+  for (const [base, ids] of authActiveByWs) {
+    for (const id of ids) keys.add(domRowKeyOf(id) || `${base}:${id}`);
+  }
   return keys;
 }
 
