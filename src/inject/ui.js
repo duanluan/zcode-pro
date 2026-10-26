@@ -566,6 +566,8 @@ export function ensureStyle() {
       -webkit-appearance: none;
       appearance: none;
       width: 100%;
+      /* 不给 padding：padding 会缩小 thumb 的可滑区间（拖不到最左/最右）。
+      轨道起点对齐由弹窗里的固定标签列宽负责 */
       height: 4px;
       border-radius: 9999px;
       background: color-mix(in oklab, var(--color-foreground, #888) 18%, transparent);

@@ -194,7 +194,7 @@ let skinStyleEl = null;   // 皮肤 token 覆盖
 let bgStyleEl = null;     // html 背景层（图 + 遮罩）
 let injectedKeys = new Set(); // 半透明化写进 root.style 的变量（重算前先撤）
 let classObserver = null; // 明暗切换（root class 变化）→ 重算遮罩色与透明度
-let currentTheme = { skin: 'default', custom: null, bg: { mode: 'none', visibility: 0.8 } };
+let currentTheme = { skin: 'default', custom: null, bg: { mode: 'none', maskOpacity: 0.82, blurPx: 0, panelOpacity: 0.3 } };
 let lastModeSig = ''; // 观察器只对明暗模式变化重算：applySkin/applyBackground
 // 自己也会改 root class（zcodepro-skin-*/zcodepro-bg-on），不带这条过滤会自触发循环
 let bgTimer = null;   // 文件夹轮换 / 网址刷新定时器（重应用前先清）
@@ -321,18 +321,23 @@ async function applyBackground(bg) {
     return;
   }
 
-  const visibility = typeof bg.visibility === 'number' && Number.isFinite(bg.visibility)
-    ? Math.min(1, Math.max(0, bg.visibility)) : 0.8;
-  const alpha = 1 - visibility;
+  // 三参数（对齐 codeg 语义）：maskOpacity 遮罩不透明度（直接作为遮罩 α）；
+  // blurPx 图片模糊（CSS filter，只糊图片层不糊遮罩）；panelOpacity 面板
+  // 不透明度（侧栏/面板/标签栏表面混入底色的比例，独立于遮罩）
+  const num01 = (v, dflt) => (typeof v === 'number' && Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : dflt);
+  const maskOpacity = num01(bg.maskOpacity, 0.82);
+  const alpha = Math.min(0.99, maskOpacity);
+  const blurPx = typeof bg.blurPx === 'number' && Number.isFinite(bg.blurPx)
+    ? Math.min(24, Math.max(0, Math.round(bg.blurPx))) : 0;
+  const panelOpacity = num01(bg.panelOpacity, 0.3);
   // 遮罩色跟随当前明暗的皮肤底色：在皮肤已应用、半透明化未写入时读解析色
   const resolvedBg = resolvedColor('--color-background');
   const mHex = resolvedBg.match(/^rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)/);
   const rgb = mHex
     ? [Math.round(+mHex[1]), Math.round(+mHex[2]), Math.round(+mHex[3])].join(',')
     : (isDarkMode() ? '13,13,13' : '248,248,248');
-  // 表面半透明化：面板不透明度 = 遮罩浓度 + 10% 基础偏移（可见度 100% → 面板
-  // 10% 底色，0% → 100% 纯色）；在设图之前完成，与具体图片无关
-  const panelMix = Math.min(100, Math.round(alpha * 100) + 10);
+  // 表面半透明化：面板不透明度直接用 panelOpacity（0=全透图，1=纯色）
+  const panelMix = Math.round(panelOpacity * 100);
   if (panelMix < 100) {
     for (const t of SURFACE_TOKENS) {
       const v = resolvedColor(t);
@@ -342,7 +347,7 @@ async function applyBackground(bg) {
       }
     }
   }
-  await applyRegionBackgrounds(bg, { mask, rgb, alpha, fit: bg.fit, visibility, seq });
+  await applyRegionBackgrounds(bg, { rgb, alpha, fit: bg.fit, seq });
   if (seq !== applySeq) return; // 分区文件夹列表等待期间配置又变了
   if (!bgActive) return; // 只有分区背景：到此为止，html 层不设图
 
@@ -357,10 +362,17 @@ async function applyBackground(bg) {
     tile: 'background-size:100% 100%,auto !important;background-repeat:no-repeat,repeat !important;',
   };
   const fitCss = FIT_CSS[bg.fit] || FIT_CSS.cover;
+  // 模糊只作用于背景层：图与遮罩画在 html::before（fixed 铺满视口、z 轴最底），
+  // filter 写在伪元素上——写在 html 自身会把整个界面子树一起糊掉。
+  // 模糊会把伪元素边缘拉开出现透明缝，按模糊半径外扩 inset 收边
+  const blurCss = blurPx > 0 ? `filter:blur(${blurPx}px);` : '';
+  const spread = blurPx > 0 ? Math.max(20, blurPx * 2) : 0;
   const setImage = (image) => {
     bgStyleEl.textContent =
-      `html.zcodepro-bg-on{background-color:rgb(${rgb}) !important;background-image:linear-gradient(rgba(${rgb},${alpha}),rgba(${rgb},${alpha})),${image} !important;` +
-      `${fitCss}background-position:center !important;}`;
+      `html.zcodepro-bg-on{background-color:rgb(${rgb}) !important;}` +
+      `html.zcodepro-bg-on::before{content:'' !important;position:fixed;inset:-${spread}px;z-index:-1;pointer-events:none;` +
+      `background-image:linear-gradient(rgba(${rgb},${alpha}),rgba(${rgb},${alpha})),${image} !important;` +
+      `${fitCss}background-position:center !important;${blurCss}}`;
     root.classList.add('zcodepro-bg-on');
   };
   const helperUrl = liveBoot().helperUrl || HELPER_URL;
@@ -413,8 +425,8 @@ async function applyRegionBackgrounds(bg, pre) {
   regionTimers = [];
   const rules = new Map(); // region -> 规则文本（轮换时覆盖同分区旧规则，不无限追加）
   const flush = () => { regionStyleEl.textContent = [...rules.values()].join(''); };
-  // pre.alpha = 遮罩浓度（= 1 - 可见度），与全局同值，不再反转
-  const alpha = pre ? pre.alpha : 0.2;
+  // pre.alpha = 遮罩不透明度（直接配置值），与全局同值
+  const alpha = pre ? pre.alpha : 0.82;
   const rgb = pre ? pre.rgb : '13,13,13';
   const FIT_CSS = {
     cover: '100% 100%,cover', contain: '100% 100%,contain', fill: '100% 100%,100% 100%', tile: '100% 100%,auto',
@@ -468,7 +480,7 @@ function applyAll(theme) {
 
 export function startTheme() {
   if (!document.head && !document.documentElement) return;
-  applyAll({ skin: 'default', custom: null, bg: { mode: 'none', visibility: 0.8 } });
+  applyAll({ skin: 'default', custom: null, bg: { mode: 'none', maskOpacity: 0.82, blurPx: 0, panelOpacity: 0.3 } });
   void getConfig().then((cfg) => applyAll(cfg.theme)).catch(() => { /* 读不到配置保持应用默认 */ });
   window.addEventListener('zcodepro:config-changed', () => {
     void getConfig(true).then((cfg) => applyAll(cfg.theme)).catch(() => { /* ignore */ });

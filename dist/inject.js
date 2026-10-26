@@ -304,12 +304,12 @@
     themeBgRegionRight: "\u53F3\u4FA7\u8FB9\u680F",
     themeBgPane: "\u80CC\u666F\u56FE",
     themeSkinTitle: "\u76AE\u80A4",
-    themeSkinDesc: "\u77E5\u540D\u7F16\u8F91\u5668\u4E3B\u9898\u914D\u8272\uFF0C\u660E\u6697\u4E24\u5957\u53D8\u4F53\u8DDF\u968F ZCode \u5F53\u524D\u660E\u6697\u81EA\u52A8\u5207\u6362\uFF1B\u9ED8\u8BA4\u4FDD\u6301 ZCode \u539F\u6837\uFF0C\u81EA\u5B9A\u4E49\u5728\u4E0B\u65B9\u81EA\u884C\u8C03\u8272\u3002",
+    themeSkinDesc: "\u77E5\u540D\u7F16\u8F91\u5668\u4E3B\u9898\u914D\u8272\uFF0C\u81EA\u52A8\u5339\u914D ZCode \u7684\u6D45\u8272 / \u6DF1\u8272\u6A21\u5F0F\uFF1B\u9ED8\u8BA4\u4FDD\u6301 ZCode \u539F\u6837\uFF0C\u81EA\u5B9A\u4E49\u5728\u4E0B\u65B9\u81EA\u884C\u8C03\u8272\u3002",
     themeSkinCustom: "\u81EA\u5B9A\u4E49",
     themeCustomTitle: "\u81EA\u5B9A\u4E49\u4E3B\u9898",
-    themeCustomHint: "\u6539\u989C\u8272\u5373\u5B9E\u65F6\u751F\u6548\uFF08\u81EA\u52A8\u5207\u5230\u81EA\u5B9A\u4E49\u76AE\u80A4\uFF09\uFF1B\u6BCF\u5957\u542B\u660E\u3001\u6697\u4E24\u4E2A\u53D8\u4F53\uFF0C\u4E94\u4E2A\u951A\u70B9\u8272\u6D3E\u751F\u6574\u5957\u754C\u9762\u914D\u8272\u3002",
-    themeCustomLight: "\u660E\u8272\u53D8\u4F53",
-    themeCustomDark: "\u6697\u8272\u53D8\u4F53",
+    themeCustomHint: "\u6539\u989C\u8272\u5373\u5B9E\u65F6\u751F\u6548\uFF08\u81EA\u52A8\u5207\u5230\u81EA\u5B9A\u4E49\u76AE\u80A4\uFF09\uFF1B\u6D45\u8272\u3001\u6DF1\u8272\u5404\u914D\u4E00\u6B21\uFF0C\u9009\u597D 5 \u4E2A\u989C\u8272\u5373\u53EF\u751F\u6210\u6574\u5957\u754C\u9762\u914D\u8272\u3002",
+    themeCustomLight: "\u6D45\u8272",
+    themeCustomDark: "\u6DF1\u8272",
     themeCustomBg: "\u80CC\u666F",
     themeCustomCard: "\u5361\u7247",
     themeCustomFg: "\u6B63\u6587",
@@ -341,7 +341,12 @@
     themeBgFitContain: "\u9002\u5E94",
     themeBgFitFill: "\u62C9\u4F38",
     themeBgFitTile: "\u5E73\u94FA",
-    themeVisibility: "\u80CC\u666F\u53EF\u89C1\u5EA6",
+    themeBgMask: "\u906E\u7F69\u4E0D\u900F\u660E\u5EA6",
+    themeBgMaskHint: "\u6570\u503C\u8D8A\u9AD8\uFF0C\u56FE\u7247\u8D8A\u5411\u4E3B\u9898\u80CC\u666F\u8272\u6DE1\u5316\uFF0C\u6587\u5B57\u5BF9\u6BD4\u8D8A\u6E05\u6670",
+    themeBgMaskHint2: "\u56FE\u7247\u5411\u4E3B\u9898\u80CC\u666F\u8272\u6DE1\u5316\u7684\u7A0B\u5EA6",
+    themeBgBlur: "\u56FE\u7247\u6A21\u7CCA",
+    themeBgPanel: "\u9762\u677F\u4E0D\u900F\u660E\u5EA6",
+    themeBgPanelHint: "\u4FA7\u680F\u3001\u9762\u677F\u4E0E\u6807\u7B7E\u680F\u7684\u4E0D\u900F\u660E\u7A0B\u5EA6\u3002\u8D8A\u4F4E\uFF0C\u900F\u51FA\u7684\u56FE\u7247\u8D8A\u591A\u3002",
     themeBgDeletedActive: "\u5F53\u524D\u80CC\u666F\u5DF2\u5220\u9664\uFF0C\u5DF2\u81EA\u52A8\u505C\u7528\u80CC\u666F",
     sbItemCtx: "\u4E0A\u4E0B\u6587\u5360\u7528",
     sbItemQuestions: "\u63D0\u95EE\u6B21\u6570",
@@ -805,12 +810,12 @@
     themeBgRegionRight: "Right sidebar",
     themeBgPane: "Background",
     themeSkinTitle: "Skins",
-    themeSkinDesc: 'Famous editor theme palettes; light and dark variants follow ZCode\u2019s current mode automatically; "Default" keeps ZCode as-is, "Custom" is tuned below.',
+    themeSkinDesc: 'Famous editor theme palettes, auto-matching ZCode\u2019s light / dark mode; "Default" keeps ZCode as-is, "Custom" is tuned below.',
     themeSkinCustom: "Custom",
     themeCustomTitle: "Custom theme",
-    themeCustomHint: "Color changes apply live (auto-switches to the custom skin); light and dark variants, five anchor colors derive the whole palette.",
-    themeCustomLight: "Light variant",
-    themeCustomDark: "Dark variant",
+    themeCustomHint: "Color changes apply live (auto-switches to the custom skin); set light and dark separately \u2014 pick 5 colors and the whole palette is derived.",
+    themeCustomLight: "Light",
+    themeCustomDark: "Dark",
     themeCustomBg: "Background",
     themeCustomCard: "Card",
     themeCustomFg: "Text",
@@ -842,7 +847,12 @@
     themeBgFitContain: "Fit",
     themeBgFitFill: "Stretch",
     themeBgFitTile: "Tile",
-    themeVisibility: "Background visibility",
+    themeBgMask: "Mask opacity",
+    themeBgMaskHint: "Higher values fade the image toward the theme background color for clearer text",
+    themeBgMaskHint2: "How much the image fades toward the theme background color",
+    themeBgBlur: "Image blur",
+    themeBgPanel: "Panel opacity",
+    themeBgPanelHint: "Opacity of sidebar, panels and tab bar. Lower reveals more of the image.",
     themeBgDeletedActive: "Active background was deleted; background disabled",
     sbItemCtx: "Context usage",
     sbItemQuestions: "Questions asked",
@@ -1816,6 +1826,8 @@
       -webkit-appearance: none;
       appearance: none;
       width: 100%;
+      /* \u4E0D\u7ED9 padding\uFF1Apadding \u4F1A\u7F29\u5C0F thumb \u7684\u53EF\u6ED1\u533A\u95F4\uFF08\u62D6\u4E0D\u5230\u6700\u5DE6/\u6700\u53F3\uFF09\u3002
+      \u8F68\u9053\u8D77\u70B9\u5BF9\u9F50\u7531\u5F39\u7A97\u91CC\u7684\u56FA\u5B9A\u6807\u7B7E\u5217\u5BBD\u8D1F\u8D23 */
       height: 4px;
       border-radius: 9999px;
       background: color-mix(in oklab, var(--color-foreground, #888) 18%, transparent);
@@ -4131,7 +4143,7 @@
   var bgStyleEl = null;
   var injectedKeys = /* @__PURE__ */ new Set();
   var classObserver = null;
-  var currentTheme = { skin: "default", custom: null, bg: { mode: "none", visibility: 0.8 } };
+  var currentTheme = { skin: "default", custom: null, bg: { mode: "none", maskOpacity: 0.82, blurPx: 0, panelOpacity: 0.3 } };
   var lastModeSig = "";
   var bgTimer = null;
   var regionStyleEl = null;
@@ -4240,12 +4252,15 @@
       await applyRegionBackgrounds(bg);
       return;
     }
-    const visibility = typeof bg.visibility === "number" && Number.isFinite(bg.visibility) ? Math.min(1, Math.max(0, bg.visibility)) : 0.8;
-    const alpha = 1 - visibility;
+    const num01 = (v, dflt) => typeof v === "number" && Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : dflt;
+    const maskOpacity = num01(bg.maskOpacity, 0.82);
+    const alpha = Math.min(0.99, maskOpacity);
+    const blurPx = typeof bg.blurPx === "number" && Number.isFinite(bg.blurPx) ? Math.min(24, Math.max(0, Math.round(bg.blurPx))) : 0;
+    const panelOpacity = num01(bg.panelOpacity, 0.3);
     const resolvedBg = resolvedColor("--color-background");
     const mHex = resolvedBg.match(/^rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)/);
     const rgb = mHex ? [Math.round(+mHex[1]), Math.round(+mHex[2]), Math.round(+mHex[3])].join(",") : isDarkMode() ? "13,13,13" : "248,248,248";
-    const panelMix = Math.min(100, Math.round(alpha * 100) + 10);
+    const panelMix = Math.round(panelOpacity * 100);
     if (panelMix < 100) {
       for (const t2 of SURFACE_TOKENS) {
         const v = resolvedColor(t2);
@@ -4255,7 +4270,7 @@
         }
       }
     }
-    await applyRegionBackgrounds(bg, { mask, rgb, alpha, fit: bg.fit, visibility, seq });
+    await applyRegionBackgrounds(bg, { rgb, alpha, fit: bg.fit, seq });
     if (seq !== applySeq) return;
     if (!bgActive) return;
     const FIT_CSS = {
@@ -4265,8 +4280,10 @@
       tile: "background-size:100% 100%,auto !important;background-repeat:no-repeat,repeat !important;"
     };
     const fitCss = FIT_CSS[bg.fit] || FIT_CSS.cover;
+    const blurCss = blurPx > 0 ? `filter:blur(${blurPx}px);` : "";
+    const spread = blurPx > 0 ? Math.max(20, blurPx * 2) : 0;
     const setImage = (image) => {
-      bgStyleEl.textContent = `html.zcodepro-bg-on{background-color:rgb(${rgb}) !important;background-image:linear-gradient(rgba(${rgb},${alpha}),rgba(${rgb},${alpha})),${image} !important;${fitCss}background-position:center !important;}`;
+      bgStyleEl.textContent = `html.zcodepro-bg-on{background-color:rgb(${rgb}) !important;}html.zcodepro-bg-on::before{content:'' !important;position:fixed;inset:-${spread}px;z-index:-1;pointer-events:none;background-image:linear-gradient(rgba(${rgb},${alpha}),rgba(${rgb},${alpha})),${image} !important;${fitCss}background-position:center !important;${blurCss}}`;
       root.classList.add("zcodepro-bg-on");
     };
     const helperUrl = liveBoot().helperUrl || HELPER_URL;
@@ -4325,7 +4342,7 @@
     const flush = () => {
       regionStyleEl.textContent = [...rules.values()].join("");
     };
-    const alpha = pre ? pre.alpha : 0.2;
+    const alpha = pre ? pre.alpha : 0.82;
     const rgb = pre ? pre.rgb : "13,13,13";
     const FIT_CSS = {
       cover: "100% 100%,cover",
@@ -4379,7 +4396,7 @@
   }
   function startTheme() {
     if (!document.head && !document.documentElement) return;
-    applyAll({ skin: "default", custom: null, bg: { mode: "none", visibility: 0.8 } });
+    applyAll({ skin: "default", custom: null, bg: { mode: "none", maskOpacity: 0.82, blurPx: 0, panelOpacity: 0.3 } });
     void getConfig().then((cfg) => applyAll(cfg.theme)).catch(() => {
     });
     window.addEventListener("zcodepro:config-changed", () => {
@@ -5333,21 +5350,18 @@
           turnList
         );
         let themeCfg = structuredClone(config.theme || {});
+        const numOrBg = (v, d) => typeof v === "number" && Number.isFinite(v) ? v : d;
         themeCfg.skin = themeCfg.skin || "default";
         themeCfg.custom = {
           light: themeCfg.custom && themeCfg.custom.light || {},
           dark: themeCfg.custom && themeCfg.custom.dark || {}
         };
         themeCfg.bg = {
-          mode: "none",
-          file: "",
-          folder: "",
-          folderRandom: true,
-          url: "",
-          intervalMin: 0,
-          fit: "cover",
-          visibility: 0.8,
-          ...themeCfg.bg || {}
+          ...themeCfg.bg || {},
+          mode: themeCfg.bg?.mode || "none",
+          maskOpacity: numOrBg(themeCfg.bg?.maskOpacity, 0.82),
+          blurPx: numOrBg(themeCfg.bg?.blurPx, 0),
+          panelOpacity: numOrBg(themeCfg.bg?.panelOpacity, 0.3)
         };
         themeCfg.bg.regions = themeCfg.bg.regions && typeof themeCfg.bg.regions === "object" ? themeCfg.bg.regions : {};
         let bgFiles = [];
@@ -5590,27 +5604,73 @@
           );
         };
         const renderThemeBg = () => {
-          const vis = Math.round((themeCfg.bg.visibility ?? 0.8) * 100);
-          const visLabel = h("span", { class: "w-10 text-right text-ui-xs tabular-nums text-foreground-subtle" }, vis + "%");
-          const visRange = h("input", {
-            type: "range",
-            min: "0",
-            max: "100",
-            step: "5",
-            value: String(vis),
-            class: "zcodepro-range",
-            "aria-label": L.themeVisibility,
-            style: "flex:1"
-          });
-          let visTimer = null;
-          visRange.addEventListener("input", () => {
-            const v = Number(visRange.value);
-            visLabel.textContent = v + "%";
-            clearTimeout(visTimer);
-            visTimer = setTimeout(() => {
-              void saveTheme({ bg: { visibility: v / 100 } });
-            }, 300);
-          });
+          const sliderRow = (label, title, min, max, step, val, unit, commit, hint) => {
+            const lab = h("span", { class: "shrink-0 whitespace-nowrap text-ui-xs font-medium text-foreground-subtle", title, style: "width:72px" }, label);
+            const valLabel = h("span", { class: "w-12 text-right text-ui-xs tabular-nums text-foreground-subtle" }, val + unit);
+            const range = h("input", {
+              type: "range",
+              min: String(min),
+              max: String(max),
+              step: String(step),
+              value: String(val),
+              class: "zcodepro-range",
+              "aria-label": label,
+              style: "flex:1"
+            });
+            let timer = null;
+            range.addEventListener("input", () => {
+              const v = Number(range.value);
+              valLabel.textContent = v + unit;
+              clearTimeout(timer);
+              timer = setTimeout(() => commit(v), 300);
+            });
+            return h(
+              "div",
+              { class: "flex flex-col gap-0.5" },
+              h("div", { class: "flex items-center gap-3" }, lab, range, valLabel),
+              hint ? h("span", { class: "text-ui-xs/relaxed text-foreground-subtle" }, hint) : null
+            );
+          };
+          const numOr = (v, d) => typeof v === "number" && Number.isFinite(v) ? v : d;
+          const maskRow = () => sliderRow(
+            L.themeBgMask,
+            L.themeBgMaskHint,
+            0,
+            99,
+            1,
+            Math.round(numOr(themeCfg.bg.maskOpacity, 0.82) * 100),
+            "%",
+            (v) => {
+              void saveTheme({ bg: { maskOpacity: v / 100 } });
+            },
+            L.themeBgMaskHint2
+          );
+          const blurRow = () => sliderRow(
+            L.themeBgBlur,
+            "",
+            0,
+            24,
+            1,
+            numOr(themeCfg.bg.blurPx, 0),
+            "px",
+            (v) => {
+              void saveTheme({ bg: { blurPx: v } });
+            },
+            ""
+          );
+          const panelRow = () => sliderRow(
+            L.themeBgPanel,
+            "",
+            0,
+            100,
+            1,
+            Math.round(numOr(themeCfg.bg.panelOpacity, 0.3) * 100),
+            "%",
+            (v) => {
+              void saveTheme({ bg: { panelOpacity: v / 100 } });
+            },
+            L.themeBgPanelHint
+          );
           const modeBtn = (id, label) => h("button", {
             type: "button",
             class: "zcodepro-tab",
@@ -5785,10 +5845,10 @@
             ),
             h(
               "div",
-              { class: "mt-3 flex items-center gap-3" },
-              h("span", { class: "shrink-0 text-ui-xs font-medium text-foreground-subtle" }, L.themeVisibility),
-              visRange,
-              visLabel
+              { class: "mt-3 flex flex-col gap-2" },
+              maskRow(),
+              blurRow(),
+              panelRow()
             ),
             bgInput
           );

@@ -869,15 +869,20 @@ export function openSettingsDialog() {
       // —— “颜色”子页（paneStylesSub3）：预设皮肤卡片 + 自定义主题编辑 ——
       // —— “背景图”子页（paneStylesSub4）：无背景 / 图库 / 文件夹轮换 / 网址 ——
       let themeCfg = structuredClone(config.theme || {});
+      const numOrBg = (v, d) => (typeof v === 'number' && Number.isFinite(v) ? v : d);
       themeCfg.skin = themeCfg.skin || 'default';
       themeCfg.custom = {
         light: (themeCfg.custom && themeCfg.custom.light) || {},
         dark: (themeCfg.custom && themeCfg.custom.dark) || {},
       };
       themeCfg.bg = {
-        mode: 'none', file: '', folder: '', folderRandom: true, url: '', intervalMin: 0, fit: 'cover', visibility: 0.8,
         ...(themeCfg.bg || {}),
+        mode: themeCfg.bg?.mode || 'none',
+        maskOpacity: numOrBg(themeCfg.bg?.maskOpacity, 0.82),
+        blurPx: numOrBg(themeCfg.bg?.blurPx, 0),
+        panelOpacity: numOrBg(themeCfg.bg?.panelOpacity, 0.3),
       };
+      // file/folder/url/fit/folderRandom/intervalMin/regions 由 helper 清洗保证形态，原样保留
       themeCfg.bg.regions = (themeCfg.bg.regions && typeof themeCfg.bg.regions === 'object') ? themeCfg.bg.regions : {};
       let bgFiles = [];
       let bgLoading = false;
@@ -1061,19 +1066,35 @@ export function openSettingsDialog() {
           valueCtrl || h('span', { class: 'text-ui-xs text-foreground-subtle' }, ''));
       };
       const renderThemeBg = () => {
-        const vis = Math.round((themeCfg.bg.visibility ?? 0.8) * 100);
-        const visLabel = h('span', { class: 'w-10 text-right text-ui-xs tabular-nums text-foreground-subtle' }, vis + '%');
-        const visRange = h('input', {
-          type: 'range', min: '0', max: '100', step: '5', value: String(vis),
-          class: 'zcodepro-range', 'aria-label': L.themeVisibility, style: 'flex:1',
-        });
-        let visTimer = null;
-        visRange.addEventListener('input', () => {
-          const v = Number(visRange.value);
-          visLabel.textContent = v + '%';
-          clearTimeout(visTimer);
-          visTimer = setTimeout(() => { void saveTheme({ bg: { visibility: v / 100 } }); }, 300);
-        });
+        // 三个调节参数（滑杆行构造器：label + 范围 + 单位 + 提示 + 防抖保存）
+        const sliderRow = (label, title, min, max, step, val, unit, commit, hint) => {
+          // 标签列固定宽（容最长标签六字；内联样式——应用的 Tailwind 按需编译
+          // 不包含 w-[72px] 这类任意值类）：多行滑杆的轨道起点对齐同一竖线
+          const lab = h('span', { class: 'shrink-0 whitespace-nowrap text-ui-xs font-medium text-foreground-subtle', title, style: 'width:72px' }, label);
+          const valLabel = h('span', { class: 'w-12 text-right text-ui-xs tabular-nums text-foreground-subtle' }, val + unit);
+          const range = h('input', {
+            type: 'range', min: String(min), max: String(max), step: String(step), value: String(val),
+            class: 'zcodepro-range', 'aria-label': label, style: 'flex:1',
+          });
+          let timer = null;
+          range.addEventListener('input', () => {
+            const v = Number(range.value);
+            valLabel.textContent = v + unit;
+            clearTimeout(timer);
+            timer = setTimeout(() => commit(v), 300);
+          });
+          return h('div', { class: 'flex flex-col gap-0.5' },
+            h('div', { class: 'flex items-center gap-3' }, lab, range, valLabel),
+            hint ? h('span', { class: 'text-ui-xs/relaxed text-foreground-subtle' }, hint) : null);
+        };
+        // 数值兜底：null（旧配置带入）与 undefined 都要落默认，?? 只兜 undefined
+        const numOr = (v, d) => (typeof v === 'number' && Number.isFinite(v) ? v : d);
+        const maskRow = () => sliderRow(L.themeBgMask, L.themeBgMaskHint, 0, 99, 1, Math.round(numOr(themeCfg.bg.maskOpacity, 0.82) * 100), '%',
+          (v) => { void saveTheme({ bg: { maskOpacity: v / 100 } }); }, L.themeBgMaskHint2);
+        const blurRow = () => sliderRow(L.themeBgBlur, '', 0, 24, 1, numOr(themeCfg.bg.blurPx, 0), 'px',
+          (v) => { void saveTheme({ bg: { blurPx: v } }); }, '');
+        const panelRow = () => sliderRow(L.themeBgPanel, '', 0, 100, 1, Math.round(numOr(themeCfg.bg.panelOpacity, 0.3) * 100), '%',
+          (v) => { void saveTheme({ bg: { panelOpacity: v / 100 } }); }, L.themeBgPanelHint);
         const modeBtn = (id, label) => h('button', {
           type: 'button', class: 'zcodepro-tab',
           'data-state': themeCfg.bg.mode === id ? 'active' : 'inactive',
@@ -1184,9 +1205,8 @@ export function openSettingsDialog() {
             h('span', { class: 'text-ui-xs font-medium text-foreground-subtle' }, L.themeBgFit),
             fitBtn('cover', L.themeBgFitCover), fitBtn('contain', L.themeBgFitContain),
             fitBtn('fill', L.themeBgFitFill), fitBtn('tile', L.themeBgFitTile)),
-          h('div', { class: 'mt-3 flex items-center gap-3' },
-            h('span', { class: 'shrink-0 text-ui-xs font-medium text-foreground-subtle' }, L.themeVisibility),
-            visRange, visLabel),
+          h('div', { class: 'mt-3 flex flex-col gap-2' },
+            maskRow(), blurRow(), panelRow()),
           bgInput,
         );
       };

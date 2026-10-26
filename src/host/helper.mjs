@@ -68,8 +68,10 @@ function listBgFiles(dataRoot) {
 // 主题配置（设置 → 外观 → 主题/背景图）：skin 为皮肤 id（default = 不覆盖，
 // custom = 用 custom 锚点色现算色阶）；bg.mode 选背景来源——none 无背景 /
 // library 本地图库（file 为当前文件）/ folder 文件夹（定时切换，folderRandom
-// 随机或顺序）/ url 网址（intervalMin 针对随机图 API 定时刷新）；visibility
-// 为图片可见度 0-1。主题功能未发过版，无旧结构需要迁移
+// 随机或顺序）/ url 网址（intervalMin 针对随机图 API 定时刷新）；
+// maskOpacity 遮罩不透明度 0-0.99（越高图片越向主题背景色淡化，文字对比越
+// 清晰，默认 0.82）、blurPx 图片模糊 0-24px（默认 0）、panelOpacity 面板
+// 不透明度 0-1（侧栏/面板/标签栏，越低透出图片越多，默认 0.3）
 const THEME_SKINS = new Set(['default', 'dracula', 'nord', 'tokyonight', 'catppuccin', 'gruvbox', 'onedark', 'solarized', 'rosepine', 'everforest', 'nightowl', 'kanagawa', 'custom']);
 const BG_MODES = new Set(['none', 'library', 'folder', 'url']);
 const BG_FITS = new Set(['cover', 'contain', 'fill', 'tile']);
@@ -103,7 +105,6 @@ function mergeBgRegion(src) {
 export function mergeThemeConfig(saved) {
   const t = saved && typeof saved === 'object' ? saved : {};
   const bg = t.bg && typeof t.bg === 'object' ? t.bg : {};
-  const vis = Number(bg.visibility);
   const cfg = {
     skin: THEME_SKINS.has(t.skin) ? t.skin : 'default',
     custom: mergeCustomSkin(t.custom),
@@ -115,7 +116,11 @@ export function mergeThemeConfig(saved) {
       url: (str(bg.url, 2000) || '').trim(),
       intervalMin: Number.isFinite(Number(bg.intervalMin)) ? Math.min(1440, Math.max(0, Math.round(Number(bg.intervalMin)))) : 0,
       fit: BG_FITS.has(bg.fit) ? bg.fit : 'cover',
-      visibility: Number.isFinite(vis) ? Math.min(1, Math.max(0, vis)) : 0.8,
+      // null/undefined/非数值都落默认（Number(null)=0 是有限数，须先排除 null）
+      maskOpacity: bg.maskOpacity != null && Number.isFinite(Number(bg.maskOpacity))
+        ? Math.min(0.99, Math.max(0, Number(bg.maskOpacity))) : 0.82,
+      blurPx: bg.blurPx != null && Number.isFinite(Number(bg.blurPx)) ? Math.min(24, Math.max(0, Math.round(Number(bg.blurPx)))) : 0,
+      panelOpacity: bg.panelOpacity != null && Number.isFinite(Number(bg.panelOpacity)) ? Math.min(1, Math.max(0, Number(bg.panelOpacity))) : 0.3,
       regions: {
         left: mergeBgRegion(bg.regions && bg.regions.left),
         center: mergeBgRegion(bg.regions && bg.regions.center),
@@ -515,7 +520,9 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
               url: bt.bg && bt.bg.url !== undefined ? bt.bg.url : cur.bg.url,
               intervalMin: bt.bg && bt.bg.intervalMin !== undefined ? bt.bg.intervalMin : cur.bg.intervalMin,
               fit: bt.bg && bt.bg.fit !== undefined ? bt.bg.fit : cur.bg.fit,
-              visibility: bt.bg && bt.bg.visibility !== undefined ? bt.bg.visibility : cur.bg.visibility,
+              maskOpacity: bt.bg && bt.bg.maskOpacity !== undefined ? bt.bg.maskOpacity : cur.bg.maskOpacity,
+              blurPx: bt.bg && bt.bg.blurPx !== undefined ? bt.bg.blurPx : cur.bg.blurPx,
+              panelOpacity: bt.bg && bt.bg.panelOpacity !== undefined ? bt.bg.panelOpacity : cur.bg.panelOpacity,
               regions: bt.bg && bt.bg.regions !== undefined ? bt.bg.regions : cur.bg.regions,
             },
           };
