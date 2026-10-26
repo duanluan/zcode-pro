@@ -348,6 +348,8 @@
     themeBgPanel: "\u9762\u677F\u4E0D\u900F\u660E\u5EA6",
     themeBgPanelHint: "\u4FA7\u680F\u3001\u9762\u677F\u4E0E\u6807\u7B7E\u680F\u7684\u4E0D\u900F\u660E\u7A0B\u5EA6\u3002\u8D8A\u4F4E\uFF0C\u900F\u51FA\u7684\u56FE\u7247\u8D8A\u591A\u3002",
     themeBgDeletedActive: "\u5F53\u524D\u80CC\u666F\u5DF2\u5220\u9664\uFF0C\u5DF2\u81EA\u52A8\u505C\u7528\u80CC\u666F",
+    tableCopyBtn: "\u590D\u5236\u8868\u683C",
+    tableCopied: "\u8868\u683C\u5DF2\u590D\u5236",
     sbItemCtx: "\u4E0A\u4E0B\u6587\u5360\u7528",
     sbItemQuestions: "\u63D0\u95EE\u6B21\u6570",
     sbMaster: "\u542F\u7528\u7EDF\u8BA1",
@@ -854,6 +856,8 @@
     themeBgPanel: "Panel opacity",
     themeBgPanelHint: "Opacity of sidebar, panels and tab bar. Lower reveals more of the image.",
     themeBgDeletedActive: "Active background was deleted; background disabled",
+    tableCopyBtn: "Copy table",
+    tableCopied: "Table copied",
     sbItemCtx: "Context usage",
     sbItemQuestions: "Questions asked",
     sbMaster: "Enable statistics",
@@ -10578,6 +10582,127 @@
     });
   }
 
+  // src/inject/features/table-copy.js
+  var installed5 = false;
+  function cleanTable(table) {
+    const clone = table.cloneNode(false);
+    const walk = (src, dst) => {
+      for (const node of src.childNodes) {
+        if (node.nodeType === Node.TEXT_NODE) {
+          if (node.textContent.trim()) dst.append(document.createTextNode(node.textContent));
+          continue;
+        }
+        if (node.nodeType !== Node.ELEMENT_NODE) continue;
+        const tag = node.tagName;
+        const el = document.createElement(tag.toLowerCase());
+        if (tag === "TD" || tag === "TH") {
+          for (const a of ["colspan", "rowspan"]) {
+            const v = node.getAttribute(a);
+            if (v && v !== "1") el.setAttribute(a, v);
+          }
+        }
+        dst.append(el);
+        walk(node, el);
+      }
+    };
+    walk(table, clone);
+    return clone;
+  }
+  function tableToTsv(table) {
+    const rows = [];
+    for (const tr of table.rows) {
+      const cells = [];
+      for (const cell of tr.cells) {
+        cells.push((cell.textContent || "").replace(/[\t\r\n]+/g, " ").trim());
+      }
+      rows.push(cells.join("	"));
+    }
+    return rows.join("\n");
+  }
+  async function copyTable(table) {
+    const L = t();
+    const clean = cleanTable(table);
+    const html = '<meta charset="utf-8"><table>' + clean.innerHTML + "</table>";
+    const tsv = tableToTsv(table);
+    try {
+      if (typeof ClipboardItem !== "undefined" && navigator.clipboard && navigator.clipboard.write) {
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            "text/html": new Blob([html], { type: "text/html" }),
+            "text/plain": new Blob([tsv], { type: "text/plain" })
+          })
+        ]);
+        showToast(L.tableCopied, "success");
+        return;
+      }
+    } catch {
+    }
+    try {
+      const holder = document.createElement("div");
+      holder.contentEditable = "true";
+      holder.style.cssText = "position:fixed;left:-9999px;top:0;";
+      holder.append(clean);
+      document.body.append(holder);
+      const range = document.createRange();
+      range.selectNodeContents(holder);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      const ok = document.execCommand("copy");
+      sel.removeAllRanges();
+      holder.remove();
+      if (ok) {
+        showToast(L.tableCopied, "success");
+        return;
+      }
+    } catch {
+    }
+    showToast(L.failed, "error");
+  }
+  function makeButton(onClick) {
+    const L = t();
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.setAttribute("aria-label", L.tableCopyBtn);
+    btn.title = L.tableCopyBtn;
+    btn.className = "group/button inline-flex items-center justify-center border border-transparent bg-clip-padding whitespace-nowrap transition-colors outline-none select-none text-foreground hover:bg-hover hover:text-foreground size-7 rounded-lg [&_svg:not([class*='size-'])]:size-4 shrink-0";
+    btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-table size-3.5" aria-hidden="true"><path d="M12 3v18"></path><path d="M3 9h18"></path><path d="M3 15h18"></path><path d="M5 21h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2"></path></svg>';
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      onClick();
+    });
+    return btn;
+  }
+  function startTableCopy() {
+    if (installed5 || typeof document === "undefined") return;
+    installed5 = true;
+    ensureStyle();
+    const tableOf = (bar) => {
+      let scope = bar.parentElement;
+      for (let i = 0; i < 3 && scope; i++) {
+        const table = scope.querySelector("table");
+        if (table) return table;
+        scope = scope.parentElement;
+      }
+      return null;
+    };
+    const enhance = (bar) => {
+      if (bar.dataset.zcodeproTableCopy) return;
+      bar.dataset.zcodeproTableCopy = "1";
+      const table = tableOf(bar);
+      if (!table) return;
+      bar.append(makeButton(() => {
+        void copyTable(table);
+      }));
+    };
+    const scan5 = () => {
+      for (const bar of document.querySelectorAll("[data-markdown-table-toolbar]")) enhance(bar);
+    };
+    scan5();
+    const observer2 = new MutationObserver(scan5);
+    observer2.observe(document.body, { childList: true, subtree: true });
+  }
+
   // src/inject/features/plugin-updates.js
   var NOTIFIED_KEY = "zcodepro-plugin-updates-notified";
   async function startPluginUpdateCheck() {
@@ -10707,6 +10832,10 @@
       }
       try {
         startTheme();
+      } catch {
+      }
+      try {
+        startTableCopy();
       } catch {
       }
       try {

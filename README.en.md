@@ -27,6 +27,7 @@ Grouped by where each feature lives in the settings window: the category column 
 | | Plugin card auto-retry | Auto-clicks "Reload" on cards that failed the 64-slot cap, so they recover as soon as a slot frees up |
 | | Running indicator while collapsed | While any session is running, collapsed projects and the "Tasks" / "Pinned" section headers show the same loader the running task row uses; it disappears when all finish |
 | | Plugin panels on the new tab page | The built-in "new tab page" only lists built-in panels and recommended official plugins; this adds cards for third-party marketplace plugin panels (headroom, rtk, …) that open in the side pane |
+| | Copy table | Adds a "Copy table" button to the table toolbar in answers: writes rich text to the clipboard so Excel / rich-text editors paste it as a real table (cells split, no borders or background colors); plain-text targets get tab-separated values |
 | | Plugin updates | Check and update zcode-plugins marketplace plugins in one click, optional auto-update on startup |
 | Shortcuts | Shortcut customization | Rebind the five session quick switch trigger keys (`alt+z` / `x` / `c` / `e` / `r` by default) one by one: click "Modify" and press a new key (letters/digits only, conflicts rejected); reset all to defaults in one click |
 | Behavior · Global prompt | Global prompt | Edit default instructions shared by all projects; applies to new sessions |
