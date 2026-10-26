@@ -361,7 +361,7 @@ export function settingRow(name, desc, checked, onToggle, extra) {
   },
     h('div', { class: 'min-w-0 flex-1' },
       h('div', { class: 'text-ui-sm font-medium text-foreground' }, name),
-      h('div', { class: 'mt-0.5 text-ui-xs/relaxed text-foreground-subtle', 'data-zcodepro-row-desc': '' }, desc ?? '')),
+      h('div', { class: 'mt-0.5 text-ui-xs/relaxed text-foreground-subtle zcodepro-row-desc', 'data-zcodepro-row-desc': '', title: desc ?? '' }, desc ?? '')),
     ...(extraEl ? [extraEl] : []),
     h('button', {
       type: 'button',
@@ -402,6 +402,14 @@ export function ensureStyle() {
       overflow-y: auto;
       /* 滚到底不再把滚动传给弹窗后面的页面 */
       overscroll-behavior: contain;
+    }
+    /* 双列网格（功能页）里的行描述最多两行省略：长描述撑出的参差行高是
+       网格观感差的根源；单列场景（其他面板）不受影响 */
+    .grid.grid-cols-2 > div > div > .zcodepro-row-desc {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
     /* 开关（设置弹窗）：几何固定写入，颜色随主题变量 */
     [data-zcodepro-switch] {
@@ -699,6 +707,9 @@ export function ensureStyle() {
       height: 12px;
       flex-shrink: 0;
       opacity: 0.6;
+      /* 11px 字体的视觉中心（x-height 中点）高于行盒几何中心约 1px（下伸部
+          预留），几何居中的图标看起来偏下——整体上移 1px 对齐视觉中心 */
+      transform: translateY(-1px);
     }
     .zcodepro-statusbar b { font-weight: 600; color: var(--color-foreground-subtle, #666); }
     .zcodepro-statusbar i {

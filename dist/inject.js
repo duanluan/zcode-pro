@@ -114,7 +114,7 @@
     agentsSave: "\u4FDD\u5B58",
     agentsSaved: "\u5168\u5C40\u63D0\u793A\u8BCD\u5DF2\u4FDD\u5B58",
     agentsLoadFailed: "\u8BFB\u53D6\u5168\u5C40\u63D0\u793A\u8BCD\u5931\u8D25",
-    proxyDesc: "\u4E3A ZCode Pro \u672C\u5730\u52A9\u624B\u53D1\u8D77\u7684\u7F51\u7EDC\u8BBF\u95EE\u8BBE\u7F6E HTTP \u4EE3\u7406\uFF1A\u63D2\u4EF6\u5E02\u573A\u7684\u66F4\u65B0\u4E0E\u5B89\u88C5\u3001\u63D2\u4EF6\u4F9D\u8D56\u8F6F\u4EF6\u7684\u5B89\u88C5\u4E0E\u5347\u7EA7\u3001WebDAV \u540C\u6B65\u90FD\u53EF\u8D70\u8BE5\u4EE3\u7406\uFF0C\u7528\u4E0B\u65B9\u5F00\u5173\u9009\u62E9\u751F\u6548\u8303\u56F4\u3002\u4E0D\u5F71\u54CD ZCode \u5E94\u7528\u672C\u8EAB\u4E0E\u6A21\u578B\u8BF7\u6C42\uFF0C\u4FDD\u5B58\u540E\u7ACB\u5373\u751F\u6548\u3002",
+    proxyDesc: "\u4E3A ZCode Pro \u672C\u5730\u52A9\u624B\u53D1\u8D77\u7684\u7F51\u7EDC\u8BBF\u95EE\u8BBE\u7F6E HTTP \u4EE3\u7406\uFF1A\u63D2\u4EF6\u5E02\u573A\u7684\u66F4\u65B0\u4E0E\u5B89\u88C5\u3001\u63D2\u4EF6\u4F9D\u8D56\u8F6F\u4EF6\u7684\u5B89\u88C5\u4E0E\u5347\u7EA7\u3001WebDAV \u540C\u6B65\u90FD\u53EF\u8D70\u8BE5\u4EE3\u7406\uFF0C\u7528\u4E0B\u65B9\u5F00\u5173\u9009\u62E9\u751F\u6548\u8303\u56F4\u3002\u4E0D\u5F71\u54CD ZCode \u5E94\u7528\u672C\u8EAB\u4E0E\u6A21\u578B\u8BF7\u6C42\u3002",
     proxyPlaceholder: "http://127.0.0.1:7890",
     proxySave: "\u4FDD\u5B58",
     proxySaved: "\u4EE3\u7406\u8BBE\u7F6E\u5DF2\u4FDD\u5B58",
@@ -128,7 +128,7 @@
     proxyScopeDeps: "\u63D2\u4EF6\u4F9D\u8D56\u8F6F\u4EF6",
     proxyScopeDepsDesc: "headroom \u4E0E rtk \u7684\u5B89\u88C5\u3001\u68C0\u67E5\u66F4\u65B0\u4E0E\u5347\u7EA7\uFF08pip \u4E0E GitHub \u4E0B\u8F7D\uFF09\u8D70\u4EE3\u7406\u3002",
     proxyScopeSync: "\u540C\u6B65",
-    proxyScopeSyncDesc: "WebDAV \u4E0A\u4F20\u4E0E\u4E0B\u8F7D\u8D70\u4EE3\u7406\u3002\u9ED8\u8BA4\u5173\u95ED\uFF1A\u575A\u679C\u4E91\u7B49\u56FD\u5185\u7F51\u76D8\u76F4\u8FDE\u5373\u53EF\uFF0C\u4EE3\u7406\u505C\u4E86\u540C\u6B65\u4F1A\u8DDF\u7740\u5931\u8D25\u3002",
+    proxyScopeSyncDesc: "WebDAV \u4E0A\u4F20\u4E0E\u4E0B\u8F7D\u8D70\u4EE3\u7406\u3002",
     tabSync: "\u540C\u6B65",
     tabDebug: "\u8C03\u8BD5",
     testNoSessionHint: "\u9009\u62E9\u201C\u8DDF\u968F\u5F53\u524D\u4F1A\u8BDD[\u5F53\u524D\u6A21\u578B]\u201D\u65F6\uFF0C\u9009\u62E9\u4E0A\u6B21\u4F1A\u8BDD\u4E2D\u4F7F\u7528\u7684\u4F9B\u5E94\u5546[\u6A21\u578B]",
@@ -215,13 +215,13 @@
     defaultValue: "\u9ED8\u8BA4",
     resetDefault: "\u6062\u590D\u9ED8\u8BA4",
     featureProjectMenu: "\u9879\u76EE\u83DC\u5355\u589E\u5F3A",
-    featureProjectMenuDesc: "\u9879\u76EE\u201C\u66F4\u591A\u201D\u83DC\u5355\u4E2D\u7684\u81EA\u5B9A\u4E49\u522B\u540D\u3001\u5207\u6362\u6587\u4EF6\u5939\u3001\u6253\u5F00\u6587\u4EF6\u5939\u4E0E\u590D\u5236\u8DEF\u5F84\uFF08\u522B\u540D\u540C\u65F6\u4F5C\u7528\u4E8E\u4FA7\u8FB9\u680F\u663E\u793A\uFF09\u3002",
+    featureProjectMenuDesc: "\u9879\u76EE\u66F4\u591A\u83DC\u5355\uFF1A\u6253\u5F00\u6587\u4EF6\u5939\u4E0E\u590D\u5236\u8DEF\u5F84\uFF08\u522B\u540D\u4E0E\u5207\u6362\u6587\u4EF6\u5939\u5DF2\u505C\u7528\uFF09\u3002",
     featureTaskOrder: "\u4FA7\u8FB9\u680F\u4F1A\u8BDD\u62D6\u52A8\u6392\u5E8F",
-    featureTaskOrderDesc: "\u8BA9\u7F6E\u9876\u3001\u9879\u76EE\u4E0E\u5206\u7EC4\u4E2D\u7684\u4F1A\u8BDD\u62D6\u52A8\u540E\u8BB0\u4F4F\u987A\u5E8F\uFF0C\u5237\u65B0\u540E\u4FDD\u6301\u3002",
+    featureTaskOrderDesc: "\u62D6\u52A8\u8C03\u6574\u7F6E\u9876\u3001\u9879\u76EE\u4E0E\u5206\u7EC4\u4E2D\u7684\u4F1A\u8BDD\u987A\u5E8F\uFF0C\u91CD\u542F\u540E\u4E0D\u53D8\u3002",
     featureSessionSwitch: "\u4F1A\u8BDD\u5FEB\u6377\u5207\u6362",
-    featureSessionSwitchDesc: "{last} \u5728\u5F53\u524D\u4E0E\u4E0A\u6B21\u4F1A\u8BDD\u95F4\u6765\u56DE\u5207\u6362\uFF1B\u6309\u4F4F alt \u518D\u6309 {prev}/{next} \u5F39\u51FA\u6700\u8FD1\u4F1A\u8BDD\u5217\u8868\u524D\u540E\u9009\u62E9\uFF08\u521D\u59CB 10 \u6761\uFF0C{next} \u5230\u5E95\u518D\u52A0\u8F7D 5 \u6761\uFF09\uFF0C{recent} \u76F4\u63A5\u6253\u5F00\u6700\u8FD1 10 \u6761\uFF0C{attention} \u6253\u5F00\u8FD0\u884C\u4E2D\u4E0E\u8FD0\u884C\u5B8C\u672A\u67E5\u770B\u7684\u4EFB\u52A1\uFF1B\u65B9\u5411\u952E\u540C\u6837\u53EF\u9009\uFF0CEnter \u6216\u677E\u5F00 alt \u5207\u6362\uFF08\u7C7B alt+tab\uFF09",
+    featureSessionSwitchDesc: "{last} \u6765\u56DE\u4E0A\u6B21\u4F1A\u8BDD\uFF1Balt+\u65B9\u5411\u952E/\u5FEB\u6377\u952E\u9009\u6700\u8FD1\u4F1A\u8BDD\uFF1B\u952E\u4F4D\u53EF\u6539",
     featureTitleLock: "\u91CD\u547D\u540D\u4F1A\u8BDD\u540D\u9501\u5B9A",
-    featureTitleLockDesc: "\u624B\u52A8\u91CD\u547D\u540D\u8FC7\u7684\u4F1A\u8BDD\u4E0D\u518D\u88AB\u81EA\u52A8\u6807\u9898\u8986\u76D6\uFF1A\u4F1A\u8BDD\u6709\u65B0\u56DE\u7B54\u540E\u754C\u9762\u53EF\u80FD\u6539\u663E\u81EA\u52A8\u6807\u9898\uFF0C\u91CD\u542F\u540E\u53C8\u53D8\u56DE\uFF0C\u672C\u529F\u80FD\u8BA9\u4FA7\u680F\u59CB\u7EC8\u663E\u793A\u91CD\u547D\u540D\u540E\u7684\u540D\u5B57\u3002",
+    featureTitleLockDesc: "\u624B\u52A8\u91CD\u547D\u540D\u8FC7\u7684\u4F1A\u8BDD\u4E0D\u88AB\u81EA\u52A8\u6807\u9898\u8986\u76D6\uFF0C\u4FA7\u680F\u59CB\u7EC8\u663E\u793A\u91CD\u547D\u540D\u540E\u7684\u540D\u5B57\u3002",
     tabTitleGen: "\u4EFB\u52A1\u540D\u63D0\u793A\u8BCD",
     titleGenShortDesc: "\u65B0\u4F1A\u8BDD\u5F00\u59CB\u4F5C\u7B54\u65F6\uFF0C\u6309\u6240\u9009\u4F9B\u5E94\u5546\u4E0E\u63D0\u793A\u8BCD\u751F\u6210\u4EFB\u52A1\u540D\u5E76\u6309\u624B\u52A8\u91CD\u547D\u540D\u4FDD\u5B58\uFF0C\u5B98\u65B9\u81EA\u52A8\u6807\u9898\u4E0D\u518D\u8986\u76D6\u3002",
     titleGenEnabled: "\u542F\u7528",
@@ -247,7 +247,7 @@
     titleGenTestOk: "\u751F\u6210\u7ED3\u679C\uFF1A",
     titleGenTestFailed: "\u751F\u6210\u5931\u8D25",
     featureWsRunning: "\u6298\u53E0\u65F6\u4EFB\u52A1\u8FD0\u884C\u4E2D\u63D0\u793A",
-    featureWsRunningDesc: "\u6709\u4F1A\u8BDD\u5728\u8FD0\u884C\u65F6\uFF0C\u6298\u53E0\u7684\u9879\u76EE\u4E0E\u201C\u4EFB\u52A1\u201D\u201C\u5DF2\u7F6E\u9876\u201D\u7B49\u5206\u533A\u5934\u663E\u793A\u4E0E\u4EFB\u52A1\u8FD0\u884C\u4E2D\u540C\u6B3E\u7684\u52A0\u8F7D\u56FE\u6807\uFF0C\u5168\u90E8\u7ED3\u675F\u540E\u6D88\u5931\u3002",
+    featureWsRunningDesc: "\u6709\u4F1A\u8BDD\u8FD0\u884C\u65F6\uFF0C\u6298\u53E0\u7684\u9879\u76EE\u4E0E\u4EFB\u52A1\u5206\u533A\u5934\u663E\u793A\u52A0\u8F7D\u56FE\u6807\uFF0C\u5168\u90E8\u7ED3\u675F\u6D88\u5931\u3002",
     tabPerformance: "\u6027\u80FD",
     perfDesc: "ZCode \u4E3A\u6BCF\u4E2A\u6253\u5F00\u8FC7\u7684\u9879\u76EE\u5E38\u9A7B\u4E00\u4E2A\u4F1A\u8BDD\u8FDB\u7A0B\uFF0C\u5E94\u7528\u81EA\u8EAB\u4E0D\u4F1A\u56DE\u6536\uFF0C\u9879\u76EE\u591A\u4E86\u5185\u5B58\u5360\u7528\u5C31\u9AD8\u3002\u5F00\u542F\u540E\uFF0C\u957F\u65F6\u95F4\u672A\u4F7F\u7528\u4E14\u6CA1\u6709\u4EFB\u52A1\u5728\u8DD1\u7684\u9879\u76EE\u4F1A\u88AB\u81EA\u52A8\u91CA\u653E\uFF1A\u4F1A\u8BDD\u8BB0\u5F55\u4E0D\u53D7\u5F71\u54CD\uFF0C\u518D\u6B21\u6253\u5F00\u65F6\u81EA\u52A8\u6062\u590D\uFF0C\u4EC5\u9996\u6B21\u56DE\u590D\u6709\u51E0\u79D2\u7B49\u5F85\u3002\u6B63\u5728\u4F7F\u7528\u7684\u9879\u76EE\u3001\u8FD0\u884C\u4E2D\u7684\u4F1A\u8BDD\u4E0E\u540E\u53F0\u547D\u4EE4\u3001\u5B9A\u65F6\u4EFB\u52A1\u90FD\u4E0D\u4F1A\u88AB\u56DE\u6536\u3002\u540E\u53F0\u547D\u4EE4\u68C0\u6D4B\u4F9D\u8D56\u7CFB\u7EDF\u8FDB\u7A0B\u4FE1\u606F\uFF08Linux / macOS / Windows \u5404\u8D70\u7CFB\u7EDF\u81EA\u5E26\u5DE5\u5177\uFF09\uFF0C\u68C0\u6D4B\u4E0D\u53EF\u7528\u65F6\u529F\u80FD\u81EA\u52A8\u505C\u7528\u3002",
     featureIdleReclaim: "\u7A7A\u95F2\u9879\u76EE\u5185\u5B58\u56DE\u6536",
@@ -257,17 +257,17 @@
     idleReclaimStartupHint: "\u5E94\u7528\u542F\u52A8\u4F1A\u4E3A\u6BCF\u4E2A\u6062\u590D\u7684\u9879\u76EE\u9884\u70ED\u8FDB\u7A0B\uFF0C\u5230\u70B9\u628A\u672A\u4F7F\u7528\u7684\u9879\u76EE\u4E00\u6B21\u6536\u6389\uFF1B0 = \u542F\u52A8\u540E\u7ACB\u5373\u56DE\u6536\uFF0C\u8BE5\u6B21\u4E0D\u53D7\u4E0A\u4E00\u9879\u7A7A\u95F2\u65F6\u957F\u9650\u5236",
     idleReclaimUnit: "\u5206\u949F",
     featureToolbarIcons: "\u4FA7\u680F\u83DC\u5355\u5E76\u5165\u9876\u680F",
-    featureToolbarIconsDesc: "\u628A\u4FA7\u8FB9\u680F\u9876\u90E8\u7684\u201C\u65B0\u5EFA\u4EFB\u52A1 / \u641C\u7D22 / \u81EA\u52A8\u5316 / \u63D2\u4EF6\u5E02\u573A\u201D\u6536\u6210\u9876\u90E8\u5BFC\u822A\u680F\uFF08\u540E\u9000/\u524D\u8FDB\u65C1\uFF09\u7684\u56FE\u6807\u6309\u94AE\uFF1A\u60AC\u505C\u663E\u793A\u540D\u79F0\uFF0C\u5BF9\u5E94\u754C\u9762\u6253\u5F00\u65F6\u9AD8\u4EAE\uFF0C\u5FEB\u6377\u952E\u7167\u5E38\u53EF\u7528\uFF1B\u4FA7\u8FB9\u680F\u539F\u83DC\u5355\u9690\u85CF\u3002",
+    featureToolbarIconsDesc: "\u65B0\u5EFA\u4EFB\u52A1/\u641C\u7D22/\u81EA\u52A8\u5316/\u63D2\u4EF6\u5E02\u573A\u6536\u6210\u9876\u680F\u56FE\u6807\u6309\u94AE\u3002",
     tbNewTask: "\u65B0\u5EFA\u4EFB\u52A1",
     tbSearch: "\u641C\u7D22",
     tbAutomations: "\u81EA\u52A8\u5316",
     tbPluginStore: "\u63D2\u4EF6\u5E02\u573A",
     featurePinnedCollapse: "\u5DF2\u7F6E\u9876\u5206\u533A\u53EF\u6298\u53E0",
-    featurePinnedCollapseDesc: "\u4FA7\u8FB9\u680F\u201C\u5DF2\u7F6E\u9876\u201D\u6807\u9898\u53EF\u70B9\u51FB\u6298\u53E0/\u5C55\u5F00\u5176\u4EFB\u52A1\u5217\u8868\uFF08\u4E0E\u201C\u9879\u76EE\u201D\u201C\u5206\u7EC4\u201D\u5206\u533A\u4E00\u81F4\uFF09\uFF0C\u72B6\u6001\u8BB0\u4F4F\u3002",
+    featurePinnedCollapseDesc: "\u4FA7\u8FB9\u680F\u5DF2\u7F6E\u9876\u6807\u9898\u53EF\u70B9\u51FB\u6298\u53E0/\u5C55\u5F00\u5176\u4EFB\u52A1\u5217\u8868\u3002",
     featureSandboxReclaim: "\u63D2\u4EF6\u754C\u9762\u6C99\u7BB1\u56DE\u6536",
-    featureSandboxReclaimDesc: "\u63D2\u4EF6\u5361\u7247\u6C99\u7BB1\u6570\u91CF\u8FBE\u5230\u4E0A\u9650\u65F6\u81EA\u52A8\u91CA\u653E\u6700\u65E9\u521B\u5EFA\u7684\uFF08\u6B63\u5728\u67E5\u770B\u7684\u6392\u6700\u540E\uFF09\uFF0C\u907F\u514D 64 \u4E2A\u540D\u989D\u8017\u5C3D\u540E\u65B0\u5361\u7247\u6253\u4E0D\u5F00\uFF1B\u88AB\u91CA\u653E\u7684\u65E7\u5361\u7247\u91CD\u65B0\u6253\u5F00\u6240\u5728\u4F1A\u8BDD\u5373\u6062\u590D\uFF08\u9884\u7B97\u53EF\u5728\u914D\u7F6E\u6587\u4EF6 sandboxReclaimBudget \u8C03\u6574\uFF09\u3002",
+    featureSandboxReclaimDesc: "\u6C99\u7BB1\u6EE1 64 \u4E2A\u65F6\u81EA\u52A8\u91CA\u653E\u6700\u65E9\u7684\uFF0C\u65B0\u5361\u7247\u4E0D\u518D\u6253\u4E0D\u5F00\uFF1B\u65E7\u5361\u91CD\u65B0\u6253\u5F00\u6240\u5728\u4F1A\u8BDD\u5373\u53EF\u6062\u590D\u3002",
     featurePluginCardRetry: "\u63D2\u4EF6\u5361\u7247\u81EA\u52A8\u91CD\u8BD5",
-    featurePluginCardRetryDesc: "\u56E0\u540D\u989D\u4E0A\u9650\u52A0\u8F7D\u5931\u8D25\u7684\u63D2\u4EF6\u5361\u7247\u81EA\u52A8\u70B9\u51FB\u201C\u91CD\u65B0\u52A0\u8F7D\u201D\uFF0C\u540D\u989D\u7A7A\u51FA\u540E\u81EA\u52A8\u6062\u590D\uFF0C\u65E0\u9700\u624B\u52A8\u8E72\u5B88\u3002",
+    featurePluginCardRetryDesc: "\u56E0\u540D\u989D\u4E0A\u9650\u52A0\u8F7D\u5931\u8D25\u7684\u63D2\u4EF6\u5361\u7247\u81EA\u52A8\u70B9\u51FB\u91CD\u65B0\u52A0\u8F7D\uFF0C\u540D\u989D\u7A7A\u51FA\u540E\u81EA\u52A8\u6062\u590D\u3002",
     visionCardUi: "\u601D\u8003\u8FC7\u7A0B\u663E\u793A\u8BC6\u56FE\u5361\u7247",
     pinnedToggleAria: "\u6298\u53E0/\u5C55\u5F00\u5DF2\u7F6E\u9876",
     sidebarProjectSpacingName: "\u9879\u76EE\u95F4\u8DDD",
@@ -290,7 +290,7 @@
     switcherAttentionHint: "\u8FD0\u884C\u4E2D / \u8FD0\u884C\u5B8C\u672A\u67E5\u770B\u7684\u4EFB\u52A1 \xB7 {prev} / {next} \u6216 \u2191 / \u2193 \u9009\u62E9\uFF0CEnter \u6216\u677E\u5F00 alt \u5207\u6362",
     switcherAttentionEmpty: "\u6682\u65E0\u8FD0\u884C\u4E2D\u6216\u672A\u67E5\u770B\u7684\u4EFB\u52A1",
     featureNewtabPanels: "\u65B0\u6807\u7B7E\u9875\u63D2\u4EF6\u9762\u677F\u5165\u53E3",
-    featureNewtabPanelsDesc: "\u5B98\u65B9\u201C\u65B0\u6807\u7B7E\u9875\u201D\u53EA\u5217\u5B98\u65B9\u9762\u677F\u4E0E\u63A8\u8350\u7684\u5B98\u65B9\u63D2\u4EF6\uFF0C\u6B64\u529F\u80FD\u628A\u7B2C\u4E09\u65B9\u5E02\u573A\u63D2\u4EF6\uFF08headroom\u3001rtk \u7B49\uFF09\u7684\u9762\u677F\u5361\u7247\u52A0\u8FDB\u53BB\uFF0C\u70B9\u51FB\u5728\u4FA7\u8FB9\u9762\u677F\u6253\u5F00\u3002",
+    featureNewtabPanelsDesc: "\u65B0\u6807\u7B7E\u9875\u52A0\u5165\u7B2C\u4E09\u65B9\u63D2\u4EF6\uFF08headroom\u3001rtk \u7B49\uFF09\u7684\u9762\u677F\u5361\u7247\uFF0C\u70B9\u51FB\u5728\u4FA7\u8FB9\u9762\u677F\u6253\u5F00\u3002",
     ntpDescSuffix: "\u63D2\u4EF6\u9762\u677F",
     ntpNeedSession: "\u5148\u6253\u5F00\u4E00\u4E2A\u4EFB\u52A1\u4F1A\u8BDD\uFF0C\u518D\u4ECE\u65B0\u6807\u7B7E\u9875\u6253\u5F00\u63D2\u4EF6\u9762\u677F",
     featureStatusBarDesc: "\u63D0\u95EE\u8F93\u5165\u6846\u53F3\u4E0B\u89D2\u548C\u6BCF\u8F6E\u56DE\u7B54\u6700\u540E\u663E\u793A\u7EDF\u8BA1\u9879\u3002",
@@ -402,7 +402,11 @@
     featureFileActions: "\u6587\u4EF6\u83DC\u5355\u589E\u5F3A",
     featureFileActionsDesc: "\u5728\u4F1A\u8BDD\u4E2D\u6587\u4EF6\u94FE\u63A5\u7684\u53F3\u952E\u83DC\u5355\u91CC\u65B0\u589E\u201C\u9ED8\u8BA4\u5E94\u7528\u6253\u5F00\u201D\u4E0E\u201C\u6253\u5F00\u6240\u5728\u76EE\u5F55\u201D\u3002",
     featureImageCopy: "\u56FE\u7247\u53F3\u952E\u590D\u5236",
+    featureTableCopy: "\u590D\u5236\u8868\u683C",
+    featureComposerProvider: "\u6A21\u578B\u540D\u663E\u793A\u4F9B\u5E94\u5546",
     featureImageCopyDesc: "\u53F3\u952E\u4F1A\u8BDD\u4E2D\u7684\u56FE\u7247\u6216\u70B9\u51FB\u653E\u5927\u7684\u9884\u89C8\u56FE\uFF0C\u53EF\u5C06\u56FE\u7247\u590D\u5236\u5230\u526A\u8D34\u677F\u3002",
+    featureTableCopyDesc: "\u8868\u683C\u5DE5\u5177\u6761\u65B0\u589E\u590D\u5236\u8868\u683C\uFF0C\u7C98\u8D34\u8FDB Excel / \u5BCC\u6587\u672C\u7F16\u8F91\u5668\u5373\u4E3A\u5E72\u51C0\u8868\u683C\u3002",
+    featureComposerProviderDesc: "\u6A21\u578B\u540D\u524D\u663E\u793A\u4F9B\u5E94\u5546\u540D\uFF08\u5982 BigModel-Max1 / glm-5.3\uFF09\uFF0C\u533A\u5206\u540C\u540D\u6A21\u578B\u3002",
     imageCopy: "\u590D\u5236\u56FE\u7247",
     imageCopied: "\u56FE\u7247\u5DF2\u590D\u5236\u5230\u526A\u8D34\u677F",
     imageCopyFailed: "\u590D\u5236\u56FE\u7247\u5931\u8D25",
@@ -425,7 +429,7 @@
     pluginsUpdatesAvailable: "zcode-plugins \u6709 {n} \u4E2A\u63D2\u4EF6\u53EF\u66F4\u65B0\uFF08ZCode Pro \u8BBE\u7F6E \u2192 \u529F\u80FD\uFF09",
     pluginsAutoUpdated: "zcode-plugins \u63D2\u4EF6\u5DF2\u66F4\u65B0",
     tabVision: "Vision",
-    visionDesc: "\u4E3B\u6A21\u578B\u4E0D\u652F\u6301\u56FE\u7247\u8F93\u5165\u65F6\uFF08\u5982 glm-5.3\uFF09\uFF0C\u81EA\u52A8\u628A\u6D88\u606F\u91CC\u7684\u56FE\u7247\u4EA4\u7ED9\u4E0B\u9762\u7684\u89C6\u89C9\u6A21\u578B\u8BC6\u522B\uFF0C\u628A\u63CF\u8FF0\u5E26\u7ED9\u4E3B\u6A21\u578B\uFF08zcode-vision \u63D2\u4EF6\uFF1B/vision-* \u547D\u4EE4\u7F16\u8F91\u540C\u4E00\u914D\u7F6E\uFF09\u3002\u6539\u52A8\u81EA\u52A8\u4FDD\u5B58\u3002",
+    visionDesc: "\u4E3B\u6A21\u578B\u4E0D\u652F\u6301\u56FE\u7247\u8F93\u5165\u65F6\uFF08\u5982 glm-5.3\uFF09\uFF0C\u81EA\u52A8\u628A\u6D88\u606F\u91CC\u7684\u56FE\u7247\u4EA4\u7ED9\u4E0B\u9762\u7684\u89C6\u89C9\u6A21\u578B\u8BC6\u522B\uFF0C\u628A\u63CF\u8FF0\u5E26\u7ED9\u4E3B\u6A21\u578B\uFF08zcode-vision \u63D2\u4EF6\uFF1B/vision-* \u547D\u4EE4\u7F16\u8F91\u540C\u4E00\u914D\u7F6E\uFF09\u3002",
     visionEnabled: "\u542F\u7528",
     visionForceIntercept: "\u4E3B\u6A21\u578B\u80FD\u770B\u56FE\u4E5F\u62E6\u622A",
     visionMode: "\u94FE\u6A21\u5F0F",
@@ -456,14 +460,14 @@
     visionCompressKBHint: "\u8D85\u8FC7\u8BE5\u5927\u5C0F\u7684\u56FE\u5148\u538B\u7F29\u518D\u8BC6\u522B\uFF08\u6700\u957F\u8FB9 2000\u3001JPEG\uFF09\uFF1B0 = \u4E0D\u538B\u7F29",
     visionLoadFailed: "\u8BFB\u53D6\u89C6\u89C9\u4EE3\u7406\u914D\u7F6E\u5931\u8D25",
     tabRtk: "rtk",
-    rtkDesc: "rtk \u63D2\u4EF6\uFF1A\u628A\u5E38\u89C1\u5F00\u53D1\u547D\u4EE4\u7684\u8F93\u51FA\u538B\u7F29 60-90% \u518D\u8FDB\u5165\u4E0A\u4E0B\u6587\uFF08/rtk-* \u547D\u4EE4\u7F16\u8F91\u540C\u4E00\u914D\u7F6E\uFF09\u3002\u6539\u52A8\u81EA\u52A8\u4FDD\u5B58\u5E76\u7ACB\u5373\u751F\u6548\u3002",
+    rtkDesc: "rtk \u63D2\u4EF6\uFF1A\u628A\u5E38\u89C1\u5F00\u53D1\u547D\u4EE4\u7684\u8F93\u51FA\u538B\u7F29 60-90% \u518D\u8FDB\u5165\u4E0A\u4E0B\u6587\uFF08/rtk-* \u547D\u4EE4\u7F16\u8F91\u540C\u4E00\u914D\u7F6E\uFF09\u3002",
     rtkEnabled: "\u542F\u7528",
     rtkNotInstalled: "\u672A\u5B89\u88C5 rtk \u672C\u4F53\uFF1B\u5B89\u88C5\u540E\u4EE5\u4E0B\u8BBE\u7F6E\u751F\u6548\uFF08\u4F1A\u8BDD\u91CC\u6267\u884C /rtk-setup \u4E5F\u53EF\u4EE5\uFF09",
     rtkInstallBin: "\u5B89\u88C5 rtk \u672C\u4F53",
     rtkBinInstalled: "rtk \u672C\u4F53\u5DF2\u5B89\u88C5\uFF1BPATH \u9700\u6CE8\u9500\u91CD\u767B\u540E\u5BF9\u4F1A\u8BDD\u751F\u6548\uFF0C\u63D2\u4EF6\u94A9\u5B50\u5373\u65F6\u751F\u6548",
     rtkWhitelistTitle: "\u767D\u540D\u5355\uFF08\u4E0D\u538B\u7F29\u76F4\u63A5\u653E\u884C\uFF09",
     rtkBuiltinLabel: "\u5185\u7F6E\u653E\u884C\uFF08\u53EA\u8BFB\uFF0C\u968F\u63D2\u4EF6\u66F4\u65B0\uFF09\uFF1A",
-    rtkWhitelistDesc: "\u6BCF\u6761 name\uFF08\u5982 docker\uFF09\u6216 git:name\uFF08\u5982 git:clone\uFF09\u3002\u8F93\u51FA\u6781\u5C0F\u6216\u7EAF\u526F\u4F5C\u7528\u7684\u547D\u4EE4\u65E0\u9700\u538B\u7F29\uFF0C\u52A0\u5165\u540E\u4E0D\u518D\u538B\u7F29\uFF1B\u5185\u7F6E\u7684 git add/commit/push\u3001mkdir/cp \u7B49\u4E0D\u53EF\u79FB\u9664\u3002\u5220\u9664\u672C\u6587\u4EF6\u5373\u6062\u590D\u9ED8\u8BA4\u3002",
+    rtkWhitelistDesc: "\u6BCF\u6761 name\uFF08\u5982 docker\uFF09\u6216 git:name\uFF08\u5982 git:clone\uFF09\uFF0C\u52A0\u5165\u540E\u4E0D\u518D\u538B\u7F29\uFF1B\u5185\u7F6E\u7684 git add/commit/push\u3001mkdir/cp \u7B49\u4E0D\u53EF\u79FB\u9664\u3002",
     rtkWhitelistPlaceholder: "name \u6216 git:name\uFF0C\u56DE\u8F66\u6DFB\u52A0",
     rtkWhitelistAdd: "\u6DFB\u52A0",
     rtkWhitelistClear: "\u6E05\u7A7A",
@@ -471,18 +475,18 @@
     rtkWhitelistInvalid: "\u6761\u76EE\u683C\u5F0F\u5E94\u4E3A name \u6216 git:name",
     rtkLoadFailed: "\u8BFB\u53D6 rtk \u914D\u7F6E\u5931\u8D25",
     tabHeadroom: "Headroom",
-    headroomDesc: "Headroom \u63D2\u4EF6\uFF1A\u672C\u5730\u538B\u7F29\u4EE3\u7406\u9A7B\u7559 127.0.0.1\uFF08\u9ED8\u8BA4 8787 \u7AEF\u53E3\uFF09\uFF0C\u538B\u7F29\u53D1\u5F80\u6A21\u578B\u7684\u4E0A\u4E0B\u6587\u4EE5\u7701 token\uFF08/hr-* \u547D\u4EE4\u7F16\u8F91\u540C\u4E00\u914D\u7F6E\uFF09\u3002\u538B\u7F29\u8BBE\u5907\u4E0E\u7701\u7535\u5207\u6362\u4FDD\u5B58\u540E\u7ACB\u5373\u751F\u6548\uFF1B\u5207\u6362\u8BBE\u5907\u4F1A\u91CD\u542F\u4EE3\u7406\uFF0C\u6B63\u5728\u5904\u7406\u7684\u8BF7\u6C42\u53EF\u80FD\u4E2D\u65AD\u4E00\u6B21\u3002",
+    headroomDesc: "Headroom \u63D2\u4EF6\uFF1A\u672C\u5730\u538B\u7F29\u4EE3\u7406\u9A7B\u7559 127.0.0.1\uFF08\u9ED8\u8BA4 8787 \u7AEF\u53E3\uFF09\uFF0C\u538B\u7F29\u53D1\u5F80\u6A21\u578B\u7684\u4E0A\u4E0B\u6587\u4EE5\u7701 token\uFF08/hr-* \u547D\u4EE4\u7F16\u8F91\u540C\u4E00\u914D\u7F6E\uFF09\u3002\u5207\u6362\u8BBE\u5907\u4F1A\u91CD\u542F\u4EE3\u7406\uFF0C\u6B63\u5728\u5904\u7406\u7684\u8BF7\u6C42\u53EF\u80FD\u4E2D\u65AD\u4E00\u6B21\u3002",
     headroomBinMissing: "\u672A\u627E\u5230 headroom \u7A0B\u5E8F\uFF0C\u4EE3\u7406\u65E0\u6CD5\u542F\u52A8\uFF1B\u5B89\u88C5 headroom \u540E\u4EE5\u4E0B\u8BBE\u7F6E\u81EA\u52A8\u751F\u6548",
     hrInstallBin: "\u5B89\u88C5 headroom \u672C\u4F53",
     hrBinInstalled: "headroom \u672C\u4F53\u5DF2\u5B89\u88C5\uFF1B\u91CD\u65B0\u6253\u5F00\u4F1A\u8BDD\u540E\u4EE3\u7406\u53EF\u7528\uFF08SessionStart \u94A9\u5B50\u81EA\u52A8\u62C9\u8D77\uFF09",
     headroomInstallTitle: "\u672A\u5B89\u88C5 headroom \u63D2\u4EF6",
-    headroomInstallDesc: "\u4ECE zcode-plugins \u5E02\u573A\u5B89\u88C5\u540E\u5373\u53EF\u5728\u6B64\u7BA1\u7406\u538B\u7F29\u4EE3\u7406\uFF1B\u5EFA\u8BAE\u5B89\u88C5\u540E\u91CD\u542F\u4F1A\u8BDD\u751F\u6548\u3002",
+    headroomInstallDesc: "\u4ECE zcode-plugins \u5E02\u573A\u5B89\u88C5\u540E\u5373\u53EF\u5728\u6B64\u7BA1\u7406\u538B\u7F29\u4EE3\u7406\uFF1B\u91CD\u542F\u4F1A\u8BDD\u540E\u751F\u6548\u3002",
     headroomInstall: "\u5B89\u88C5",
     headroomInstalling: "\u5B89\u88C5\u4E2D\u2026",
     headroomInstalled: "\u5DF2\u5B89\u88C5 headroom \u63D2\u4EF6",
     headroomInstallRetry: "\u5B89\u88C5\u672A\u751F\u6548\uFF0C\u8BF7\u91CD\u8BD5\u6216\u624B\u52A8\u5728\u63D2\u4EF6\u5E02\u573A\u5B89\u88C5",
     pluginInstallCardTitle: "\u672A\u5B89\u88C5 {name} \u63D2\u4EF6",
-    pluginInstallCardDesc: "\u4ECE zcode-plugins \u5E02\u573A\u5B89\u88C5\u540E\u5373\u53EF\u5728\u6B64\u7BA1\u7406\uFF1B\u5EFA\u8BAE\u5B89\u88C5\u540E\u91CD\u542F\u4F1A\u8BDD\u751F\u6548\u3002",
+    pluginInstallCardDesc: "\u4ECE zcode-plugins \u5E02\u573A\u5B89\u88C5\u540E\u5373\u53EF\u5728\u6B64\u7BA1\u7406\uFF1B\u91CD\u542F\u4F1A\u8BDD\u540E\u751F\u6548\u3002",
     pluginInstallDone: "\u5DF2\u5B89\u88C5 {name} \u63D2\u4EF6",
     pluginEnable: "\u542F\u7528",
     hrStarting: "\u6B63\u5728\u542F\u52A8\u538B\u7F29\u4EE3\u7406\u2026",
@@ -525,7 +529,7 @@
     headroomBackendAuto: "\u81EA\u52A8 \xB7 \u663E\u5361\u4F18\u5148",
     headroomBackendCpu: "\u7701\u7535 \xB7 CPU \u4F18\u5148",
     headroomBackendNative: "\uFF08\u539F\u751F\u503C\uFF09",
-    headroomBackendDesc: "\u81EA\u52A8\uFF1Aheadroom \u9009\u6700\u5FEB\u8BBE\u5907\uFF08CUDA/MPS \u663E\u5361\u4F18\u5148\uFF09\uFF1BCPU\uFF1A\u5F3A\u5236 CPU \u538B\u7F29\uFF0C\u7701\u7535\u4E14\u4E0D\u5360\u663E\u5B58\u3002\u4E5F\u652F\u6301 headroom \u539F\u751F\u503C\uFF08onnx\u3001pytorch_mps \u7B49\uFF09\u3002\u5207\u6362\u4F1A\u91CD\u542F\u4EE3\u7406\u7ACB\u5373\u751F\u6548\u3002",
+    headroomBackendDesc: "\u81EA\u52A8\uFF1Aheadroom \u9009\u6700\u5FEB\u8BBE\u5907\uFF08CUDA/MPS \u663E\u5361\u4F18\u5148\uFF09\uFF1BCPU\uFF1A\u5F3A\u5236 CPU \u538B\u7F29\uFF0C\u7701\u7535\u4E14\u4E0D\u5360\u663E\u5B58\u3002\u4E5F\u652F\u6301 headroom \u539F\u751F\u503C\uFF08onnx\u3001pytorch_mps \u7B49\uFF09\u3002",
     headroomPower: "\u7701\u7535\u81EA\u52A8\u5207\u6362",
     headroomPowerOff: "\u5173\u95ED",
     headroomPowerOffDesc: "\u4E0D\u81EA\u52A8\u5207\u6362\uFF0C\u59CB\u7EC8\u6309\u201C\u538B\u7F29\u8BBE\u5907\u201D\u8FD0\u884C\u3002",
@@ -535,7 +539,7 @@
     headroomPowerSaverDesc: "\u4EC5\u7CFB\u7EDF\u8FDB\u5165\u7701\u7535\u6A21\u5F0F \u2192 CPU \u538B\u7F29\uFF0C\u9000\u51FA\u5207\u56DE\u3002",
     hrCpuPinnedHint: "\u538B\u7F29\u8BBE\u5907\u5DF2\u56FA\u5B9A\u4E3A CPU\uFF0C\u7701\u7535\u81EA\u52A8\u5207\u6362\u4E0D\u4F1A\u518D\u6539\u53D8\u5B83\u3002",
     headroomInterval: "\u76D1\u89C6\u95F4\u9694",
-    headroomIntervalDesc: "\u7701\u7535\u76D1\u89C6\u5668\u8F6E\u8BE2\u7535\u6E90\u72B6\u6001\u7684\u95F4\u9694\uFF0810\u20133600 \u79D2\uFF0C\u9ED8\u8BA4 60\uFF09\uFF1B\u4FDD\u5B58\u540E\u4ECE\u4E0B\u4E00\u8F6E\u5DE1\u68C0\u8D77\u751F\u6548\uFF0C\u65E0\u9700\u91CD\u542F\u3002",
+    headroomIntervalDesc: "\u7701\u7535\u76D1\u89C6\u5668\u8F6E\u8BE2\u7535\u6E90\u72B6\u6001\u7684\u95F4\u9694\uFF0810\u20133600 \u79D2\uFF0C\u9ED8\u8BA4 60\uFF09\uFF1B\u4FDD\u5B58\u540E\u4ECE\u4E0B\u4E00\u8F6E\u5DE1\u68C0\u8D77\u751F\u6548\u3002",
     headroomSecUnit: "\u79D2",
     upgradeCheck: "\u68C0\u67E5\u66F4\u65B0",
     upgradeChecking: "\u68C0\u67E5\u4E2D\u2026",
@@ -622,7 +626,7 @@
     agentsSave: "Save",
     agentsSaved: "Global prompt saved.",
     agentsLoadFailed: "Failed to load the global prompt",
-    proxyDesc: "Set an HTTP proxy for network access made by the local helper: plugin marketplace updates and installs, plugin dependency installs and upgrades, and WebDAV sync can all use it \u2014 pick the scopes with the toggles below. Does not affect the ZCode app itself or model requests. Applies immediately.",
+    proxyDesc: "Set an HTTP proxy for network access made by the local helper: plugin marketplace updates and installs, plugin dependency installs and upgrades, and WebDAV sync can all use it \u2014 pick the scopes with the toggles below. Does not affect the ZCode app itself or model requests.",
     proxyPlaceholder: "http://127.0.0.1:7890",
     proxySave: "Save",
     proxySaved: "Proxy settings saved.",
@@ -636,7 +640,7 @@
     proxyScopeDeps: "Plugin dependencies",
     proxyScopeDepsDesc: "headroom and rtk installs, update checks and upgrades (pip and GitHub downloads) go through the proxy.",
     proxyScopeSync: "Sync",
-    proxyScopeSyncDesc: "WebDAV upload and download go through the proxy. Off by default: domestic WebDAV providers work fine direct, and a stopped proxy breaks sync.",
+    proxyScopeSyncDesc: "WebDAV upload and download go through the proxy.",
     tabSync: "Sync",
     tabDebug: "Debug",
     testNoSessionHint: "With \u201Cfollow current session [current model]\u201D selected, the provider [model] of the last session is used.",
@@ -723,13 +727,13 @@
     defaultValue: "default",
     resetDefault: "Reset to default",
     featureProjectMenu: "Project menu actions",
-    featureProjectMenuDesc: 'Custom alias, switch folder, open folder and copy path in the project "More" menu (the alias also applies to the sidebar).',
+    featureProjectMenuDesc: "Open folder and copy path in the project More menu (alias and folder switch retired).",
     featureTaskOrder: "Sidebar session drag ordering",
-    featureTaskOrderDesc: "Makes session drags in Pinned, Projects and Groups persist across refreshes.",
+    featureTaskOrderDesc: "Drag to reorder sessions in Pinned, Projects and Groups; survives restarts.",
     featureSessionSwitch: "Session quick switch",
-    featureSessionSwitchDesc: "{last} toggles between the current and the last session; hold alt and press {prev}/{next} to move the highlight across recently used sessions (10 shown initially, pressing {next} at the bottom loads 5 more), {recent} opens the last 10 directly, {attention} opens running / finished-but-unseen tasks; arrow keys also move the highlight, Enter or release alt to switch (like alt+tab)",
+    featureSessionSwitchDesc: "{last} toggles to the last session; alt + arrows pick recent sessions; keys remappable",
     featureTitleLock: "Keep renamed session titles",
-    featureTitleLockDesc: "Sessions you renamed keep their custom title: after new replies the app may show an auto-generated title instead, which reverts after a restart; this keeps the renamed title in the sidebar.",
+    featureTitleLockDesc: "Sessions you renamed keep their custom title in the sidebar.",
     tabTitleGen: "Task name prompt",
     titleGenShortDesc: "When a new session starts answering, generates the task name with the chosen provider and prompt and saves it as a manual rename the built-in title never overrides.",
     titleGenEnabled: "Enable",
@@ -755,7 +759,7 @@
     titleGenTestOk: "Result: ",
     titleGenTestFailed: "Generation failed",
     featureWsRunning: "Running indicator when collapsed",
-    featureWsRunningDesc: "Shows the same spinning loader as running tasks on collapsed projects and on section headers (\u201CTasks\u201D, \u201CPinned\u201D) while any session is running; clears when they all finish.",
+    featureWsRunningDesc: "Collapsed project and task headers show a loader while sessions run.",
     tabPerformance: "Performance",
     perfDesc: "ZCode keeps a session process resident for every project you have opened and never reclaims it, so memory grows with projects. When enabled, projects unused for a while with nothing running release their memory automatically: sessions are untouched and reload when reopened, with a few seconds wait on the first reply. The project in use, running sessions, background commands and scheduled tasks are never reclaimed. Background-command detection reads system process info via built-in tools (Linux / macOS / Windows); when unavailable, the feature disables itself.",
     featureIdleReclaim: "Idle project memory reclaim",
@@ -765,15 +769,15 @@
     idleReclaimStartupHint: "Startup pre-spawns a process per restored project; this pass collects the unused ones once. 0 = reclaim right after startup, ignoring the idle minutes above",
     idleReclaimUnit: "min",
     featureToolbarIcons: "Sidebar menu in the top bar",
-    featureToolbarIconsDesc: "Turns the sidebar menu (New task / Search / Automations / Plugin store) into icon buttons next to the back/forward arrows in the top bar: hover shows the name, the button stays highlighted while its view is open, and shortcuts still work; the original sidebar menu is hidden.",
+    featureToolbarIconsDesc: "New task / search / automations / plugin store become top-bar icon buttons.",
     tbNewTask: "New task",
     tbSearch: "Search",
     tbAutomations: "Automations",
     tbPluginStore: "Plugin store",
     featurePinnedCollapse: "Collapsible Pinned section",
-    featurePinnedCollapseDesc: 'The sidebar "Pinned" header collapses/expands its task list (like Projects and Groups); the state is remembered.',
+    featurePinnedCollapseDesc: "The Pinned header collapses/expands its task list.",
     featureSandboxReclaim: "Plugin card sandbox reclaim",
-    featureSandboxReclaimDesc: "Releases the oldest plugin-card sandboxes once the cap is hit (the one being viewed goes last), so new cards keep opening after the 64-slot pool fills up; released cards come back when their session is reopened (budget adjustable via sandboxReclaimBudget in the config file).",
+    featureSandboxReclaimDesc: "Reclaims the oldest sandboxes at the 64 cap so new cards keep opening; released cards come back when their session is reopened.",
     featurePluginCardRetry: "Plugin card auto-retry",
     featurePluginCardRetryDesc: 'Auto-clicks "Reload" on cards that failed the slot cap; they recover as soon as a slot frees up.',
     visionCardUi: "Vision cards",
@@ -798,7 +802,7 @@
     switcherAttentionHint: "Running / finished but unseen tasks \xB7 {prev} / {next} or \u2191 / \u2193 to choose, Enter or release alt to switch",
     switcherAttentionEmpty: "No running or unseen tasks",
     featureNewtabPanels: "Plugin panels on the new tab page",
-    featureNewtabPanelsDesc: 'The built-in "new tab page" only lists built-in panels and recommended official plugins; this adds cards for third-party marketplace plugin panels (headroom, rtk, \u2026) that open in the side pane.',
+    featureNewtabPanelsDesc: "Adds third-party plugin panels (headroom, rtk, ...) to the new tab page; click to open in the side pane.",
     ntpDescSuffix: "plugin panel",
     ntpNeedSession: "Open a task session first, then open plugin panels from the new tab page",
     featureStatusBarDesc: "Shows statistics at the bottom-right of the input box and at the end of each answer.",
@@ -910,7 +914,11 @@
     featureFileActions: "File menu actions",
     featureFileActionsDesc: 'Adds "Open with default app" and "Reveal in file manager" to the right-click menu of file links in chat.',
     featureImageCopy: "Image right-click copy",
+    featureTableCopy: "Copy table",
+    featureComposerProvider: "Provider in model name",
     featureImageCopyDesc: "Right-click an image in chat or the enlarged preview to copy it to the clipboard.",
+    featureTableCopyDesc: "Copy-table button on the table toolbar; pastes into Excel / editors as a clean table.",
+    featureComposerProviderDesc: "Shows the provider before the model name (e.g. BigModel-Max1 / glm-5.3).",
     imageCopy: "Copy image",
     imageCopied: "Image copied to the clipboard.",
     imageCopyFailed: "Failed to copy the image.",
@@ -933,7 +941,7 @@
     pluginsUpdatesAvailable: "{n} zcode-plugins update(s) available (ZCode Pro settings \u2192 Features)",
     pluginsAutoUpdated: "zcode-plugins updated",
     tabVision: "Vision",
-    visionDesc: "When the main model cannot see images (e.g. glm-5.3), images in messages are recognized by the vision models below and passed to the main model as text (zcode-vision plugin; /vision-* commands edit the same file). Changes save automatically.",
+    visionDesc: "When the main model cannot see images (e.g. glm-5.3), images in messages are recognized by the vision models below and passed to the main model as text (zcode-vision plugin; /vision-* commands edit the same file).",
     visionEnabled: "Enable",
     visionForceIntercept: "Intercept even if the main model sees images",
     visionMode: "Chain mode",
@@ -964,14 +972,14 @@
     visionCompressKBHint: "Images above this size are compressed first (max edge 2000, JPEG); 0 = never",
     visionLoadFailed: "Failed to load the vision config",
     tabRtk: "rtk",
-    rtkDesc: "rtk plugin: compresses common dev command output by 60-90% before it reaches the context (/rtk-* commands edit the same files). Changes save automatically and apply immediately.",
+    rtkDesc: "rtk plugin: compresses common dev command output by 60-90% before it reaches the context (/rtk-* commands edit the same files).",
     rtkEnabled: "Enable",
     rtkNotInstalled: "rtk is not installed. The settings below take effect after installation (/rtk-setup in a session).",
     rtkInstallBin: "Install rtk binary",
     rtkBinInstalled: "rtk installed; PATH takes effect for sessions after signing out and back in \u2014 the plugin hook works immediately",
     rtkWhitelistTitle: "Whitelist (pass through without compression)",
     rtkBuiltinLabel: "Built-in exemptions (read-only, follow plugin updates):",
-    rtkWhitelistDesc: "Each entry is name (e.g. docker) or git:name (e.g. git:clone). Commands with tiny or no output need no compression; adding them skips compression. Built-ins (git add/commit/push, mkdir/cp, \u2026) cannot be removed. Delete the file to reset.",
+    rtkWhitelistDesc: "Each entry is name (e.g. docker) or git:name (e.g. git:clone); added commands skip compression. Built-ins (git add/commit/push, mkdir/cp, \u2026) cannot be removed.",
     rtkWhitelistPlaceholder: "name or git:name, press Enter to add",
     rtkWhitelistAdd: "Add",
     rtkWhitelistClear: "Clear",
@@ -979,18 +987,18 @@
     rtkWhitelistInvalid: "Entry must be name or git:name",
     rtkLoadFailed: "Failed to load the rtk config",
     tabHeadroom: "Headroom",
-    headroomDesc: "Headroom plugin: a local compression proxy on 127.0.0.1 (port 8787 by default) that compresses context sent to the model to save tokens (/hr-* commands edit the same file). Device and power-save changes apply immediately; switching the device restarts the proxy, so requests in progress may be interrupted once.",
+    headroomDesc: "Headroom plugin: a local compression proxy on 127.0.0.1 (port 8787 by default) that compresses context sent to the model to save tokens (/hr-* commands edit the same file). Switching the device restarts the proxy, so requests in progress may be interrupted once.",
     headroomBinMissing: "The headroom program was not found, so the proxy cannot start. The settings below take effect once it is installed.",
     hrInstallBin: "Install headroom binary",
     hrBinInstalled: "headroom installed; reopen a session and the hook will start the proxy automatically",
     headroomInstallTitle: "headroom plugin not installed",
-    headroomInstallDesc: "Install it from the zcode-plugins marketplace to manage the compression proxy here; restarting the session afterwards is recommended.",
+    headroomInstallDesc: "Install it from the zcode-plugins marketplace to manage the compression proxy here; takes effect after a session restart.",
     headroomInstall: "Install",
     headroomInstalling: "Installing\u2026",
     headroomInstalled: "headroom plugin installed",
     headroomInstallRetry: "Installation did not take effect; retry or install it from the marketplace manually",
     pluginInstallCardTitle: "{name} plugin not installed",
-    pluginInstallCardDesc: "Install it from the zcode-plugins marketplace to manage it here; restarting the session afterwards is recommended.",
+    pluginInstallCardDesc: "Install it from the zcode-plugins marketplace to manage it here; takes effect after a session restart.",
     pluginInstallDone: "{name} plugin installed",
     pluginEnable: "Enable",
     hrStarting: "Starting compression proxy\u2026",
@@ -1043,7 +1051,7 @@
     headroomPowerSaverDesc: "Only the system power-saver mode \u2192 CPU; back when it exits.",
     hrCpuPinnedHint: "The compression device is pinned to CPU, so power-save switching no longer changes anything.",
     headroomInterval: "Watch interval",
-    headroomIntervalDesc: "Seconds between power checks (10\u20133600, default 60); applies from the next round, no restart needed.",
+    headroomIntervalDesc: "Seconds between power checks (10\u20133600, default 60); applies from the next round.",
     headroomSecUnit: "s",
     upgradeCheck: "Check update",
     upgradeChecking: "Checking\u2026",
@@ -1623,7 +1631,7 @@
         "div",
         { class: "min-w-0 flex-1" },
         h("div", { class: "text-ui-sm font-medium text-foreground" }, name),
-        h("div", { class: "mt-0.5 text-ui-xs/relaxed text-foreground-subtle", "data-zcodepro-row-desc": "" }, desc ?? "")
+        h("div", { class: "mt-0.5 text-ui-xs/relaxed text-foreground-subtle zcodepro-row-desc", "data-zcodepro-row-desc": "", title: desc ?? "" }, desc ?? "")
       ),
       ...extraEl ? [extraEl] : [],
       h("button", {
@@ -1664,6 +1672,14 @@
       overflow-y: auto;
       /* \u6EDA\u5230\u5E95\u4E0D\u518D\u628A\u6EDA\u52A8\u4F20\u7ED9\u5F39\u7A97\u540E\u9762\u7684\u9875\u9762 */
       overscroll-behavior: contain;
+    }
+    /* \u53CC\u5217\u7F51\u683C\uFF08\u529F\u80FD\u9875\uFF09\u91CC\u7684\u884C\u63CF\u8FF0\u6700\u591A\u4E24\u884C\u7701\u7565\uFF1A\u957F\u63CF\u8FF0\u6491\u51FA\u7684\u53C2\u5DEE\u884C\u9AD8\u662F
+       \u7F51\u683C\u89C2\u611F\u5DEE\u7684\u6839\u6E90\uFF1B\u5355\u5217\u573A\u666F\uFF08\u5176\u4ED6\u9762\u677F\uFF09\u4E0D\u53D7\u5F71\u54CD */
+    .grid.grid-cols-2 > div > div > .zcodepro-row-desc {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
     /* \u5F00\u5173\uFF08\u8BBE\u7F6E\u5F39\u7A97\uFF09\uFF1A\u51E0\u4F55\u56FA\u5B9A\u5199\u5165\uFF0C\u989C\u8272\u968F\u4E3B\u9898\u53D8\u91CF */
     [data-zcodepro-switch] {
@@ -1961,6 +1977,9 @@
       height: 12px;
       flex-shrink: 0;
       opacity: 0.6;
+      /* 11px \u5B57\u4F53\u7684\u89C6\u89C9\u4E2D\u5FC3\uFF08x-height \u4E2D\u70B9\uFF09\u9AD8\u4E8E\u884C\u76D2\u51E0\u4F55\u4E2D\u5FC3\u7EA6 1px\uFF08\u4E0B\u4F38\u90E8
+          \u9884\u7559\uFF09\uFF0C\u51E0\u4F55\u5C45\u4E2D\u7684\u56FE\u6807\u770B\u8D77\u6765\u504F\u4E0B\u2014\u2014\u6574\u4F53\u4E0A\u79FB 1px \u5BF9\u9F50\u89C6\u89C9\u4E2D\u5FC3 */
+      transform: translateY(-1px);
     }
     .zcodepro-statusbar b { font-weight: 600; color: var(--color-foreground-subtle, #666); }
     .zcodepro-statusbar i {
@@ -3128,10 +3147,10 @@
   function startImageMenu() {
     if (typeof window === "undefined") return;
     if (typeof navigator.clipboard?.write !== "function" || typeof window.ClipboardItem === "undefined") return;
-    let enabled9 = true;
+    let enabled11 = true;
     const refresh = () => {
       void getConfig().then((c) => {
-        enabled9 = !(c.features && c.features.imageCopy === false);
+        enabled11 = !(c.features && c.features.imageCopy === false);
       });
     };
     refresh();
@@ -3140,7 +3159,7 @@
       const img = copyTargetOf(e.target, e.clientX, e.clientY);
       if (!img) return;
       e.preventDefault();
-      if (enabled9) showMenu(e.clientX, e.clientY, img);
+      if (enabled11) showMenu(e.clientX, e.clientY, img);
       refresh();
     }, true);
   }
@@ -4655,8 +4674,12 @@
           h("span", { class: "inline-block size-2 rounded-full bg-emerald-500" }),
           h("span", { class: "text-foreground-subtle/70" }, `${health.version} \xB7 ${HELPER_URL}`)
         );
-        const rows = h("div", { class: "divide-y divide-border rounded-xl border border-border" });
+        const rows = h("div", { class: "grid grid-cols-2 gap-x-0 gap-y-1 rounded-xl border border-border p-2 divide-x divide-border" });
         const pluginsStatusLine = h("span", { class: "max-w-40 truncate text-ui-xs/relaxed text-foreground-subtle" }, "\u2026");
+        const setPluginsStatus = (text) => {
+          setPluginsStatus(text);
+          pluginsStatusLine.setAttribute("title", text);
+        };
         const pluginsBtn = btnSmall(L.pluginsCheckNow, () => {
           void runPluginsUpdate();
         });
@@ -4665,23 +4688,23 @@
           if (pluginsUpdating) return;
           pluginsUpdating = true;
           pluginsBtn.disabled = true;
-          pluginsStatusLine.textContent = L.pluginsUpdating;
+          setPluginsStatus(L.pluginsUpdating);
           const res = await rpc("/plugins/update", { method: "POST", body: {} });
           pluginsUpdating = false;
           pluginsBtn.disabled = false;
           if (!res.ok) {
-            pluginsStatusLine.textContent = "";
+            setPluginsStatus("");
             showToast(L.pluginsUpdateFailed + ": " + errText(res), "error");
             return;
           }
-          pluginsStatusLine.textContent = res.updated > 0 ? L.pluginsUpdatedDone.replaceAll("{n}", String(res.updated)) : L.pluginsUpToDate;
+          setPluginsStatus(res.updated > 0 ? L.pluginsUpdatedDone.replaceAll("{n}", String(res.updated)) : L.pluginsUpToDate);
           showToast(pluginsStatusLine.textContent, "success");
         };
         void (async () => {
           const cfg = await getConfig(true).catch(() => null);
           const res = await rpc("/plugins/status");
           if (!res.ok) {
-            pluginsStatusLine.textContent = "";
+            setPluginsStatus("");
             return;
           }
           const n = (res.updates || []).length;
@@ -4689,7 +4712,7 @@
             void runPluginsUpdate();
             return;
           }
-          pluginsStatusLine.textContent = n > 0 ? L.pluginsUpdatesFound.replaceAll("{n}", String(n)) : L.pluginsUpToDate;
+          setPluginsStatus(n > 0 ? L.pluginsUpdatesFound.replaceAll("{n}", String(n)) : L.pluginsUpToDate);
         })();
         const HK_ACTIONS = [
           ["switchLast", "hkAltZ"],
@@ -4757,6 +4780,16 @@
               if (await setFeature("imageCopy", next)) f.imageCopy = next;
               refreshRows();
             }),
+            settingRow(L.featureTableCopy, L.featureTableCopyDesc, f.tableCopy !== false, async () => {
+              const next = !(f.tableCopy !== false);
+              if (await setFeature("tableCopy", next)) f.tableCopy = next;
+              refreshRows();
+            }),
+            settingRow(L.featureComposerProvider, L.featureComposerProviderDesc, f.composerProvider !== false, async () => {
+              const next = !(f.composerProvider !== false);
+              if (await setFeature("composerProvider", next)) f.composerProvider = next;
+              refreshRows();
+            }),
             settingRow(L.featureSandboxReclaim, L.featureSandboxReclaimDesc, f.sandboxReclaim !== false, async () => {
               const next = !(f.sandboxReclaim !== false);
               if (await setFeature("sandboxReclaim", next)) f.sandboxReclaim = next;
@@ -4795,12 +4828,14 @@
               if (nameEl) {
                 nameEl.replaceChildren(
                   document.createTextNode(L.featureAutoUpdatePlugins + " "),
-                  repoLink,
-                  document.createTextNode(" \u63D2\u4EF6")
+                  repoLink
                 );
               }
               const descEl = row.querySelector("[data-zcodepro-row-desc]");
-              if (descEl) descEl.replaceChildren(pluginsStatusLine);
+              if (descEl) {
+                descEl.replaceChildren(pluginsStatusLine);
+                descEl.setAttribute("title", descEl.textContent.trim());
+              }
               return row;
             })()
           );
@@ -4993,10 +5028,10 @@
         const panes = { features: paneFeatures, shortcuts: paneShortcuts, styles: paneStyles, perf: panePerf, agents: paneAgents, proxy: paneProxy, sync: paneSync, vision: paneVision, headroom: paneHeadroom, rtk: paneRtk, debug: paneDebug };
         const tabDefs = [
           ["features", L.tabFeatures],
-          ["shortcuts", L.tabShortcuts],
-          ["agents", L.tabBehavior],
           ["styles", L.tabStyles],
+          ["agents", L.tabBehavior],
           ["perf", L.tabPerformance],
+          ["shortcuts", L.tabShortcuts],
           ["proxy", L.tabProxy],
           ["sync", L.tabSync],
           ["vision", L.tabVision],
@@ -10584,6 +10619,7 @@
 
   // src/inject/features/table-copy.js
   var installed5 = false;
+  var enabled9 = true;
   function cleanTable(table) {
     const clone = table.cloneNode(false);
     const walk = (src, dst) => {
@@ -10699,8 +10735,116 @@
       for (const bar of document.querySelectorAll("[data-markdown-table-toolbar]")) enhance(bar);
     };
     scan5();
-    const observer2 = new MutationObserver(scan5);
+    void getConfig().then((cfg) => {
+      enabled9 = cfg.features ? cfg.features.tableCopy !== false : true;
+    }).catch(() => {
+    });
+    window.addEventListener("zcodepro:config-changed", () => {
+      void getConfig(true).then((cfg) => {
+        enabled9 = cfg.features ? cfg.features.tableCopy !== false : true;
+      }).catch(() => {
+      });
+    });
+    const observer2 = new MutationObserver(() => {
+      if (enabled9) scan5();
+    });
     observer2.observe(document.body, { childList: true, subtree: true });
+  }
+
+  // src/inject/features/composer-provider.js
+  var installed6 = false;
+  var enabled10 = true;
+  function labelToDisplay(label) {
+    const i = label.indexOf("/");
+    if (i <= 0) return null;
+    const provider = label.slice(0, i).trim();
+    const rest = label.slice(i + 1);
+    const model = rest.trim().split(/\s+/)[0];
+    if (!provider || !model) return null;
+    return `${provider} / ${model}`;
+  }
+  function apply3() {
+    if (!enabled10) {
+      for (const btn of document.querySelectorAll('[data-testid="chat-model-select-trigger"]')) {
+        if (!btn.dataset.zcodeproProviderShown) continue;
+        const label = btn.getAttribute("aria-label") || "";
+        const i = label.indexOf("/");
+        if (i <= 0) continue;
+        const model = label.slice(i + 1).trim().split(/\s+/)[0];
+        if (!model) continue;
+        for (const sp of btn.querySelectorAll("span[title]")) sp.setAttribute("title", model);
+        for (const el of btn.querySelectorAll("span[title] span:not([title])")) {
+          if (!el.querySelector("span") && el.textContent.includes("/")) el.textContent = model;
+        }
+        delete btn.dataset.zcodeproProviderShown;
+      }
+      return;
+    }
+    for (const btn of document.querySelectorAll('[data-testid="chat-model-select-trigger"]')) {
+      const label = btn.getAttribute("aria-label") || "";
+      const display = labelToDisplay(label);
+      if (!display) continue;
+      const titleSpans = [...btn.querySelectorAll("span[title]")];
+      if (!titleSpans.length) continue;
+      const innermost = titleSpans.filter((sp) => !sp.querySelector("span[title]"));
+      if (!innermost.length) continue;
+      const holders = [];
+      for (const sp of innermost) {
+        sp.querySelectorAll("span:not([title])").forEach((el) => {
+          if (!el.querySelector("span") && el.textContent.trim() && !el.textContent.includes("/")) holders.push(el);
+        });
+      }
+      if (!holders.length) continue;
+      for (const sp of titleSpans) {
+        if (sp.getAttribute("title") !== display) sp.setAttribute("title", display);
+      }
+      for (const el of holders) el.textContent = display;
+      btn.dataset.zcodeproProviderShown = "1";
+    }
+  }
+  function startComposerProvider() {
+    if (installed6 || typeof document === "undefined") return;
+    installed6 = true;
+    const COMPOSER_SEL = '[data-composer-layout], [data-composer-leading-content], [data-testid="chat-model-select-trigger"]';
+    const relevant2 = (muts) => {
+      for (const m of muts) {
+        if (m.type === "childList") {
+          for (const n of [...m.addedNodes, ...m.removedNodes]) {
+            if (n instanceof Element && (n.matches?.(COMPOSER_SEL) || n.querySelector?.(COMPOSER_SEL))) return true;
+          }
+        } else if (m.type === "characterData") {
+          let el = m.target.parentElement;
+          while (el && el !== document.body) {
+            if (el.matches?.("[data-composer-layout], [data-composer-leading-actions], [data-composer-leading-content]")) return true;
+            el = el.parentElement;
+          }
+        }
+      }
+      return false;
+    };
+    const schedule = () => {
+      clearTimeout(schedule.t);
+      schedule.t = setTimeout(apply3, 120);
+    };
+    void getConfig().then((cfg) => {
+      enabled10 = cfg.features ? cfg.features.composerProvider !== false : true;
+    }).catch(() => {
+    });
+    window.addEventListener("zcodepro:config-changed", () => {
+      void getConfig(true).then((cfg) => {
+        const next = cfg.features ? cfg.features.composerProvider !== false : true;
+        if (next !== enabled10) {
+          enabled10 = next;
+          apply3();
+        }
+      }).catch(() => {
+      });
+    });
+    const observer2 = new MutationObserver((muts) => {
+      if (enabled10 && relevant2(muts)) schedule();
+    });
+    observer2.observe(document.body, { childList: true, subtree: true, characterData: true });
+    apply3();
   }
 
   // src/inject/features/plugin-updates.js
@@ -10836,6 +10980,10 @@
       }
       try {
         startTableCopy();
+      } catch {
+      }
+      try {
+        startComposerProvider();
       } catch {
       }
       try {

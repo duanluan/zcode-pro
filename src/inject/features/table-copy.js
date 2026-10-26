@@ -6,9 +6,10 @@
 // text/plain 同步写 TSV（Tab 分列、换行分行）：Excel / Numbers / 粘贴为纯
 // 文本的场景都能正确分列；富文本编辑器取 text/html 得到干净表格。
 import { ensureStyle, showToast } from '../ui.js';
-import { t } from '../core.js';
+import { t, getConfig } from '../core.js';
 
 let installed = false;
+let enabled = true; // helper features.tableCopy（默认开）
 
 // 剥样式：克隆树上去掉 style/class/width 等表现属性，只留结构（含 rowspan/
 // colspan——Excel 识别合并单元格）。thead/tbody 保留，th/td 语义也保留
@@ -138,6 +139,10 @@ export function startTableCopy() {
   };
   scan();
   // 会话滚动/新回答渲染都会新增表格：body 子树观察器兜底（现有各功能同款模式）
-  const observer = new MutationObserver(scan);
+  void getConfig().then((cfg) => { enabled = cfg.features ? cfg.features.tableCopy !== false : true; }).catch(() => {});
+  window.addEventListener('zcodepro:config-changed', () => {
+    void getConfig(true).then((cfg) => { enabled = cfg.features ? cfg.features.tableCopy !== false : true; }).catch(() => {});
+  });
+  const observer = new MutationObserver(() => { if (enabled) scan(); });
   observer.observe(document.body, { childList: true, subtree: true });
 }

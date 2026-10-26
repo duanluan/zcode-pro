@@ -244,8 +244,17 @@ export function openSettingsDialog() {
         h('span', { class: 'text-foreground-subtle/70' }, `${health.version} · ${HELPER_URL}`)
       );
 
-      const rows = h('div', { class: 'divide-y divide-border rounded-xl border border-border' });
+      // 双列网格：功能开关行短小（名称+开关+折行描述），两列排布把 15+ 行压到
+      // 一屏内。列间加分隔线、行距拉开（gap-y-1），格内不留底 padding——
+      // 悬停底色由行自身圆角承担，避免一格一格的补丁感
+      const rows = h('div', { class: 'grid grid-cols-2 gap-x-0 gap-y-1 rounded-xl border border-border p-2 divide-x divide-border' });
       const pluginsStatusLine = h('span', { class: 'max-w-40 truncate text-ui-xs/relaxed text-foreground-subtle' }, '…');
+      // 状态文字写入统一入口：文本与悬停 title 一起更新（描述位被动态内容替换后
+      // 仍保持悬停全文约定）
+      const setPluginsStatus = (text) => {
+        setPluginsStatus(text);
+        pluginsStatusLine.setAttribute('title', text);
+      };
       const pluginsBtn = btnSmall(L.pluginsCheckNow, () => { void runPluginsUpdate(); });
       let pluginsUpdating = false;
       const runPluginsUpdate = async () => {
@@ -253,18 +262,18 @@ export function openSettingsDialog() {
         if (pluginsUpdating) return;
         pluginsUpdating = true;
         pluginsBtn.disabled = true;
-        pluginsStatusLine.textContent = L.pluginsUpdating;
+        setPluginsStatus(L.pluginsUpdating);
         const res = await rpc('/plugins/update', { method: 'POST', body: {} });
         pluginsUpdating = false;
         pluginsBtn.disabled = false;
         if (!res.ok) {
-          pluginsStatusLine.textContent = '';
+          setPluginsStatus('');
           showToast(L.pluginsUpdateFailed + ': ' + errText(res), 'error');
           return;
         }
-        pluginsStatusLine.textContent = res.updated > 0
+        setPluginsStatus(res.updated > 0
           ? L.pluginsUpdatedDone.replaceAll('{n}', String(res.updated))
-          : L.pluginsUpToDate;
+          : L.pluginsUpToDate);
         showToast(pluginsStatusLine.textContent, 'success');
       };
       void (async () => {
@@ -272,15 +281,15 @@ export function openSettingsDialog() {
         // 状态行如实显示过程与结果；开关关闭时只检查并显示“N 个可更新”
         const cfg = await getConfig(true).catch(() => null);
         const res = await rpc('/plugins/status');
-        if (!res.ok) { pluginsStatusLine.textContent = ''; return; }
+        if (!res.ok) { setPluginsStatus(''); return; }
         const n = (res.updates || []).length;
         if (cfg && (cfg.features || {}).autoUpdatePlugins === true && n > 0) {
           void runPluginsUpdate();
           return;
         }
-        pluginsStatusLine.textContent = n > 0
+        setPluginsStatus(n > 0
           ? L.pluginsUpdatesFound.replaceAll('{n}', String(n))
-          : L.pluginsUpToDate;
+          : L.pluginsUpToDate);
       })();
 
       // 会话快捷切换：入口键位（“快捷键”标签页可改）；此处定义在 refreshRows 之前，
@@ -360,6 +369,16 @@ export function openSettingsDialog() {
             if (await setFeature('imageCopy', next)) f.imageCopy = next;
             refreshRows();
           }),
+          settingRow(L.featureTableCopy, L.featureTableCopyDesc, f.tableCopy !== false, async () => {
+            const next = !(f.tableCopy !== false);
+            if (await setFeature('tableCopy', next)) f.tableCopy = next;
+            refreshRows();
+          }),
+          settingRow(L.featureComposerProvider, L.featureComposerProviderDesc, f.composerProvider !== false, async () => {
+            const next = !(f.composerProvider !== false);
+            if (await setFeature('composerProvider', next)) f.composerProvider = next;
+            refreshRows();
+          }),
           settingRow(L.featureSandboxReclaim, L.featureSandboxReclaimDesc, f.sandboxReclaim !== false, async () => {
             const next = !(f.sandboxReclaim !== false);
             if (await setFeature('sandboxReclaim', next)) f.sandboxReclaim = next;
@@ -381,7 +400,7 @@ export function openSettingsDialog() {
             refreshRows();
           }),
           (() => {
-            // 标题 = “自动更新 duanluan/zcode-plugins 插件”，仓库名可点击跳转仓库
+            // 标题 = “自动更新 duanluan/zcode-plugins”，仓库名可点击跳转仓库
             const repoLink = h('span', {
               class: 'cursor-pointer underline-offset-4 hover:underline',
               title: PLUGINS_REPO_URL,
@@ -392,17 +411,19 @@ export function openSettingsDialog() {
               if (await setFeature('autoUpdatePlugins', next)) f.autoUpdatePlugins = next;
               refreshRows();
             }, h('div', { class: 'flex items-center gap-2' }, pluginsBtn));
-            // 标题行：自动更新 <链接> 插件；描述位放状态字（检查结果/更新进度）
+            // 标题行：自动更新 <链接>；描述位放状态字（检查结果/更新进度）
             const nameEl = row.querySelector('.text-ui-sm.font-medium');
             if (nameEl) {
               nameEl.replaceChildren(
                 document.createTextNode(L.featureAutoUpdatePlugins + ' '),
                 repoLink,
-                document.createTextNode(' 插件'),
               );
             }
             const descEl = row.querySelector('[data-zcodepro-row-desc]');
-            if (descEl) descEl.replaceChildren(pluginsStatusLine);
+            if (descEl) {
+              descEl.replaceChildren(pluginsStatusLine);
+              descEl.setAttribute('title', descEl.textContent.trim());
+            }
             return row;
           })(),
         );
@@ -560,12 +581,13 @@ export function openSettingsDialog() {
       const paneTitleGen = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
       const paneDebug = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
       const panes = { features: paneFeatures, shortcuts: paneShortcuts, styles: paneStyles, perf: panePerf, agents: paneAgents, proxy: paneProxy, sync: paneSync, vision: paneVision, headroom: paneHeadroom, rtk: paneRtk, debug: paneDebug };
+      // 一级 tab 顺序：功能 → 外观 → 行为 → 性能 → 快捷键 → 代理/同步/插件页
       const tabDefs = [
         ['features', L.tabFeatures],
-        ['shortcuts', L.tabShortcuts],
-        ['agents', L.tabBehavior],
         ['styles', L.tabStyles],
+        ['agents', L.tabBehavior],
         ['perf', L.tabPerformance],
+        ['shortcuts', L.tabShortcuts],
         ['proxy', L.tabProxy],
         ['sync', L.tabSync],
         ['vision', L.tabVision],
