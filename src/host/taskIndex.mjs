@@ -538,7 +538,8 @@ export async function reconcileCustomTitles(dataRoot, writtenMap) {
   };
 
   for (const [sessId, rec] of Object.entries(writtenMap)) {
-    if (!/^sess_[A-Za-z0-9._-]+$/.test(sessId) || !rec || typeof rec.title !== 'string') continue;
+    // 会话 id 有 sess_ 与 session_ 两种前缀（新版应用为 session_），两种都认
+    if (!/^(?:sess|session)_[A-Za-z0-9._-]+$/.test(sessId) || !rec || typeof rec.title !== 'string') continue;
     let cli;
     try { cli = await readCli(sessId); } catch { continue; }
     // CLI 已不是我们所写的 custom 标题：别人改过（手动改名/官方），不碰

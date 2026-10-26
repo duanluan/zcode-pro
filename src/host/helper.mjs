@@ -848,7 +848,9 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
           json(res, 400, { ok: false, code: 'title-gen-disabled', error: '智能起名未开启' });
           return;
         }
-        const sessId = typeof body?.sessId === 'string' && /^sess_[A-Za-z0-9._-]+$/.test(body.sessId) ? body.sessId : '';
+        // 会话 id 有 sess_ 与 session_ 两种前缀（新版应用为 session_），两种都认，
+        // 否则新形式会话的标题永远不会写入数据库
+        const sessId = typeof body?.sessId === 'string' && /^(?:sess|session)_[A-Za-z0-9._-]+$/.test(body.sessId) ? body.sessId : '';
         let title;
         try {
           title = await generateTitleWith(cfg, text, dataRoot, sessId);
@@ -1715,12 +1717,13 @@ function mergeTitleGenConfig(saved) {
   // 登录账号的套餐已在供应商列表里，跟随会话即覆盖原语义
   const provider = typeof s.provider === 'string' ? s.provider.trim().slice(0, 200) : d.provider;
   // customWritten：起名功能写过的 { sessId → { title, at } }，自动校正只认这些
-  // 记录（见 reconcileCustomTitles）。只收合法会话 id 与短字符串，超 7 天/500 条的丢弃
+  // 记录（见 reconcileCustomTitles）。只收合法会话 id（sess_/session_ 两种前缀，
+  // 新版应用为 session_）与短字符串，超 7 天/500 条的丢弃
   const written = {};
   const cutoff = Date.now() - 7 * 24 * 3600 * 1000;
   let kept = 0;
   for (const [k, v] of Object.entries((s.customWritten && typeof s.customWritten === 'object' && !Array.isArray(s.customWritten)) ? s.customWritten : {})) {
-    if (kept >= 500 || !/^sess_[A-Za-z0-9._-]+$/.test(k)) continue;
+    if (kept >= 500 || !/^(?:sess|session)_[A-Za-z0-9._-]+$/.test(k)) continue;
     if (!v || typeof v !== 'object' || typeof v.title !== 'string' || v.title.length > 200) continue;
     if (!Number.isFinite(v.at) || v.at < cutoff) continue;
     written[k] = { title: v.title, at: v.at };
@@ -2469,7 +2472,9 @@ export async function classifyIdleBusyWindows(procs, paths, lookupTaskWs) {
       if (child.ppid !== cli.pid) continue;
       if (isInfraCmdline(child.cmdline)) continue;
       if (!child.cmdline) { unattributed = true; continue; }
-      const sess = child.cmdline.match(/sess_[A-Za-z0-9-]+/);
+      // 会话 id 有 sess_ 与 session_ 两种前缀（新版应用为 session_）；匹配不到
+      // 会走 unattributed 全量判忙——新形式命令挂着时空闲回收会整体停摆
+      const sess = child.cmdline.match(/(?:sess|session)_[A-Za-z0-9-]+/);
       if (sess) await markByTask(sess[0]);
       else unattributed = true; // 用户进程但无会话线索：归属不到具体项目
     }
