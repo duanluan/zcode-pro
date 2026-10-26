@@ -1512,7 +1512,8 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
           renameSync(vTmp, vFile);
         }
       } catch { /* 无配置或不可写不影响启动 */ }
-      server.listen(port, '127.0.0.1', () => resolveStarted(server));
+      // 服务就绪即安排 headroom 代理兜底（内部延迟 5 秒执行，避开启动高峰）
+      server.listen(port, '127.0.0.1', () => { ensureHeadroomAtStartup(); resolveStarted(server); });
     };
     tryListen();
   });
@@ -3662,6 +3663,20 @@ async function runHeadroomHook(args, timeoutMs = 30000) {
       });
     });
   });
+}
+
+// 启动兜底：整机重启后首次打开应用时恢复的是旧会话，触发 SessionStart(resume)，
+// 旧版 headroom 插件的钩子只匹配 startup，代理不会自动启动（要等用户新建会话或
+// 手动重启）。helper 就绪后延迟几秒补一次 ensure：动作幂等（已在跑秒回），新版
+// 插件侧还带跨进程锁；失败一律静默——没装 headroom 插件/本体的环境不能打扰启动。
+let headroomStartupEnsureFired = false;
+function ensureHeadroomAtStartup() {
+  if (headroomStartupEnsureFired) return;
+  headroomStartupEnsureFired = true;
+  const timer = setTimeout(() => {
+    runHeadroomHook(['ensure'], 20000).catch(() => { /* 兜底失败不影响启动 */ });
+  }, 5000);
+  timer.unref?.();
 }
 
 // 解析 ensure-proxy(.sh/.mjs) status 输出为结构化字段（字段名以脚本 hr_status 的输出为准；
