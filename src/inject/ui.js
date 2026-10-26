@@ -26,8 +26,10 @@ export function showToast(text, kind = 'info') {
 // 注意：绝不能用 bg-surface 做面板底色——该 token 在应用里是 ~3% 不透明度的着色层（#0d0d0d08），
 // 会导致整卡透明。关键视觉另在 ensureStyle 里以自有样式表兜底（ID 选择器 + 主题变量 + 字面量回退），
 // 应用 Tailwind 类随版本更新变动时遮罩/面板仍能正确绘制。
-const overlayClass = 'fixed inset-0 isolate z-50 flex items-center justify-center bg-black/60 supports-backdrop-filter:backdrop-blur-xs duration-100 p-4 platform-linux-desktop:top-12';
-const overlayClassBare = 'fixed inset-0 isolate z-50 flex items-center justify-center duration-100 p-4 platform-linux-desktop:top-12';
+// 垂直方向 items-start + 卡片 margin-top：切 tab 内容高度变化时卡片顶边不动
+// （此前 items-center 上下双向伸缩，顶部随内容高度跳动，顶部 tab 没法稳着点）
+const overlayClass = 'fixed inset-0 isolate z-50 flex items-start justify-center bg-black/60 supports-backdrop-filter:backdrop-blur-xs duration-100 p-4 platform-linux-desktop:top-12';
+const overlayClassBare = 'fixed inset-0 isolate z-50 flex items-start justify-center duration-100 p-4 platform-linux-desktop:top-12';
 const contentClass = 'w-full sm:max-w-md rounded-2xl border-none bg-popover/98 p-5 text-ui-base/relaxed text-foreground ring-border shadow-2xl';
 
 // overlay: 'dim'（默认，半透明遮罩）| 'none'（透明遮罩）——设置弹窗用 'none'，方便边调样式边看会话。
@@ -59,6 +61,7 @@ export function openDialog({ title, description, onMount, onClose, width = 'sm:m
     role: 'dialog',
     'aria-modal': 'true',
     class: contentClass.replace('sm:max-w-md', width) + ' zcodepro-card',
+    style: 'margin-top:12vh;max-height:calc(88vh - 3rem);overflow-y:auto;',
   });
   const overlayEl = h('div', {
     'data-overlay': overlay,

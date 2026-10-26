@@ -1268,8 +1268,8 @@
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => el.remove(), kind === "error" ? 5e3 : 2600);
   }
-  var overlayClass = "fixed inset-0 isolate z-50 flex items-center justify-center bg-black/60 supports-backdrop-filter:backdrop-blur-xs duration-100 p-4 platform-linux-desktop:top-12";
-  var overlayClassBare = "fixed inset-0 isolate z-50 flex items-center justify-center duration-100 p-4 platform-linux-desktop:top-12";
+  var overlayClass = "fixed inset-0 isolate z-50 flex items-start justify-center bg-black/60 supports-backdrop-filter:backdrop-blur-xs duration-100 p-4 platform-linux-desktop:top-12";
+  var overlayClassBare = "fixed inset-0 isolate z-50 flex items-start justify-center duration-100 p-4 platform-linux-desktop:top-12";
   var contentClass = "w-full sm:max-w-md rounded-2xl border-none bg-popover/98 p-5 text-ui-base/relaxed text-foreground ring-border shadow-2xl";
   var dialogStack = [];
   function openDialog({ title, description, onMount, onClose, width = "sm:max-w-md", overlay = "dim", draggable = false, posKey = "", dismissOnOutside = true, bodyClass = "", closable = false }) {
@@ -1297,7 +1297,8 @@
     const content = h("div", {
       role: "dialog",
       "aria-modal": "true",
-      class: contentClass.replace("sm:max-w-md", width) + " zcodepro-card"
+      class: contentClass.replace("sm:max-w-md", width) + " zcodepro-card",
+      style: "margin-top:12vh;max-height:calc(88vh - 3rem);overflow-y:auto;"
     });
     const overlayEl = h("div", {
       "data-overlay": overlay,
