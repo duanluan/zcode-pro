@@ -1,7 +1,7 @@
 // 会话快捷切换：alt+z 立即切到上次使用的会话（再按切回）；按住 alt 按 x/c 打开
 // MRU 弹窗前后移动高亮（x 更早 / c 更新，c 到底且还有更多时加载 5 条并选中新
 // 加载的第一条），alt+e 直接打开同一弹窗（初始显示最近 10 条），alt+r 打开
-// “运行中 / 运行完未查看”任务弹窗，松开 alt 切换，Esc / 点弹窗外取消，点行即切。
+// “运行中 / 运行完未查看”任务弹窗，Enter 或点击行切换，Esc / 点弹窗外取消。
 // MRU（最近使用序）从注入起记录（不回填历史库，上限 50 条），
 // 与侧栏展示顺序无关；当前会话靠侧栏条目的 bg-selected 类识别（实测标记），
 // 事件驱动扫描（会话行增删/选中标记移动才触发）+ 低频兜底轮询——
@@ -30,7 +30,6 @@ let popupMode = 'mru';   // 'mru'：最近使用（x/c/e）；'attention'：运�
 let visibleCount = INITIAL_COUNT;
 let unseen = new Set();  // 运行结束以来未再切入查看的会话键
 let lastRunKeys = null;  // 上次采样的运行键集合（用于识别“运行→结束”的转变）
-let movedSinceOpen = false; // 打开弹窗后是否移动过高亮（决定松开 alt 是提交还是保持）
 // 键位（alt+字母/数字）：默认见 core.js，可在设置 → 快捷键修改；
 // 设置保存时会派发 zcodepro:config-changed，这里刷新缓存
 let hotkeys = { ...DEFAULT_SHORTCUTS };
@@ -138,7 +137,7 @@ async function switchTo(key) {
   return true;
 }
 
-// —— 切换弹窗（类 alt+tab）：居中列表卡，x/c 移动高亮，松开 alt / 点击提交 ——
+// —— 切换弹窗（类 alt+tab）：居中列表卡，x/c 移动高亮，Enter / 点击提交 ——
 
 // attention 弹窗的列表：正在运行或运行完未查看的任务。MRU 只记录切入过的
 // 会话，而“未查看”的任务可能从未切入，不在 MRU 里——这部分（先运行中、
@@ -242,12 +241,21 @@ function renderPopup() {
   }
 }
 
-async function openPopup(mode = 'mru') {
+// 打开进行中的 Promise：连按（r 后紧接 x/c）等同一次打开，等弹窗真正挂载完
+// 再移动——移动若落在打开流程的 await 窗口里，会被打开时的状态重置冲掉
+let openPopupInflight = null;
+
+function openPopup(mode = 'mru') {
   if (popupEl) return;
+  if (openPopupInflight) return openPopupInflight;
+  openPopupInflight = openPopupInner(mode).finally(() => { openPopupInflight = null; });
+  return openPopupInflight;
+}
+
+async function openPopupInner(mode) {
   popupMode = mode;
   visibleCount = INITIAL_COUNT;
   highlight = 0;
-  movedSinceOpen = false;
   const cfg = await getConfig().catch(() => null);
   aliasesCache = (cfg && cfg.aliases && typeof cfg.aliases === 'object') ? cfg.aliases : {};
   // attention 模式的行可能整段来自权威扫描（折叠项目），先补齐它们的标题再渲染
@@ -279,7 +287,6 @@ function moveUp() {
   const len = Math.min(activeList().length, visibleCount);
   if (len < 2) return;
   highlight = highlight > 0 ? highlight - 1 : len - 1; // 到顶循环回已加载的末尾
-  movedSinceOpen = true;
   renderPopup();
   scrollHighlight();
 }
@@ -297,7 +304,6 @@ function moveDown() {
   } else {
     highlight = 0; // 全部加载完后再到底：循环回顶部
   }
-  movedSinceOpen = true;
   renderPopup();
   scrollHighlight();
 }
@@ -345,6 +351,16 @@ export function startSessionSwitch() {
       e.preventDefault();
       e.stopImmediatePropagation();
       closePopup(false);
+      return;
+    }
+    // 弹窗开着时松开 alt 后裸按 x/c 也移动高亮：提示文案一直是
+    // “x / c 或 ↑ / ↓ 选择”，与方向键同规则（下到底加载 5 条）
+    const bareK = e.key.toLowerCase();
+    if (popupEl && !e.altKey && !e.ctrlKey && !e.metaKey && !e.isComposing
+      && (bareK === hotkeys.switchPrev || bareK === hotkeys.switchNext)) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      if (bareK === hotkeys.switchPrev) moveUp(); else moveDown();
       return;
     }
     // 弹窗开着时方向键 / Enter 也可操作（此时用户往往已松开 alt）：
@@ -396,25 +412,34 @@ export function startSessionSwitch() {
       await openPopup('attention');
       return;
     }
-    // x/c/e：最近使用弹窗（无可导航会话时与 z 一致轻提示）
-    if (mru.length < 2) { showToast(t().switcherEmpty); return; }
-    // e 只负责打开（初始显示最近 10 条，c 可继续加载更早的）
+    // e 只负责打开（初始显示最近 10 条，c 可继续加载更早的）；已开着或正在
+    // 打开时不动作。只在 mru 为空（连当前会话都没有，如停在新建任务页）才
+    // 提示——首次仅开着当前会话时照常打开，列表里就是它这一条
     if (k === hotkeys.switchRecent) {
-      if (!e.repeat && !popupEl) await openPopup('mru');
+      if (!e.repeat && !popupEl && !openPopupInflight) {
+        if (!mru.length) { showToast(t().switcherEmpty); return; }
+        await openPopup('mru');
+      }
       return;
     }
-    if (!popupEl) await openPopup('mru');
+    // x/c：弹窗已开着（含 attention 模式）直接在当前列表移动——attention 的
+    // 列表不是 mru，不能用 mru 的条数门槛拦截；正在打开（r 的异步流程没走完，
+    // popupEl 还没挂上）就等它开完再移动，否则要么被 mru 门槛拦成“空”，要么
+    // 移动被打开流程的状态重置冲掉；没开则以 mru 打开再移动（mru 为空才提示，
+    // 单条=当前会话时打开，移动自然无效）
+    if (openPopupInflight) {
+      await openPopupInflight;
+    } else if (!popupEl) {
+      if (!mru.length) { showToast(t().switcherEmpty); return; }
+      await openPopup('mru');
+    }
     // 键位对调：alt+x 上移一位（更靠上/更近的键管向上），alt+c 下移
     if (k === hotkeys.switchPrev) moveUp(); else moveDown();
     })();
   }, true);
 
-  document.addEventListener('keyup', (e) => {
-    // 松开 alt：移动过高亮则提交（alt+tab 流）；从未移动则保持弹窗打开，
-    // 让用户继续用方向键选择（alt+e / alt+r 打开后松手查看的场景）
-    if (e.key === 'Alt' && popupEl && movedSinceOpen) closePopup(true);
-  }, true);
-
-  // 窗口失焦（alt+tab 到别的应用等）视同取消
+  // 松开 alt 不做任何事（曾按 alt+tab 语义在松开时提交，但 Electron 的应用
+  // 菜单会抢走按松 Alt 的焦点，keyup 时有时无，行为不可靠，已移除）；切换只
+  // 认 Enter 与点击行。窗口失焦（alt+tab 到别的应用、系统抢焦点）视同取消
   window.addEventListener('blur', () => closePopup(false));
 }

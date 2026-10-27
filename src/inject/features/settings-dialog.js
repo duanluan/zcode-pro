@@ -499,8 +499,7 @@ export function openSettingsDialog() {
           }),
           hkCell('↑ / ↓', L.hkArrow.replaceAll('{prev}', keys.switchPrev).replaceAll('{next}', keys.switchNext)),
           hkCell('Enter', L.hkEnter),
-          hkCell('Esc', L.hkEsc),
-          hkCell(L.hkReleaseKey, L.hkRelease));
+          hkCell('Esc', L.hkEsc));
       };
       const stopHkRecording = () => {
         hkRecording = null;

@@ -280,14 +280,14 @@
     userFontDesc: "\u4F1A\u8BDD\u4E2D\u63D0\u95EE\u5185\u5BB9\u7684\u5B57\u4F53\uFF1B\u9009\u201C\u9ED8\u8BA4\u201D\u65F6\u8DDF\u968F\u754C\u9762\u5B57\u4F53\u3002",
     assistantFontName: "\u56DE\u7B54\u5B57\u4F53",
     assistantFontDesc: "\u4F1A\u8BDD\u4E2D\u56DE\u7B54\u6B63\u6587\u7684\u5B57\u4F53\uFF08\u4EE3\u7801\u5757\u4ECD\u7528\u7B49\u5BBD\u5B57\u4F53\uFF09\uFF1B\u9009\u201C\u9ED8\u8BA4\u201D\u65F6\u8DDF\u968F\u754C\u9762\u5B57\u4F53\u3002",
-    switcherHint: "{prev} / {next} \u6216 \u2191 / \u2193 \u9009\u62E9\uFF0CEnter \u6216\u677E\u5F00 alt \u5207\u6362\uFF0CEsc \u53D6\u6D88",
+    switcherHint: "{prev} / {next} \u6216 \u2191 / \u2193 \u9009\u62E9\uFF0CEnter \u6216\u70B9\u51FB\u884C\u5207\u6362\uFF0CEsc \u53D6\u6D88",
     switcherCurrent: "\u5F53\u524D",
     switcherEmpty: "\u6682\u65E0\u4E0A\u6B21\u4F1A\u8BDD\uFF08\u5207\u6362\u8FC7\u4F1A\u8BDD\u540E\u53EF\u7528\uFF09",
     switcherFailed: "\u672A\u80FD\u5207\u6362\u5230\u8BE5\u4F1A\u8BDD\uFF08\u53EF\u80FD\u5DF2\u5220\u9664\uFF09",
     switcherMore: "\u8FD8\u6709 {n} \u6761 \xB7 \u6309 c \u52A0\u8F7D",
     switcherRunning: "\u8FD0\u884C\u4E2D",
     switcherUnseen: "\u672A\u67E5\u770B",
-    switcherAttentionHint: "\u8FD0\u884C\u4E2D / \u8FD0\u884C\u5B8C\u672A\u67E5\u770B\u7684\u4EFB\u52A1 \xB7 {prev} / {next} \u6216 \u2191 / \u2193 \u9009\u62E9\uFF0CEnter \u6216\u677E\u5F00 alt \u5207\u6362",
+    switcherAttentionHint: "\u8FD0\u884C\u4E2D / \u8FD0\u884C\u5B8C\u672A\u67E5\u770B\u7684\u4EFB\u52A1 \xB7 {prev} / {next} \u6216 \u2191 / \u2193 \u9009\u62E9\uFF0CEnter \u6216\u70B9\u51FB\u884C\u5207\u6362",
     switcherAttentionEmpty: "\u6682\u65E0\u8FD0\u884C\u4E2D\u6216\u672A\u67E5\u770B\u7684\u4EFB\u52A1",
     featureNewtabPanels: "\u65B0\u6807\u7B7E\u9875\u63D2\u4EF6\u9762\u677F\u5165\u53E3",
     featureNewtabPanelsDesc: "\u65B0\u6807\u7B7E\u9875\u52A0\u5165\u7B2C\u4E09\u65B9\u63D2\u4EF6\uFF08headroom\u3001rtk \u7B49\uFF09\u7684\u9762\u677F\u5361\u7247\uFF0C\u70B9\u51FB\u5728\u4FA7\u8FB9\u9762\u677F\u6253\u5F00\u3002",
@@ -384,8 +384,6 @@
     hkArrow: "\u5F39\u7A97\u6253\u5F00\u65F6\u79FB\u52A8\u9AD8\u4EAE\uFF08\u4E0E alt + {prev} / alt + {next} \u540C\u89C4\u5219\uFF09",
     hkEnter: "\u786E\u8BA4\u5207\u6362\u5230\u9AD8\u4EAE\u7684\u4F1A\u8BDD",
     hkEsc: "\u53D6\u6D88\u5E76\u5173\u95ED\u5F39\u7A97",
-    hkRelease: "\u79FB\u52A8\u8FC7\u9AD8\u4EAE\u65F6\u677E\u5F00\u5373\u5207\u6362\uFF1B\u4ECE\u672A\u79FB\u52A8\u5219\u5F39\u7A97\u4FDD\u6301\u6253\u5F00\uFF0C\u7EE7\u7EED\u9009\u62E9",
-    hkReleaseKey: "\u677E\u5F00 alt",
     hkModify: "\u4FEE\u6539",
     hkRecording: "\u6309\u4E0B\u65B0\u952E\u2026",
     hkInvalid: "\u5FEB\u6377\u952E\u53EA\u652F\u6301\u5355\u4E2A\u5B57\u6BCD\u6216\u6570\u5B57",
@@ -792,14 +790,14 @@
     userFontDesc: 'Font of question text in conversations; "default" follows the UI font.',
     assistantFontName: "Answer font",
     assistantFontDesc: 'Font of answer text in conversations (code blocks stay monospaced); "default" follows the UI font.',
-    switcherHint: "{prev} / {next} or \u2191 / \u2193 to choose, Enter or release alt to switch, Esc to cancel",
+    switcherHint: "{prev} / {next} or \u2191 / \u2193 to choose, Enter or click a row to switch, Esc to cancel",
     switcherCurrent: "current",
     switcherEmpty: "No previous session yet (available after you switch sessions)",
     switcherFailed: "Failed to switch to that session (it may have been deleted)",
     switcherMore: "{n} more \xB7 press c to load",
     switcherRunning: "running",
     switcherUnseen: "unseen",
-    switcherAttentionHint: "Running / finished but unseen tasks \xB7 {prev} / {next} or \u2191 / \u2193 to choose, Enter or release alt to switch",
+    switcherAttentionHint: "Running / finished but unseen tasks \xB7 {prev} / {next} or \u2191 / \u2193 to choose, Enter or click a row to switch",
     switcherAttentionEmpty: "No running or unseen tasks",
     featureNewtabPanels: "Plugin panels on the new tab page",
     featureNewtabPanelsDesc: "Adds third-party plugin panels (headroom, rtk, ...) to the new tab page; click to open in the side pane.",
@@ -896,8 +894,6 @@
     hkArrow: "Move the highlight while the popup is open (same rules as alt + {prev} / alt + {next})",
     hkEnter: "Switch to the highlighted session",
     hkEsc: "Cancel and close the popup",
-    hkRelease: "Releasing alt switches once the highlight has moved; otherwise the popup stays open for further selection",
-    hkReleaseKey: "release alt",
     hkModify: "Change",
     hkRecording: "press a key\u2026",
     hkInvalid: "Shortcuts accept a single letter or digit only",
@@ -4923,8 +4919,7 @@
             }),
             hkCell("\u2191 / \u2193", L.hkArrow.replaceAll("{prev}", keys.switchPrev).replaceAll("{next}", keys.switchNext)),
             hkCell("Enter", L.hkEnter),
-            hkCell("Esc", L.hkEsc),
-            hkCell(L.hkReleaseKey, L.hkRelease)
+            hkCell("Esc", L.hkEsc)
           );
         };
         const stopHkRecording = () => {
@@ -8631,7 +8626,6 @@
   var visibleCount = INITIAL_COUNT;
   var unseen = /* @__PURE__ */ new Set();
   var lastRunKeys = null;
-  var movedSinceOpen = false;
   var hotkeys = { ...DEFAULT_SHORTCUTS };
   function loadHotkeys() {
     return getConfig(true).then((cfg) => {
@@ -8823,12 +8817,19 @@
       ));
     }
   }
-  async function openPopup(mode = "mru") {
+  var openPopupInflight = null;
+  function openPopup(mode = "mru") {
     if (popupEl) return;
+    if (openPopupInflight) return openPopupInflight;
+    openPopupInflight = openPopupInner(mode).finally(() => {
+      openPopupInflight = null;
+    });
+    return openPopupInflight;
+  }
+  async function openPopupInner(mode) {
     popupMode = mode;
     visibleCount = INITIAL_COUNT;
     highlight = 0;
-    movedSinceOpen = false;
     const cfg = await getConfig().catch(() => null);
     aliasesCache = cfg && cfg.aliases && typeof cfg.aliases === "object" ? cfg.aliases : {};
     if (mode === "attention") await fetchMissingTitles(attentionList()).catch(() => {
@@ -8867,7 +8868,6 @@
     const len = Math.min(activeList().length, visibleCount);
     if (len < 2) return;
     highlight = highlight > 0 ? highlight - 1 : len - 1;
-    movedSinceOpen = true;
     renderPopup();
     scrollHighlight();
   }
@@ -8883,7 +8883,6 @@
     } else {
       highlight = 0;
     }
-    movedSinceOpen = true;
     renderPopup();
     scrollHighlight();
   }
@@ -8924,6 +8923,14 @@
         e.preventDefault();
         e.stopImmediatePropagation();
         closePopup(false);
+        return;
+      }
+      const bareK = e.key.toLowerCase();
+      if (popupEl && !e.altKey && !e.ctrlKey && !e.metaKey && !e.isComposing && (bareK === hotkeys.switchPrev || bareK === hotkeys.switchNext)) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        if (bareK === hotkeys.switchPrev) moveUp();
+        else moveDown();
         return;
       }
       if (popupEl && (e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === "Enter")) {
@@ -8969,21 +8976,28 @@
           await openPopup("attention");
           return;
         }
-        if (mru.length < 2) {
-          showToast(t().switcherEmpty);
-          return;
-        }
         if (k === hotkeys.switchRecent) {
-          if (!e.repeat && !popupEl) await openPopup("mru");
+          if (!e.repeat && !popupEl && !openPopupInflight) {
+            if (!mru.length) {
+              showToast(t().switcherEmpty);
+              return;
+            }
+            await openPopup("mru");
+          }
           return;
         }
-        if (!popupEl) await openPopup("mru");
+        if (openPopupInflight) {
+          await openPopupInflight;
+        } else if (!popupEl) {
+          if (!mru.length) {
+            showToast(t().switcherEmpty);
+            return;
+          }
+          await openPopup("mru");
+        }
         if (k === hotkeys.switchPrev) moveUp();
         else moveDown();
       })();
-    }, true);
-    document.addEventListener("keyup", (e) => {
-      if (e.key === "Alt" && popupEl && movedSinceOpen) closePopup(true);
     }, true);
     window.addEventListener("blur", () => closePopup(false));
   }
