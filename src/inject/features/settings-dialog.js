@@ -158,7 +158,7 @@ export function openSettingsDialog() {
     // sm:max-w-3xl 不存在会失去约束拉满全屏；max-w-3xl=48rem 存在——英文界面
     // 标签栏较长，42rem 会挤出一块空白并触发横向滚动
     width: 'max-w-3xl',
-    bodyClass: 'mt-1',
+    bodyClass: 'mt-0',
     overlay: 'none',
     draggable: true,
     posKey: 'settings',
@@ -168,9 +168,13 @@ export function openSettingsDialog() {
       if (rtkUpgradePollStop) rtkUpgradePollStop();
     },
     onMount: async ({ body, close, content }) => {
+      // 标记设置弹窗：showToast 据此把弹窗内触发的提示居中叠在弹窗上
+      if (content) content.setAttribute('data-zcodepro-settings', '1');
       // 标题行：左侧“ZCode Pro”点击跳转 GitHub 仓库；右上角 X 关闭弹窗（替代底部按钮）。
       // h2 仍是拖拽把手——X 上阻止 mousedown 冒泡，避免点关闭时误触发拖拽
       const titleEl = content && content.firstElementChild;
+      // 版本行稍后并入标题（要等 health 请求返回），这里先留引用
+      let titleLeft = null;
       if (titleEl && titleEl.tagName === 'H2') {
         titleEl.classList.add('flex', 'w-full', 'items-center', 'justify-between');
         const ns = 'http://www.w3.org/2000/svg';
@@ -184,7 +188,7 @@ export function openSettingsDialog() {
           }
           return svg;
         };
-        const titleLeft = h('span', { class: 'flex min-w-0 items-center' }, L.settingsTitle);
+        titleLeft = h('span', { class: 'flex min-w-0 items-center' }, L.settingsTitle);
         if (typeof window.zcode?.openExternal === 'function') {
           const REPO_URL = 'https://github.com/duanluan/zcode-pro';
           titleLeft.replaceChildren(
@@ -229,7 +233,7 @@ export function openSettingsDialog() {
         // 通知常驻功能（如侧栏菜单并入顶栏）立即按新配置启用/停用
         window.dispatchEvent(new CustomEvent('zcodepro:config-changed'));
         if (!res.ok) {
-          body.querySelector('[data-zcodepro-status]').replaceChildren(
+          statusLine.replaceChildren(
             h('span', { class: 'text-ui-sm text-destructive' }, L.failed + ': ' + errText(res))
           );
           return false;
@@ -237,13 +241,15 @@ export function openSettingsDialog() {
         return true;
       };
 
+      // 版本行跟在标题文字后（左留间距）；也是功能开关保存失败时的报错位置
       const statusLine = h('div', {
-        class: 'flex items-center gap-2 text-ui-sm text-foreground-subtle',
+        class: 'ml-2 flex min-w-0 items-center gap-1.5 text-ui-xs text-foreground-subtle',
         'data-zcodepro-status': '1',
       },
         h('span', { class: 'inline-block size-2 rounded-full bg-emerald-500' }),
-        h('span', { class: 'text-foreground-subtle/70' }, `${health.version} · ${HELPER_URL}`)
+        h('span', { class: 'truncate text-foreground-subtle/70' }, `${health.version} · ${HELPER_URL}`)
       );
+      if (titleLeft) titleLeft.append(statusLine);
 
       // 双列网格：功能开关行短小（名称+开关+折行描述），两列排布把 15+ 行压到
       // 一屏内。列间加分隔线、行距拉开（gap-y-1），格内不留底 padding——
@@ -253,7 +259,7 @@ export function openSettingsDialog() {
       // 状态文字写入统一入口：文本与悬停 title 一起更新（描述位被动态内容替换后
       // 仍保持悬停全文约定）
       const setPluginsStatus = (text) => {
-        setPluginsStatus(text);
+        pluginsStatusLine.textContent = text;
         pluginsStatusLine.setAttribute('title', text);
       };
       const pluginsBtn = btnSmall(L.pluginsCheckNow, () => { void runPluginsUpdate(); });
@@ -462,15 +468,17 @@ export function openSettingsDialog() {
         communityCard(L.wechatGroupTitle, L.wechatGroupDesc.replaceAll('{id}', WECHAT_ID),
           () => hCopyIcon('size-4 shrink-0 text-foreground-subtle'),
           async () => {
-            if (await copyToClipboard(WECHAT_ID)) showToast(L.wechatIdCopied);
+            if (await copyToClipboard(WECHAT_ID)) showToast(L.wechatIdCopied, 'success');
           }));
 
       // 标签页切换：功能（现有内容）/ 外观 / 全局提示词 / 视觉代理
       let activeTab = 'features';
+      // 二级 tab 栏（外观 / 行为各一条）：登记后统一放到滚动区上方的固定区
+      const subTabBars = {};
       // 插件更新卡片：显示 duanluan-zcode-plugins 市场状态，一键更新（helper /plugins/* 端点）；
       // 状态异步加载，打开弹窗不等待
 
-      const paneFeatures = h('div', { role: 'tabpanel', class: 'mt-4' },
+      const paneFeatures = h('div', { role: 'tabpanel', class: 'mt-2' },
         h('div', {}, rows),
         communityCards,
       );
@@ -563,23 +571,23 @@ export function openSettingsDialog() {
         refreshRows(); // 功能标签页的开关描述跟随默认键位
         renderShortcuts();
       };
-      const paneShortcuts = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' },
+      const paneShortcuts = h('div', { role: 'tabpanel', style: 'display:none' },
         h('div', { class: 'mb-2 text-ui-sm font-medium' }, L.hkTitle),
         h('div', { class: 'mb-2 flex items-center gap-2' },
           h('div', { class: 'min-w-0 flex-1 text-ui-xs/relaxed text-foreground-subtle' }, L.hkEditHint),
           h('div', { class: 'shrink-0' }, btnSmall(L.hkReset, () => { void resetShortcuts(); }))),
         hkCard,
       );
-      const paneStyles = h('div', { role: 'tabpanel', class: 'mt-2', style: 'display:none' });
-      const panePerf = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
-      const paneAgents = h('div', { role: 'tabpanel', class: 'mt-2', style: 'display:none' });
-      const paneProxy = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
-      const paneSync = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
-      const paneVision = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
-      const paneRtk = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
-      const paneHeadroom = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
-      const paneTitleGen = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
-      const paneDebug = h('div', { role: 'tabpanel', class: 'mt-4', style: 'display:none' });
+      const paneStyles = h('div', { role: 'tabpanel', style: 'display:none' });
+      const panePerf = h('div', { role: 'tabpanel', style: 'display:none' });
+      const paneAgents = h('div', { role: 'tabpanel', style: 'display:none' });
+      const paneProxy = h('div', { role: 'tabpanel', style: 'display:none' });
+      const paneSync = h('div', { role: 'tabpanel', style: 'display:none' });
+      const paneVision = h('div', { role: 'tabpanel', style: 'display:none' });
+      const paneRtk = h('div', { role: 'tabpanel', style: 'display:none' });
+      const paneHeadroom = h('div', { role: 'tabpanel', style: 'display:none' });
+      const paneTitleGen = h('div', { role: 'tabpanel', style: 'display:none' });
+      const paneDebug = h('div', { role: 'tabpanel', style: 'display:none' });
       const panes = { features: paneFeatures, shortcuts: paneShortcuts, styles: paneStyles, perf: panePerf, agents: paneAgents, proxy: paneProxy, sync: paneSync, vision: paneVision, headroom: paneHeadroom, rtk: paneRtk, debug: paneDebug };
       // 一级 tab 顺序：功能 → 外观 → 行为 → 性能 → 快捷键 → 代理/同步/插件页
       const tabDefs = [
@@ -610,6 +618,7 @@ export function openSettingsDialog() {
         // 切走“快捷键”标签页时结束键位录制：否则在其它标签页打字会被录制监听吞掉
         if (name !== 'shortcuts' && hkRecording) stopHkRecording();
         for (const [id, pane] of Object.entries(panes)) pane.style.display = id === name ? '' : 'none';
+        for (const [id, bar] of Object.entries(subTabBars)) bar.style.display = id === name ? '' : 'none';
         renderTabs();
       };
       renderTabs();
@@ -767,10 +776,10 @@ export function openSettingsDialog() {
       renderToolbarSwitch();
       // “外观”标签页的二级结构：样式（原内容）/ 状态栏（统计项顺序与显隐）/
       // 主题（皮肤与自定义主题）/ 背景图（图库、文件夹轮换、网址）
-      const paneStylesSub1 = h('div', { class: 'mt-4' });
-      const paneStylesSub2 = h('div', { class: 'mt-4', style: 'display:none' });
-      const paneStylesSub3 = h('div', { class: 'mt-4', style: 'display:none' });
-      const paneStylesSub4 = h('div', { class: 'mt-4', style: 'display:none' });
+      const paneStylesSub1 = h('div', { class: 'mt-2' });
+      const paneStylesSub2 = h('div', { class: 'mt-2', style: 'display:none' });
+      const paneStylesSub3 = h('div', { class: 'mt-2', style: 'display:none' });
+      const paneStylesSub4 = h('div', { class: 'mt-2', style: 'display:none' });
       const ITEM_NAMES = {
         ctx: 'sbItemCtx', questions: 'sbItemQuestions',
         todayTokens: 'sbItemTodayTokens', totalTokens: 'sbItemTotalTokens', tasks: 'sbItemTasks',
@@ -1258,7 +1267,8 @@ export function openSettingsDialog() {
         },
       }, label)));
       renderStylesSubTabs();
-      paneStyles.append(stylesSubTablist, paneStylesSub1, paneStylesSub2, paneStylesSub3, paneStylesSub4);
+      subTabBars.styles = stylesSubTablist;
+      paneStyles.append(paneStylesSub1, paneStylesSub2, paneStylesSub3, paneStylesSub4);
       paneStylesSub1.append(
         toolbarSwitchWrap,
         h('div', { class: 'mt-2 flex flex-col gap-0.5 rounded-xl border border-border p-1' },
@@ -2019,7 +2029,7 @@ export function openSettingsDialog() {
         compressThresholdKB: 1024,
         skipAfterFailures: 2,
         skipMinutes: 30,
-        forceIntercept: true,
+        // forceIntercept 不写：缺省 = 自动（跟随宿主「模型设置」图片开关，zcode-vision ≥1.7.10）
       };
       let visionCfg = visionRes.ok && visionRes.config && typeof visionRes.config === 'object'
         ? structuredClone(visionRes.config)
@@ -2244,26 +2254,37 @@ export function openSettingsDialog() {
                   await persistVision();
                   renderVision();
                 })))),
-          // 链模式 + 强制拦截开关合到一行（启用开关已上移信息卡）
-          h('div', { class: 'mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-xl border border-border p-1' },
-            h('span', { class: 'ml-1.5 shrink-0 text-ui-sm font-medium text-foreground' }, L.visionMode),
-            modeBtn('fallback', L.visionModeFallback, L.visionModeFallbackDesc),
-            modeBtn('pipeline', L.visionModePipeline, L.visionModePipelineDesc),
-            h('div', { class: 'ml-auto flex items-center gap-4' },
+          // 链模式 / 主模型策略 / 识图卡片 三项均分一行、各格内容左对齐（启用开关已上移信息卡）
+          h('div', { class: 'mt-3 grid grid-cols-1 items-center gap-1.5 rounded-xl border border-border p-2 sm:grid-cols-3' },
+            h('div', { class: 'flex flex-wrap items-center gap-2' },
+              h('span', { class: 'shrink-0 text-ui-sm font-medium text-foreground' }, L.visionMode),
+              modeBtn('fallback', L.visionModeFallback, L.visionModeFallbackDesc),
+              modeBtn('pipeline', L.visionModePipeline, L.visionModePipelineDesc),
+            ),
+            (() => {
+              // 三态：不能识图就使用插件（null，POST 侧删键恢复插件缺省联动）/ 始终使用插件 / 不使用插件
+              const sel = h('select', { class: 'h-8 rounded-lg border border-border bg-input px-2 text-ui-sm text-foreground outline-none', title: L.visionForceInterceptHint },
+                h('option', { value: 'auto' }, L.visionForceInterceptAuto),
+                h('option', { value: 'true' }, L.visionForceInterceptTrue),
+                h('option', { value: 'false' }, L.visionForceInterceptFalse));
+              sel.value = visionCfg.forceIntercept === true ? 'true' : visionCfg.forceIntercept === false ? 'false' : 'auto';
+              sel.addEventListener('change', () => {
+                visionCfg.forceIntercept = sel.value === 'true' ? true : sel.value === 'false' ? false : null;
+                void persistVision();
+              });
+              return h('label', { class: 'flex items-center gap-1.5', title: L.visionForceInterceptHint },
+                h('span', { class: 'text-ui-sm font-medium text-foreground' }, L.visionForceIntercept), sel);
+            })(),
+            h('div', { class: 'flex items-center' },
               settingRow(L.visionCardUi, '', visionCfg.cardUi !== false, async () => {
                 visionCfg.cardUi = !(visionCfg.cardUi !== false);
                 await persistVision();
                 renderVision();
               }),
-              settingRow(L.visionForceIntercept, '', visionCfg.forceIntercept !== false, async () => {
-                visionCfg.forceIntercept = !(visionCfg.forceIntercept !== false);
-                await persistVision();
-                renderVision();
-              }),
             ),
           ),
-          // 压缩阈值 / 连续失败次数 / 跳过分钟数 三个数字一行
-          h('div', { class: 'mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-xl border border-border p-1' },
+          // 压缩阈值 / 连续失败次数 / 跳过分钟数 三个数字一行（p-2 与上方信息卡对齐）
+          h('div', { class: 'mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-xl border border-border p-2' },
             (() => {
               const n = h('input', { type: 'number', min: '0', step: '128', title: L.visionCompressKBHint,
                 class: 'h-7 w-16 rounded-lg border border-border bg-input px-2 text-right text-ui-xs tabular-nums text-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40' });
@@ -3046,9 +3067,17 @@ export function openSettingsDialog() {
       };
       renderTitleGenPane();
 
+      // 一级 / 二级 tab 放到滚动区（body）之上的固定区：内容滚动时标题、
+      // 版本行（已并入标题行）与两级 tab 始终可见
+      const subTabHost = h('div', { class: 'mt-2' });
+      for (const bar of Object.values(subTabBars)) {
+        bar.style.display = 'none';
+        subTabHost.append(bar);
+      }
+      // flex-col：两个 tab 栏都是 inline-flex，走块布局会在栏下垫出基线空隙；
+      // items-start：不拉伸子项，tab 栏胶囊底色保持内容宽度
+      content.insertBefore(h('div', { class: 'flex flex-col items-start' }, tablist, subTabHost), body);
       body.append(
-        statusLine,
-        tablist,
         paneFeatures,
         paneShortcuts,
         paneAgents,
