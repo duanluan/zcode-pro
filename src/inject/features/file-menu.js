@@ -58,7 +58,9 @@ function pathFromReactFiber(el) {
   try {
     const key = Object.keys(el).find((k) => k.startsWith('__reactFiber$'));
     let fiber = key ? el[key] : null;
-    for (let i = 0; fiber && i < 40; i++, fiber = fiber.return) {
+    // 层数上限 100：预览卡片“打开 ▾”下拉的触发器到 OpenSplitButton（target.path）实测 41 层，
+    // Radix 的 provider/Slot 中间层多，40 会差一层拿不到路径
+    for (let i = 0; fiber && i < 100; i++, fiber = fiber.return) {
       const props = fiber.memoizedProps;
       if (!props || typeof props !== 'object') continue;
       for (const k of ['target', 'fileLink', 'row']) {

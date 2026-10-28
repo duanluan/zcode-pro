@@ -2995,7 +2995,7 @@
     try {
       const key = Object.keys(el).find((k) => k.startsWith("__reactFiber$"));
       let fiber = key ? el[key] : null;
-      for (let i = 0; fiber && i < 40; i++, fiber = fiber.return) {
+      for (let i = 0; fiber && i < 100; i++, fiber = fiber.return) {
         const props = fiber.memoizedProps;
         if (!props || typeof props !== "object") continue;
         for (const k of ["target", "fileLink", "row"]) {
