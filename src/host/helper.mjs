@@ -16,6 +16,7 @@ import { pickFolderSystem } from './pickFolder.mjs';
 import { reorderWorkspaceTasks, reorderGroupMembers } from './taskOrder.mjs';
 import { webdavRequest, webdavPutWithMkcol, webdavHttpText, parseWebdavListing, findCurl } from './webdav.mjs';
 import { resolveZcodeExecutable } from './paths.mjs';
+import { skillStats, DEFAULT_METADATA_BUDGET } from './skill-stats.mjs';
 
 const VERSION = '1.5.1';
 
@@ -355,6 +356,63 @@ function titleGenLog(dataRoot, line) {
   } catch { /* 日志失败不影响功能 */ }
 }
 
+// ZCode 自身的行为配置（~/.zcode/cli/config.json，ZCode 官方用户级配置文件）：
+// 设置弹窗“行为 → ZCode CLI”由此读写，只更新提交的键，其余内容原样保留。
+// 与全局提示词一样固定按主目录定位，不跟 ZCODE_DATA_BASE_DIR 迁移
+function zcodeDataRoot() {
+  return join(homedir(), '.zcode');
+}
+
+function readZcodeConfig(file) {
+  try {
+    return JSON.parse(readFileSync(file, 'utf8'));
+  } catch {
+    return {};
+  }
+}
+
+// 记忆不在此列：工作区记忆由桌面设置里的 memoryEnabled（~/.zcode/v2/setting.json）
+// 控制，官方 设置 → Agent 能力 → 记忆 页负责开关
+const ZCODE_FEATURE_KEYS = ['compact', 'rewind', 'subagent', 'skill', 'mcp'];
+
+function zcodeConfigSnapshot(dataRoot) {
+  const cfg = readZcodeConfig(join(dataRoot, 'cli', 'config.json'));
+  const skills = cfg.skills && typeof cfg.skills === 'object' ? cfg.skills : {};
+  const features = cfg.features && typeof cfg.features === 'object' ? cfg.features : {};
+  const roots = Array.isArray(skills.roots)
+    ? skills.roots.filter((v) => typeof v === 'string' && v.trim()).map((v) => v.trim())
+    : [];
+  const has = (v) => v !== undefined;
+  const values = {
+    skills: {
+      enabled: skills.enabled !== false,
+      includeInstructions: skills.includeInstructions !== false,
+      metadataBudget: Number.isFinite(skills.metadataBudget) ? skills.metadataBudget : DEFAULT_METADATA_BUDGET,
+      roots,
+    },
+    features: Object.fromEntries(ZCODE_FEATURE_KEYS.map((k) => [k, features[k] !== false])),
+  };
+  // configured（是否显式写在配置里）：界面据此标注“默认值”，也保证只写用户动过的键
+  const configured = {
+    skills: {
+      enabled: has(skills.enabled),
+      includeInstructions: has(skills.includeInstructions),
+      metadataBudget: has(skills.metadataBudget),
+      roots: has(skills.roots),
+    },
+    features: Object.fromEntries(ZCODE_FEATURE_KEYS.map((k) => [k, has(features[k])])),
+  };
+  const stats = skillStats({
+    dataRoot,
+    roots: values.skills.roots,
+    budget: values.skills.metadataBudget,
+    pluginsEnabled: cfg.plugins && typeof cfg.plugins === 'object' ? cfg.plugins.enabled !== false : true,
+    enabledPlugins: cfg.plugins && typeof cfg.plugins.enabledPlugins === 'object' ? cfg.plugins.enabledPlugins : {},
+    suppressedBuiltins: cfg.plugins && Array.isArray(cfg.plugins.suppressedBuiltins) ? cfg.plugins.suppressedBuiltins : [],
+  });
+  return { ok: true, values, configured, stats };
+}
+
 export function startHelper({ port, token, dataRoot, state, agentsFile = defaultAgentsFile() }) {
   const configFile = join(dataRoot, 'zcodepro.json');
   const settingsFile = join(dataRoot, 'v2', 'setting.json');
@@ -543,6 +601,50 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         }
         saveConfig(configFile, current);
         json(res, 200, { ok: true, config: current });
+        return;
+      }
+      // —— ZCode CLI 行为配置（设置 → 行为 → ZCode CLI）：读写 ~/.zcode/cli/config.json
+      // 里的 skills / features 两组键，另附技能清单检查统计 ——
+      if (req.method === 'GET' && url.pathname === '/zcode-config') {
+        json(res, 200, zcodeConfigSnapshot(zcodeDataRoot()));
+        return;
+      }
+      if (req.method === 'POST' && url.pathname === '/zcode-config') {
+        const body = await readBody(req);
+        const file = join(zcodeDataRoot(), 'cli', 'config.json');
+        // 文件存在但解析失败时拒绝写入：按空对象重写会把 provider 等配置清掉
+        let cfg;
+        try {
+          cfg = JSON.parse(readFileSync(file, 'utf8'));
+        } catch {
+          if (existsSync(file)) {
+            json(res, 500, { ok: false, code: 'zcode-config-unreadable', error: 'ZCode 配置文件无法解析，已中止写入' });
+            return;
+          }
+          cfg = {};
+        }
+        // 只收白名单里类型正确的键；数组类的 roots 整组覆盖（空数组 = 清空）
+        const s = body && typeof body === 'object' && body.skills && typeof body.skills === 'object' ? body.skills : {};
+        const skillsPatch = {};
+        if (typeof s.enabled === 'boolean') skillsPatch.enabled = s.enabled;
+        if (typeof s.includeInstructions === 'boolean') skillsPatch.includeInstructions = s.includeInstructions;
+        if (typeof s.metadataBudget === 'number' && Number.isFinite(s.metadataBudget) && s.metadataBudget >= 0 && s.metadataBudget <= 1000000) {
+          skillsPatch.metadataBudget = Math.round(s.metadataBudget);
+        }
+        if (Array.isArray(s.roots)) {
+          skillsPatch.roots = s.roots.filter((v) => typeof v === 'string' && v.trim()).map((v) => v.trim());
+        }
+        if (Object.keys(skillsPatch).length) {
+          cfg.skills = { ...(cfg.skills && typeof cfg.skills === 'object' ? cfg.skills : {}), ...skillsPatch };
+        }
+        const f = body && typeof body === 'object' && body.features && typeof body.features === 'object' ? body.features : {};
+        const featuresPatch = {};
+        for (const k of ZCODE_FEATURE_KEYS) if (typeof f[k] === 'boolean') featuresPatch[k] = f[k];
+        if (Object.keys(featuresPatch).length) {
+          cfg.features = { ...(cfg.features && typeof cfg.features === 'object' ? cfg.features : {}), ...featuresPatch };
+        }
+        saveConfig(file, cfg);
+        json(res, 200, zcodeConfigSnapshot(zcodeDataRoot()));
         return;
       }
       // —— 主题背景图库：列表 / base64 上传 / 删除（取文件见上方免 token 的 /bg/file）——
@@ -948,6 +1050,8 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
           // 的字段重建整份配置，直接覆盖会丢插件新增、面板还不认识的键
           //（cardSandboxBudget/cardUi/interceptMode 等）
           const merged = { ...(readJsonFile(file) || {}), ...cfg };
+          // forceIntercept 为 null = 面板选了「自动」：从磁盘配置删掉该键，恢复插件缺省联动
+          if (cfg.forceIntercept === null) delete merged.forceIntercept;
           const tmp = file + '.tmp';
           writeFileSync(tmp, JSON.stringify(merged, null, 2) + '\n', 'utf-8');
           renameSync(tmp, file);
@@ -3009,8 +3113,12 @@ export function validateVisionConfig(raw) {
     // 连续失败跳过（0 = 不跳过）；跳过时长（分钟）
     skipAfterFailures: clampInt(raw.skipAfterFailures, 0, 100, 2),
     skipMinutes: clampInt(raw.skipMinutes, 1, 10080, 30),
-    // 主模型能看图时是否也拦截识别（false = 跳过；flash 主模型始终不触发，见插件）
-    forceIntercept: raw.forceIntercept !== false,
+    // 主模型能看图时的策略：true = 始终走识别代理（双重识别换卡片）；false = 能看图就不拦截；
+    // null = 自动（跟随宿主「模型设置」图片开关，zcode-vision ≥1.7.10 语义）。缺省不写键（POST
+    // 磁盘合并保留原值）；显式 null 由 POST 合并处删键（面板「自动」选项）
+    ...(raw.forceIntercept !== undefined
+      ? { forceIntercept: raw.forceIntercept === true ? true : raw.forceIntercept === false ? false : null }
+      : {}),
     // 识图卡片展示：只在调用方显式给值时透传（面板开关用）；缺省不写键，
     // 让 POST 的磁盘合并保留原值（zcode-pro 装机缺省 true 的补键逻辑见 GET /vision）
     ...(raw.cardUi !== undefined ? { cardUi: raw.cardUi === true } : {}),

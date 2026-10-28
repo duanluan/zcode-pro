@@ -30,6 +30,7 @@ Grouped by where each feature lives in the settings window: the category column 
 | | Copy table | Adds a "Copy table" button to the table toolbar in answers: writes rich text to the clipboard so Excel / rich-text editors paste it as a real table (cells split, no borders or background colors); plain-text targets get tab-separated values |
 | | Plugin updates | Check and update zcode-plugins marketplace plugins in one click, optional auto-update on startup |
 | Shortcuts | Shortcut customization | Rebind the five session quick switch trigger keys (`alt+z` / `x` / `c` / `e` / `r` by default) one by one: click "Modify" and press a new key (letters/digits only, conflicts rejected); reset all to defaults in one click |
+| Behavior · ZCode CLI | ZCode CLI | Skill listing check: counts the full listing against the injection budget, warns when it degrades to names only and suggests a budget; configure the skill system, listing budget, extra skill directories and feature switches; workspace memory stays in the official settings under Settings → Agent capabilities → Memory; changes apply to new sessions |
 | Behavior · Global prompt | Global prompt | Edit default instructions shared by all projects; applies to new sessions |
 | Behavior · Task title prompt | Task name prompt | When a new session starts answering, generates the task name with a provider and prompt you choose (following the current session and glm-5.3-flash by default; every question sent before the first answer counts), saved as a manual rename the built-in auto title never overrides; provider, model and prompt are editable in settings, with a test button |
 | Appearance · Styles | Sidebar menu in the top bar | Turns "New task / Search / Automations / Plugin store" into icon buttons in the top navigation bar, highlighted while its view is open|
@@ -181,6 +182,7 @@ Configuration and data locations:
 | Feature switches, aliases, software proxy | `~/.zcode/zcodepro.json` |
 | Startup diagnostics log (silent shortcut launches, Windows) | `~/.zcode/zcodepro.log` |
 | Global prompt | `~/.zcode/AGENTS.md` |
+| ZCode behavior settings (skill listing budget etc.) | `~/.zcode/cli/config.json` |
 | Vision proxy (zcode-vision plugin) | `~/.zcode/zcode-vision.json` |
 | rtk compression (rtk plugin) | `~/.zcode-rtk/` |
 | Headroom (headroom plugin) | `~/.zcode/headroom.json` |

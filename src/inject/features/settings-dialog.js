@@ -206,9 +206,9 @@ export function openSettingsDialog() {
         }, '✕');
         titleEl.replaceChildren(titleLeft, closeX);
       }
-      // 八个只读请求相互独立：并行取（串行时 headroom 的版本探测一项就约
+      // 九个只读请求相互独立：并行取（串行时 headroom 的版本探测一项就约
       // 700ms，弹窗打开明显卡顿）
-      const [health, config, agentsRes, visionRes, titleGenRes, titleGenProvidersRes, rtkRes, headroomRes] = await Promise.all([
+      const [health, config, agentsRes, visionRes, titleGenRes, titleGenProvidersRes, rtkRes, headroomRes, zcodeConfigRes] = await Promise.all([
         rpc('/health'),
         getConfig(true),
         rpc('/agents'),
@@ -217,6 +217,7 @@ export function openSettingsDialog() {
         rpc('/title-gen/providers'),
         rpc('/rtk'),
         rpc('/headroom'),
+        rpc('/zcode-config'),
       ]);
       // 供应商表（含各供应商可选模型）：视觉代理的模型下拉也用这份
       const titleGenProviders = titleGenProvidersRes.ok && Array.isArray(titleGenProvidersRes.providers)
@@ -1297,16 +1298,138 @@ export function openSettingsDialog() {
         const res = await rpc('/agents', { method: 'POST', body: { content: agentsArea.value } });
         if (res.ok) {
           agentsOriginal = typeof res.content === 'string' ? res.content : agentsArea.value;
-          showToast(L.agentsSaved);
+          showToast(L.agentsSaved, 'success');
         } else {
           showToast(L.failed + ': ' + errText(res), 'error');
           agentsSaveBtn.disabled = false;
         }
       };
-      // “行为”标签页：二级标签切换“全局提示词 / 任务名”。全局提示词编辑
+      // “行为 → ZCode CLI”：zcode-cli 运行时的行为配置（写 ~/.zcode/cli/config.json）+
+      // 技能清单检查。开关与预算数字框改动即存，每次只提交自己那个键；
+      // 目录列表显式保存
+      const paneZcode = h('div', { class: 'mt-2' });
+      let snap = zcodeConfigRes;
+      const setZcode = async (body) => {
+        const res = await rpc('/zcode-config', { method: 'POST', body });
+        if (!res.ok) {
+          showToast(L.failed + ': ' + errText(res), 'error');
+          return false;
+        }
+        snap = res;
+        return true;
+      };
+      if (!snap.ok) {
+        paneZcode.append(h('p', { class: 'mt-2 text-ui-sm text-destructive' }, L.failed + ': ' + errText(snap)));
+      } else {
+        const fmt = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        // —— 技能清单检查：完整清单字符数对照预算，超了就提示被降级 ——
+        const countsEl = h('div', { class: 'text-ui-sm text-foreground' });
+        const charsEl = h('div', { class: 'mt-0.5 text-ui-sm text-foreground' });
+        const statusEl = h('div', { class: 'mt-0.5 text-ui-sm' });
+        // —— 技能清单预算：数字框改动即存；“用建议值”写入并保存 ——
+        const budgetField = numberField({
+          value: snap.values.skills.metadataBudget,
+          fallback: snap.stats.defaultBudget,
+          min: 0,
+          max: 1000000,
+          step: 1000,
+          onCommit: async (v) => {
+            if (await setZcode({ skills: { metadataBudget: v } })) renderStats();
+          },
+        });
+        const budgetTag = h('span', { class: 'text-ui-xs text-foreground-subtle' });
+        const suggestEl = h('div', { class: 'min-w-0 flex-1 text-ui-xs/relaxed text-foreground-subtle' });
+        const renderStats = () => {
+          countsEl.textContent = L.zcodeStatsCounts
+            .replaceAll('{total}', fmt(snap.stats.total))
+            .replaceAll('{user}', fmt(snap.stats.userCount))
+            .replaceAll('{plugin}', fmt(snap.stats.pluginCount));
+          charsEl.textContent = L.zcodeStatsChars.replaceAll('{n}', fmt(snap.stats.fullChars));
+          statusEl.textContent = snap.stats.degraded ? L.zcodeStatsDegraded : L.zcodeStatsOk;
+          statusEl.className = 'mt-0.5 text-ui-sm ' + (snap.stats.degraded ? 'text-destructive' : 'text-foreground');
+          budgetTag.textContent = snap.configured.skills.metadataBudget ? '' : L.zcodeBudgetDefaultTag;
+          suggestEl.textContent = L.zcodeStatsSuggest.replaceAll('{n}', fmt(snap.stats.suggested));
+        };
+        const applyBtn = btnSmall(L.zcodeBudgetApply, async () => {
+          if (await setZcode({ skills: { metadataBudget: snap.stats.suggested } })) {
+            budgetField.set(snap.values.skills.metadataBudget);
+            renderStats();
+            showToast(L.zcodeBudgetApplied, 'success');
+          }
+        }, 'shrink-0');
+        // 检查与预算同一行两个块
+        const statsBudgetRow = h('div', { class: 'mt-2 flex items-stretch gap-2' },
+          h('div', { class: 'flex min-w-0 flex-1 flex-col rounded-xl border border-border p-3' },
+            h('div', { class: 'text-ui-sm font-medium' }, L.zcodeStatsTitle),
+            countsEl, charsEl, statusEl,
+            h('div', { class: 'mt-1 text-ui-xs/relaxed text-foreground-subtle' }, L.zcodeStatsNote)),
+          h('div', { class: 'flex min-w-0 flex-1 flex-col rounded-xl border border-border p-3' },
+            h('div', { class: 'text-ui-sm font-medium' }, L.zcodeSkillBudget),
+            h('div', { class: 'mt-0.5 text-ui-xs/relaxed text-foreground-subtle' }, L.zcodeSkillBudgetDesc),
+            h('div', { class: 'mt-2 flex items-center gap-1' }, budgetField.el, budgetTag),
+            h('div', { class: 'mt-1 flex items-center gap-2' }, suggestEl, applyBtn)));
+        // —— 开关组：skills / features 两段配置键，点一次只写一个键 ——
+        const togglesWrap = h('div', { class: 'mt-2 flex flex-col gap-0.5 rounded-xl border border-border p-1' });
+        const renderToggles = () => {
+          const v = snap.values;
+          const row = (name, desc, checked, patch) => settingRow(name, desc, checked, async () => {
+            if (await setZcode(patch(!checked))) renderToggles();
+          });
+          // 分组标题省略：每行描述都带 skills./features. 键名前缀，分组名是重复信息
+          togglesWrap.replaceChildren(
+            row(L.zcodeSkillEnabled, L.zcodeSkillEnabledDesc, v.skills.enabled, (n) => ({ skills: { enabled: n } })),
+            row(L.zcodeSkillIncludeInstructions, L.zcodeSkillIncludeInstructionsDesc, v.skills.includeInstructions, (n) => ({ skills: { includeInstructions: n } })),
+            row(L.zcodeFeatCompact, L.zcodeFeatCompactDesc, v.features.compact, (n) => ({ features: { compact: n } })),
+            row(L.zcodeFeatRewind, L.zcodeFeatRewindDesc, v.features.rewind, (n) => ({ features: { rewind: n } })),
+            row(L.zcodeFeatSubagent, L.zcodeFeatSubagentDesc, v.features.subagent, (n) => ({ features: { subagent: n } })),
+            row(L.zcodeFeatSkill, L.zcodeFeatSkillDesc, v.features.skill, (n) => ({ features: { skill: n } })),
+            row(L.zcodeFeatMcp, L.zcodeFeatMcpDesc, v.features.mcp, (n) => ({ features: { mcp: n } })),
+            // 记忆不放这里：官方“工作区记忆”是桌面设置里的 memoryEnabled
+            // （~/.zcode/v2/setting.json），与本页写的 agent 配置不是同一层开关
+            h('div', { class: 'px-2 pb-1 pt-1 text-ui-xs/relaxed text-foreground-subtle' }, L.zcodeMemoryHint),
+          );
+        };
+        // —— 额外技能目录：多行文本，显式保存 ——
+        const rootsArea = h('textarea', {
+          class: 'zcodepro-textarea zcodepro-textarea-sm',
+          rows: 3,
+          spellcheck: 'false',
+          placeholder: '/path/to/skills',
+        });
+        let rootsOriginal = snap.values.skills.roots.join('\n');
+        rootsArea.value = rootsOriginal;
+        const rootsSaveBtn = btnSmall(L.zcodeSave, async () => {
+          rootsSaveBtn.disabled = true;
+          const lines = rootsArea.value.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+          if (await setZcode({ skills: { roots: lines } })) {
+            rootsOriginal = snap.values.skills.roots.join('\n');
+            renderStats(); // 目录影响清单统计
+            showToast(L.zcodeRootsSaved, 'success');
+          } else {
+            rootsSaveBtn.disabled = false;
+          }
+        }, 'shrink-0', 'primary');
+        rootsSaveBtn.disabled = true;
+        rootsArea.addEventListener('input', () => {
+          rootsSaveBtn.disabled = rootsArea.value === rootsOriginal;
+        });
+        renderStats();
+        renderToggles();
+        paneZcode.append(
+          h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.zcodeDesc),
+          statsBudgetRow,
+          togglesWrap,
+          h('div', { class: 'mt-2 rounded-xl border border-border p-2' },
+            h('div', { class: 'text-ui-sm font-medium text-foreground' }, L.zcodeSkillRoots),
+            h('div', { class: 'mt-0.5 text-ui-xs/relaxed text-foreground-subtle' }, L.zcodeSkillRootsDesc),
+            h('div', { class: 'mt-2' }, rootsArea),
+            h('div', { class: 'mt-2 flex justify-end' }, rootsSaveBtn)),
+        );
+      }
+      // “行为”标签页：二级标签切换“ZCode / 全局提示词 / 任务名”。全局提示词编辑
       // ~/.zcode/AGENTS.md；任务名（智能起名）面板复用 paneTitleGen（原本是
       // 一级标签页，收进来后不再单独出现在顶部标签栏）
-      const agentsPromptPane = h('div', { class: 'mt-4' });
+      const agentsPromptPane = h('div', { class: 'mt-2' });
       agentsPromptPane.append(
         h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.agentsDesc),
         ...(agentsFailed
@@ -1315,11 +1438,12 @@ export function openSettingsDialog() {
         h('div', { class: 'mt-3' }, agentsArea),
         h('div', { class: 'mt-3 flex justify-end' }, agentsSaveBtn),
       );
-      let agentsSubTab = 'prompt';
-      const agentsSubPanes = { prompt: agentsPromptPane, titleGen: paneTitleGen };
+      let agentsSubTab = 'zcode';
+      const agentsSubPanes = { zcode: paneZcode, prompt: agentsPromptPane, titleGen: paneTitleGen };
       const agentsSubList = h('div', { role: 'tablist', 'aria-orientation': 'horizontal', class: 'zcodepro-tablist' });
       const renderAgentsSubTabs = () => {
         agentsSubList.replaceChildren(...[
+          ['zcode', L.tabZcode],
           ['prompt', L.tabAgents],
           ['titleGen', L.tabTitleGen],
         ].map(([id, label]) => h('button', {
@@ -1335,7 +1459,8 @@ export function openSettingsDialog() {
       };
       for (const [pid, pane] of Object.entries(agentsSubPanes)) pane.style.display = pid === agentsSubTab ? '' : 'none';
       renderAgentsSubTabs();
-      paneAgents.append(agentsSubList, agentsPromptPane, paneTitleGen);
+      subTabBars.agents = agentsSubList;
+      paneAgents.append(paneZcode, agentsPromptPane, paneTitleGen);
 
       // “代理”：为 helper 发起的网络访问（插件市场更新/安装、headroom 本体升级）设
       // HTTP 代理；保存即生效（helper 子进程环境变量注入），不影响 ZCode 应用与模型请求。

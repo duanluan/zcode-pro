@@ -109,6 +109,39 @@
     tabProxy: "\u4EE3\u7406",
     tabBehavior: "\u884C\u4E3A",
     tabAgents: "\u5168\u5C40\u63D0\u793A\u8BCD",
+    tabZcode: "ZCode CLI",
+    zcodeDesc: "ZCode \u81EA\u8EAB\u7684\u884C\u4E3A\u914D\u7F6E\uFF08\u5199\u5165 ~/.zcode/cli/config.json\uFF09\uFF0C\u4FDD\u5B58\u540E\u5BF9\u65B0\u4F1A\u8BDD\u751F\u6548\u3002",
+    zcodeStatsTitle: "\u6280\u80FD\u6E05\u5355\u68C0\u67E5",
+    zcodeStatsCounts: "\u6280\u80FD {total} \u4E2A\uFF08\u672C\u5730 {user} \xB7 \u63D2\u4EF6 {plugin}\uFF09",
+    zcodeStatsChars: "\u5B8C\u6574\u6E05\u5355\u7EA6 {n} \u5B57\u7B26",
+    zcodeBudgetDefaultTag: "\uFF08\u9ED8\u8BA4\u503C\uFF09",
+    zcodeStatsDegraded: "\u8D85\u51FA\u9884\u7B97\uFF1A\u5B8C\u6574\u6E05\u5355\u653E\u4E0D\u4E0B\uFF0C\u964D\u7EA7\u4E3A\u4EC5\u540D\u79F0\uFF0C\u6A21\u578B\u770B\u4E0D\u5230\u6280\u80FD\u63CF\u8FF0",
+    zcodeStatsOk: "\u9884\u7B97\u5145\u8DB3\uFF1A\u6E05\u5355\u5E26\u5B8C\u6574\u63CF\u8FF0\u6CE8\u5165\u65B0\u4F1A\u8BDD",
+    zcodeStatsSuggest: "\u5EFA\u8BAE\u9884\u7B97 {n} \u5B57\u7B26\uFF08\u7559 20% \u4F59\u91CF\uFF09",
+    zcodeBudgetApply: "\u7528\u5EFA\u8BAE\u503C",
+    zcodeBudgetApplied: "\u6E05\u5355\u9884\u7B97\u5DF2\u4FDD\u5B58",
+    zcodeStatsNote: "\u6309\u5F53\u524D\u78C1\u76D8\u72B6\u6001\u4F30\u7B97\uFF0C\u4E0D\u542B\u5404\u9879\u76EE\u5185\u7684\u6280\u80FD\u76EE\u5F55\u3002",
+    zcodeSkillEnabled: "\u6280\u80FD\u7CFB\u7EDF",
+    zcodeSkillEnabledDesc: "skills.enabled\uFF1A\u5173\u95ED\u540E ZCode \u4E0D\u518D\u53D1\u73B0\u4E0E\u6CE8\u5165\u4EFB\u4F55\u6280\u80FD",
+    zcodeSkillIncludeInstructions: "\u6280\u80FD\u8BF4\u660E\u6CE8\u5165",
+    zcodeSkillIncludeInstructionsDesc: "skills.includeInstructions\uFF1A\u6280\u80FD\u8BF4\u660E\u662F\u5426\u968F\u6E05\u5355\u4E00\u8D77\u6CE8\u5165",
+    zcodeSkillBudget: "\u6280\u80FD\u6E05\u5355\u9884\u7B97\uFF08\u5B57\u7B26\uFF09",
+    zcodeSkillBudgetDesc: "skills.metadataBudget\uFF1A\u5B8C\u6574\u6E05\u5355\u8D85\u8FC7\u8BE5\u957F\u5EA6\u5C31\u964D\u7EA7\u4E3A\u4EC5\u540D\u79F0\uFF0C\u9ED8\u8BA4 20000",
+    zcodeSkillRoots: "\u989D\u5916\u6280\u80FD\u76EE\u5F55",
+    zcodeSkillRootsDesc: "skills.roots\uFF1A\u6BCF\u884C\u4E00\u4E2A\u76EE\u5F55\uFF0C\u76EE\u5F55\u4E0B\u7684\u6280\u80FD\u4F1A\u88AB\u53D1\u73B0\uFF08~/.zcode/skills\u3001~/.agents/skills \u4E4B\u5916\u7684\u8865\u5145\uFF09",
+    zcodeSave: "\u4FDD\u5B58",
+    zcodeRootsSaved: "\u6280\u80FD\u76EE\u5F55\u5DF2\u4FDD\u5B58",
+    zcodeFeatCompact: "\u4F1A\u8BDD\u538B\u7F29",
+    zcodeFeatCompactDesc: "features.compact\uFF1A\u4E0A\u4E0B\u6587\u8FC7\u957F\u65F6\u538B\u7F29\u65E9\u671F\u4F1A\u8BDD\u5185\u5BB9",
+    zcodeFeatRewind: "\u4F1A\u8BDD\u56DE\u6EAF",
+    zcodeFeatRewindDesc: "features.rewind\uFF1A\u56DE\u9000\u5230\u8F83\u65E9\u8282\u70B9\u91CD\u65B0\u7EE7\u7EED",
+    zcodeFeatSubagent: "\u5B50\u4EE3\u7406",
+    zcodeFeatSubagentDesc: "features.subagent\uFF1A\u6D3E\u51FA\u5B50\u4EE3\u7406\u5904\u7406\u5B50\u4EFB\u52A1",
+    zcodeFeatSkill: "\u6280\u80FD\u5DE5\u5177",
+    zcodeFeatSkillDesc: "features.skill\uFF1ASkill \u5DE5\u5177\u53EF\u7528\uFF08\u8FD8\u9700\u5F00\u542F\u6280\u80FD\u7CFB\u7EDF\uFF09",
+    zcodeFeatMcp: "MCP \u5DE5\u5177",
+    zcodeFeatMcpDesc: "features.mcp\uFF1A\u4F7F\u7528 MCP \u670D\u52A1\u5668\u63D0\u4F9B\u7684\u5DE5\u5177",
+    zcodeMemoryHint: "\u8BB0\u5FC6\u4E0D\u5728\u6B64\u5904\uFF1A\u5DE5\u4F5C\u533A\u8BB0\u5FC6\u5728\u5B98\u65B9 \u8BBE\u7F6E \u2192 Agent \u80FD\u529B \u2192 \u8BB0\u5FC6 \u4E2D\u5F00\u5173\uFF08\u542B\u8BB0\u5FC6\u8BE6\u60C5\u67E5\u770B\uFF09\u3002",
     agentsDesc: "\u5199\u5165 ~/.zcode/AGENTS.md\uFF0C\u4F5C\u4E3A\u9ED8\u8BA4\u6307\u4EE4\u7528\u4E8E\u6240\u6709\u9879\u76EE\u7684\u6BCF\u6B21\u4F1A\u8BDD\uFF1B\u4FDD\u5B58\u540E\u4ECE\u65B0\u4F1A\u8BDD\u8D77\u751F\u6548\uFF0C\u9879\u76EE\u5185\u7684 AGENTS.md \u53EF\u8865\u5145\u6216\u8986\u76D6\u3002\u5185\u5BB9\u8D85\u8FC7 100KB \u4F1A\u88AB\u5E94\u7528\u622A\u65AD\u3002",
     agentsPlaceholder: "\u586B\u5199\u5E0C\u671B\u6240\u6709\u9879\u76EE\u9ED8\u8BA4\u9075\u5FAA\u7684\u6307\u4EE4\uFF1B\u6E05\u7A7A\u5E76\u4FDD\u5B58\u5373\u79FB\u9664\u5168\u5C40\u63D0\u793A\u8BCD",
     agentsSave: "\u4FDD\u5B58",
@@ -268,7 +301,7 @@
     featureSandboxReclaimDesc: "\u6C99\u7BB1\u6EE1 64 \u4E2A\u65F6\u81EA\u52A8\u91CA\u653E\u6700\u65E9\u7684\uFF0C\u65B0\u5361\u7247\u4E0D\u518D\u6253\u4E0D\u5F00\uFF1B\u65E7\u5361\u91CD\u65B0\u6253\u5F00\u6240\u5728\u4F1A\u8BDD\u5373\u53EF\u6062\u590D\u3002",
     featurePluginCardRetry: "\u63D2\u4EF6\u5361\u7247\u81EA\u52A8\u91CD\u8BD5",
     featurePluginCardRetryDesc: "\u56E0\u540D\u989D\u4E0A\u9650\u52A0\u8F7D\u5931\u8D25\u7684\u63D2\u4EF6\u5361\u7247\u81EA\u52A8\u70B9\u51FB\u91CD\u65B0\u52A0\u8F7D\uFF0C\u540D\u989D\u7A7A\u51FA\u540E\u81EA\u52A8\u6062\u590D\u3002",
-    visionCardUi: "\u601D\u8003\u8FC7\u7A0B\u663E\u793A\u8BC6\u56FE\u5361\u7247",
+    visionCardUi: "\u601D\u8003\u8FC7\u7A0B\u663E\u793A Vision \u5361\u7247",
     pinnedToggleAria: "\u6298\u53E0/\u5C55\u5F00\u5DF2\u7F6E\u9876",
     sidebarProjectSpacingName: "\u9879\u76EE\u95F4\u8DDD",
     sidebarProjectSpacingDesc: "\u4FA7\u8FB9\u680F\u4E2D\u76F8\u90BB\u9879\u76EE\u884C\u4E4B\u95F4\u7684\u89C6\u89C9\u95F4\u8DDD\uFF08\u542B\u884C\u5185\u7559\u767D\uFF09\uFF1B\u8BBE\u7F6E\u540E\u5404\u5206\u533A\uFF08\u5DF2\u7F6E\u9876/\u9879\u76EE/\u4EFB\u52A1\uFF09\u4E4B\u95F4\u7684\u95F4\u8DDD\u4E5F\u7EDF\u4E00\u4E3A\u8BE5\u503C\u3002",
@@ -429,7 +462,11 @@
     tabVision: "Vision",
     visionDesc: "\u4E3B\u6A21\u578B\u4E0D\u652F\u6301\u56FE\u7247\u8F93\u5165\u65F6\uFF08\u5982 glm-5.3\uFF09\uFF0C\u81EA\u52A8\u628A\u6D88\u606F\u91CC\u7684\u56FE\u7247\u4EA4\u7ED9\u4E0B\u9762\u7684\u89C6\u89C9\u6A21\u578B\u8BC6\u522B\uFF0C\u628A\u63CF\u8FF0\u5E26\u7ED9\u4E3B\u6A21\u578B\uFF08zcode-vision \u63D2\u4EF6\uFF1B/vision-* \u547D\u4EE4\u7F16\u8F91\u540C\u4E00\u914D\u7F6E\uFF09\u3002",
     visionEnabled: "\u542F\u7528",
-    visionForceIntercept: "\u4E3B\u6A21\u578B\u80FD\u770B\u56FE\u4E5F\u62E6\u622A",
+    visionForceIntercept: "\u4E3B\u6A21\u578B",
+    visionForceInterceptAuto: "\u4E0D\u80FD\u8BC6\u56FE\u5C31\u4F7F\u7528\u63D2\u4EF6",
+    visionForceInterceptTrue: "\u59CB\u7EC8\u4F7F\u7528\u63D2\u4EF6",
+    visionForceInterceptFalse: "\u4E0D\u4F7F\u7528\u63D2\u4EF6",
+    visionForceInterceptHint: "\u4E0D\u80FD\u8BC6\u56FE\u5C31\u4F7F\u7528\u63D2\u4EF6 = \u8DDF\u968F ZCode\u300C\u6A21\u578B\u8BBE\u7F6E\u300D\u91CC\u8BE5\u6A21\u578B\u7684\u56FE\u7247\u5F00\u5173\uFF1A\u5F00 = \u6A21\u578B\u81EA\u770B\u4E0D\u91CD\u590D\u8BC6\u522B\uFF0C\u5173 = \u8D70 vision_ask\uFF08\u8BC6\u522B\u6709\u5361\u7247\uFF09\uFF1B\u59CB\u7EC8\u4F7F\u7528\u63D2\u4EF6 = \u80FD\u770B\u56FE\u4E5F\u5F3A\u5236\u8D70\u8BC6\u522B\u4EE3\u7406\uFF08\u53CC\u91CD\u8BC6\u522B\u6362\u5361\u7247\uFF09\uFF1B\u4E0D\u4F7F\u7528\u63D2\u4EF6 = \u80FD\u770B\u56FE\u5C31\u653E\u884C\uFF08\u4E0D\u80FD\u8BC6\u56FE\u7684\u6A21\u578B\u4ECD\u8D70\u8BC6\u522B\u4EE3\u7406\uFF09",
     visionMode: "\u94FE\u6A21\u5F0F",
     visionModeFallback: "\u4F9D\u6B21\u5C1D\u8BD5",
     visionModeFallbackDesc: "\u524D\u4E00\u4E2A\u5931\u8D25\u624D\u8BD5\u4E0B\u4E00\u4E2A\uFF0C\u4EFB\u4E00\u6210\u529F\u5373\u6B62\uFF08\u4E3B\u529B + \u5907\u7528\uFF09\u3002",
@@ -619,6 +656,39 @@
     tabProxy: "Proxy",
     tabBehavior: "Behavior",
     tabAgents: "Global Prompt",
+    tabZcode: "ZCode CLI",
+    zcodeDesc: "ZCode behavior settings (written to ~/.zcode/cli/config.json); takes effect for new sessions.",
+    zcodeStatsTitle: "Skill listing check",
+    zcodeStatsCounts: "{total} skills ({user} local \xB7 {plugin} plugin)",
+    zcodeStatsChars: "Full listing \u2248 {n} characters",
+    zcodeBudgetDefaultTag: " (default)",
+    zcodeStatsDegraded: "Over budget: the listing degrades to names only, so the model cannot see skill descriptions",
+    zcodeStatsOk: "Within budget: the full listing with descriptions is injected into new sessions",
+    zcodeStatsSuggest: "Suggested budget {n} characters (with 20% margin)",
+    zcodeBudgetApply: "Use suggested",
+    zcodeBudgetApplied: "Listing budget saved.",
+    zcodeStatsNote: "Estimated from the current disk state; per-project skill directories are not counted.",
+    zcodeSkillEnabled: "Skill system",
+    zcodeSkillEnabledDesc: "skills.enabled: when off, ZCode discovers and injects no skills",
+    zcodeSkillIncludeInstructions: "Skill instructions injection",
+    zcodeSkillIncludeInstructionsDesc: "skills.includeInstructions: whether skill instructions are injected along with the listing",
+    zcodeSkillBudget: "Skill listing budget (characters)",
+    zcodeSkillBudgetDesc: "skills.metadataBudget: the listing degrades to names only beyond this length; default 20000",
+    zcodeSkillRoots: "Extra skill directories",
+    zcodeSkillRootsDesc: "skills.roots: one directory per line; skills under them are discovered (beyond ~/.zcode/skills and ~/.agents/skills)",
+    zcodeSave: "Save",
+    zcodeRootsSaved: "Skill directories saved.",
+    zcodeFeatCompact: "Compaction",
+    zcodeFeatCompactDesc: "features.compact: compact earlier conversation when the context grows too long",
+    zcodeFeatRewind: "Rewind",
+    zcodeFeatRewindDesc: "features.rewind: roll back to an earlier point and continue from there",
+    zcodeFeatSubagent: "Subagents",
+    zcodeFeatSubagentDesc: "features.subagent: dispatch subagents for subtasks",
+    zcodeFeatSkill: "Skill tool",
+    zcodeFeatSkillDesc: "features.skill: the Skill tool is available (the skill system must also be on)",
+    zcodeFeatMcp: "MCP tools",
+    zcodeFeatMcpDesc: "features.mcp: use tools provided by MCP servers",
+    zcodeMemoryHint: "Memory is not here: workspace memory is toggled in the official settings under Settings \u2192 Agent capabilities \u2192 Memory (with the memory viewer).",
     agentsDesc: "Written to ~/.zcode/AGENTS.md and used as default instructions in every session across all projects. Takes effect for new sessions; per-project AGENTS.md can extend or override it. Content over 100 KB is truncated by the app.",
     agentsPlaceholder: "Instructions followed by all projects by default; save empty to remove the global prompt",
     agentsSave: "Save",
@@ -939,7 +1009,11 @@
     tabVision: "Vision",
     visionDesc: "When the main model cannot see images (e.g. glm-5.3), images in messages are recognized by the vision models below and passed to the main model as text (zcode-vision plugin; /vision-* commands edit the same file).",
     visionEnabled: "Enable",
-    visionForceIntercept: "Intercept even if the main model sees images",
+    visionForceIntercept: "Main model",
+    visionForceInterceptAuto: "Use plugin only if model can't see images",
+    visionForceInterceptTrue: "Always use plugin",
+    visionForceInterceptFalse: "Never use plugin",
+    visionForceInterceptHint: "Use plugin only if model can't see images = follow the image toggle in ZCode model settings: on = the model sees images itself (no duplicate recognition), off = route through vision_ask (result card); Always use plugin = forced double recognition for the card; Never use plugin = let capable models see images (models that can't still go through the plugin)",
     visionMode: "Chain mode",
     visionModeFallback: "Fallback",
     visionModeFallbackDesc: "Try in order until one succeeds (primary + backup).",
@@ -1260,21 +1334,36 @@
 
   // src/inject/ui.js
   var toastTimer = null;
+  var TOAST_KINDS = {
+    success: { name: "success", glyph: "\u2713", ms: 2600 },
+    warning: { name: "warning", glyph: "\uFF01", ms: 3600 },
+    error: { name: "error", glyph: "\u2715", ms: 5e3 },
+    info: { name: "info", glyph: "\u24D8", ms: 2600 }
+  };
   function showToast(text, kind = "info") {
     document.getElementById("__zcodepro_toast__")?.remove();
-    const el = h(
+    clearTimeout(toastTimer);
+    const v = TOAST_KINDS[kind === "ok" ? "success" : kind] || TOAST_KINDS.info;
+    const chip = h(
       "div",
       {
-        id: "__zcodepro_toast__",
-        class: "fixed bottom-6 z-[100] flex max-w-md items-center gap-2 rounded-lg border px-4 py-3 text-ui-sm shadow-lg " + (kind === "error" ? "border-destructive/40 bg-menu text-foreground" : "border-border bg-menu text-foreground"),
-        // left 用内联样式：ZCode 的 Tailwind 未编译 left-6/right-6 工具类（bottom-6 有）
-        style: "animation:zcodepro-fade-in .18s ease; left: 1.5rem;"
+        class: `zcodepro-toast zcodepro-toast-${v.name}`,
+        style: "animation:zcodepro-fade-in .18s ease;"
       },
+      h("span", { class: "zcodepro-toast-glyph" }, v.glyph),
       h("span", { class: "truncate" }, text)
     );
-    document.body.append(el);
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => el.remove(), kind === "error" ? 5e3 : 2600);
+    const wrap = h("div", { id: "__zcodepro_toast__", class: "pointer-events-none flex items-center justify-center" });
+    const host = document.querySelector("[data-zcodepro-settings]");
+    if (host) {
+      const r = host.getBoundingClientRect();
+      wrap.style.cssText = `position:fixed; left:${Math.round(r.left)}px; top:${Math.round(r.top)}px; width:${Math.round(r.width)}px; height:${Math.round(r.height)}px; z-index:100;`;
+    } else {
+      wrap.style.cssText = "position:fixed; inset:0; z-index:100;";
+    }
+    wrap.append(chip);
+    document.body.append(wrap);
+    toastTimer = setTimeout(() => wrap.remove(), v.ms);
   }
   var overlayClass = "fixed inset-0 isolate z-50 flex items-start justify-center bg-black/60 supports-backdrop-filter:backdrop-blur-xs duration-100 p-4 platform-linux-desktop:top-12";
   var overlayClassBare = "fixed inset-0 isolate z-50 flex items-start justify-center duration-100 p-4 platform-linux-desktop:top-12";
@@ -1668,6 +1757,23 @@
     if (!root) return;
     root.append(h("style", { id: "__zcodepro_style__" }, `
     @keyframes zcodepro-fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+    /* \u63D0\u793A\u6761\u56DB\u6001\uFF08\u6210\u529F/\u8B66\u544A/\u5931\u8D25/\u4FE1\u606F\uFF09\uFF1A\u914D\u8272\u7528\u4E3B\u9898\u53D8\u91CF\u52A0\u5B57\u9762\u91CF\u515C\u5E95\uFF0C
+       \u4E0D\u4F9D\u8D56\u5BBF\u4E3B Tailwind \u751F\u6210\u914D\u8272\u5DE5\u5177\u7C7B */
+    .zcodepro-toast {
+      display: flex; align-items: center; gap: .5rem;
+      max-width: 28rem; padding: .75rem 1rem;
+      border-radius: .5rem; border: 1px solid var(--color-border, #555);
+      background: var(--color-menu, #1f1f1f); color: var(--color-foreground, #eee);
+      font-size: .875rem; box-shadow: 0 10px 15px -3px rgb(0 0 0 / .3);
+    }
+    .zcodepro-toast .zcodepro-toast-glyph { font-weight: 600; }
+    .zcodepro-toast-success { border-color: #22c55e; }
+    .zcodepro-toast-success .zcodepro-toast-glyph { color: #22c55e; }
+    .zcodepro-toast-warning { border-color: #f59e0b; }
+    .zcodepro-toast-warning .zcodepro-toast-glyph { color: #f59e0b; }
+    .zcodepro-toast-error { border-color: var(--color-destructive, #ef4444); }
+    .zcodepro-toast-error .zcodepro-toast-glyph { color: var(--color-destructive, #ef4444); }
+    .zcodepro-toast-info .zcodepro-toast-glyph { color: var(--color-foreground-subtle, #999); }
     /* \u5F39\u7A97\u906E\u7F69/\u9762\u677F\u515C\u5E95\uFF1A\u4E0D\u4F9D\u8D56\u5E94\u7528 Tailwind \u7C7B\u662F\u5426\u4ECD\u5B58\u5728\uFF1B\u4E3B\u9898\u8272\u8D70 --color-* \u53D8\u91CF\uFF0C\u7F3A\u5931\u65F6\u56DE\u9000\u5B57\u9762\u91CF */
     .zcodepro-overlay { background-color: rgba(0, 0, 0, 0.6); }
     .zcodepro-overlay[data-overlay="none"] { background-color: transparent; }
@@ -2178,7 +2284,7 @@
   }
   async function copyText(text) {
     const L = t();
-    if (await copyToClipboard(text)) showToast(L.pathCopied);
+    if (await copyToClipboard(text)) showToast(L.pathCopied, "success");
     else showToast(L.pathCopyFailed, "error");
   }
   async function copyToClipboard(text) {
@@ -2374,7 +2480,7 @@
             close();
             clearConfigCache();
             await refreshAliases();
-            showToast(name ? L.aliasSaved : L.aliasCleared);
+            showToast(name ? L.aliasSaved : L.aliasCleared, "success");
             return;
           }
           showToast(L.failed + ": " + (errText(res) || L.retryHint), "error");
@@ -2410,7 +2516,7 @@
                   close();
                   clearConfigCache();
                   await refreshAliases();
-                  showToast(L.aliasCleared);
+                  showToast(L.aliasCleared, "success");
                 } else showToast(L.failed + ": " + (errText(res) || L.retryHint), "error");
               }));
             }
@@ -2542,7 +2648,10 @@
           submitBtn.removeAttribute("disabled");
           if (res.ok) {
             close();
-            showToast(res.indexSynced === false ? L.relocateIndexSkipped : L.relocateSuccess);
+            showToast(
+              res.indexSynced === false ? L.relocateIndexSkipped : L.relocateSuccess,
+              res.indexSynced === false ? "warning" : "success"
+            );
             setTimeout(() => location.reload(), 900);
             return;
           }
@@ -2814,7 +2923,7 @@
         content.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", code: "Escape", bubbles: true, cancelable: true }));
       } catch {
       }
-      void copyToClipboard(primary.path).then((ok) => showToast(ok ? L.pathCopied : L.pathCopyFailed, ok ? void 0 : "error"));
+      void copyToClipboard(primary.path).then((ok) => showToast(ok ? L.pathCopied : L.pathCopyFailed, ok ? "success" : "error"));
     });
     openItem.after(copyItem);
   }
@@ -3088,9 +3197,9 @@
       if (!blob) throw new Error("empty image");
       if (blob.type !== "image/png") blob = await toPng(blob);
       await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-      showToast(L.imageCopied);
+      showToast(L.imageCopied, "success");
     } catch {
-      if (copyViaSelection(img)) showToast(L.imageCopied);
+      if (copyViaSelection(img)) showToast(L.imageCopied, "success");
       else showToast(L.imageCopyFailed, "error");
     }
   }
@@ -3560,7 +3669,7 @@
             clearConfigCache();
             renderList();
             window.dispatchEvent(new CustomEvent("zcodepro:aliases-changed"));
-            if (ok === dead.length) showToast(L.aliasMigrateDeadCleared.replace("{n}", String(ok)));
+            if (ok === dead.length) showToast(L.aliasMigrateDeadCleared.replace("{n}", String(ok)), "success");
             else showToast(L.aliasMigrateDeadClearFailed, "error");
           };
           const goBtn = btnPrimary(L.aliasMigrateGo, () => {
@@ -3600,9 +3709,9 @@
             decide();
             close();
             if (!failed.length) {
-              showToast(L.aliasMigrateDone.replace("{n}", String(ok)), "ok");
+              showToast(L.aliasMigrateDone.replace("{n}", String(ok)), "success");
             } else if (ok) {
-              showToast(L.aliasMigratePartial.replace("{n}", String(ok)).replace("{m}", String(failed.length)), "error");
+              showToast(L.aliasMigratePartial.replace("{n}", String(ok)).replace("{m}", String(failed.length)), "warning");
             } else {
               showToast(L.aliasMigrateAllFailed, "error");
             }
@@ -4604,7 +4713,7 @@
       // sm:max-w-3xl 不存在会失去约束拉满全屏；max-w-3xl=48rem 存在——英文界面
       // 标签栏较长，42rem 会挤出一块空白并触发横向滚动
       width: "max-w-3xl",
-      bodyClass: "mt-1",
+      bodyClass: "mt-0",
       overlay: "none",
       draggable: true,
       posKey: "settings",
@@ -4614,7 +4723,9 @@
         if (rtkUpgradePollStop) rtkUpgradePollStop();
       },
       onMount: async ({ body, close, content }) => {
+        if (content) content.setAttribute("data-zcodepro-settings", "1");
         const titleEl = content && content.firstElementChild;
+        let titleLeft = null;
         if (titleEl && titleEl.tagName === "H2") {
           titleEl.classList.add("flex", "w-full", "items-center", "justify-between");
           const ns2 = "http://www.w3.org/2000/svg";
@@ -4635,7 +4746,7 @@
             }
             return svg;
           };
-          const titleLeft = h("span", { class: "flex min-w-0 items-center" }, L.settingsTitle);
+          titleLeft = h("span", { class: "flex min-w-0 items-center" }, L.settingsTitle);
           if (typeof window.zcode?.openExternal === "function") {
             const REPO_URL = "https://github.com/duanluan/zcode-pro";
             titleLeft.replaceChildren(
@@ -4661,7 +4772,7 @@
           }, "\u2715");
           titleEl.replaceChildren(titleLeft, closeX);
         }
-        const [health, config, agentsRes, visionRes, titleGenRes, titleGenProvidersRes, rtkRes, headroomRes] = await Promise.all([
+        const [health, config, agentsRes, visionRes, titleGenRes, titleGenProvidersRes, rtkRes, headroomRes, zcodeConfigRes] = await Promise.all([
           rpc("/health"),
           getConfig(true),
           rpc("/agents"),
@@ -4669,7 +4780,8 @@
           rpc("/title-gen"),
           rpc("/title-gen/providers"),
           rpc("/rtk"),
-          rpc("/headroom")
+          rpc("/headroom"),
+          rpc("/zcode-config")
         ]);
         const titleGenProviders = titleGenProvidersRes.ok && Array.isArray(titleGenProvidersRes.providers) ? titleGenProvidersRes.providers : [];
         const setFeature = async (key, value) => {
@@ -4677,7 +4789,7 @@
           clearConfigCache();
           window.dispatchEvent(new CustomEvent("zcodepro:config-changed"));
           if (!res.ok) {
-            body.querySelector("[data-zcodepro-status]").replaceChildren(
+            statusLine.replaceChildren(
               h("span", { class: "text-ui-sm text-destructive" }, L.failed + ": " + errText(res))
             );
             return false;
@@ -4687,16 +4799,17 @@
         const statusLine = h(
           "div",
           {
-            class: "flex items-center gap-2 text-ui-sm text-foreground-subtle",
+            class: "ml-2 flex min-w-0 items-center gap-1.5 text-ui-xs text-foreground-subtle",
             "data-zcodepro-status": "1"
           },
           h("span", { class: "inline-block size-2 rounded-full bg-emerald-500" }),
-          h("span", { class: "text-foreground-subtle/70" }, `${health.version} \xB7 ${HELPER_URL}`)
+          h("span", { class: "truncate text-foreground-subtle/70" }, `${health.version} \xB7 ${HELPER_URL}`)
         );
+        if (titleLeft) titleLeft.append(statusLine);
         const rows = h("div", { class: "grid grid-cols-2 gap-x-0 gap-y-1 rounded-xl border border-border p-2 divide-x divide-border" });
         const pluginsStatusLine = h("span", { class: "max-w-40 truncate text-ui-xs/relaxed text-foreground-subtle" }, "\u2026");
         const setPluginsStatus = (text) => {
-          setPluginsStatus(text);
+          pluginsStatusLine.textContent = text;
           pluginsStatusLine.setAttribute("title", text);
         };
         const pluginsBtn = btnSmall(L.pluginsCheckNow, () => {
@@ -4902,14 +5015,15 @@
             L.wechatGroupDesc.replaceAll("{id}", WECHAT_ID),
             () => hCopyIcon("size-4 shrink-0 text-foreground-subtle"),
             async () => {
-              if (await copyToClipboard(WECHAT_ID)) showToast(L.wechatIdCopied);
+              if (await copyToClipboard(WECHAT_ID)) showToast(L.wechatIdCopied, "success");
             }
           )
         );
         let activeTab = "features";
+        const subTabBars = {};
         const paneFeatures = h(
           "div",
-          { role: "tabpanel", class: "mt-4" },
+          { role: "tabpanel", class: "mt-2" },
           h("div", {}, rows),
           communityCards
         );
@@ -4971,14 +5085,14 @@
               }
               const k = e.key.toLowerCase();
               if (!/^[a-z0-9]$/.test(k)) {
-                showToast(L.hkInvalid, "error");
+                showToast(L.hkInvalid, "warning");
                 return;
               }
               const keys = hkKeys();
               const names = hkNames();
               const conflict = HK_ACTIONS.find(([a2]) => a2 !== hkRecording && keys[a2] === k);
               if (conflict) {
-                showToast(L.hkConflict.replaceAll("{k}", k).replaceAll("{name}", names[conflict[0]]), "error");
+                showToast(L.hkConflict.replaceAll("{k}", k).replaceAll("{name}", names[conflict[0]]), "warning");
                 return;
               }
               const a = hkRecording;
@@ -5021,7 +5135,7 @@
         };
         const paneShortcuts = h(
           "div",
-          { role: "tabpanel", class: "mt-4", style: "display:none" },
+          { role: "tabpanel", style: "display:none" },
           h("div", { class: "mb-2 text-ui-sm font-medium" }, L.hkTitle),
           h(
             "div",
@@ -5033,16 +5147,16 @@
           ),
           hkCard
         );
-        const paneStyles = h("div", { role: "tabpanel", class: "mt-2", style: "display:none" });
-        const panePerf = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
-        const paneAgents = h("div", { role: "tabpanel", class: "mt-2", style: "display:none" });
-        const paneProxy = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
-        const paneSync = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
-        const paneVision = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
-        const paneRtk = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
-        const paneHeadroom = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
-        const paneTitleGen = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
-        const paneDebug = h("div", { role: "tabpanel", class: "mt-4", style: "display:none" });
+        const paneStyles = h("div", { role: "tabpanel", style: "display:none" });
+        const panePerf = h("div", { role: "tabpanel", style: "display:none" });
+        const paneAgents = h("div", { role: "tabpanel", style: "display:none" });
+        const paneProxy = h("div", { role: "tabpanel", style: "display:none" });
+        const paneSync = h("div", { role: "tabpanel", style: "display:none" });
+        const paneVision = h("div", { role: "tabpanel", style: "display:none" });
+        const paneRtk = h("div", { role: "tabpanel", style: "display:none" });
+        const paneHeadroom = h("div", { role: "tabpanel", style: "display:none" });
+        const paneTitleGen = h("div", { role: "tabpanel", style: "display:none" });
+        const paneDebug = h("div", { role: "tabpanel", style: "display:none" });
         const panes = { features: paneFeatures, shortcuts: paneShortcuts, styles: paneStyles, perf: panePerf, agents: paneAgents, proxy: paneProxy, sync: paneSync, vision: paneVision, headroom: paneHeadroom, rtk: paneRtk, debug: paneDebug };
         const tabDefs = [
           ["features", L.tabFeatures],
@@ -5072,6 +5186,7 @@
           activeTab = name;
           if (name !== "shortcuts" && hkRecording) stopHkRecording();
           for (const [id, pane] of Object.entries(panes)) pane.style.display = id === name ? "" : "none";
+          for (const [id, bar] of Object.entries(subTabBars)) bar.style.display = id === name ? "" : "none";
           renderTabs();
         };
         renderTabs();
@@ -5248,10 +5363,10 @@
           for (const c of fontCells) c.setOptions(list);
         })();
         renderToolbarSwitch();
-        const paneStylesSub1 = h("div", { class: "mt-4" });
-        const paneStylesSub2 = h("div", { class: "mt-4", style: "display:none" });
-        const paneStylesSub3 = h("div", { class: "mt-4", style: "display:none" });
-        const paneStylesSub4 = h("div", { class: "mt-4", style: "display:none" });
+        const paneStylesSub1 = h("div", { class: "mt-2" });
+        const paneStylesSub2 = h("div", { class: "mt-2", style: "display:none" });
+        const paneStylesSub3 = h("div", { class: "mt-2", style: "display:none" });
+        const paneStylesSub4 = h("div", { class: "mt-2", style: "display:none" });
         const ITEM_NAMES = {
           ctx: "sbItemCtx",
           questions: "sbItemQuestions",
@@ -5778,7 +5893,7 @@
               return;
             }
             if (!/^https?:\/\/\S+$/.test(v)) {
-              showToast(L.themeBgUrlInvalid, "error");
+              showToast(L.themeBgUrlInvalid, "warning");
               renderThemeBg();
               return;
             }
@@ -5938,7 +6053,8 @@
           }
         }, label)));
         renderStylesSubTabs();
-        paneStyles.append(stylesSubTablist, paneStylesSub1, paneStylesSub2, paneStylesSub3, paneStylesSub4);
+        subTabBars.styles = stylesSubTablist;
+        paneStyles.append(paneStylesSub1, paneStylesSub2, paneStylesSub3, paneStylesSub4);
         paneStylesSub1.append(
           toolbarSwitchWrap,
           h(
@@ -5986,24 +6102,149 @@
           const res = await rpc("/agents", { method: "POST", body: { content: agentsArea.value } });
           if (res.ok) {
             agentsOriginal = typeof res.content === "string" ? res.content : agentsArea.value;
-            showToast(L.agentsSaved);
+            showToast(L.agentsSaved, "success");
           } else {
             showToast(L.failed + ": " + errText(res), "error");
             agentsSaveBtn.disabled = false;
           }
         };
-        const agentsPromptPane = h("div", { class: "mt-4" });
+        const paneZcode = h("div", { class: "mt-2" });
+        let snap = zcodeConfigRes;
+        const setZcode = async (body2) => {
+          const res = await rpc("/zcode-config", { method: "POST", body: body2 });
+          if (!res.ok) {
+            showToast(L.failed + ": " + errText(res), "error");
+            return false;
+          }
+          snap = res;
+          return true;
+        };
+        if (!snap.ok) {
+          paneZcode.append(h("p", { class: "mt-2 text-ui-sm text-destructive" }, L.failed + ": " + errText(snap)));
+        } else {
+          const fmt2 = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+          const countsEl = h("div", { class: "text-ui-sm text-foreground" });
+          const charsEl = h("div", { class: "mt-0.5 text-ui-sm text-foreground" });
+          const statusEl = h("div", { class: "mt-0.5 text-ui-sm" });
+          const budgetField = numberField({
+            value: snap.values.skills.metadataBudget,
+            fallback: snap.stats.defaultBudget,
+            min: 0,
+            max: 1e6,
+            step: 1e3,
+            onCommit: async (v) => {
+              if (await setZcode({ skills: { metadataBudget: v } })) renderStats();
+            }
+          });
+          const budgetTag = h("span", { class: "text-ui-xs text-foreground-subtle" });
+          const suggestEl = h("div", { class: "min-w-0 flex-1 text-ui-xs/relaxed text-foreground-subtle" });
+          const renderStats = () => {
+            countsEl.textContent = L.zcodeStatsCounts.replaceAll("{total}", fmt2(snap.stats.total)).replaceAll("{user}", fmt2(snap.stats.userCount)).replaceAll("{plugin}", fmt2(snap.stats.pluginCount));
+            charsEl.textContent = L.zcodeStatsChars.replaceAll("{n}", fmt2(snap.stats.fullChars));
+            statusEl.textContent = snap.stats.degraded ? L.zcodeStatsDegraded : L.zcodeStatsOk;
+            statusEl.className = "mt-0.5 text-ui-sm " + (snap.stats.degraded ? "text-destructive" : "text-foreground");
+            budgetTag.textContent = snap.configured.skills.metadataBudget ? "" : L.zcodeBudgetDefaultTag;
+            suggestEl.textContent = L.zcodeStatsSuggest.replaceAll("{n}", fmt2(snap.stats.suggested));
+          };
+          const applyBtn = btnSmall(L.zcodeBudgetApply, async () => {
+            if (await setZcode({ skills: { metadataBudget: snap.stats.suggested } })) {
+              budgetField.set(snap.values.skills.metadataBudget);
+              renderStats();
+              showToast(L.zcodeBudgetApplied, "success");
+            }
+          }, "shrink-0");
+          const statsBudgetRow = h(
+            "div",
+            { class: "mt-2 flex items-stretch gap-2" },
+            h(
+              "div",
+              { class: "flex min-w-0 flex-1 flex-col rounded-xl border border-border p-3" },
+              h("div", { class: "text-ui-sm font-medium" }, L.zcodeStatsTitle),
+              countsEl,
+              charsEl,
+              statusEl,
+              h("div", { class: "mt-1 text-ui-xs/relaxed text-foreground-subtle" }, L.zcodeStatsNote)
+            ),
+            h(
+              "div",
+              { class: "flex min-w-0 flex-1 flex-col rounded-xl border border-border p-3" },
+              h("div", { class: "text-ui-sm font-medium" }, L.zcodeSkillBudget),
+              h("div", { class: "mt-0.5 text-ui-xs/relaxed text-foreground-subtle" }, L.zcodeSkillBudgetDesc),
+              h("div", { class: "mt-2 flex items-center gap-1" }, budgetField.el, budgetTag),
+              h("div", { class: "mt-1 flex items-center gap-2" }, suggestEl, applyBtn)
+            )
+          );
+          const togglesWrap = h("div", { class: "mt-2 flex flex-col gap-0.5 rounded-xl border border-border p-1" });
+          const renderToggles = () => {
+            const v = snap.values;
+            const row = (name, desc, checked, patch) => settingRow(name, desc, checked, async () => {
+              if (await setZcode(patch(!checked))) renderToggles();
+            });
+            togglesWrap.replaceChildren(
+              row(L.zcodeSkillEnabled, L.zcodeSkillEnabledDesc, v.skills.enabled, (n) => ({ skills: { enabled: n } })),
+              row(L.zcodeSkillIncludeInstructions, L.zcodeSkillIncludeInstructionsDesc, v.skills.includeInstructions, (n) => ({ skills: { includeInstructions: n } })),
+              row(L.zcodeFeatCompact, L.zcodeFeatCompactDesc, v.features.compact, (n) => ({ features: { compact: n } })),
+              row(L.zcodeFeatRewind, L.zcodeFeatRewindDesc, v.features.rewind, (n) => ({ features: { rewind: n } })),
+              row(L.zcodeFeatSubagent, L.zcodeFeatSubagentDesc, v.features.subagent, (n) => ({ features: { subagent: n } })),
+              row(L.zcodeFeatSkill, L.zcodeFeatSkillDesc, v.features.skill, (n) => ({ features: { skill: n } })),
+              row(L.zcodeFeatMcp, L.zcodeFeatMcpDesc, v.features.mcp, (n) => ({ features: { mcp: n } })),
+              // 记忆不放这里：官方“工作区记忆”是桌面设置里的 memoryEnabled
+              // （~/.zcode/v2/setting.json），与本页写的 agent 配置不是同一层开关
+              h("div", { class: "px-2 pb-1 pt-1 text-ui-xs/relaxed text-foreground-subtle" }, L.zcodeMemoryHint)
+            );
+          };
+          const rootsArea = h("textarea", {
+            class: "zcodepro-textarea zcodepro-textarea-sm",
+            rows: 3,
+            spellcheck: "false",
+            placeholder: "/path/to/skills"
+          });
+          let rootsOriginal = snap.values.skills.roots.join("\n");
+          rootsArea.value = rootsOriginal;
+          const rootsSaveBtn = btnSmall(L.zcodeSave, async () => {
+            rootsSaveBtn.disabled = true;
+            const lines = rootsArea.value.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+            if (await setZcode({ skills: { roots: lines } })) {
+              rootsOriginal = snap.values.skills.roots.join("\n");
+              renderStats();
+              showToast(L.zcodeRootsSaved, "success");
+            } else {
+              rootsSaveBtn.disabled = false;
+            }
+          }, "shrink-0", "primary");
+          rootsSaveBtn.disabled = true;
+          rootsArea.addEventListener("input", () => {
+            rootsSaveBtn.disabled = rootsArea.value === rootsOriginal;
+          });
+          renderStats();
+          renderToggles();
+          paneZcode.append(
+            h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.zcodeDesc),
+            statsBudgetRow,
+            togglesWrap,
+            h(
+              "div",
+              { class: "mt-2 rounded-xl border border-border p-2" },
+              h("div", { class: "text-ui-sm font-medium text-foreground" }, L.zcodeSkillRoots),
+              h("div", { class: "mt-0.5 text-ui-xs/relaxed text-foreground-subtle" }, L.zcodeSkillRootsDesc),
+              h("div", { class: "mt-2" }, rootsArea),
+              h("div", { class: "mt-2 flex justify-end" }, rootsSaveBtn)
+            )
+          );
+        }
+        const agentsPromptPane = h("div", { class: "mt-2" });
         agentsPromptPane.append(
           h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.agentsDesc),
           ...agentsFailed ? [h("p", { class: "mt-2 text-ui-sm text-destructive" }, L.agentsLoadFailed + ": " + errText(agentsRes))] : [],
           h("div", { class: "mt-3" }, agentsArea),
           h("div", { class: "mt-3 flex justify-end" }, agentsSaveBtn)
         );
-        let agentsSubTab = "prompt";
-        const agentsSubPanes = { prompt: agentsPromptPane, titleGen: paneTitleGen };
+        let agentsSubTab = "zcode";
+        const agentsSubPanes = { zcode: paneZcode, prompt: agentsPromptPane, titleGen: paneTitleGen };
         const agentsSubList = h("div", { role: "tablist", "aria-orientation": "horizontal", class: "zcodepro-tablist" });
         const renderAgentsSubTabs = () => {
           agentsSubList.replaceChildren(...[
+            ["zcode", L.tabZcode],
             ["prompt", L.tabAgents],
             ["titleGen", L.tabTitleGen]
           ].map(([id, label]) => h("button", {
@@ -6021,7 +6262,8 @@
         };
         for (const [pid, pane] of Object.entries(agentsSubPanes)) pane.style.display = pid === agentsSubTab ? "" : "none";
         renderAgentsSubTabs();
-        paneAgents.append(agentsSubList, agentsPromptPane, paneTitleGen);
+        subTabBars.agents = agentsSubList;
+        paneAgents.append(paneZcode, agentsPromptPane, paneTitleGen);
         const savedProxy = typeof config.proxy === "string" ? config.proxy : "";
         const proxyInputCls = "h-8 w-full rounded-lg border border-border bg-input px-2.5 text-ui-sm text-foreground outline-none transition-shadow placeholder:text-foreground-subtle focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40";
         const proxyInput = h("input", { type: "text", value: savedProxy, placeholder: L.proxyPlaceholder, spellcheck: "false", class: proxyInputCls + " min-w-0 flex-1" });
@@ -6039,7 +6281,7 @@
           if (res.ok) {
             proxyOriginal = res.config && typeof res.config.proxy === "string" ? res.config.proxy : proxyInput.value.trim();
             proxyInput.value = proxyOriginal;
-            showToast(L.proxySaved);
+            showToast(L.proxySaved, "success");
           } else {
             proxySaveBtn.disabled = false;
             showToast(L.failed + ": " + errText(res), "error");
@@ -6239,7 +6481,7 @@
             syncLoginInput.value = res.sync.login;
             syncPasswordInput.value = res.sync.password;
             syncHistoryInput.value = syncFormOriginal.historyLimit;
-            showToast(L.syncSaved);
+            showToast(L.syncSaved, "success");
           } else {
             showToast(L.failed + ": " + errText(res), "error");
             syncCheckDirty();
@@ -6630,8 +6872,8 @@
           // 视觉上游冷启动可能近 2 分钟，与插件 DEFAULT_CONFIG 一致
           compressThresholdKB: 1024,
           skipAfterFailures: 2,
-          skipMinutes: 30,
-          forceIntercept: true
+          skipMinutes: 30
+          // forceIntercept 不写：缺省 = 自动（跟随宿主「模型设置」图片开关，zcode-vision ≥1.7.10）
         };
         let visionCfg = visionRes.ok && visionRes.config && typeof visionRes.config === "object" ? structuredClone(visionRes.config) : null;
         let visionAutoInitTried = false;
@@ -6918,32 +7160,51 @@
                 )
               )
             ),
-            // 链模式 + 强制拦截开关合到一行（启用开关已上移信息卡）
+            // 链模式 / 主模型策略 / 识图卡片 三项均分一行、各格内容左对齐（启用开关已上移信息卡）
             h(
               "div",
-              { class: "mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-xl border border-border p-1" },
-              h("span", { class: "ml-1.5 shrink-0 text-ui-sm font-medium text-foreground" }, L.visionMode),
-              modeBtn("fallback", L.visionModeFallback, L.visionModeFallbackDesc),
-              modeBtn("pipeline", L.visionModePipeline, L.visionModePipelineDesc),
+              { class: "mt-3 grid grid-cols-1 items-center gap-1.5 rounded-xl border border-border p-2 sm:grid-cols-3" },
               h(
                 "div",
-                { class: "ml-auto flex items-center gap-4" },
+                { class: "flex flex-wrap items-center gap-2" },
+                h("span", { class: "shrink-0 text-ui-sm font-medium text-foreground" }, L.visionMode),
+                modeBtn("fallback", L.visionModeFallback, L.visionModeFallbackDesc),
+                modeBtn("pipeline", L.visionModePipeline, L.visionModePipelineDesc)
+              ),
+              (() => {
+                const sel = h(
+                  "select",
+                  { class: "h-8 rounded-lg border border-border bg-input px-2 text-ui-sm text-foreground outline-none", title: L.visionForceInterceptHint },
+                  h("option", { value: "auto" }, L.visionForceInterceptAuto),
+                  h("option", { value: "true" }, L.visionForceInterceptTrue),
+                  h("option", { value: "false" }, L.visionForceInterceptFalse)
+                );
+                sel.value = visionCfg.forceIntercept === true ? "true" : visionCfg.forceIntercept === false ? "false" : "auto";
+                sel.addEventListener("change", () => {
+                  visionCfg.forceIntercept = sel.value === "true" ? true : sel.value === "false" ? false : null;
+                  void persistVision();
+                });
+                return h(
+                  "label",
+                  { class: "flex items-center gap-1.5", title: L.visionForceInterceptHint },
+                  h("span", { class: "text-ui-sm font-medium text-foreground" }, L.visionForceIntercept),
+                  sel
+                );
+              })(),
+              h(
+                "div",
+                { class: "flex items-center" },
                 settingRow(L.visionCardUi, "", visionCfg.cardUi !== false, async () => {
                   visionCfg.cardUi = !(visionCfg.cardUi !== false);
-                  await persistVision();
-                  renderVision();
-                }),
-                settingRow(L.visionForceIntercept, "", visionCfg.forceIntercept !== false, async () => {
-                  visionCfg.forceIntercept = !(visionCfg.forceIntercept !== false);
                   await persistVision();
                   renderVision();
                 })
               )
             ),
-            // 压缩阈值 / 连续失败次数 / 跳过分钟数 三个数字一行
+            // 压缩阈值 / 连续失败次数 / 跳过分钟数 三个数字一行（p-2 与上方信息卡对齐）
             h(
               "div",
-              { class: "mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-xl border border-border p-1" },
+              { class: "mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-xl border border-border p-2" },
               (() => {
                 const n = h("input", {
                   type: "number",
@@ -7096,7 +7357,7 @@
             const v = input.value.trim();
             if (!v) return;
             if (!/^(git:)?[A-Za-z0-9._-]+$/.test(v) || rtkCfg.whitelist.includes(v)) {
-              showToast(L.rtkWhitelistInvalid, "error");
+              showToast(L.rtkWhitelistInvalid, "warning");
               return;
             }
             if (await persistRtk({ whitelist: [...rtkCfg.whitelist, v] })) {
@@ -7224,7 +7485,7 @@
                     if (await persistRtk({ whitelist: [] })) {
                       rtkCfg.whitelist = [];
                       renderRtk();
-                      showToast(L.rtkWhitelistCleared);
+                      showToast(L.rtkWhitelistCleared, "success");
                     }
                   })();
                 }, "shrink-0")
@@ -7340,7 +7601,7 @@
                     clearInterval(timerIv);
                     hrBusy = false;
                     await hrRefresh();
-                    showToast(doneMsg, isStart ? "success" : void 0);
+                    showToast(doneMsg, "success");
                     return;
                   }
                 }
@@ -7359,7 +7620,7 @@
               return false;
             }
             if (res.config) Object.assign(hrCfg, res.config);
-            if (warn) showToast(warn);
+            if (warn) showToast(warn, "warning");
             if (!isStart && !isStop) {
               hrBusy = false;
               setTimeout(() => {
@@ -7439,7 +7700,7 @@
                 }
                 if (res.usage) headroomRes.usage = res.usage;
                 renderHrUsageSwitch();
-                if (next && !res.changed && !(res.usage && res.usage.enabled)) showToast(L.hrUsageNone);
+                if (next && !res.changed && !(res.usage && res.usage.enabled)) showToast(L.hrUsageNone, "warning");
               })
             );
           };
@@ -7823,9 +8084,13 @@
           );
         };
         renderTitleGenPane();
+        const subTabHost = h("div", { class: "mt-2" });
+        for (const bar of Object.values(subTabBars)) {
+          bar.style.display = "none";
+          subTabHost.append(bar);
+        }
+        content.insertBefore(h("div", { class: "flex flex-col items-start" }, tablist, subTabHost), body);
         body.append(
-          statusLine,
-          tablist,
           paneFeatures,
           paneShortcuts,
           paneAgents,
@@ -7910,7 +8175,7 @@
       const scope = workspaces.size === 1 ? "workspace" : "group-members";
       const res = await rpc("/task-order", { method: "POST", body: { scope, ordered } });
       if (res && res.ok) {
-        showToast(L.taskOrderSaved);
+        showToast(L.taskOrderSaved, "success");
         setTimeout(() => location.reload(), 600);
       } else {
         showToast(L.failed + ": " + (errText(res) || L.retryHint), "error");
@@ -8981,7 +9246,7 @@
           if (live) record(live.getAttribute("data-task-item-key"));
           const target = live ? mru[0] === current ? mru[1] : mru.find((mk) => mk !== current) : mru[0];
           if (!target) {
-            showToast(t().switcherEmpty);
+            showToast(t().switcherEmpty, "warning");
             return;
           }
           void switchTo(target).then((ok) => {
@@ -8993,7 +9258,7 @@
           if (e.repeat) return;
           closePopup(false);
           if (!attentionList().length) {
-            showToast(t().switcherAttentionEmpty);
+            showToast(t().switcherAttentionEmpty, "warning");
             return;
           }
           await openPopup("attention");
@@ -9002,7 +9267,7 @@
         if (k === hotkeys.switchRecent) {
           if (!e.repeat && !popupEl && !openPopupInflight) {
             if (!mru.length) {
-              showToast(t().switcherEmpty);
+              showToast(t().switcherEmpty, "warning");
               return;
             }
             await openPopup("mru");
@@ -9013,7 +9278,7 @@
           await openPopupInflight;
         } else if (!popupEl) {
           if (!mru.length) {
-            showToast(t().switcherEmpty);
+            showToast(t().switcherEmpty, "warning");
             return;
           }
           await openPopup("mru");
@@ -9158,7 +9423,7 @@
         const sc = sessionScope();
         const open = findOpenSidePane();
         if (!sc || !open) {
-          showToast(L.ntpNeedSession, "error");
+          showToast(L.ntpNeedSession, "warning");
           return;
         }
         try {
@@ -9174,7 +9439,7 @@
           });
         } catch (e) {
           console.warn("[zcodepro] \u6253\u5F00\u63D2\u4EF6\u9762\u677F\u5931\u8D25", e);
-          showToast(L.ntpNeedSession, "error");
+          showToast(L.ntpNeedSession, "warning");
         }
       });
       grid.append(card);
@@ -10843,70 +11108,75 @@
   // src/inject/features/composer-provider.js
   var installed6 = false;
   var enabled10 = true;
-  function labelToDisplay(label) {
-    const i = label.indexOf("/");
-    if (i <= 0) return null;
-    const provider = label.slice(0, i).trim();
-    const rest = label.slice(i + 1);
-    const model = rest.trim().split(/\s+/)[0];
-    if (!provider || !model) return null;
-    return `${provider} / ${model}`;
+  var TRIGGER_SEL = '[data-testid="chat-model-select-trigger"]';
+  function labelParts(label) {
+    const text = (label || "").trim();
+    if (!text) return null;
+    const i = text.indexOf("/");
+    if (i > 0) {
+      const provider = text.slice(0, i).trim();
+      const model = text.slice(i + 1).trim().split(/\s+/)[0];
+      return provider && model ? { provider, model } : null;
+    }
+    return { provider: null, model: text.split(/\s+/)[0] };
+  }
+  function holdersOf(btn, model) {
+    const innermost = [...btn.querySelectorAll("span[title]")].filter((sp) => !sp.querySelector("span[title]"));
+    const holders = [];
+    for (const sp of innermost) {
+      for (const el of sp.querySelectorAll("span:not([title])")) {
+        if (el.querySelector("span")) continue;
+        const text = el.textContent.trim();
+        if (!text) continue;
+        if (text === model || text.endsWith(` / ${model}`)) holders.push(el);
+      }
+    }
+    return holders;
+  }
+  function setText(el, text) {
+    const node = el.firstChild;
+    if (node && node.nodeType === 3 && !node.nextSibling) node.nodeValue = text;
+    else el.textContent = text;
   }
   function apply3() {
-    if (!enabled10) {
-      for (const btn of document.querySelectorAll('[data-testid="chat-model-select-trigger"]')) {
-        if (!btn.dataset.zcodeproProviderShown) continue;
-        const label = btn.getAttribute("aria-label") || "";
-        const i = label.indexOf("/");
-        if (i <= 0) continue;
-        const model = label.slice(i + 1).trim().split(/\s+/)[0];
-        if (!model) continue;
-        for (const sp of btn.querySelectorAll("span[title]")) sp.setAttribute("title", model);
-        for (const el of btn.querySelectorAll("span[title] span:not([title])")) {
-          if (!el.querySelector("span") && el.textContent.includes("/")) el.textContent = model;
+    for (const btn of document.querySelectorAll(TRIGGER_SEL)) {
+      const parts = labelParts(btn.getAttribute("aria-label") || "");
+      if (!parts) continue;
+      const holders = holdersOf(btn, parts.model);
+      if (enabled10) {
+        if (!parts.provider || !holders.length) continue;
+        const target = `${parts.provider} / ${parts.model}`;
+        for (const el of holders) {
+          if (el.textContent.trim() !== target) setText(el, target);
         }
+        for (const sp of btn.querySelectorAll("span[title]")) {
+          if (sp.getAttribute("title") !== target) sp.setAttribute("title", target);
+        }
+        btn.dataset.zcodeproProviderShown = "1";
+      } else if (btn.dataset.zcodeproProviderShown) {
+        for (const el of holders) {
+          if (el.textContent.trim() !== parts.model) setText(el, parts.model);
+        }
+        for (const sp of btn.querySelectorAll("span[title]")) sp.setAttribute("title", parts.model);
         delete btn.dataset.zcodeproProviderShown;
       }
-      return;
-    }
-    for (const btn of document.querySelectorAll('[data-testid="chat-model-select-trigger"]')) {
-      const label = btn.getAttribute("aria-label") || "";
-      const display = labelToDisplay(label);
-      if (!display) continue;
-      const titleSpans = [...btn.querySelectorAll("span[title]")];
-      if (!titleSpans.length) continue;
-      const innermost = titleSpans.filter((sp) => !sp.querySelector("span[title]"));
-      if (!innermost.length) continue;
-      const holders = [];
-      for (const sp of innermost) {
-        sp.querySelectorAll("span:not([title])").forEach((el) => {
-          if (!el.querySelector("span") && el.textContent.trim() && !el.textContent.includes("/")) holders.push(el);
-        });
-      }
-      if (!holders.length) continue;
-      for (const sp of titleSpans) {
-        if (sp.getAttribute("title") !== display) sp.setAttribute("title", display);
-      }
-      for (const el of holders) el.textContent = display;
-      btn.dataset.zcodeproProviderShown = "1";
     }
   }
   function startComposerProvider() {
     if (installed6 || typeof document === "undefined") return;
     installed6 = true;
-    const COMPOSER_SEL = '[data-composer-layout], [data-composer-leading-content], [data-testid="chat-model-select-trigger"]';
+    const COMPOSER_SEL = '[data-composer-layout], [data-composer-leading-actions], [data-composer-leading-content], [data-testid="chat-model-select-trigger"]';
     const relevant2 = (muts) => {
       for (const m of muts) {
         if (m.type === "childList") {
           for (const n of [...m.addedNodes, ...m.removedNodes]) {
-            if (n instanceof Element && (n.matches?.(COMPOSER_SEL) || n.querySelector?.(COMPOSER_SEL))) return true;
+            if (n instanceof Element && (n.matches?.(COMPOSER_SEL) || n.querySelector?.(COMPOSER_SEL) || n.closest?.(TRIGGER_SEL))) return true;
           }
+        } else if (m.type === "attributes") {
+          if (m.target instanceof Element && m.target.closest?.(TRIGGER_SEL)) return true;
         } else if (m.type === "characterData") {
-          let el = m.target.parentElement;
-          while (el && el !== document.body) {
-            if (el.matches?.("[data-composer-layout], [data-composer-leading-actions], [data-composer-leading-content]")) return true;
-            el = el.parentElement;
-          }
+          const el = m.target.parentElement?.closest?.(COMPOSER_SEL);
+          if (el) return true;
         }
       }
       return false;
@@ -10932,7 +11202,14 @@
     const observer2 = new MutationObserver((muts) => {
       if (enabled10 && relevant2(muts)) schedule();
     });
-    observer2.observe(document.body, { childList: true, subtree: true, characterData: true });
+    observer2.observe(document.body, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+      attributes: true,
+      attributeFilter: ["aria-label", "data-model-current-value"]
+      // 这两个只有应用会写，不认 title，避免自己改 title 叫醒自己
+    });
     apply3();
   }
 
