@@ -102,14 +102,40 @@ export function openDialog({ title, description, onMount, onClose, width = 'sm:m
     titleEl.style.cursor = 'move';
     titleEl.style.userSelect = 'none';
     let dragging = false, sx = 0, sy = 0, ox = 0, oy = 0;
-    // 边界按遮罩实际范围算（Linux 下遮罩顶部让出自绘标题栏），不能按窗口算：
-    // 否则卡片能被拖进标题栏下面，拖动把手和关闭按钮被标题栏盖住就都点不到了
+    // 应用自绘标题栏高度：标题栏带 -webkit-app-region:drag，是合成层区域、
+    // 在所有页面内容之上——卡片钻到它下面后拖动把手和关闭按钮就再也点不到。
+    // 实测 3.16.2 起宿主样式表不再编译 platform-linux-desktop:top-12，遮罩
+    // 让位旧机制失效，因此运行时实测标题栏（结果短缓存，视图切换后能跟上）
+    let tbCache = { at: 0, h: 0 };
+    const titleBarHeight = () => {
+      if (Date.now() - tbCache.at < 2000) return tbCache.h;
+      let h = 0;
+      try {
+        for (const el of document.querySelectorAll('[class*="app-region"], [style*="app-region"], header')) {
+          const st = getComputedStyle(el);
+          if ((st.webkitAppRegion || st.appRegion) !== 'drag') continue;
+          const r = el.getBoundingClientRect();
+          if (r.top <= 2 && r.height > 8 && r.height < 120) h = Math.max(h, r.bottom);
+        }
+      } catch { /* ignore */ }
+      tbCache = { at: Date.now(), h };
+      return h;
+    };
+    // 卡片未平移时的矩形（当前矩形扣除平移量）。平移边界按卡片实际边缘不出
+    // 窗体算（旧算法按遮罩内居中对称取值：顶部能钻进标题栏、底部也够不到边）
+    const baseRect = () => {
+      const r = content.getBoundingClientRect();
+      return { left: r.left - ox, top: r.top - oy, right: r.right - ox, bottom: r.bottom - oy };
+    };
+    // 单轴夹取：范围倒挂（卡片比可用空间还宽/高）时取中点，保证两边均可见
+    const clampAxis = (v, lo, hi) => (lo > hi ? (lo + hi) / 2 : Math.min(hi, Math.max(lo, v)));
     const clampPos = (x, y) => {
-      const ob = overlayEl.getBoundingClientRect();
-      // 卡片在遮罩内居中，平移量不能超过卡片边缘到遮罩边缘的距离（留 8px 余量）
-      const mx = Math.max(0, (ob.width - content.offsetWidth) / 2 - 8);
-      const my = Math.max(0, (ob.height - content.offsetHeight) / 2 - 8);
-      return [Math.min(mx, Math.max(-mx, x)), Math.min(my, Math.max(-my, y))];
+      const M = 8; // 距窗体边缘的留白
+      const b = baseRect();
+      return [
+        clampAxis(x, M - b.left, (window.innerWidth - M) - b.right),
+        clampAxis(y, (titleBarHeight() + M) - b.top, (window.innerHeight - M) - b.bottom),
+      ];
     };
     const applyPos = () => {
       content.style.transform = (ox || oy) ? `translate(${ox}px, ${oy}px)` : '';

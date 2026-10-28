@@ -1349,11 +1349,34 @@
       titleEl.style.cursor = "move";
       titleEl.style.userSelect = "none";
       let dragging = false, sx = 0, sy = 0, ox = 0, oy = 0;
+      let tbCache = { at: 0, h: 0 };
+      const titleBarHeight = () => {
+        if (Date.now() - tbCache.at < 2e3) return tbCache.h;
+        let h2 = 0;
+        try {
+          for (const el of document.querySelectorAll('[class*="app-region"], [style*="app-region"], header')) {
+            const st = getComputedStyle(el);
+            if ((st.webkitAppRegion || st.appRegion) !== "drag") continue;
+            const r = el.getBoundingClientRect();
+            if (r.top <= 2 && r.height > 8 && r.height < 120) h2 = Math.max(h2, r.bottom);
+          }
+        } catch {
+        }
+        tbCache = { at: Date.now(), h: h2 };
+        return h2;
+      };
+      const baseRect = () => {
+        const r = content.getBoundingClientRect();
+        return { left: r.left - ox, top: r.top - oy, right: r.right - ox, bottom: r.bottom - oy };
+      };
+      const clampAxis = (v, lo, hi) => lo > hi ? (lo + hi) / 2 : Math.min(hi, Math.max(lo, v));
       const clampPos = (x, y) => {
-        const ob = overlayEl.getBoundingClientRect();
-        const mx = Math.max(0, (ob.width - content.offsetWidth) / 2 - 8);
-        const my = Math.max(0, (ob.height - content.offsetHeight) / 2 - 8);
-        return [Math.min(mx, Math.max(-mx, x)), Math.min(my, Math.max(-my, y))];
+        const M = 8;
+        const b = baseRect();
+        return [
+          clampAxis(x, M - b.left, window.innerWidth - M - b.right),
+          clampAxis(y, titleBarHeight() + M - b.top, window.innerHeight - M - b.bottom)
+        ];
       };
       const applyPos = () => {
         content.style.transform = ox || oy ? `translate(${ox}px, ${oy}px)` : "";
