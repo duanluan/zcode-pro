@@ -67,7 +67,7 @@ async function persistOrder(ordered) {
     const scope = workspaces.size === 1 ? 'workspace' : 'group-members';
     const res = await rpc('/task-order', { method: 'POST', body: { scope, ordered } });
     if (res && res.ok) {
-      showToast(L.taskOrderSaved);
+      showToast(L.taskOrderSaved, 'success');
       setTimeout(() => location.reload(), 600);
     } else {
       showToast(L.failed + ': ' + (errText(res) || L.retryHint), 'error');

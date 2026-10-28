@@ -116,11 +116,11 @@ async function copyImage(img, preBlob) {
     if (!blob) throw new Error('empty image');
     if (blob.type !== 'image/png') blob = await toPng(blob);
     await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-    showToast(L.imageCopied);
+    showToast(L.imageCopied, 'success');
   } catch {
     // 部分 Electron/Linux 组合上 navigator.clipboard 写图片报 DataError（写文本正常），
     // 回退 execCommand：选中 <img> 后复制，Chromium 会把图片本体写入剪贴板
-    if (copyViaSelection(img)) showToast(L.imageCopied);
+    if (copyViaSelection(img)) showToast(L.imageCopied, 'success');
     else showToast(L.imageCopyFailed, 'error');
   }
 }

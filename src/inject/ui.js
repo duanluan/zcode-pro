@@ -5,19 +5,40 @@ import { h, t } from './core.js';
 
 let toastTimer = null;
 
+// 提示条：设置弹窗里触发的提示居中叠在弹窗上，其余居中显示在 ZCode 窗体中间。
+// kind 区分成功 / 警告 / 失败 / 信息（'ok' 是旧调用点的成功写法，按成功处理）；
+// 配色走 ensureStyle 的自有样式，不依赖宿主 Tailwind 生成配色工具类
+const TOAST_KINDS = {
+  success: { name: 'success', glyph: '✓', ms: 2600 },
+  warning: { name: 'warning', glyph: '！', ms: 3600 },
+  error: { name: 'error', glyph: '✕', ms: 5000 },
+  info: { name: 'info', glyph: 'ⓘ', ms: 2600 },
+};
+
 export function showToast(text, kind = 'info') {
   document.getElementById('__zcodepro_toast__')?.remove();
-  const el = h('div', {
-    id: '__zcodepro_toast__',
-    class: 'fixed bottom-6 z-[100] flex max-w-md items-center gap-2 rounded-lg border px-4 py-3 text-ui-sm shadow-lg ' +
-      (kind === 'error' ? 'border-destructive/40 bg-menu text-foreground' : 'border-border bg-menu text-foreground'),
-    // left 用内联样式：ZCode 的 Tailwind 未编译 left-6/right-6 工具类（bottom-6 有）
-    style: 'animation:zcodepro-fade-in .18s ease; left: 1.5rem;',
-  },
-    h('span', { class: 'truncate' }, text));
-  document.body.append(el);
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.remove(), kind === 'error' ? 5000 : 2600);
+  const v = TOAST_KINDS[kind === 'ok' ? 'success' : kind] || TOAST_KINDS.info;
+  const chip = h('div', {
+    class: `zcodepro-toast zcodepro-toast-${v.name}`,
+    style: 'animation:zcodepro-fade-in .18s ease;',
+  },
+    h('span', { class: 'zcodepro-toast-glyph' }, v.glyph),
+    h('span', { class: 'truncate' }, text));
+  const wrap = h('div', { id: '__zcodepro_toast__', class: 'pointer-events-none flex items-center justify-center' });
+  // 设置弹窗可拖动、内部可滚动：按弹窗当前盒子定位（fixed），
+  // 提示始终落在可见弹窗的正中间；不属于弹窗的提示落到窗体正中间
+  const host = document.querySelector('[data-zcodepro-settings]');
+  if (host) {
+    const r = host.getBoundingClientRect();
+    wrap.style.cssText = `position:fixed; left:${Math.round(r.left)}px; top:${Math.round(r.top)}px;`
+      + ` width:${Math.round(r.width)}px; height:${Math.round(r.height)}px; z-index:100;`;
+  } else {
+    wrap.style.cssText = 'position:fixed; inset:0; z-index:100;';
+  }
+  wrap.append(chip);
+  document.body.append(wrap);
+  toastTimer = setTimeout(() => wrap.remove(), v.ms);
 }
 
 // 复用应用自身 AlertDialog 的真实类名组合（逆向自 app.asar 渲染层源码）：
@@ -405,6 +426,23 @@ export function ensureStyle() {
   if (!root) return;
   root.append(h('style', { id: '__zcodepro_style__' }, `
     @keyframes zcodepro-fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+    /* 提示条四态（成功/警告/失败/信息）：配色用主题变量加字面量兜底，
+       不依赖宿主 Tailwind 生成配色工具类 */
+    .zcodepro-toast {
+      display: flex; align-items: center; gap: .5rem;
+      max-width: 28rem; padding: .75rem 1rem;
+      border-radius: .5rem; border: 1px solid var(--color-border, #555);
+      background: var(--color-menu, #1f1f1f); color: var(--color-foreground, #eee);
+      font-size: .875rem; box-shadow: 0 10px 15px -3px rgb(0 0 0 / .3);
+    }
+    .zcodepro-toast .zcodepro-toast-glyph { font-weight: 600; }
+    .zcodepro-toast-success { border-color: #22c55e; }
+    .zcodepro-toast-success .zcodepro-toast-glyph { color: #22c55e; }
+    .zcodepro-toast-warning { border-color: #f59e0b; }
+    .zcodepro-toast-warning .zcodepro-toast-glyph { color: #f59e0b; }
+    .zcodepro-toast-error { border-color: var(--color-destructive, #ef4444); }
+    .zcodepro-toast-error .zcodepro-toast-glyph { color: var(--color-destructive, #ef4444); }
+    .zcodepro-toast-info .zcodepro-toast-glyph { color: var(--color-foreground-subtle, #999); }
     /* 弹窗遮罩/面板兜底：不依赖应用 Tailwind 类是否仍存在；主题色走 --color-* 变量，缺失时回退字面量 */
     .zcodepro-overlay { background-color: rgba(0, 0, 0, 0.6); }
     .zcodepro-overlay[data-overlay="none"] { background-color: transparent; }

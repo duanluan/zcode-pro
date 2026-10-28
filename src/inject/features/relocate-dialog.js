@@ -123,7 +123,8 @@ export function openRelocateDialog(project) {
         submitBtn.removeAttribute('disabled');
         if (res.ok) {
           close();
-          showToast(res.indexSynced === false ? L.relocateIndexSkipped : L.relocateSuccess);
+          showToast(res.indexSynced === false ? L.relocateIndexSkipped : L.relocateSuccess,
+            res.indexSynced === false ? 'warning' : 'success');
           setTimeout(() => location.reload(), 900);
           return;
         }

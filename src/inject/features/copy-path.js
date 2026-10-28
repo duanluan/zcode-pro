@@ -28,7 +28,7 @@ export async function appendCopyPathItem(menu, anchorItem, project) {
 
 async function copyText(text) {
   const L = t();
-  if (await copyToClipboard(text)) showToast(L.pathCopied);
+  if (await copyToClipboard(text)) showToast(L.pathCopied, 'success');
   else showToast(L.pathCopyFailed, 'error');
 }
 

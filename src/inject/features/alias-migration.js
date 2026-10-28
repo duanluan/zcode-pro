@@ -311,7 +311,7 @@ export function openMigrationDialog() {
           clearConfigCache();
           renderList();
           window.dispatchEvent(new CustomEvent('zcodepro:aliases-changed'));
-          if (ok === dead.length) showToast(L.aliasMigrateDeadCleared.replace('{n}', String(ok)));
+          if (ok === dead.length) showToast(L.aliasMigrateDeadCleared.replace('{n}', String(ok)), 'success');
           else showToast(L.aliasMigrateDeadClearFailed, 'error');
         };
 
@@ -351,9 +351,9 @@ export function openMigrationDialog() {
           decide();
           close();
           if (!failed.length) {
-            showToast(L.aliasMigrateDone.replace('{n}', String(ok)), 'ok');
+            showToast(L.aliasMigrateDone.replace('{n}', String(ok)), 'success');
           } else if (ok) {
-            showToast(L.aliasMigratePartial.replace('{n}', String(ok)).replace('{m}', String(failed.length)), 'error');
+            showToast(L.aliasMigratePartial.replace('{n}', String(ok)).replace('{m}', String(failed.length)), 'warning');
           } else {
             showToast(L.aliasMigrateAllFailed, 'error');
           }

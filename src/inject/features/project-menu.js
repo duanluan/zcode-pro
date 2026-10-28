@@ -211,7 +211,7 @@ async function injectNewMenuItems(content, menuRow) {
   wireHighlight(content, copyItem);
   copyItem.addEventListener('click', () => {
     try { content.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', bubbles: true, cancelable: true })); } catch { /* ignore */ }
-    void copyToClipboard(primary.path).then((ok) => showToast(ok ? L.pathCopied : L.pathCopyFailed, ok ? undefined : 'error'));
+    void copyToClipboard(primary.path).then((ok) => showToast(ok ? L.pathCopied : L.pathCopyFailed, ok ? 'success' : 'error'));
   });
   openItem.after(copyItem);
 }

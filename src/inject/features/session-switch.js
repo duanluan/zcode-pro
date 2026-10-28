@@ -397,7 +397,7 @@ export function startSessionSwitch() {
       const target = live
         ? (mru[0] === current ? mru[1] : mru.find((mk) => mk !== current))
         : mru[0];
-      if (!target) { showToast(t().switcherEmpty); return; }
+      if (!target) { showToast(t().switcherEmpty, 'warning'); return; }
       void switchTo(target).then((ok) => { if (!ok) showToast(t().switcherFailed, 'error'); });
       return;
     }
@@ -406,7 +406,7 @@ export function startSessionSwitch() {
       if (e.repeat) return;
       closePopup(false);
       if (!attentionList().length) {
-        showToast(t().switcherAttentionEmpty);
+        showToast(t().switcherAttentionEmpty, 'warning');
         return;
       }
       await openPopup('attention');
@@ -417,7 +417,7 @@ export function startSessionSwitch() {
     // 提示——首次仅开着当前会话时照常打开，列表里就是它这一条
     if (k === hotkeys.switchRecent) {
       if (!e.repeat && !popupEl && !openPopupInflight) {
-        if (!mru.length) { showToast(t().switcherEmpty); return; }
+        if (!mru.length) { showToast(t().switcherEmpty, 'warning'); return; }
         await openPopup('mru');
       }
       return;
@@ -430,7 +430,7 @@ export function startSessionSwitch() {
     if (openPopupInflight) {
       await openPopupInflight;
     } else if (!popupEl) {
-      if (!mru.length) { showToast(t().switcherEmpty); return; }
+      if (!mru.length) { showToast(t().switcherEmpty, 'warning'); return; }
       await openPopup('mru');
     }
     // 键位对调：alt+x 上移一位（更靠上/更近的键管向上），alt+c 下移

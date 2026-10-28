@@ -531,12 +531,12 @@ export function openSettingsDialog() {
             e.stopImmediatePropagation();
             if (e.key === 'Escape') { stopHkRecording(); return; }
             const k = e.key.toLowerCase();
-            if (!/^[a-z0-9]$/.test(k)) { showToast(L.hkInvalid, 'error'); return; }
+            if (!/^[a-z0-9]$/.test(k)) { showToast(L.hkInvalid, 'warning'); return; }
             const keys = hkKeys();
             const names = hkNames();
             const conflict = HK_ACTIONS.find(([a]) => a !== hkRecording && keys[a] === k);
             if (conflict) {
-              showToast(L.hkConflict.replaceAll('{k}', k).replaceAll('{name}', names[conflict[0]]), 'error');
+              showToast(L.hkConflict.replaceAll('{k}', k).replaceAll('{name}', names[conflict[0]]), 'warning');
               return;
             }
             const a = hkRecording;
@@ -1166,7 +1166,7 @@ export function openSettingsDialog() {
         urlInput.addEventListener('change', () => {
           const v = urlInput.value.trim();
           if (!v) { void saveTheme({ bg: { mode: 'none', url: '' } }); return; }
-          if (!/^https?:\/\/\S+$/.test(v)) { showToast(L.themeBgUrlInvalid, 'error'); renderThemeBg(); return; }
+          if (!/^https?:\/\/\S+$/.test(v)) { showToast(L.themeBgUrlInvalid, 'warning'); renderThemeBg(); return; }
           void saveTheme({ bg: { mode: 'url', url: v } });
         });
         const libCard = (f) => {
@@ -1490,7 +1490,7 @@ export function openSettingsDialog() {
         if (res.ok) {
           proxyOriginal = res.config && typeof res.config.proxy === 'string' ? res.config.proxy : proxyInput.value.trim();
           proxyInput.value = proxyOriginal;
-          showToast(L.proxySaved);
+          showToast(L.proxySaved, 'success');
         } else {
           proxySaveBtn.disabled = false;
           showToast(L.failed + ': ' + errText(res), 'error');
@@ -1685,7 +1685,7 @@ export function openSettingsDialog() {
           syncLoginInput.value = res.sync.login;
           syncPasswordInput.value = res.sync.password;
           syncHistoryInput.value = syncFormOriginal.historyLimit;
-          showToast(L.syncSaved);
+          showToast(L.syncSaved, 'success');
         } else {
           showToast(L.failed + ': ' + errText(res), 'error');
           syncCheckDirty();
@@ -2425,7 +2425,7 @@ export function openSettingsDialog() {
           const v = input.value.trim();
           if (!v) return;
           if (!/^(git:)?[A-Za-z0-9._-]+$/.test(v) || rtkCfg.whitelist.includes(v)) {
-            showToast(L.rtkWhitelistInvalid, 'error');
+            showToast(L.rtkWhitelistInvalid, 'warning');
             return;
           }
           if (await persistRtk({ whitelist: [...rtkCfg.whitelist, v] })) {
@@ -2528,7 +2528,7 @@ export function openSettingsDialog() {
                   if (await persistRtk({ whitelist: [] })) {
                     rtkCfg.whitelist = [];
                     renderRtk();
-                    showToast(L.rtkWhitelistCleared);
+                    showToast(L.rtkWhitelistCleared, 'success');
                   }
                 })();
               }, 'shrink-0'))),
@@ -2650,7 +2650,7 @@ export function openSettingsDialog() {
                   clearInterval(timerIv);
                   hrBusy = false;
                   await hrRefresh();
-                  showToast(doneMsg, isStart ? 'success' : undefined);
+                  showToast(doneMsg, 'success');
                   return;
                 }
               }
@@ -2669,7 +2669,7 @@ export function openSettingsDialog() {
             return false;
           }
           if (res.config) Object.assign(hrCfg, res.config);
-          if (warn) showToast(warn);
+          if (warn) showToast(warn, 'warning');
           // 非生命周期动作（backend/power）：稍等后刷一次
           if (!isStart && !isStop) {
             hrBusy = false;
@@ -2738,7 +2738,7 @@ export function openSettingsDialog() {
               }
               if (res.usage) headroomRes.usage = res.usage;
               renderHrUsageSwitch();
-              if (next && !res.changed && !(res.usage && res.usage.enabled)) showToast(L.hrUsageNone);
+              if (next && !res.changed && !(res.usage && res.usage.enabled)) showToast(L.hrUsageNone, 'warning');
             }));
         };
         renderHrUsageSwitch();

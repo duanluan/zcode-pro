@@ -171,7 +171,7 @@ async function injectPanels(grid) {
       const sc = sessionScope();
       const open = findOpenSidePane();
       if (!sc || !open) {
-        showToast(L.ntpNeedSession, 'error');
+        showToast(L.ntpNeedSession, 'warning');
         return;
       }
       try {
@@ -189,7 +189,7 @@ async function injectPanels(grid) {
         });
       } catch (e) {
         console.warn('[zcodepro] 打开插件面板失败', e);
-        showToast(L.ntpNeedSession, 'error');
+        showToast(L.ntpNeedSession, 'warning');
       }
     });
     grid.append(card);

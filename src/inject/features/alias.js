@@ -174,7 +174,7 @@ export function openAliasDialog(project) {
           close();
           clearConfigCache();
           await refreshAliases();
-          showToast(name ? L.aliasSaved : L.aliasCleared);
+          showToast(name ? L.aliasSaved : L.aliasCleared, 'success');
           return;
         }
         showToast((L.failed) + ': ' + (errText(res) || L.retryHint), 'error');
@@ -203,7 +203,7 @@ export function openAliasDialog(project) {
                 close();
                 clearConfigCache();
                 await refreshAliases();
-                showToast(L.aliasCleared);
+                showToast(L.aliasCleared, 'success');
               } else showToast((L.failed) + ': ' + (errText(res) || L.retryHint), 'error');
             }));
           }
