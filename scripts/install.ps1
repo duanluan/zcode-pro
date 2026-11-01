@@ -85,7 +85,7 @@ function New-ZcodeProShortcut([string]$path) {
     $lnk.WindowStyle = 7
   }
   $lnk.WorkingDirectory = "$dest"
-  $lnk.Description = "ZCode 桌面版增强启动器（自定义别名等，不修改客户端文件）"
+  $lnk.Description = "ZCode 桌面版增强启动器（壁纸引擎、皮肤主题等，不修改客户端文件）"
   # 图标来源用独立变量跟踪：$lnk.IconLocation 读回的是旧 .lnk 的值（非空），
   # 不能作为“本次未设置”的判断依据
   $iconSet = $false

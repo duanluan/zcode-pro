@@ -66,6 +66,10 @@ export function openDialog({ title, description, onMount, onClose, width = 'sm:m
   const prevActive = document.activeElement;
   let cleanupDrag = null;
   const close = () => {
+    // 先 blur 弹窗内焦点元素：输入框靠 change 提交，直接 remove 不触发 change，
+    // Esc 关弹窗会把没失焦的输入悄悄丢掉
+    const active = document.activeElement;
+    if (active && overlayEl.contains(active)) { try { active.blur(); } catch { /* ignore */ } }
     overlayEl.remove();
     dialogStack = dialogStack.filter((e) => e !== overlayEl);
     document.removeEventListener('keydown', onKey);
@@ -546,7 +550,7 @@ export function ensureStyle() {
     }
     .zcodepro-bg-card:hover { filter: brightness(1.15); }
     .zcodepro-bg-card[data-state="active"] { border-color: var(--color-primary, #333); }
-    .zcodepro-bg-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .zcodepro-bg-card img, .zcodepro-bg-card video { width: 100%; height: 100%; object-fit: cover; display: block; }
     .zcodepro-bg-del {
       position: absolute; top: 4px; right: 4px; width: 20px; height: 20px;
       border-radius: 6px; border: none; cursor: pointer; font-size: 11px; line-height: 1;

@@ -1,6 +1,6 @@
 // “ZCode Pro 增强设置”弹窗：功能开关 + 外观 + 运行状态。
 // 顶部标签页切换（视觉参考侧栏“分组/项目”切换）；配置写入 helper（~/.zcode/zcodepro.json）。
-import { h, t, rpc, getConfig, clearConfigCache, errText, HELPER_URL, isZhLocale, isNewProjectSidebar, DEFAULT_SHORTCUTS, DEFAULT_STATUS_ITEMS, DEFAULT_TURN_ITEMS, STATUS_SESSION_IDS, STATUS_GLOBAL_IDS } from '../core.js';
+import { h, t, rpc, getConfig, clearConfigCache, errText, HELPER_URL, liveBoot, isZhLocale, isNewProjectSidebar, DEFAULT_SHORTCUTS, DEFAULT_STATUS_ITEMS, DEFAULT_TURN_ITEMS, STATUS_SESSION_IDS, STATUS_GLOBAL_IDS } from '../core.js';
 import { openDialog, dialogFooter, btnPrimary, btnSecondary, btnSmall, settingRow, ensureStyle, showToast, numberField, unitField } from '../ui.js';
 import { comboField, providerOptionsOf, modelOptionsOf, modelPlaceholderOf, isManualConn } from '../provider-fields.js';
 import { refreshAliases } from './alias.js';
@@ -13,6 +13,9 @@ import { copyToClipboard, hCopyIcon } from './copy-path.js';
 function openExternal(url) {
   try { void window.zcode.openExternal(url); } catch { /* ignore */ }
 }
+
+// 文件名比较归一：Windows 大小写不敏感、macOS 返回 NFD 分解字符
+const sameName = (a, b) => String(a).normalize('NFC').toLowerCase() === String(b).normalize('NFC').toLowerCase();
 
 // 插件市场仓库（设置页“自动更新”行的仓库名链接指向它）
 const PLUGINS_REPO_URL = 'https://github.com/duanluan/zcode-plugins';
@@ -898,7 +901,7 @@ export function openSettingsDialog() {
         h('div', { class: 'mt-3 mb-1 text-ui-sm font-medium' }, L.sbGroupTurn),
         turnList);
       // —— “颜色”子页（paneStylesSub3）：预设皮肤卡片 + 自定义主题编辑 ——
-      // —— “背景图”子页（paneStylesSub4）：无背景 / 图库 / 文件夹轮换 / 网址 ——
+      // —— “壁纸”子页（paneStylesSub4）：无壁纸 / 图库 / 文件夹轮换 / 图片网址 / 网页 ——
       let themeCfg = structuredClone(config.theme || {});
       const numOrBg = (v, d) => (typeof v === 'number' && Number.isFinite(v) ? v : d);
       themeCfg.skin = themeCfg.skin || 'default';
@@ -951,14 +954,28 @@ export function openSettingsDialog() {
         renderThemeBg();
         const res = await rpc('/bg');
         bgLoading = false;
-        if (res.ok && Array.isArray(res.files)) bgFiles = res.files;
-        // 图库模式下当前文件可能已被删（同步/手动删除）：自动回无背景并提示一次
-        if (themeCfg.bg.mode === 'library' && themeCfg.bg.file
-          && !bgFiles.some((f) => f.name === themeCfg.bg.file)) {
-          themeCfg = { ...themeCfg, bg: { ...themeCfg.bg, file: '' } };
-          await saveTheme({ bg: { file: '' } });
-          showToast(L.themeBgDeletedActive, 'success');
-          return;
+        const listed = res.ok && Array.isArray(res.files);
+        if (listed) bgFiles = res.files;
+        // 清"指向已删文件的引用"只在拿到真实列表后做：取数失败时 bgFiles 是空的，
+        // 按空列表当"全删了"清引用会把还在的文件引用误清掉
+        if (listed) {
+          // 分区背景指向已删文件的引用一并清掉：否则分区继续请求已删文件名，静默铺不出图
+          const regionPatch = {};
+          for (const [k, r] of Object.entries(themeCfg.bg.regions || {})) {
+            if (r && r.mode === 'library' && r.file && !bgFiles.some((f) => sameName(f.name, r.file))) regionPatch[k] = { ...r, file: '' };
+          }
+          if (Object.keys(regionPatch).length) {
+            themeCfg = { ...themeCfg, bg: { ...themeCfg.bg, regions: { ...themeCfg.bg.regions, ...regionPatch } } };
+            await saveTheme({ bg: { regions: { ...themeCfg.bg.regions } } });
+          }
+          // 图库模式下当前文件可能已被删（同步/手动删除）：自动回无背景并提示一次
+          if (themeCfg.bg.mode === 'library' && themeCfg.bg.file
+            && !bgFiles.some((f) => sameName(f.name, themeCfg.bg.file))) {
+            themeCfg = { ...themeCfg, bg: { ...themeCfg.bg, file: '' } };
+            await saveTheme({ bg: { file: '' } });
+            showToast(L.themeBgDeletedActive, 'success');
+            return;
+          }
         }
         renderThemeBg();
       };
@@ -970,8 +987,9 @@ export function openSettingsDialog() {
           : { count: 0, dir: themeCfg.bg.folder };
         renderThemeBg();
       };
-      // 上传：多选文件逐张转 base64 传 helper；第一张上传且当前无背景时自动选为当前
-      const bgInput = h('input', { type: 'file', accept: '.png,.jpg,.jpeg,.webp,.gif,.bmp,.avif', multiple: '', style: 'display:none' });
+      // 上传：图片转 base64 传 helper，视频走 raw 字节流接口（base64 会把内存翻倍）；
+      // 第一个上传且当前无壁纸时自动选为当前
+      const bgInput = h('input', { type: 'file', accept: '.png,.jpg,.jpeg,.webp,.gif,.bmp,.avif,.mp4,.webm,.mov', multiple: '', style: 'display:none' });
       bgInput.addEventListener('change', () => {
         const files = [...bgInput.files || []];
         bgInput.value = '';
@@ -979,17 +997,26 @@ export function openSettingsDialog() {
         void (async () => {
           let first = themeCfg.bg.file;
           for (const f of files) {
-            const dataUrl = await new Promise((resolve) => {
-              const r = new FileReader();
-              r.onload = () => resolve(String(r.result || ''));
-              r.onerror = () => resolve('');
-              r.readAsDataURL(f);
-            });
-            if (!dataUrl) continue;
-            const res = await rpc('/bg', { method: 'POST', body: { name: f.name, data: dataUrl } });
-            if (!res.ok) { showToast(L.failed + ': ' + errText(res), 'error'); continue; }
+            let res = null;
+            if (/\.(mp4|webm|mov)$/i.test(f.name)) {
+              res = await fetch(`${HELPER_URL}/bg/upload?name=${encodeURIComponent(f.name)}`, {
+                method: 'POST',
+                headers: { 'X-ZCodePro-Token': liveBoot().token || '' },
+                body: f,
+              }).then((r) => r.json()).catch((e) => ({ ok: false, error: String((e && e.message) || e) }));
+            } else {
+              const dataUrl = await new Promise((resolve) => {
+                const r = new FileReader();
+                r.onload = () => resolve(String(r.result || ''));
+                r.onerror = () => resolve('');
+                r.readAsDataURL(f);
+              });
+              if (!dataUrl) continue;
+              res = await rpc('/bg', { method: 'POST', body: { name: f.name, data: dataUrl } });
+            }
+            if (!res || !res.ok) { showToast(L.failed + ': ' + errText(res || {}), 'error'); continue; }
             if (Array.isArray(res.files)) bgFiles = res.files;
-            if (!first) first = f.name;
+            if (!first) first = res.name || f.name; // 落盘名以 helper 回传为准（清洗可能改名）
           }
           if (first && first !== themeCfg.bg.file) await saveTheme({ bg: { file: first } });
           else renderThemeBg();
@@ -1076,17 +1103,24 @@ export function openSettingsDialog() {
         if (mode === 'library') {
           const sel = h('select', { class: 'h-7 max-w-40 rounded-lg border border-border bg-input px-1.5 text-ui-xs text-foreground outline-none' });
           sel.append(h('option', { value: '' }, '—'));
-          for (const f of bgFiles) sel.append(h('option', { value: f.name }, f.name));
+          for (const f of bgFiles) {
+            if (/\.(mp4|webm|mov)$/i.test(f.name)) continue; // 分区是 CSS 铺图，视频播不了
+            sel.append(h('option', { value: f.name }, f.name));
+          }
           sel.value = (cur && cur.file) || '';
           sel.addEventListener('change', () => setRegion(region, { ...cur, file: sel.value }));
           valueCtrl = sel;
         } else if (mode === 'folder') {
           const inp = h('input', { type: 'text', value: (cur && cur.folder) || '', class: themeInputCls.replace('h-8', 'h-7'), placeholder: '/path/to/wallpapers' });
-          inp.addEventListener('change', () => { if (inp.value.trim()) setRegion(region, { ...cur, folder: inp.value.trim() }); });
+          inp.addEventListener('change', () => { setRegion(region, { ...cur, folder: inp.value.trim() }); }); // 空值 = 清空目录，应用侧会撤掉旧图规则
           valueCtrl = inp;
         } else if (mode === 'url') {
           const inp = h('input', { type: 'url', value: (cur && cur.url) || '', class: themeInputCls.replace('h-8', 'h-7'), placeholder: 'https://...' });
-          inp.addEventListener('change', () => { if (/^https?:\/\/\S+$/.test(inp.value.trim())) setRegion(region, { ...cur, url: inp.value.trim() }); });
+          inp.addEventListener('change', () => {
+            const v = inp.value.trim();
+            if (/^https?:\/\/\S+$/.test(v) && !/[<>"'\\]/.test(v)) setRegion(region, { ...cur, url: v });
+            else { showToast(L.themeBgUrlInvalid, 'warning'); renderThemeBg(); } // 非法网址不保存：提示并回显已存值
+          });
           valueCtrl = inp;
         }
         return h('div', { class: 'flex flex-wrap items-center gap-2' },
@@ -1129,7 +1163,12 @@ export function openSettingsDialog() {
         const modeBtn = (id, label) => h('button', {
           type: 'button', class: 'zcodepro-tab',
           'data-state': themeCfg.bg.mode === id ? 'active' : 'inactive',
-          onClick: () => void saveTheme({ bg: { mode: id } }),
+          onClick: () => {
+            // url 与 web 共用 bg.url：互切时清空，别让另一模式的网址留着静默失效
+            const cur = themeCfg.bg.mode;
+            const cross = (cur === 'url' || cur === 'web') && (id === 'url' || id === 'web') && cur !== id;
+            void saveTheme({ bg: cross ? { mode: id, url: '' } : { mode: id } });
+          },
         }, label);
         // 文件夹路径输入 + 浏览（系统对话框）；确认时先校验目录再保存
         const folderInput = h('input', { type: 'text', value: themeCfg.bg.folder, class: themeInputCls, placeholder: '/path/to/wallpapers' });
@@ -1161,13 +1200,21 @@ export function openSettingsDialog() {
         const randomCheck = h('input', { type: 'checkbox' });
         randomCheck.checked = themeCfg.bg.folderRandom !== false;
         randomCheck.addEventListener('change', () => { void saveTheme({ bg: { folderRandom: randomCheck.checked } }); });
-        // 网址输入：change 提交；空值回无背景
+        // 图片网址输入：change 提交；空值回无壁纸
         const urlInput = h('input', { type: 'url', value: themeCfg.bg.url, class: themeInputCls, placeholder: 'https://...' });
         urlInput.addEventListener('change', () => {
           const v = urlInput.value.trim();
           if (!v) { void saveTheme({ bg: { mode: 'none', url: '' } }); return; }
-          if (!/^https?:\/\/\S+$/.test(v)) { showToast(L.themeBgUrlInvalid, 'warning'); renderThemeBg(); return; }
+          if (!/^https?:\/\/\S+$/.test(v) || /[<>"'\\]/.test(v)) { showToast(L.themeBgUrlInvalid, 'warning'); renderThemeBg(); return; }
           void saveTheme({ bg: { mode: 'url', url: v } });
+        });
+        // 网页壁纸输入：与图片网址共用 bg.url 字段，模式不同渲染方式不同
+        const webInput = h('input', { type: 'url', value: themeCfg.bg.url, class: themeInputCls, placeholder: 'https://...' });
+        webInput.addEventListener('change', () => {
+          const v = webInput.value.trim();
+          if (!v) { void saveTheme({ bg: { mode: 'none', url: '' } }); return; }
+          if (!/^https?:\/\/\S+$/.test(v) || /[<>"'\\]/.test(v)) { showToast(L.themeBgUrlInvalid, 'warning'); renderThemeBg(); return; }
+          void saveTheme({ bg: { mode: 'web', url: v } });
         });
         const libCard = (f) => {
           const del = h('button', {
@@ -1182,12 +1229,16 @@ export function openSettingsDialog() {
               })();
             },
           }, '✕');
+          // 视频用 <video> 拉首帧当缩略图（preload=metadata 只取元数据不下载全片）
+          const thumb = /\.(mp4|webm|mov)$/i.test(f.name)
+            ? h('video', { src: bgUrl(f.name), preload: 'metadata', muted: '' })
+            : h('img', { src: bgUrl(f.name), alt: '', loading: 'lazy' });
           return h('button', {
             type: 'button', class: 'zcodepro-bg-card',
-            'data-state': themeCfg.bg.mode === 'library' && themeCfg.bg.file === f.name ? 'active' : 'inactive',
+            'data-state': themeCfg.bg.mode === 'library' && sameName(themeCfg.bg.file, f.name) ? 'active' : 'inactive',
             title: f.name,
             onClick: () => void saveTheme({ bg: { mode: 'library', file: themeCfg.bg.file === f.name ? '' : f.name } }),
-          }, h('img', { src: bgUrl(f.name), alt: '', loading: 'lazy' }), del);
+          }, thumb, del);
         };
         const section = (titleText, body) => h('div', { class: 'mt-3' },
           h('div', { class: 'mb-1.5 text-ui-xs font-medium text-foreground-subtle' }, titleText), body);
@@ -1197,7 +1248,11 @@ export function openSettingsDialog() {
               h('span', { class: 'text-ui-xs/relaxed text-foreground-subtle' }, bgLoading ? '…' : (bgFiles.length ? '' : L.themeBgEmpty)),
               btnSmall(L.themeBgUpload, () => bgInput.click())),
             bgFiles.length ? h('div', { class: 'grid grid-cols-4 gap-2', style: 'max-height:13.5rem;overflow-y:auto;' },
-              ...bgFiles.map(libCard)) : null)),
+              ...bgFiles.map(libCard)) : null,
+            h('div', { class: 'flex items-center gap-2' },
+              h('label', { class: 'flex items-center gap-1.5 text-ui-xs text-foreground-subtle' }, randomCheck, L.themeBgFolderRandom),
+              numField(themeCfg.bg.intervalMin, 0, 1440, (v) => { void saveTheme({ bg: { intervalMin: v } }); }, L.themeBgIntervalHint),
+              h('span', { class: 'text-ui-xs text-foreground-subtle' }, L.themeBgIntervalUnit)))),
         ] : themeCfg.bg.mode === 'folder' ? [
           section(L.themeBgModeFolder, h('div', { class: 'flex flex-col gap-2' },
             h('div', { class: 'flex items-center gap-2' }, folderInput, browseBtn),
@@ -1216,17 +1271,52 @@ export function openSettingsDialog() {
               numField(themeCfg.bg.intervalMin, 0, 1440, (v) => { void saveTheme({ bg: { intervalMin: v } }); }, L.themeBgUrlIntervalHint),
               h('span', { class: 'text-ui-xs text-foreground-subtle' }, L.themeBgIntervalUnit)),
             h('p', { class: 'text-ui-xs/relaxed text-foreground-subtle' }, L.themeBgUrlHint))),
+        ] : themeCfg.bg.mode === 'web' ? [
+          section(L.themeBgModeWeb, h('div', { class: 'flex flex-col gap-2' },
+            webInput,
+            h('p', { class: 'text-ui-xs/relaxed text-foreground-subtle' }, L.themeBgWebHint))),
         ] : [h('p', { class: 'mt-3 text-ui-xs/relaxed text-foreground-subtle' }, L.themeBgNoneHint)];
         const fitBtn = (id, label) => h('button', {
           type: 'button', class: 'zcodepro-tab',
           'data-state': (themeCfg.bg.fit || 'cover') === id ? 'active' : 'inactive',
           onClick: () => void saveTheme({ bg: { fit: id } }),
         }, label);
+        const transBtn = (id, label) => h('button', {
+          type: 'button', class: 'zcodepro-tab',
+          'data-state': (themeCfg.bg.transition || 'cut') === id ? 'active' : 'inactive',
+          onClick: () => void saveTheme({ bg: { transition: id } }),
+        }, label);
+        const pauseCheck = (key, label) => {
+          const c = h('input', { type: 'checkbox' });
+          c.checked = key === 'pauseOnHidden' ? themeCfg.bg.pauseOnHidden !== false : !!themeCfg.bg[key];
+          c.addEventListener('change', () => void saveTheme({ bg: { [key]: c.checked } }));
+          return h('label', { class: 'flex items-center gap-1.5 text-ui-xs text-foreground-subtle' }, c, label);
+        };
+        // 播放行只作用于视频壁纸：音量滑杆 + 倍速/帧率下拉
+        const selectField = (value, options, commit) => {
+          const sel = h('select', { class: 'h-7 rounded-lg border border-border bg-input px-1.5 text-ui-xs text-foreground outline-none' });
+          for (const [v, label] of options) sel.append(h('option', { value: String(v) }, label));
+          sel.value = String(value);
+          sel.addEventListener('change', () => commit(sel.value));
+          return sel;
+        };
+        const labelledRow = (label, ctrl) => h('div', { class: 'flex items-center gap-3' },
+          h('span', { class: 'shrink-0 whitespace-nowrap text-ui-xs font-medium text-foreground-subtle', style: 'width:72px' }, label), ctrl);
+        const volumeRow = () => sliderRow(L.themeBgVolume, L.themeBgVolumeHint, 0, 100, 1, Math.round(numOr(themeCfg.bg.videoVolume, 0) * 100), '%',
+          (v) => { void saveTheme({ bg: { videoVolume: v / 100 } }); }, '');
+        const rateRow = () => labelledRow(L.themeBgRate,
+          selectField(numOr(themeCfg.bg.playbackRate, 1), [['0.5', '0.5x'], ['0.75', '0.75x'], ['1', '1x'], ['1.25', '1.25x'], ['1.5', '1.5x'], ['2', '2x']],
+            (v) => { void saveTheme({ bg: { playbackRate: Number(v) } }); }));
+        const fpsRow = () => h('div', { class: 'flex flex-col gap-0.5' },
+          labelledRow(L.themeBgFps, selectField(numOr(themeCfg.bg.fpsCap, 0), [['0', L.themeBgFpsOff], ['15', '15 fps'], ['30', '30 fps'], ['60', '60 fps']],
+            (v) => { void saveTheme({ bg: { fpsCap: Number(v) } }); })),
+          h('span', { class: 'text-ui-xs/relaxed text-foreground-subtle' }, L.themeBgFpsHint));
         paneStylesSub4.replaceChildren(
           h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.themeBgDesc),
           h('div', { class: 'mt-2 flex flex-wrap gap-1' },
             modeBtn('none', L.themeBgModeNone), modeBtn('library', L.themeBgModeLibrary),
-            modeBtn('folder', L.themeBgModeFolder), modeBtn('url', L.themeBgModeUrl)),
+            modeBtn('folder', L.themeBgModeFolder), modeBtn('url', L.themeBgModeUrl),
+            modeBtn('web', L.themeBgModeWeb)),
           ...modeArea,
           section(L.themeBgRegions, h('div', { class: 'flex flex-col gap-2' },
             regionRow('left', L.themeBgRegionLeft),
@@ -1236,8 +1326,18 @@ export function openSettingsDialog() {
             h('span', { class: 'text-ui-xs font-medium text-foreground-subtle' }, L.themeBgFit),
             fitBtn('cover', L.themeBgFitCover), fitBtn('contain', L.themeBgFitContain),
             fitBtn('fill', L.themeBgFitFill), fitBtn('tile', L.themeBgFitTile)),
+          h('div', { class: 'mt-3 flex flex-wrap items-center gap-2' },
+            h('span', { class: 'text-ui-xs font-medium text-foreground-subtle' }, L.themeBgTransition),
+            transBtn('cut', L.themeBgTransitionCut), transBtn('fade', L.themeBgTransitionFade)),
+          h('div', { class: 'mt-3 flex flex-wrap items-center gap-2' },
+            h('span', { class: 'text-ui-xs font-medium text-foreground-subtle' }, L.themeBgPause),
+            pauseCheck('pauseOnHidden', L.themeBgPauseHidden),
+            pauseCheck('pauseOnBlur', L.themeBgPauseBlur),
+            pauseCheck('pauseOnBattery', L.themeBgPauseBattery)),
           h('div', { class: 'mt-3 flex flex-col gap-2' },
             maskRow(), blurRow(), panelRow()),
+          section(L.themeBgPlayback, h('div', { class: 'flex flex-col gap-2' },
+            volumeRow(), rateRow(), fpsRow())),
           bgInput,
         );
       };
@@ -2029,7 +2129,7 @@ export function openSettingsDialog() {
         compressThresholdKB: 1024,
         skipAfterFailures: 2,
         skipMinutes: 30,
-        // forceIntercept 不写：缺省 = 自动（跟随宿主「模型设置」图片开关，zcode-vision ≥1.7.10）
+        // forceIntercept 不写：缺省 = 自动（跟随宿主「模型设置」图片开关，zcode-vision ≥1.7.9）
       };
       let visionCfg = visionRes.ok && visionRes.config && typeof visionRes.config === 'object'
         ? structuredClone(visionRes.config)

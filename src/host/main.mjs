@@ -14,6 +14,7 @@ import { readZcodeVersion } from './version.mjs';
 import { CdpConnection, fetchBrowserWsUrl } from './cdp.mjs';
 import { startHelper } from './helper.mjs';
 import { runSetup } from './setup.mjs';
+import { runWallpaperCli, installWallpaperDocs, removeWallpaperDocs } from './wallpaper.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const INJECT_BUNDLE = resolve(here, '..', '..', 'dist', 'inject.js');
@@ -34,7 +35,7 @@ if (process.platform === 'win32' && (process.stdout.isTTY || process.stdin.isTTY
 }
 
 function usage() {
-  return `ZCode Pro — ZCode 桌面版界面增强启动器
+  return `ZCode Pro — ZCode 桌面版增强启动器（壁纸引擎与界面增强）
 
 用法: zcode-pro [选项]
 
@@ -50,6 +51,7 @@ function usage() {
   setup                  安装本机集成（快捷方式：Linux 应用菜单 / Windows 开始菜单 / macOS 应用）
   setup --desktop        同时在桌面创建快捷方式
   setup --uninstall      移除由 setup 安装的集成（含桌面）
+  wallpaper <操作>       壁纸引擎控制：list/set/rotate/params/upload/delete（wallpaper -h 详览）
 
 环境变量:
   ZCODEPRO_ZCODE_PATH     ZCode 可执行文件路径（同 --zcode-path）
@@ -155,16 +157,35 @@ async function waitForCdp(port, timeoutMs) {
   return false;
 }
 
+// 沙箱透明样式：插件卡片（zcode-sandbox 壳/插件页）注入的唯一内容。
+// 不含 token、不碰宿主接口，只是把页面自带的实色 body 背景顶成透明，
+// 让壁纸从卡片透出（与注入层的 webview.insertCSS 双保险）
+const SANDBOX_STYLE_SCRIPT = `(() => {
+  const s = document.createElement('style');
+  s.textContent = 'html,body{background:transparent !important}';
+  (document.head || document.documentElement).append(s);
+})();`;
+
 async function buildInjectSource(token, helperPort, features, zcodeVersion) {
   if (!existsSync(INJECT_BUNDLE)) {
     throw new Error('缺少注入脚本 dist/inject.js，请先运行 npm run build');
   }
   const bundle = readFileSync(INJECT_BUNDLE, 'utf8');
   const bootstrap = `window.__ZCODEPRO__={helperUrl:'http://127.0.0.1:${helperPort}',token:${JSON.stringify(token)},features:${JSON.stringify(features)},zcodeVersion:${JSON.stringify(zcodeVersion || '')}};`;
-  return bootstrap + '\n' + bundle;
+  // token 护栏做成运行时自检：attach 时判定 URL 挡不住“空白初页 → 导航去沙箱/外网”
+  // 的目标（引导脚本会随 addScript 落进该会话之后的每个文档）。每文档执行时看真实
+  // href，沙箱/外链页面整段跳过，token 不出应用页；空白文档也跳过（真应用文档会
+  // 以自己的 URL 再触发一次钩子）
+  const guard = 'if (!/^(zcode-sandbox|about|data|blob|view-source):/i.test(location.href) && !(/^https?:\\/\\//i.test(location.href) && !/^https?:\\/\\/(127\\.0\\.0\\.1|localhost)(:\\d+)?(\\/|$|\\?|#)/i.test(location.href))) {';
+  return guard + bootstrap + '\n' + bundle + '\n}';
 }
 
 export async function run(argv) {
+  // wallpaper 子命令只碰壁纸配置/图库，不启动 ZCode，先于其余参数解析处理
+  if (argv[0] === 'wallpaper') {
+    process.exitCode = await runWallpaperCli(argv.slice(1), resolveDataRootDir());
+    return;
+  }
   const args = parseArgs(argv);
   if (args.help) { console.log(usage()); return; }
   // setup 不依赖 ZCode 运行（装快捷方式等本机集成），先于 ZCode 定位处理
@@ -175,6 +196,7 @@ export async function run(argv) {
       return;
     }
     await runSetup({ uninstall: args.setupUninstall, desktop: args.setupDesktop });
+    if (args.setupUninstall) { try { removeWallpaperDocs(resolveDataRootDir()); } catch { /* ignore */ } }
     return;
   }
   const log = (...a) => { if (args.verbose) console.log('[zcodepro]', ...a); };
@@ -193,6 +215,7 @@ export async function run(argv) {
   const zcodeVersion = readZcodeVersion(exe);
   if (args.verbose) console.log(`[zcodepro] ZCode 版本: ${zcodeVersion || '未知（app.asar 读取失败）'}`);
   const dataRoot = resolveDataRootDir();
+  try { installWallpaperDocs(dataRoot); } catch { /* 命令/技能文件写入失败不挡启动 */ }
   const token = randomBytes(16).toString('hex');
   const state = { injectedPages: 0 };
 
@@ -248,13 +271,38 @@ export async function run(argv) {
 
     const handleAttach = async (sessionId, targetInfo) => {
       const targetId = targetInfo?.targetId;
-      if (!targetId || targetInfo?.type !== 'page') return;
+      if (!targetId) return;
+      const pageUrl = String(targetInfo?.url || '');
+      // 插件卡片（zcode-sandbox 壳 + 插件页 iframe）：只注入透明背景样式，不带
+      // 引导脚本——沙箱页面拿不到 token，下面的护栏不受影响。背景透明后壁纸能
+      // 从卡片透出（插件页自带的实色 body 背景被这条 !important 顶掉）
+      if (/^zcode-sandbox:\/\//i.test(pageUrl)) {
+        // 每步独立容错：iframe 会话上 addScript 若被拒，立即执行那步不能跟着一起死，
+        // 否则样式永远进不去（白底卡片的根因）
+        let ok = false;
+        try {
+          await conn.send('Page.enable', {}, sessionId);
+          await conn.send('Page.addScriptToEvaluateOnNewDocument', { source: SANDBOX_STYLE_SCRIPT, runImmediately: true }, sessionId);
+          ok = true;
+        } catch (err) {
+          log('沙箱新文档钩子注册失败（继续立即执行）: ' + err.message);
+        }
+        try {
+          await conn.send('Runtime.evaluate', { expression: SANDBOX_STYLE_SCRIPT, silent: true }, sessionId);
+          ok = true;
+        } catch (err) {
+          log('沙箱立即注入失败: ' + err.message);
+        }
+        if (ok) log('已注入沙箱透明样式: ' + pageUrl.slice(0, 60));
+        return;
+      }
+      if (targetInfo?.type !== 'page') return;
       // 安全护栏：引导脚本内含 helper 鉴权 token，只能注入 ZCode 应用自身的页面。
       // 外部网站若以内嵌浏览器/网页形式成为 page target，拿到 token 即可调用本地
       // helper（改写增强配置/别名表等）。规则：放行非 http(s)（file://、应用自有协议）与
       // 本机回环地址，拦截其余外部网页。代价是 http(s) 非 localhost 的自有页面不注入。
-      const pageUrl = String(targetInfo?.url || '');
-      const isExternalWeb = /^https?:\/\//i.test(pageUrl) && !/^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?/i.test(pageUrl);
+      const isExternalWeb = (/^https?:\/\//i.test(pageUrl) && !/^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?(\/|$|\?|#)/i.test(pageUrl))
+        || /^(data|blob|view-source|about):/i.test(pageUrl); // 非 http 协议的子文档也能拿 token，一并跳过
       if (isExternalWeb) {
         log('跳过外部页面注入（防止 token 泄露）: ' + pageUrl.slice(0, 120));
         return;

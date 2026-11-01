@@ -1,7 +1,7 @@
 {
   "name": "zcode-pro",
   "version": "1.5.2",
-  "description": "ZCode Pro — 为 ZCode 桌面版增加界面增强（不修改客户端文件，通过 ZCode Pro 快捷方式启动即可），核心功能：项目自定义别名",
+  "description": "ZCode Pro — ZCode 桌面版增强工具：壁纸引擎（图片/视频/网页）、皮肤主题、会话快捷切换、状态栏统计等二十余项界面与体验增强；不修改客户端文件，用 ZCode Pro 快捷方式启动即可生效。",
   "type": "module",
   "bin": {
     "zcode-pro": "./bin/zcode-pro.mjs"

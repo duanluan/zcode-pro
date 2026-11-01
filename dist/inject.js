@@ -183,7 +183,7 @@
     syncIncludeZcp: "ZCode Pro \u8BBE\u7F6E",
     syncIncludeZcpDesc: "\u529F\u80FD\u5F00\u5173\u3001\u6837\u5F0F\u8C03\u6574\u4E0E\u4EE3\u7406\u8BBE\u7F6E\uFF1B\u540C\u6B65\u914D\u7F6E\u4E0E\u51ED\u636E\u672C\u8EAB\u4E0D\u53C2\u4E0E\u540C\u6B65\u3002\u9879\u76EE\u522B\u540D\u4E0D\u540C\u6B65\uFF08\u5B98\u65B9\u5DF2\u652F\u6301\u6539\u9879\u76EE\u540D\uFF09\u3002",
     syncIncludeModel: "\u6A21\u578B\u8BBE\u7F6E",
-    syncIncludeModelDesc: "\u81EA\u5B9A\u4E49\u4F9B\u5E94\u5546\u4E0E\u6A21\u578B\u914D\u7F6E\uFF08config.json \u4E0E provider_config.json\uFF0C\u542B API Key\uFF09\u3002\u8D26\u53F7\u767B\u5F55\u7684\u51ED\u636E\uFF08\u5982 BigModel \u8BA2\u9605\uFF09\u4E0D\u53C2\u4E0E\u540C\u6B65\uFF0C\u5404\u673A\u5668\u7528\u5404\u81EA\u8D26\u53F7\u767B\u5F55\u3002",
+    syncIncludeModelDesc: "\u81EA\u5B9A\u4E49\u4F9B\u5E94\u5546\u4E0E\u6A21\u578B\u914D\u7F6E\uFF08config.json \u4E0E provider_config.json\uFF0C\u542B API Key\uFF09\u4E0E Headroom \u4F9B\u5E94\u5546\u6620\u5C04\uFF08headroom.json\uFF0Ckey \u4EC5\u4EE5 keyHash \u5B58\u50A8\u3001\u4E0D\u542B\u660E\u6587\uFF09\u3002\u8D26\u53F7\u767B\u5F55\u7684\u51ED\u636E\uFF08\u5982 BigModel \u8BA2\u9605\uFF09\u4E0D\u53C2\u4E0E\u540C\u6B65\uFF0C\u5404\u673A\u5668\u7528\u5404\u81EA\u8D26\u53F7\u767B\u5F55\u3002",
     syncUpload: "\u4E0A\u4F20\u5230\u4E91\u7AEF",
     syncDownload: "\u4ECE\u4E91\u7AEF\u4E0B\u8F7D",
     syncUploading: "\u4E0A\u4F20\u4E2D\u2026",
@@ -335,7 +335,7 @@
     themeBgRegionLeft: "\u5DE6\u4FA7\u8FB9\u680F",
     themeBgRegionCenter: "\u4E2D\u95F4\u533A\u57DF",
     themeBgRegionRight: "\u53F3\u4FA7\u8FB9\u680F",
-    themeBgPane: "\u80CC\u666F\u56FE",
+    themeBgPane: "\u58C1\u7EB8",
     themeSkinTitle: "\u76AE\u80A4",
     themeSkinDesc: "\u77E5\u540D\u7F16\u8F91\u5668\u4E3B\u9898\u914D\u8272\uFF0C\u81EA\u52A8\u5339\u914D ZCode \u7684\u6D45\u8272 / \u6DF1\u8272\u6A21\u5F0F\uFF1B\u9ED8\u8BA4\u4FDD\u6301 ZCode \u539F\u6837\uFF0C\u81EA\u5B9A\u4E49\u5728\u4E0B\u65B9\u81EA\u884C\u8C03\u8272\u3002",
     themeSkinCustom: "\u81EA\u5B9A\u4E49",
@@ -348,39 +348,55 @@
     themeCustomFg: "\u6B63\u6587",
     themeCustomMuted: "\u6B21\u7EA7\u6587\u5B57",
     themeCustomAccent: "\u5F3A\u8C03\u8272",
-    themeBgDesc: "\u80CC\u666F\u6765\u6E90\u53EF\u9009\u672C\u5730\u56FE\u5E93\u3001\u6587\u4EF6\u5939\uFF08\u5B9A\u65F6\u8F6E\u6362\uFF09\u6216\u7F51\u5740\uFF08\u5B9A\u65F6\u5237\u65B0\uFF09\uFF0C\u5DE6\u680F / \u4E2D\u680F / \u53F3\u680F\u53EF\u5206\u533A\u72EC\u7ACB\u8BBE\u7F6E\uFF1B\u4FA7\u680F\u3001\u4F1A\u8BDD\u6D41\u3001\u8F93\u5165\u6846\u900F\u51FA\u80CC\u666F\uFF0C\u5F39\u7A97\u83DC\u5355\u4FDD\u6301\u4E0D\u900F\u660E\u4FDD\u53EF\u8BFB\u3002\u672C\u5730\u56FE\u5E93\u968F WebDAV \u540C\u6B65\u4E0A\u4F20\uFF08\u8986\u76D6\u5F0F\uFF0C\u4E0D\u7559\u5386\u53F2\u7248\u672C\uFF09\u3002",
-    themeBgModeNone: "\u65E0\u80CC\u666F",
+    themeBgDesc: "\u58C1\u7EB8\u652F\u6301\u56FE\u7247\u3001\u89C6\u9891\u3001\u7F51\u9875\u4E09\u7C7B\uFF0C\u94FA\u5728\u754C\u9762\u540E\u65B9\uFF1B\u6765\u6E90\u53EF\u9009\u672C\u5730\u56FE\u5E93\u3001\u6587\u4EF6\u5939\uFF08\u5B9A\u65F6\u8F6E\u6362\uFF09\u3001\u56FE\u7247\u7F51\u5740\uFF08\u5B9A\u65F6\u5237\u65B0\uFF09\u6216\u7F51\u9875\u5730\u5740\uFF0C\u5DE6\u680F / \u4E2D\u680F / \u53F3\u680F\u53EF\u5206\u533A\u72EC\u7ACB\u8BBE\u7F6E\uFF08\u4EC5\u9759\u6001\u56FE\uFF09\uFF1B\u4FA7\u680F\u3001\u4F1A\u8BDD\u6D41\u3001\u8F93\u5165\u6846\u900F\u51FA\u753B\u9762\uFF0C\u5F39\u7A97\u83DC\u5355\u4FDD\u6301\u4E0D\u900F\u660E\u4FDD\u53EF\u8BFB\u3002\u672C\u5730\u56FE\u5E93\u968F WebDAV \u540C\u6B65\u4E0A\u4F20\uFF08\u8986\u76D6\u5F0F\uFF0C\u4E0D\u7559\u5386\u53F2\u7248\u672C\uFF09\u3002",
+    themeBgModeNone: "\u65E0\u58C1\u7EB8",
     themeBgModeLibrary: "\u672C\u5730\u56FE\u5E93",
     themeBgModeFolder: "\u6587\u4EF6\u5939",
-    themeBgModeUrl: "\u7F51\u5740",
+    themeBgModeUrl: "\u56FE\u7247\u7F51\u5740",
+    themeBgModeWeb: "\u7F51\u9875",
     themeBgLibrary: "\u6211\u7684\u56FE\u5E93",
-    themeBgUpload: "\u4E0A\u4F20\u56FE\u7247",
-    themeBgEmpty: "\u8FD8\u6CA1\u6709\u4E0A\u4F20\u56FE\u7247\uFF0C\u652F\u6301 png / jpg / webp / gif / bmp / avif\uFF0C\u5355\u5F20 10MB \u4EE5\u5185",
+    themeBgUpload: "\u4E0A\u4F20\u56FE\u7247/\u89C6\u9891",
+    themeBgEmpty: "\u8FD8\u6CA1\u6709\u4E0A\u4F20\u6587\u4EF6\uFF1B\u56FE\u7247\u652F\u6301 png / jpg / webp / gif / bmp / avif\uFF0810MB \u4EE5\u5185\uFF09\uFF0C\u89C6\u9891\u652F\u6301 mp4 / webm / mov\uFF08200MB \u4EE5\u5185\uFF09",
     themeBgDelete: "\u5220\u9664",
-    themeBgNoneHint: "\u9009\u62E9\u4E00\u79CD\u80CC\u666F\u6765\u6E90\uFF1B\u6587\u4EF6\u5939\u53EF\u5B9A\u65F6\u8F6E\u6362\uFF0C\u7F51\u5740\u53EF\u914D\u5408\u968F\u673A\u56FE API \u5B9A\u65F6\u5237\u65B0\u3002",
+    themeBgNoneHint: "\u9009\u62E9\u4E00\u79CD\u58C1\u7EB8\u6765\u6E90\uFF1B\u56FE\u5E93\u548C\u6587\u4EF6\u5939\u53EF\u5B9A\u65F6\u8F6E\u6362\uFF0C\u56FE\u7247\u7F51\u5740\u53EF\u914D\u5408\u968F\u673A\u56FE API \u5B9A\u65F6\u5237\u65B0\u3002",
     themeBgFolderPick: "\u6D4F\u89C8",
-    themeBgFolderPickTitle: "\u9009\u62E9\u80CC\u666F\u56FE\u6587\u4EF6\u5939",
-    themeBgFolderHint: "\u9009\u62E9\u4E00\u4E2A\u88C5\u58C1\u7EB8\u7684\u6587\u4EF6\u5939\uFF0C\u56FE\u7247\u539F\u5730\u8BFB\u53D6\u4E0D\u590D\u5236\u3002",
+    themeBgFolderPickTitle: "\u9009\u62E9\u58C1\u7EB8\u6587\u4EF6\u5939",
+    themeBgFolderHint: "\u9009\u62E9\u4E00\u4E2A\u88C5\u58C1\u7EB8\u7684\u6587\u4EF6\u5939\uFF0C\u6587\u4EF6\u539F\u5730\u8BFB\u53D6\u4E0D\u590D\u5236\u3002",
     themeBgFolderRandom: "\u968F\u673A\u987A\u5E8F",
     themeBgIntervalHint: "\u5207\u6362\u95F4\u9694\uFF08\u5206\u949F\uFF09",
     themeBgIntervalUnit: "\u5206\u949F\uFF0C0 = \u4E0D\u5207\u6362",
-    themeBgFolderCount: "\u6587\u4EF6\u5939\u91CC\u6709 {n} \u5F20\u56FE\u7247\uFF0C\u5B9A\u65F6\u8F6E\u6362\u4E2D\u3002",
-    themeBgFolderMissing: "\u6587\u4EF6\u5939\u4E0D\u5B58\u5728\u6216\u91CC\u9762\u6CA1\u6709\u56FE\u7247\u3002",
+    themeBgFolderCount: "\u6587\u4EF6\u5939\u91CC\u6709 {n} \u4E2A\u58C1\u7EB8\u6587\u4EF6\uFF0C\u5B9A\u65F6\u8F6E\u6362\u4E2D\u3002",
+    themeBgFolderMissing: "\u6587\u4EF6\u5939\u4E0D\u5B58\u5728\u6216\u91CC\u9762\u6CA1\u6709\u58C1\u7EB8\u6587\u4EF6\u3002",
     themeBgUrlHint: "\u5B9A\u65F6\u5237\u65B0\u9002\u5408\u968F\u673A\u56FE API\uFF08\u6BCF\u6B21\u8BF7\u6C42\u8FD4\u56DE\u4E0D\u540C\u56FE\uFF09\uFF1B\u5237\u65B0\u65F6\u5E26\u7F13\u5B58\u53C2\u6570\u907F\u514D\u547D\u4E2D\u7F13\u5B58\u3002",
     themeBgUrlIntervalHint: "\u5237\u65B0\u95F4\u9694\uFF08\u5206\u949F\uFF09",
     themeBgUrlInvalid: "\u7F51\u5740\u9700\u4EE5 http(s):// \u5F00\u5934",
+    themeBgWebHint: "\u7F51\u9875\u58C1\u7EB8\u7528\u6C99\u7BB1 iframe \u94FA\u5728\u754C\u9762\u540E\u65B9\uFF0C\u9875\u9762\u9700\u81EA\u884C\u64AD\u653E\u52A8\u753B\u6216\u89C6\u9891\uFF1B\u4EC5\u9875\u9762\u81EA\u8EAB\u900F\u660E\u5E95\u65F6\u80FD\u900F\u51FA\u58C1\u7EB8\uFF0C\u90E8\u5206\u4F9D\u8D56\u767B\u5F55\u6001\u7684\u9875\u9762\u65E0\u6CD5\u663E\u793A\u3002",
     themeBgFit: "\u7F29\u653E\u65B9\u5F0F",
     themeBgFitCover: "\u586B\u6EE1",
     themeBgFitContain: "\u9002\u5E94",
     themeBgFitFill: "\u62C9\u4F38",
     themeBgFitTile: "\u5E73\u94FA",
     themeBgMask: "\u906E\u7F69\u4E0D\u900F\u660E\u5EA6",
-    themeBgMaskHint: "\u6570\u503C\u8D8A\u9AD8\uFF0C\u56FE\u7247\u8D8A\u5411\u4E3B\u9898\u80CC\u666F\u8272\u6DE1\u5316\uFF0C\u6587\u5B57\u5BF9\u6BD4\u8D8A\u6E05\u6670",
-    themeBgMaskHint2: "\u56FE\u7247\u5411\u4E3B\u9898\u80CC\u666F\u8272\u6DE1\u5316\u7684\u7A0B\u5EA6",
-    themeBgBlur: "\u56FE\u7247\u6A21\u7CCA",
+    themeBgMaskHint: "\u6570\u503C\u8D8A\u9AD8\uFF0C\u753B\u9762\u8D8A\u5411\u4E3B\u9898\u80CC\u666F\u8272\u6DE1\u5316\uFF0C\u6587\u5B57\u5BF9\u6BD4\u8D8A\u6E05\u6670",
+    themeBgMaskHint2: "\u753B\u9762\u5411\u4E3B\u9898\u80CC\u666F\u8272\u6DE1\u5316\u7684\u7A0B\u5EA6",
+    themeBgBlur: "\u753B\u9762\u6A21\u7CCA",
     themeBgPanel: "\u9762\u677F\u4E0D\u900F\u660E\u5EA6",
-    themeBgPanelHint: "\u4FA7\u680F\u3001\u9762\u677F\u4E0E\u6807\u7B7E\u680F\u7684\u4E0D\u900F\u660E\u7A0B\u5EA6\u3002\u8D8A\u4F4E\uFF0C\u900F\u51FA\u7684\u56FE\u7247\u8D8A\u591A\u3002",
-    themeBgDeletedActive: "\u5F53\u524D\u80CC\u666F\u5DF2\u5220\u9664\uFF0C\u5DF2\u81EA\u52A8\u505C\u7528\u80CC\u666F",
+    themeBgPanelHint: "\u4FA7\u680F\u3001\u9762\u677F\u4E0E\u6807\u7B7E\u680F\u7684\u4E0D\u900F\u660E\u7A0B\u5EA6\u3002\u8D8A\u4F4E\uFF0C\u900F\u51FA\u7684\u753B\u9762\u8D8A\u591A\u3002",
+    themeBgPlayback: "\u64AD\u653E",
+    themeBgVolume: "\u97F3\u91CF",
+    themeBgVolumeHint: "\u89C6\u9891\u58C1\u7EB8\u7684\u97F3\u8F68\u97F3\u91CF\uFF0C0 = \u9759\u97F3\uFF08\u9ED8\u8BA4\uFF09",
+    themeBgRate: "\u500D\u901F",
+    themeBgFps: "\u5E27\u7387\u4E0A\u9650",
+    themeBgFpsOff: "\u539F\u59CB\u5E27\u7387",
+    themeBgFpsHint: "\u5BF9\u89C6\u9891\u58C1\u7EB8\u91CD\u7F16\u7801\u62BD\u5E27\u4EE5\u7701\u8D44\u6E90\uFF0C\u9700\u8981 ffmpeg\uFF1B\u672A\u5B89\u88C5\u65F6\u4FDD\u6301\u539F\u59CB\u5E27\u7387\u3002",
+    themeBgTransition: "\u5207\u6362\u8F6C\u573A",
+    themeBgTransitionCut: "\u786C\u5207",
+    themeBgTransitionFade: "\u6DE1\u5165\u6DE1\u51FA",
+    themeBgPause: "\u6682\u505C\u6761\u4EF6",
+    themeBgPauseHidden: "\u7A97\u53E3\u6700\u5C0F\u5316\u65F6",
+    themeBgPauseBlur: "\u7A97\u53E3\u5931\u7126\u65F6",
+    themeBgPauseBattery: "\u7535\u6C60\u4F9B\u7535\u65F6",
+    themeBgDeletedActive: "\u5F53\u524D\u58C1\u7EB8\u5DF2\u5220\u9664\uFF0C\u5DF2\u81EA\u52A8\u505C\u7528\u58C1\u7EB8",
     tableCopyBtn: "\u590D\u5236\u8868\u683C",
     tableCopied: "\u8868\u683C\u5DF2\u590D\u5236",
     sbItemCtx: "\u4E0A\u4E0B\u6587\u5360\u7528",
@@ -466,7 +482,7 @@
     visionForceInterceptAuto: "\u4E0D\u80FD\u8BC6\u56FE\u5C31\u4F7F\u7528\u63D2\u4EF6",
     visionForceInterceptTrue: "\u59CB\u7EC8\u4F7F\u7528\u63D2\u4EF6",
     visionForceInterceptFalse: "\u4E0D\u4F7F\u7528\u63D2\u4EF6",
-    visionForceInterceptHint: "\u4E0D\u80FD\u8BC6\u56FE\u5C31\u4F7F\u7528\u63D2\u4EF6 = \u8DDF\u968F ZCode\u300C\u6A21\u578B\u8BBE\u7F6E\u300D\u91CC\u8BE5\u6A21\u578B\u7684\u56FE\u7247\u5F00\u5173\uFF1A\u5F00 = \u6A21\u578B\u81EA\u770B\u4E0D\u91CD\u590D\u8BC6\u522B\uFF0C\u5173 = \u8D70 vision_ask\uFF08\u8BC6\u522B\u6709\u5361\u7247\uFF09\uFF1B\u59CB\u7EC8\u4F7F\u7528\u63D2\u4EF6 = \u80FD\u770B\u56FE\u4E5F\u5F3A\u5236\u8D70\u8BC6\u522B\u4EE3\u7406\uFF08\u53CC\u91CD\u8BC6\u522B\u6362\u5361\u7247\uFF09\uFF1B\u4E0D\u4F7F\u7528\u63D2\u4EF6 = \u80FD\u770B\u56FE\u5C31\u653E\u884C\uFF08\u4E0D\u80FD\u8BC6\u56FE\u7684\u6A21\u578B\u4ECD\u8D70\u8BC6\u522B\u4EE3\u7406\uFF09",
+    visionForceInterceptHint: "\u4E0D\u80FD\u8BC6\u56FE\u5C31\u4F7F\u7528\u63D2\u4EF6 = \u8DDF\u968F ZCode\u300C\u6A21\u578B\u8BBE\u7F6E\u300D\u91CC\u8BE5\u6A21\u578B\u7684\u56FE\u7247\u5F00\u5173\uFF1A\u5F00 = \u6A21\u578B\u81EA\u770B\u4E0D\u91CD\u590D\u8BC6\u522B\uFF0C\u5173 = \u8D70\u8BC6\u522B\u4EE3\u7406\uFF08tool \u6A21\u5F0F\u51FA\u8BC6\u522B\u5361\u7247\uFF09\uFF1B\u59CB\u7EC8\u4F7F\u7528\u63D2\u4EF6 = \u80FD\u770B\u56FE\u4E5F\u5F3A\u5236\u8D70\u8BC6\u522B\u4EE3\u7406\uFF08\u53CC\u91CD\u8BC6\u522B\u6362\u5361\u7247\uFF09\uFF1B\u4E0D\u4F7F\u7528\u63D2\u4EF6 = \u80FD\u770B\u56FE\u5C31\u653E\u884C\uFF08\u4E0D\u80FD\u8BC6\u56FE\u7684\u6A21\u578B\u4ECD\u8D70\u8BC6\u522B\u4EE3\u7406\uFF09",
     visionMode: "\u94FE\u6A21\u5F0F",
     visionModeFallback: "\u4F9D\u6B21\u5C1D\u8BD5",
     visionModeFallbackDesc: "\u524D\u4E00\u4E2A\u5931\u8D25\u624D\u8BD5\u4E0B\u4E00\u4E2A\uFF0C\u4EFB\u4E00\u6210\u529F\u5373\u6B62\uFF08\u4E3B\u529B + \u5907\u7528\uFF09\u3002",
@@ -730,7 +746,7 @@
     syncIncludeZcp: "ZCode Pro settings",
     syncIncludeZcpDesc: "Feature toggles, style adjustments and the proxy setting; the sync config and credentials themselves are never synced. Project aliases are not synced (renaming is built in now).",
     syncIncludeModel: "Model settings",
-    syncIncludeModelDesc: "Custom providers and model config (config.json and provider_config.json, API keys included). Account sign-in credentials (e.g. the BigModel subscription) are not synced; each computer signs in with its own account.",
+    syncIncludeModelDesc: "Custom providers and model config (config.json and provider_config.json, API keys included) and the Headroom provider map (headroom.json; keys are stored as keyHashes, never in plaintext). Account sign-in credentials (e.g. the BigModel subscription) are not synced; each computer signs in with its own account.",
     syncUpload: "Upload",
     syncDownload: "Download",
     syncUploading: "Uploading\u2026",
@@ -882,7 +898,7 @@
     themeBgRegionLeft: "Left sidebar",
     themeBgRegionCenter: "Center area",
     themeBgRegionRight: "Right sidebar",
-    themeBgPane: "Background",
+    themeBgPane: "Wallpaper",
     themeSkinTitle: "Skins",
     themeSkinDesc: 'Famous editor theme palettes, auto-matching ZCode\u2019s light / dark mode; "Default" keeps ZCode as-is, "Custom" is tuned below.',
     themeSkinCustom: "Custom",
@@ -895,39 +911,55 @@
     themeCustomFg: "Text",
     themeCustomMuted: "Muted text",
     themeCustomAccent: "Accent",
-    themeBgDesc: "Sources: local library, folder (rotate on a timer) or URL (refresh on a timer); left / center / right regions can each have their own. Sidebar, chat and composer reveal the background while menus and dialogs stay opaque. The library uploads with the zcode-pro sync group (overwrite, no history versions).",
+    themeBgDesc: "Wallpapers can be images, videos or web pages, rendered behind the UI. Sources: local library, folder (rotate on a timer), image URL (refresh on a timer) or a web page; left / center / right regions can each have their own (static images only). Sidebar, chat and composer reveal the wallpaper while menus and dialogs stay opaque. The library uploads with the zcode-pro sync group (overwrite, no history versions).",
     themeBgModeNone: "None",
     themeBgModeLibrary: "Library",
     themeBgModeFolder: "Folder",
-    themeBgModeUrl: "URL",
+    themeBgModeUrl: "Image URL",
+    themeBgModeWeb: "Web page",
     themeBgLibrary: "My library",
-    themeBgUpload: "Upload",
-    themeBgEmpty: "No images yet. png / jpg / webp / gif / bmp / avif, up to 10MB each",
+    themeBgUpload: "Upload images/videos",
+    themeBgEmpty: "Nothing uploaded yet. Images: png / jpg / webp / gif / bmp / avif (up to 10MB); videos: mp4 / webm / mov (up to 200MB)",
     themeBgDelete: "Delete",
-    themeBgNoneHint: "Pick a background source; folders rotate on a timer, URLs refresh on a timer for random-image APIs.",
+    themeBgNoneHint: "Pick a wallpaper source; library and folder rotate on a timer, image URLs refresh on a timer for random-image APIs.",
     themeBgFolderPick: "Browse",
     themeBgFolderPickTitle: "Choose a wallpaper folder",
-    themeBgFolderHint: "Pick a folder of wallpapers; images are read in place, not copied.",
+    themeBgFolderHint: "Pick a folder of wallpapers; files are read in place, not copied.",
     themeBgFolderRandom: "Random order",
     themeBgIntervalHint: "Switch interval (minutes)",
     themeBgIntervalUnit: "min, 0 = off",
-    themeBgFolderCount: "{n} images in the folder, rotating on the timer.",
-    themeBgFolderMissing: "Folder missing or contains no images.",
+    themeBgFolderCount: "{n} wallpaper files in the folder, rotating on the timer.",
+    themeBgFolderMissing: "Folder missing or contains no wallpaper files.",
     themeBgUrlHint: "Timed refresh suits random-image APIs (each request returns a new image); a cache-buster is appended on refresh.",
     themeBgUrlIntervalHint: "Refresh interval (minutes)",
     themeBgUrlInvalid: "URL must start with http(s)://",
+    themeBgWebHint: "Web wallpapers render behind the UI in a sandboxed iframe; the page plays its own animation or video. Only pages with their own transparent background reveal the wallpaper; pages that need a login session may not show.",
     themeBgFit: "Fit",
     themeBgFitCover: "Fill",
     themeBgFitContain: "Fit",
     themeBgFitFill: "Stretch",
     themeBgFitTile: "Tile",
     themeBgMask: "Mask opacity",
-    themeBgMaskHint: "Higher values fade the image toward the theme background color for clearer text",
-    themeBgMaskHint2: "How much the image fades toward the theme background color",
-    themeBgBlur: "Image blur",
+    themeBgMaskHint: "Higher values fade the wallpaper toward the theme background color for clearer text",
+    themeBgMaskHint2: "How much the wallpaper fades toward the theme background color",
+    themeBgBlur: "Wallpaper blur",
     themeBgPanel: "Panel opacity",
-    themeBgPanelHint: "Opacity of sidebar, panels and tab bar. Lower reveals more of the image.",
-    themeBgDeletedActive: "Active background was deleted; background disabled",
+    themeBgPanelHint: "Opacity of sidebar, panels and tab bar. Lower reveals more of the wallpaper.",
+    themeBgPlayback: "Playback",
+    themeBgVolume: "Volume",
+    themeBgVolumeHint: "Audio track volume of video wallpapers, 0 = muted (default)",
+    themeBgRate: "Speed",
+    themeBgFps: "FPS cap",
+    themeBgFpsOff: "Native",
+    themeBgFpsHint: "Re-encodes video wallpapers to a lower frame rate to save resources; needs ffmpeg, otherwise the native rate is kept.",
+    themeBgTransition: "Transition",
+    themeBgTransitionCut: "Cut",
+    themeBgTransitionFade: "Fade",
+    themeBgPause: "Pause when",
+    themeBgPauseHidden: "Window minimized",
+    themeBgPauseBlur: "Window unfocused",
+    themeBgPauseBattery: "On battery",
+    themeBgDeletedActive: "Active wallpaper was deleted; wallpaper disabled",
     tableCopyBtn: "Copy table",
     tableCopied: "Table copied",
     sbItemCtx: "Context usage",
@@ -1013,7 +1045,7 @@
     visionForceInterceptAuto: "Use plugin only if model can't see images",
     visionForceInterceptTrue: "Always use plugin",
     visionForceInterceptFalse: "Never use plugin",
-    visionForceInterceptHint: "Use plugin only if model can't see images = follow the image toggle in ZCode model settings: on = the model sees images itself (no duplicate recognition), off = route through vision_ask (result card); Always use plugin = forced double recognition for the card; Never use plugin = let capable models see images (models that can't still go through the plugin)",
+    visionForceInterceptHint: "Use plugin only if model can't see images = follow the image toggle in ZCode model settings: on = the model sees images itself (no duplicate recognition), off = route through the vision proxy (tool mode shows the result card); Always use plugin = forced double recognition for the card; Never use plugin = let capable models see images (models that can't still go through the plugin)",
     visionMode: "Chain mode",
     visionModeFallback: "Fallback",
     visionModeFallbackDesc: "Try in order until one succeeds (primary + backup).",
@@ -1374,6 +1406,13 @@
     const prevActive = document.activeElement;
     let cleanupDrag = null;
     const close = () => {
+      const active = document.activeElement;
+      if (active && overlayEl.contains(active)) {
+        try {
+          active.blur();
+        } catch {
+        }
+      }
       overlayEl.remove();
       dialogStack = dialogStack.filter((e) => e !== overlayEl);
       document.removeEventListener("keydown", onKey);
@@ -1877,7 +1916,7 @@
     }
     .zcodepro-bg-card:hover { filter: brightness(1.15); }
     .zcodepro-bg-card[data-state="active"] { border-color: var(--color-primary, #333); }
-    .zcodepro-bg-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .zcodepro-bg-card img, .zcodepro-bg-card video { width: 100%; height: 100%; object-fit: cover; display: block; }
     .zcodepro-bg-del {
       position: absolute; top: 4px; right: 4px; width: 20px; height: 20px;
       border-radius: 6px; border: none; cursor: pointer; font-size: 11px; line-height: 1;
@@ -4297,16 +4336,27 @@
   var classObserver = null;
   var currentTheme = { skin: "default", custom: null, bg: { mode: "none", maskOpacity: 0.82, blurPx: 0, panelOpacity: 0.3 } };
   var lastModeSig = "";
+  var lastThemeSig = "";
+  var themePollTimer = null;
   var bgTimer = null;
+  var bgTimerMs = 0;
+  var wpShowTicket = 0;
+  var wpSlide = null;
+  var wpMask = null;
+  var wpMedia = null;
+  var wpTimers = /* @__PURE__ */ new Set();
+  var lastWpSig = "";
+  var batteryCharging = null;
   var regionStyleEl = null;
-  var regionTimers = [];
   var regionFolderIdx = { left: -1, center: -1, right: -1 };
   var REGION_SELECTORS = {
     left: 'div[class*="workspace-sidebar-panel-width"]',
     center: '[data-testid="conversation-column"]',
     right: '[data-testid="conversation-column"] ~ [data-testid="browser"]'
   };
-  var folderIdx = -1;
+  var rotateIdx = -1;
+  var wpTickFn = null;
+  var wpItem = null;
   var urlTick = 0;
   var applySeq = 0;
   var SURFACE_TOKENS = [
@@ -4321,6 +4371,7 @@
     "--color-input-focused",
     "--color-highspeed-composer-surface"
   ];
+  var sameName = (a, b) => String(a).normalize("NFC").toLowerCase() === String(b).normalize("NFC").toLowerCase();
   var isDarkMode = () => document.documentElement.classList.contains("theme-zai-dark") || document.documentElement.classList.contains("dark");
   var probeEl = null;
   function resolvedColor(token) {
@@ -4332,11 +4383,37 @@
       }
       probeEl.style.color = "";
       probeEl.style.color = `var(${token})`;
+      if (!getComputedStyle(probeEl).getPropertyValue(token).trim()) return "";
       const v = getComputedStyle(probeEl).color;
-      return /^rgba?\(/.test(v) ? v : "";
+      return /^[a-z-]+\(/.test(v) ? v : "";
     } catch {
       return "";
     }
+  }
+  function rgbTriple(v, fallback) {
+    const pick = (str) => {
+      const m = str.match(/^rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)/);
+      if (m) return [Math.round(+m[1]), Math.round(+m[2]), Math.round(+m[3])].join(",");
+      const s = str.match(/^color\(srgb\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)/);
+      if (s) return [Math.round(+s[1] * 255), Math.round(+s[2] * 255), Math.round(+s[3] * 255)].join(",");
+      const h2 = str.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})/i);
+      if (h2) return [parseInt(h2[1], 16), parseInt(h2[2], 16), parseInt(h2[3], 16)].join(",");
+      return "";
+    };
+    const direct = pick(v);
+    if (direct) return direct;
+    try {
+      const ctx = document.createElement("canvas").getContext("2d");
+      ctx.fillStyle = "#010203";
+      ctx.fillStyle = v;
+      const norm3 = String(ctx.fillStyle);
+      if (norm3 !== "#010203") {
+        const p = pick(norm3);
+        if (p) return p;
+      }
+    } catch {
+    }
+    return fallback;
   }
   function ensureEl(id) {
     let el = document.getElementById(id);
@@ -4387,19 +4464,237 @@
     for (const k of injectedKeys) root.style.removeProperty(k);
     injectedKeys = /* @__PURE__ */ new Set();
   }
-  async function applyBackground(bg) {
-    const seq = ++applySeq;
-    bgStyleEl = ensureEl("__zcodepro_bg__");
-    const root = document.documentElement;
+  function wpLayerEl() {
+    let layer = document.getElementById("__zcodepro_wallpaper__");
+    if (!layer || !layer.isConnected) {
+      layer = document.createElement("div");
+      layer.id = "__zcodepro_wallpaper__";
+      layer.style.cssText = "position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden";
+      (document.body || document.documentElement).append(layer);
+    }
+    return layer;
+  }
+  function clearWallpaper() {
+    const layer = document.getElementById("__zcodepro_wallpaper__");
+    if (wpMedia && wpMedia.tagName === "VIDEO") wpMedia.pause();
+    if (layer) layer.remove();
+    wpSlide = null;
+    wpMask = null;
+    wpMedia = null;
+    wpShowTicket += 1;
+  }
+  function clearWpTimers() {
     if (bgTimer) {
       clearInterval(bgTimer);
       bgTimer = null;
     }
+    for (const t2 of wpTimers) clearInterval(t2);
+    wpTimers.clear();
+  }
+  var webviewScanTimer = null;
+  var wvStyled = [];
+  function applyWebviewTransparency() {
+    const css = "html,body{background:transparent !important}";
+    const hook = (w) => {
+      const on = document.documentElement.classList.contains("zcodepro-bg-on");
+      const rec = wvStyled.find((r) => r.el === w);
+      if (on && !rec) {
+        const entry = { el: w, key: null, handler: null };
+        entry.handler = () => {
+          if (!wvStyled.includes(entry)) return;
+          try {
+            void w.insertCSS(css).then((k) => {
+              if (wvStyled.includes(entry)) entry.key = k;
+              else {
+                try {
+                  void w.removeCSS(k).catch(() => {
+                  });
+                } catch {
+                }
+              }
+            }).catch(() => {
+            });
+          } catch {
+          }
+        };
+        w.addEventListener("dom-ready", entry.handler);
+        wvStyled.push(entry);
+        entry.handler();
+      } else if (!on && rec) {
+        if (rec.handler) w.removeEventListener("dom-ready", rec.handler);
+        if (rec.key) {
+          try {
+            void w.removeCSS(rec.key).catch(() => {
+            });
+          } catch {
+          }
+        }
+        wvStyled.splice(wvStyled.indexOf(rec), 1);
+      }
+    };
+    const scan5 = () => document.querySelectorAll("webview").forEach(hook);
+    scan5();
+    if (!webviewScanTimer) webviewScanTimer = setInterval(scan5, 2e3);
+  }
+  function applyMediaState() {
+    const bg = currentTheme.bg || {};
+    const paused = bg.pauseOnHidden !== false && document.hidden || bg.pauseOnBlur === true && !document.hasFocus() || bg.pauseOnBattery === true && batteryCharging === false;
+    const el = wpMedia;
+    if (!el || !el.isConnected) return;
+    if (el.tagName === "VIDEO") {
+      if (paused) {
+        el.pause();
+        return;
+      }
+      el.muted = el.volume === 0;
+      el.play().catch(() => {
+        el.muted = true;
+        el.play().catch(() => {
+        });
+      });
+      return;
+    }
+    if (paused) {
+      if (el.src && el.src !== "about:blank") {
+        el.dataset.wpSrc = el.src;
+        el.src = "about:blank";
+        el.style.visibility = "hidden";
+      }
+    } else if (el.dataset.wpSrc) {
+      el.src = el.dataset.wpSrc;
+      delete el.dataset.wpSrc;
+      el.style.visibility = "";
+    }
+  }
+  function applySlideStyle(el, bg) {
+    if (!el || !el.isConnected) return;
+    const blurPx = typeof bg.blurPx === "number" && Number.isFinite(bg.blurPx) ? Math.min(24, Math.max(0, Math.round(bg.blurPx))) : 0;
+    const spread = blurPx > 0 ? Math.max(20, blurPx * 2) : 0;
+    el.style.inset = `-${spread}px`;
+    el.style.filter = blurPx > 0 ? `blur(${blurPx}px)` : "";
+    el.style.transition = (currentTheme.bg || {}).transition === "fade" ? "opacity .4s ease" : "none";
+    if (el.tagName === "DIV") {
+      const fit = bg.fit || "cover";
+      el.style.backgroundSize = fit === "tile" ? "auto" : fit === "fill" ? "100% 100%" : fit;
+      el.style.backgroundRepeat = fit === "tile" ? "repeat" : "no-repeat";
+      return;
+    }
+    el.style.objectFit = bg.fit === "fill" ? "fill" : bg.fit === "contain" ? "contain" : "cover";
+    if (el.tagName === "VIDEO") {
+      el.volume = typeof bg.videoVolume === "number" && Number.isFinite(bg.videoVolume) ? Math.min(1, Math.max(0, bg.videoVolume)) : 0;
+      if (!el.paused) el.muted = el.volume === 0;
+      el.playbackRate = typeof bg.playbackRate === "number" && Number.isFinite(bg.playbackRate) ? Math.min(2, Math.max(0.5, bg.playbackRate)) : 1;
+    }
+  }
+  function applySlideParams(bg, rgb, alpha) {
+    if (wpMask) wpMask.style.background = `rgba(${rgb},${alpha})`;
+    const el = wpSlide;
+    if (!el || !el.isConnected) return;
+    applySlideStyle(el, bg);
+    if (el.tagName === "VIDEO") {
+      if (String(Number(bg.fpsCap) || 0) !== (el.dataset.wpFps || "")) maybeTranscode(el, el.dataset.wpName, el.dataset.wpFrom);
+    }
+  }
+  function armRotateTimer(bg) {
+    const ms = Math.max(0, Number(bg.intervalMin) || 0) * 6e4;
+    const want = ms >= 3e4 && wpTickFn ? ms : 0;
+    if (bgTimer && want === bgTimerMs) return;
+    if (bgTimer) {
+      clearInterval(bgTimer);
+      bgTimer = null;
+    }
+    bgTimerMs = want;
+    if (want) bgTimer = setInterval(wpTickFn, want);
+  }
+  function maybeTranscode(el, name, from) {
+    const helperUrl = liveBoot().helperUrl || HELPER_URL;
+    const cap = Number((currentTheme.bg || {}).fpsCap) || 0;
+    el.dataset.wpFps = String(cap);
+    if (!cap || !name) {
+      if (!cap && name && el.src && el.src.includes("/bg/transcode/file/")) {
+        const orig = (from === "folder" ? `${helperUrl}/bg/folder/file/` : `${helperUrl}/bg/file/`) + encodeURIComponent(name);
+        const at = el.currentTime;
+        el.src = orig;
+        el.addEventListener("loadedmetadata", () => {
+          if (!el.isConnected) return;
+          try {
+            el.currentTime = at;
+          } catch {
+          }
+          applyMediaState();
+        }, { once: true });
+      }
+      return;
+    }
+    void (async () => {
+      const reqCap = String(cap);
+      const res = await rpc("/bg/transcode", { method: "POST", body: { name, from, fps: cap } });
+      if (!res.ok || !res.key) {
+        if (el.isConnected) el.dataset.wpFps = "";
+        return;
+      }
+      if (!el.isConnected) return;
+      const swapTo = () => {
+        if (!el.isConnected) return;
+        if (el.dataset.wpFps !== reqCap) return;
+        const target = `${helperUrl}/bg/transcode/file/${res.key}.mp4`;
+        if (el.src === target) return;
+        const at = el.currentTime;
+        el.src = target;
+        el.addEventListener("loadedmetadata", () => {
+          if (!el.isConnected) return;
+          try {
+            el.currentTime = at;
+          } catch {
+          }
+          applyMediaState();
+        }, { once: true });
+      };
+      if (res.ready) {
+        swapTo();
+        return;
+      }
+      let pollN = 0;
+      const poll = setInterval(() => {
+        if (!el.isConnected) {
+          clearInterval(poll);
+          wpTimers.delete(poll);
+          return;
+        }
+        if (++pollN > 360) {
+          clearInterval(poll);
+          wpTimers.delete(poll);
+          return;
+        }
+        void fetch(`${helperUrl}/bg/transcode/file/${res.key}.mp4`).then((r) => {
+          if (!r.ok) return;
+          clearInterval(poll);
+          wpTimers.delete(poll);
+          void (r.body && r.body.cancel && r.body.cancel());
+          swapTo();
+        }).catch(() => {
+        });
+      }, 5e3);
+      wpTimers.add(poll);
+    })();
+  }
+  async function applyBackground(bg) {
+    const seq = ++applySeq;
+    bgStyleEl = ensureEl("__zcodepro_bg__");
+    const root = document.documentElement;
     root.classList.remove("zcodepro-bg-on");
     clearBgOverrides();
     const bgActive = !!(bg && bg.mode && bg.mode !== "none");
     const anyRegion = !!(bg && bg.regions && (bg.regions.left || bg.regions.center || bg.regions.right));
-    if (!bgActive) bgStyleEl.textContent = "";
+    if (!bgActive) {
+      bgStyleEl.textContent = "";
+      ensureEl("__zcodepro_bg_extra__").textContent = "";
+      clearWpTimers();
+      wpTickFn = null;
+      wpItem = null;
+      lastWpSig = "";
+      clearWallpaper();
+    }
     if (!bgActive && !anyRegion) {
       await applyRegionBackgrounds(bg);
       return;
@@ -4410,144 +4705,343 @@
     const blurPx = typeof bg.blurPx === "number" && Number.isFinite(bg.blurPx) ? Math.min(24, Math.max(0, Math.round(bg.blurPx))) : 0;
     const panelOpacity = num01(bg.panelOpacity, 0.3);
     const resolvedBg = resolvedColor("--color-background");
-    const mHex = resolvedBg.match(/^rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)/);
-    const rgb = mHex ? [Math.round(+mHex[1]), Math.round(+mHex[2]), Math.round(+mHex[3])].join(",") : isDarkMode() ? "13,13,13" : "248,248,248";
+    const rgb = rgbTriple(resolvedBg, isDarkMode() ? "13,13,13" : "248,248,248");
     const panelMix = Math.round(panelOpacity * 100);
-    if (panelMix < 100) {
-      for (const t2 of SURFACE_TOKENS) {
-        const v = resolvedColor(t2);
-        if (v) {
-          root.style.setProperty(t2, `color-mix(in srgb, ${v} ${panelMix}%, transparent)`);
-          injectedKeys.add(t2);
-        }
+    const composerVeil = Math.max(panelMix, 65);
+    const inputTriple = rgbTriple(resolvedColor("--color-input"), rgb);
+    for (const t2 of SURFACE_TOKENS) {
+      if (panelMix >= 100) continue;
+      const v = resolvedColor(t2);
+      if (v) {
+        root.style.setProperty(t2, `color-mix(in srgb, ${v} ${panelMix}%, transparent)`);
+        injectedKeys.add(t2);
       }
     }
+    ensureEl("__zcodepro_bg_extra__").textContent = `[data-testid="chat-summary-panel"]{background-color:color-mix(in srgb, var(--color-popover) ${panelMix}%, transparent) !important;backdrop-filter:blur(24px) saturate(1.15);-webkit-backdrop-filter:blur(24px) saturate(1.15);}[data-testid="v4-composer"] form > .rounded-2xl{background-color:rgba(${inputTriple},${composerVeil / 100}) !important;backdrop-filter:blur(24px) saturate(1.15);-webkit-backdrop-filter:blur(24px) saturate(1.15);}aside[data-testid="sidebar"] svg:not(.zcodepro-ws-loader){color:var(--color-foreground) !important;stroke:currentColor !important;}`;
     await applyRegionBackgrounds(bg, { rgb, alpha, fit: bg.fit, seq });
     if (seq !== applySeq) return;
     if (!bgActive) return;
-    const FIT_CSS = {
-      cover: "background-size:100% 100%,cover !important;background-repeat:no-repeat !important;",
-      contain: "background-size:100% 100%,contain !important;background-repeat:no-repeat !important;",
-      fill: "background-size:100% 100%,100% 100% !important;background-repeat:no-repeat !important;",
-      tile: "background-size:100% 100%,auto !important;background-repeat:no-repeat,repeat !important;"
-    };
-    const fitCss = FIT_CSS[bg.fit] || FIT_CSS.cover;
-    const blurCss = blurPx > 0 ? `filter:blur(${blurPx}px);` : "";
-    const spread = blurPx > 0 ? Math.max(20, blurPx * 2) : 0;
-    const setImage = (image) => {
-      bgStyleEl.textContent = `html.zcodepro-bg-on{background-color:rgb(${rgb}) !important;}html.zcodepro-bg-on::before{content:'' !important;position:fixed;inset:-${spread}px;z-index:-1;pointer-events:none;background-image:linear-gradient(rgba(${rgb},${alpha}),rgba(${rgb},${alpha})),${image} !important;${fitCss}background-position:center !important;${blurCss}}`;
+    const sourceSig = JSON.stringify([bg.mode, bg.file, bg.folder, bg.url]);
+    const markBgOn = () => {
+      bgStyleEl.textContent = `html.zcodepro-bg-on{background-color:rgb(${rgb}) !important;}html.zcodepro-bg-on webview{background:transparent !important;}`;
       root.classList.add("zcodepro-bg-on");
     };
+    if (sourceSig === lastWpSig && wpSlide && wpSlide.isConnected) {
+      markBgOn();
+      applySlideParams(bg, rgb, alpha);
+      armRotateTimer(bg);
+      return;
+    }
+    const commit = () => {
+      lastWpSig = sourceSig;
+      clearWpTimers();
+      wpTickFn = null;
+    };
+    markBgOn();
     const helperUrl = liveBoot().helperUrl || HELPER_URL;
+    const B = () => currentTheme.bg || bg;
+    const spread = blurPx > 0 ? Math.max(20, blurPx * 2) : 0;
+    const mkSlide = (kind) => {
+      const cur = B();
+      const el = document.createElement(kind === "video" ? "video" : kind === "web" ? "iframe" : "div");
+      el.className = "__zcp-slide";
+      el.style.position = "absolute";
+      el.style.inset = `-${spread}px`;
+      el.style.transition = cur.transition === "fade" ? "opacity .4s ease" : "none";
+      if (blurPx > 0) el.style.filter = `blur(${blurPx}px)`;
+      if (kind === "image") {
+        const fit = cur.fit || "cover";
+        el.style.backgroundSize = fit === "tile" ? "auto" : fit === "fill" ? "100% 100%" : fit;
+        el.style.backgroundRepeat = fit === "tile" ? "repeat" : "no-repeat";
+        el.style.backgroundPosition = "center";
+      } else {
+        el.style.objectFit = cur.fit === "fill" ? "fill" : cur.fit === "contain" ? "contain" : "cover";
+      }
+      return el;
+    };
+    const mask = document.createElement("div");
+    mask.className = "__zcp-mask";
+    mask.style.position = "absolute";
+    mask.style.inset = "0";
+    mask.style.background = `rgba(${rgb},${alpha})`;
+    const setSlide = (el) => {
+      const layer = wpLayerEl();
+      for (const c of [...layer.children]) if (c.classList.contains("__zcp-mask")) c.remove();
+      const old = wpSlide;
+      el.style.opacity = old && B().transition === "fade" ? "0" : "1";
+      if (wpMask) mask.style.background = wpMask.style.background;
+      layer.append(el, mask);
+      wpMask = mask;
+      wpSlide = el;
+      wpMedia = el.tagName === "DIV" ? null : el;
+      applySlideStyle(el, B());
+      if (old) {
+        if (old.tagName === "VIDEO") old.pause();
+        if (B().transition === "fade") {
+          requestAnimationFrame(() => {
+            el.style.opacity = "1";
+            old.style.opacity = "0";
+          });
+          setTimeout(() => old.remove(), 450);
+        } else {
+          old.remove();
+        }
+      }
+      applyMediaState();
+    };
+    const setImage = (rawUrl) => {
+      const el = mkSlide("image");
+      el.style.backgroundImage = `url("${rawUrl}")`;
+      const ticket = ++wpShowTicket;
+      const probe = new Image();
+      probe.onload = () => {
+        if (ticket === wpShowTicket) setSlide(el);
+      };
+      probe.src = rawUrl;
+    };
+    const setupVideo = (srcUrl, name, from) => {
+      const cur = B();
+      const el = mkSlide("video");
+      el.dataset.wpName = name;
+      el.dataset.wpFrom = from;
+      el.src = srcUrl;
+      el.loop = true;
+      el.playsInline = true;
+      el.muted = true;
+      el.volume = num01(cur.videoVolume, 0);
+      el.playbackRate = typeof cur.playbackRate === "number" && Number.isFinite(cur.playbackRate) ? Math.min(2, Math.max(0.5, cur.playbackRate)) : 1;
+      const ticket = ++wpShowTicket;
+      let done = false;
+      const go = () => {
+        if (done) return;
+        done = true;
+        if (ticket !== wpShowTicket) return;
+        setSlide(el);
+        maybeTranscode(el, name, from);
+      };
+      el.addEventListener("loadeddata", go, { once: true });
+      el.addEventListener("error", () => {
+        done = true;
+      }, { once: true });
+      wpTimers.add(setTimeout(go, 8e3));
+    };
+    const setupWeb = (u) => {
+      const el = mkSlide("web");
+      el.style.border = "none";
+      el.style.background = "transparent";
+      el.style.visibility = "";
+      el.sandbox = "allow-scripts";
+      el.src = u;
+      const ticket = ++wpShowTicket;
+      let done = false;
+      const go = () => {
+        if (done) return;
+        done = true;
+        if (ticket !== wpShowTicket) return;
+        setSlide(el);
+      };
+      el.addEventListener("load", go, { once: true });
+      el.addEventListener("error", () => {
+        done = true;
+      }, { once: true });
+      wpTimers.add(setTimeout(go, 8e3));
+    };
+    const showFile = (f, from) => {
+      wpItem = { name: f.name, from };
+      const u = from === "folder" ? `${helperUrl}/bg/folder/file/${encodeURIComponent(f.name)}` : `${helperUrl}/bg/file/${encodeURIComponent(f.name)}`;
+      if (/\.(mp4|webm|mov)$/i.test(f.name)) setupVideo(u, f.name, from);
+      else setImage(u);
+    };
+    const nextIdx = (n) => {
+      if (B().folderRandom !== false) return n > 1 ? Math.floor(Math.random() * n) : 0;
+      rotateIdx = (rotateIdx + 1) % n;
+      return rotateIdx;
+    };
     if (bg.mode === "library") {
-      if (!bg.file) {
-        bgStyleEl.textContent = "";
+      const res = await rpc("/bg");
+      if (seq !== applySeq) return;
+      if (!res.ok) {
+        lastThemeSig = "";
         return;
       }
-      setImage(`url("${helperUrl}/bg/file/${encodeURIComponent(bg.file)}")`);
+      commit();
+      const files = Array.isArray(res.files) ? res.files.filter((f) => f && f.name) : [];
+      if (!files.length) {
+        clearWallpaper();
+        return;
+      }
+      const tick6 = () => showFile(files[nextIdx(files.length)], "library");
+      wpTickFn = tick6;
+      if (!(Math.max(0, Number(bg.intervalMin) || 0) * 6e4 >= 3e4)) {
+        const pickFile = files.find((f) => sameName(f.name, bg.file));
+        if (!pickFile) {
+          clearWallpaper();
+          return;
+        }
+        showFile(pickFile, "library");
+        return;
+      }
+      tick6();
+      armRotateTimer(bg);
       return;
     }
     if (bg.mode === "folder") {
       const res = await rpc("/bg/folder/list");
       if (seq !== applySeq) return;
-      const files = res.ok && Array.isArray(res.files) ? res.files.filter((f) => f && f.name) : [];
-      if (!files.length) {
-        bgStyleEl.textContent = "";
-        root.classList.remove("zcodepro-bg-on");
+      if (!res.ok) {
+        lastThemeSig = "";
         return;
       }
-      const pick = () => {
-        let idx = 0;
-        if (bg.folderRandom) idx = files.length > 1 ? Math.floor(Math.random() * files.length) : 0;
-        else {
-          folderIdx = (folderIdx + 1) % files.length;
-          idx = folderIdx;
-        }
-        setImage(`url("${helperUrl}/bg/folder/file/${encodeURIComponent(files[idx].name)}")`);
-      };
-      pick();
-      const ms = Math.max(0, Number(bg.intervalMin) || 0) * 6e4;
-      if (ms >= 3e4) bgTimer = setInterval(pick, ms);
+      commit();
+      const files = Array.isArray(res.files) ? res.files.filter((f) => f && f.name) : [];
+      if (!files.length) {
+        clearWallpaper();
+        return;
+      }
+      const tick6 = () => showFile(files[nextIdx(files.length)], "folder");
+      wpTickFn = tick6;
+      tick6();
+      armRotateTimer(bg);
       return;
     }
     if (bg.mode === "url") {
+      commit();
       const u0 = /^https?:\/\/\S+$/i.test(bg.url || "") && !/[<>"'\\]/.test(bg.url) ? bg.url : "";
       if (!u0) {
-        bgStyleEl.textContent = "";
+        clearWallpaper();
         return;
       }
       const bust = () => {
         urlTick += 1;
         const sep = u0.includes("?") ? "&" : "?";
-        setImage(`url("${u0}${sep}_zcp=${urlTick}")`);
+        setImage(`${u0}${sep}_zcp=${urlTick}`);
       };
+      wpTickFn = bust;
       bust();
-      const ms = Math.max(0, Number(bg.intervalMin) || 0) * 6e4;
-      if (ms >= 3e4) bgTimer = setInterval(bust, ms);
+      armRotateTimer(bg);
+      return;
+    }
+    if (bg.mode === "web") {
+      commit();
+      const u0 = /^https?:\/\/\S+$/i.test(bg.url || "") && !/[<>"'\\]/.test(bg.url) ? bg.url : "";
+      if (!u0) {
+        clearWallpaper();
+        return;
+      }
+      setupWeb(u0);
+    }
+    if (!["library", "folder", "url", "web"].includes(bg.mode)) {
+      commit();
+      clearWallpaper();
     }
   }
+  var regionState = { left: null, center: null, right: null };
+  var regionRules = /* @__PURE__ */ new Map();
+  var regionPaint = { rgb: "13,13,13", alpha: 0.82, sizeVal: "100% 100%,cover", repeatVal: "no-repeat" };
   async function applyRegionBackgrounds(bg, pre) {
     regionStyleEl = ensureEl("__zcodepro_bg_regions__");
-    for (const t2 of regionTimers) clearInterval(t2);
-    regionTimers = [];
-    const rules = /* @__PURE__ */ new Map();
     const flush = () => {
-      regionStyleEl.textContent = [...rules.values()].join("");
+      regionStyleEl.textContent = [...regionRules.values()].join("");
     };
-    const alpha = pre ? pre.alpha : 0.82;
-    const rgb = pre ? pre.rgb : "13,13,13";
+    regionPaint.alpha = pre ? pre.alpha : 0.82;
+    regionPaint.rgb = pre ? pre.rgb : "13,13,13";
     const FIT_CSS = {
       cover: "100% 100%,cover",
       contain: "100% 100%,contain",
       fill: "100% 100%,100% 100%",
       tile: "100% 100%,auto"
     };
-    const sizeVal = FIT_CSS[bg && bg.fit] || FIT_CSS.cover;
-    const repeatVal = bg && bg.fit === "tile" ? "no-repeat,repeat" : "no-repeat";
+    regionPaint.sizeVal = FIT_CSS[bg && bg.fit] || FIT_CSS.cover;
+    regionPaint.repeatVal = bg && bg.fit === "tile" ? "no-repeat,repeat" : "no-repeat";
     const helperUrl = liveBoot().helperUrl || HELPER_URL;
     const safeUrl = (u) => /^https?:\/\/\S+$/i.test(u || "") && !/[<>"'\\]/.test(u) ? u : "";
     const addRule = (region, image) => {
       if (!image) return;
-      rules.set(region, `${REGION_SELECTORS[region]}{background-image:linear-gradient(rgba(${rgb},${alpha}),rgba(${rgb},${alpha})),${image} !important;background-size:${sizeVal} !important;background-position:center !important;background-repeat:${repeatVal} !important;}`);
+      regionRules.set(region, `${REGION_SELECTORS[region]}{background-image:linear-gradient(rgba(${regionPaint.rgb},${regionPaint.alpha}),rgba(${regionPaint.rgb},${regionPaint.alpha})),${image} !important;background-size:${regionPaint.sizeVal} !important;background-position:center !important;background-repeat:${regionPaint.repeatVal} !important;}`);
     };
     const seq = applySeq;
+    const ms = Math.max(0, Number(bg && bg.intervalMin) || 0) * 6e4;
     for (const region of ["left", "center", "right"]) {
       const r = bg && bg.regions && bg.regions[region];
-      if (!r) continue;
+      const st = regionState[region];
+      if (!r) {
+        if (st) {
+          if (st.timer) clearInterval(st.timer);
+          regionState[region] = null;
+        }
+        regionRules.delete(region);
+        continue;
+      }
+      const sig = JSON.stringify([r.mode, r.file, r.folder, r.url]);
+      if (st && st.sig === sig && st.image) {
+        addRule(region, st.image);
+        if (st.timer && st.interval !== ms) {
+          clearInterval(st.timer);
+          st.timer = null;
+        }
+        if (!st.timer && st.tick && ms >= 3e4) {
+          st.timer = setInterval(st.tick, ms);
+          st.interval = ms;
+        }
+        continue;
+      }
+      if (st && st.timer) {
+        clearInterval(st.timer);
+        st.timer = null;
+      }
+      const setState = (image, tick6) => {
+        regionState[region] = { sig, image, tick: tick6, timer: null, interval: 0 };
+        if (image) addRule(region, image);
+      };
+      const drop = () => {
+        regionRules.delete(region);
+        regionState[region] = null;
+      };
       if (r.mode === "library") {
-        if (r.file) addRule(region, `url("${helperUrl}/bg/file/${encodeURIComponent(r.file)}")`);
+        if (r.file) setState(`url("${helperUrl}/bg/file/${encodeURIComponent(r.file)}")`, null);
+        else drop();
       } else if (r.mode === "url") {
         const u = safeUrl(r.url);
-        if (u) addRule(region, `url("${u}")`);
+        if (u) setState(`url("${u}")`, null);
+        else drop();
       } else if (r.mode === "folder" && r.folder) {
         const res = await rpc("/bg/folder/list?dir=" + encodeURIComponent(r.folder));
         if (seq !== applySeq) return;
-        const files = res.ok && !res.missing && Array.isArray(res.files) ? res.files.filter((f) => f && f.name) : [];
+        const files = res.ok && !res.missing && Array.isArray(res.files) ? res.files.filter((f) => f && f.name && !/\.(mp4|webm|mov)$/i.test(f.name)) : [];
         if (!files.length) continue;
         const pick = () => {
           let idx = 0;
-          if (bg.folderRandom !== false) idx = files.length > 1 ? Math.floor(Math.random() * files.length) : 0;
+          if ((currentTheme.bg || {}).folderRandom !== false) idx = files.length > 1 ? Math.floor(Math.random() * files.length) : 0;
           else {
             regionFolderIdx[region] = (regionFolderIdx[region] + 1) % files.length;
             idx = regionFolderIdx[region];
           }
-          addRule(region, `url("${helperUrl}/bg/folder/file/${encodeURIComponent(files[idx].name)}")`);
+          const image = `url("${helperUrl}/bg/folder/file/${encodeURIComponent(files[idx].name)}?dir=${encodeURIComponent(r.folder)}")`;
+          if (regionState[region]) regionState[region].image = image;
+          addRule(region, image);
           flush();
         };
+        setState(null, pick);
         pick();
-        const ms = Math.max(0, Number(bg.intervalMin) || 0) * 6e4;
-        if (ms >= 3e4) regionTimers.push(setInterval(pick, ms));
+        if (ms >= 3e4) {
+          regionState[region].timer = setInterval(pick, ms);
+          regionState[region].interval = ms;
+        }
+      } else {
+        drop();
       }
     }
     flush();
   }
   function applyAll(theme) {
     if (theme && typeof theme === "object") currentTheme = theme;
+    lastThemeSig = JSON.stringify(currentTheme);
     applySkin(currentTheme.skin || "default", currentTheme.custom);
     void applyBackground(currentTheme.bg);
   }
   function startTheme() {
     if (!document.head && !document.documentElement) return;
+    applyWebviewTransparency();
     applyAll({ skin: "default", custom: null, bg: { mode: "none", maskOpacity: 0.82, blurPx: 0, panelOpacity: 0.3 } });
     void getConfig().then((cfg) => applyAll(cfg.theme)).catch(() => {
     });
@@ -4555,6 +5049,38 @@
       void getConfig(true).then((cfg) => applyAll(cfg.theme)).catch(() => {
       });
     });
+    lastThemeSig = JSON.stringify(currentTheme);
+    if (themePollTimer) clearInterval(themePollTimer);
+    let pollFail = 0;
+    themePollTimer = setInterval(() => {
+      if (pollFail >= 3 && ++pollFail % 6 !== 0) return;
+      void getConfig(true).then((cfg) => {
+        if (!cfg.theme) {
+          pollFail = Math.max(pollFail + 1, 3);
+          return;
+        }
+        pollFail = 0;
+        const sig = JSON.stringify(cfg.theme);
+        if (sig !== lastThemeSig) applyAll(cfg.theme);
+      }).catch(() => {
+        pollFail = Math.max(pollFail + 1, 3);
+      });
+    }, 5e3);
+    document.addEventListener("visibilitychange", applyMediaState);
+    window.addEventListener("focus", applyMediaState);
+    window.addEventListener("blur", applyMediaState);
+    if (navigator.getBattery) {
+      navigator.getBattery().then((b) => {
+        batteryCharging = !!b.charging;
+        b.addEventListener("chargingchange", () => {
+          batteryCharging = !!b.charging;
+          applyMediaState();
+        });
+        applyMediaState();
+      }).catch(() => {
+        batteryCharging = null;
+      });
+    }
     if (!classObserver) {
       lastModeSig = isDarkMode() ? "d" : "l";
       classObserver = new MutationObserver(() => {
@@ -4574,6 +5100,7 @@
     } catch {
     }
   }
+  var sameName2 = (a, b) => String(a).normalize("NFC").toLowerCase() === String(b).normalize("NFC").toLowerCase();
   var PLUGINS_REPO_URL = "https://github.com/duanluan/zcode-plugins";
   function makeUpgradeControls({ endpoint, metaRefresh, idleText }) {
     const L = t();
@@ -5577,12 +6104,23 @@
           renderThemeBg();
           const res = await rpc("/bg");
           bgLoading = false;
-          if (res.ok && Array.isArray(res.files)) bgFiles = res.files;
-          if (themeCfg.bg.mode === "library" && themeCfg.bg.file && !bgFiles.some((f) => f.name === themeCfg.bg.file)) {
-            themeCfg = { ...themeCfg, bg: { ...themeCfg.bg, file: "" } };
-            await saveTheme({ bg: { file: "" } });
-            showToast(L.themeBgDeletedActive, "success");
-            return;
+          const listed = res.ok && Array.isArray(res.files);
+          if (listed) bgFiles = res.files;
+          if (listed) {
+            const regionPatch = {};
+            for (const [k, r] of Object.entries(themeCfg.bg.regions || {})) {
+              if (r && r.mode === "library" && r.file && !bgFiles.some((f) => sameName2(f.name, r.file))) regionPatch[k] = { ...r, file: "" };
+            }
+            if (Object.keys(regionPatch).length) {
+              themeCfg = { ...themeCfg, bg: { ...themeCfg.bg, regions: { ...themeCfg.bg.regions, ...regionPatch } } };
+              await saveTheme({ bg: { regions: { ...themeCfg.bg.regions } } });
+            }
+            if (themeCfg.bg.mode === "library" && themeCfg.bg.file && !bgFiles.some((f) => sameName2(f.name, themeCfg.bg.file))) {
+              themeCfg = { ...themeCfg, bg: { ...themeCfg.bg, file: "" } };
+              await saveTheme({ bg: { file: "" } });
+              showToast(L.themeBgDeletedActive, "success");
+              return;
+            }
           }
           renderThemeBg();
         };
@@ -5596,7 +6134,7 @@
           folderInfo = res.ok && !res.missing && Array.isArray(res.files) ? { count: res.files.length, dir: res.dir || themeCfg.bg.folder } : { count: 0, dir: themeCfg.bg.folder };
           renderThemeBg();
         };
-        const bgInput = h("input", { type: "file", accept: ".png,.jpg,.jpeg,.webp,.gif,.bmp,.avif", multiple: "", style: "display:none" });
+        const bgInput = h("input", { type: "file", accept: ".png,.jpg,.jpeg,.webp,.gif,.bmp,.avif,.mp4,.webm,.mov", multiple: "", style: "display:none" });
         bgInput.addEventListener("change", () => {
           const files = [...bgInput.files || []];
           bgInput.value = "";
@@ -5604,20 +6142,29 @@
           void (async () => {
             let first = themeCfg.bg.file;
             for (const f of files) {
-              const dataUrl = await new Promise((resolve) => {
-                const r = new FileReader();
-                r.onload = () => resolve(String(r.result || ""));
-                r.onerror = () => resolve("");
-                r.readAsDataURL(f);
-              });
-              if (!dataUrl) continue;
-              const res = await rpc("/bg", { method: "POST", body: { name: f.name, data: dataUrl } });
-              if (!res.ok) {
-                showToast(L.failed + ": " + errText(res), "error");
+              let res = null;
+              if (/\.(mp4|webm|mov)$/i.test(f.name)) {
+                res = await fetch(`${HELPER_URL}/bg/upload?name=${encodeURIComponent(f.name)}`, {
+                  method: "POST",
+                  headers: { "X-ZCodePro-Token": liveBoot().token || "" },
+                  body: f
+                }).then((r) => r.json()).catch((e) => ({ ok: false, error: String(e && e.message || e) }));
+              } else {
+                const dataUrl = await new Promise((resolve) => {
+                  const r = new FileReader();
+                  r.onload = () => resolve(String(r.result || ""));
+                  r.onerror = () => resolve("");
+                  r.readAsDataURL(f);
+                });
+                if (!dataUrl) continue;
+                res = await rpc("/bg", { method: "POST", body: { name: f.name, data: dataUrl } });
+              }
+              if (!res || !res.ok) {
+                showToast(L.failed + ": " + errText(res || {}), "error");
                 continue;
               }
               if (Array.isArray(res.files)) bgFiles = res.files;
-              if (!first) first = f.name;
+              if (!first) first = res.name || f.name;
             }
             if (first && first !== themeCfg.bg.file) await saveTheme({ bg: { file: first } });
             else renderThemeBg();
@@ -5744,20 +6291,28 @@
           if (mode === "library") {
             const sel = h("select", { class: "h-7 max-w-40 rounded-lg border border-border bg-input px-1.5 text-ui-xs text-foreground outline-none" });
             sel.append(h("option", { value: "" }, "\u2014"));
-            for (const f of bgFiles) sel.append(h("option", { value: f.name }, f.name));
+            for (const f of bgFiles) {
+              if (/\.(mp4|webm|mov)$/i.test(f.name)) continue;
+              sel.append(h("option", { value: f.name }, f.name));
+            }
             sel.value = cur && cur.file || "";
             sel.addEventListener("change", () => setRegion(region, { ...cur, file: sel.value }));
             valueCtrl = sel;
           } else if (mode === "folder") {
             const inp = h("input", { type: "text", value: cur && cur.folder || "", class: themeInputCls.replace("h-8", "h-7"), placeholder: "/path/to/wallpapers" });
             inp.addEventListener("change", () => {
-              if (inp.value.trim()) setRegion(region, { ...cur, folder: inp.value.trim() });
+              setRegion(region, { ...cur, folder: inp.value.trim() });
             });
             valueCtrl = inp;
           } else if (mode === "url") {
             const inp = h("input", { type: "url", value: cur && cur.url || "", class: themeInputCls.replace("h-8", "h-7"), placeholder: "https://..." });
             inp.addEventListener("change", () => {
-              if (/^https?:\/\/\S+$/.test(inp.value.trim())) setRegion(region, { ...cur, url: inp.value.trim() });
+              const v = inp.value.trim();
+              if (/^https?:\/\/\S+$/.test(v) && !/[<>"'\\]/.test(v)) setRegion(region, { ...cur, url: v });
+              else {
+                showToast(L.themeBgUrlInvalid, "warning");
+                renderThemeBg();
+              }
             });
             valueCtrl = inp;
           }
@@ -5848,7 +6403,11 @@
             type: "button",
             class: "zcodepro-tab",
             "data-state": themeCfg.bg.mode === id ? "active" : "inactive",
-            onClick: () => void saveTheme({ bg: { mode: id } })
+            onClick: () => {
+              const cur = themeCfg.bg.mode;
+              const cross = (cur === "url" || cur === "web") && (id === "url" || id === "web") && cur !== id;
+              void saveTheme({ bg: cross ? { mode: id, url: "" } : { mode: id } });
+            }
           }, label);
           const folderInput = h("input", { type: "text", value: themeCfg.bg.folder, class: themeInputCls, placeholder: "/path/to/wallpapers" });
           const applyFolder = async (dir) => {
@@ -5892,12 +6451,26 @@
               void saveTheme({ bg: { mode: "none", url: "" } });
               return;
             }
-            if (!/^https?:\/\/\S+$/.test(v)) {
+            if (!/^https?:\/\/\S+$/.test(v) || /[<>"'\\]/.test(v)) {
               showToast(L.themeBgUrlInvalid, "warning");
               renderThemeBg();
               return;
             }
             void saveTheme({ bg: { mode: "url", url: v } });
+          });
+          const webInput = h("input", { type: "url", value: themeCfg.bg.url, class: themeInputCls, placeholder: "https://..." });
+          webInput.addEventListener("change", () => {
+            const v = webInput.value.trim();
+            if (!v) {
+              void saveTheme({ bg: { mode: "none", url: "" } });
+              return;
+            }
+            if (!/^https?:\/\/\S+$/.test(v) || /[<>"'\\]/.test(v)) {
+              showToast(L.themeBgUrlInvalid, "warning");
+              renderThemeBg();
+              return;
+            }
+            void saveTheme({ bg: { mode: "web", url: v } });
           });
           const libCard = (f) => {
             const del = h("button", {
@@ -5917,13 +6490,14 @@
                 })();
               }
             }, "\u2715");
+            const thumb = /\.(mp4|webm|mov)$/i.test(f.name) ? h("video", { src: bgUrl(f.name), preload: "metadata", muted: "" }) : h("img", { src: bgUrl(f.name), alt: "", loading: "lazy" });
             return h("button", {
               type: "button",
               class: "zcodepro-bg-card",
-              "data-state": themeCfg.bg.mode === "library" && themeCfg.bg.file === f.name ? "active" : "inactive",
+              "data-state": themeCfg.bg.mode === "library" && sameName2(themeCfg.bg.file, f.name) ? "active" : "inactive",
               title: f.name,
               onClick: () => void saveTheme({ bg: { mode: "library", file: themeCfg.bg.file === f.name ? "" : f.name } })
-            }, h("img", { src: bgUrl(f.name), alt: "", loading: "lazy" }), del);
+            }, thumb, del);
           };
           const section = (titleText, body2) => h(
             "div",
@@ -5945,7 +6519,16 @@
                 "div",
                 { class: "grid grid-cols-4 gap-2", style: "max-height:13.5rem;overflow-y:auto;" },
                 ...bgFiles.map(libCard)
-              ) : null
+              ) : null,
+              h(
+                "div",
+                { class: "flex items-center gap-2" },
+                h("label", { class: "flex items-center gap-1.5 text-ui-xs text-foreground-subtle" }, randomCheck, L.themeBgFolderRandom),
+                numField(themeCfg.bg.intervalMin, 0, 1440, (v) => {
+                  void saveTheme({ bg: { intervalMin: v } });
+                }, L.themeBgIntervalHint),
+                h("span", { class: "text-ui-xs text-foreground-subtle" }, L.themeBgIntervalUnit)
+              )
             ))
           ] : themeCfg.bg.mode === "folder" ? [
             section(L.themeBgModeFolder, h(
@@ -5982,6 +6565,13 @@
               ),
               h("p", { class: "text-ui-xs/relaxed text-foreground-subtle" }, L.themeBgUrlHint)
             ))
+          ] : themeCfg.bg.mode === "web" ? [
+            section(L.themeBgModeWeb, h(
+              "div",
+              { class: "flex flex-col gap-2" },
+              webInput,
+              h("p", { class: "text-ui-xs/relaxed text-foreground-subtle" }, L.themeBgWebHint)
+            ))
           ] : [h("p", { class: "mt-3 text-ui-xs/relaxed text-foreground-subtle" }, L.themeBgNoneHint)];
           const fitBtn = (id, label) => h("button", {
             type: "button",
@@ -5989,6 +6579,66 @@
             "data-state": (themeCfg.bg.fit || "cover") === id ? "active" : "inactive",
             onClick: () => void saveTheme({ bg: { fit: id } })
           }, label);
+          const transBtn = (id, label) => h("button", {
+            type: "button",
+            class: "zcodepro-tab",
+            "data-state": (themeCfg.bg.transition || "cut") === id ? "active" : "inactive",
+            onClick: () => void saveTheme({ bg: { transition: id } })
+          }, label);
+          const pauseCheck = (key, label) => {
+            const c = h("input", { type: "checkbox" });
+            c.checked = key === "pauseOnHidden" ? themeCfg.bg.pauseOnHidden !== false : !!themeCfg.bg[key];
+            c.addEventListener("change", () => void saveTheme({ bg: { [key]: c.checked } }));
+            return h("label", { class: "flex items-center gap-1.5 text-ui-xs text-foreground-subtle" }, c, label);
+          };
+          const selectField = (value, options, commit) => {
+            const sel = h("select", { class: "h-7 rounded-lg border border-border bg-input px-1.5 text-ui-xs text-foreground outline-none" });
+            for (const [v, label] of options) sel.append(h("option", { value: String(v) }, label));
+            sel.value = String(value);
+            sel.addEventListener("change", () => commit(sel.value));
+            return sel;
+          };
+          const labelledRow = (label, ctrl) => h(
+            "div",
+            { class: "flex items-center gap-3" },
+            h("span", { class: "shrink-0 whitespace-nowrap text-ui-xs font-medium text-foreground-subtle", style: "width:72px" }, label),
+            ctrl
+          );
+          const volumeRow = () => sliderRow(
+            L.themeBgVolume,
+            L.themeBgVolumeHint,
+            0,
+            100,
+            1,
+            Math.round(numOr(themeCfg.bg.videoVolume, 0) * 100),
+            "%",
+            (v) => {
+              void saveTheme({ bg: { videoVolume: v / 100 } });
+            },
+            ""
+          );
+          const rateRow = () => labelledRow(
+            L.themeBgRate,
+            selectField(
+              numOr(themeCfg.bg.playbackRate, 1),
+              [["0.5", "0.5x"], ["0.75", "0.75x"], ["1", "1x"], ["1.25", "1.25x"], ["1.5", "1.5x"], ["2", "2x"]],
+              (v) => {
+                void saveTheme({ bg: { playbackRate: Number(v) } });
+              }
+            )
+          );
+          const fpsRow = () => h(
+            "div",
+            { class: "flex flex-col gap-0.5" },
+            labelledRow(L.themeBgFps, selectField(
+              numOr(themeCfg.bg.fpsCap, 0),
+              [["0", L.themeBgFpsOff], ["15", "15 fps"], ["30", "30 fps"], ["60", "60 fps"]],
+              (v) => {
+                void saveTheme({ bg: { fpsCap: Number(v) } });
+              }
+            )),
+            h("span", { class: "text-ui-xs/relaxed text-foreground-subtle" }, L.themeBgFpsHint)
+          );
           paneStylesSub4.replaceChildren(
             h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.themeBgDesc),
             h(
@@ -5997,7 +6647,8 @@
               modeBtn("none", L.themeBgModeNone),
               modeBtn("library", L.themeBgModeLibrary),
               modeBtn("folder", L.themeBgModeFolder),
-              modeBtn("url", L.themeBgModeUrl)
+              modeBtn("url", L.themeBgModeUrl),
+              modeBtn("web", L.themeBgModeWeb)
             ),
             ...modeArea,
             section(L.themeBgRegions, h(
@@ -6018,11 +6669,33 @@
             ),
             h(
               "div",
+              { class: "mt-3 flex flex-wrap items-center gap-2" },
+              h("span", { class: "text-ui-xs font-medium text-foreground-subtle" }, L.themeBgTransition),
+              transBtn("cut", L.themeBgTransitionCut),
+              transBtn("fade", L.themeBgTransitionFade)
+            ),
+            h(
+              "div",
+              { class: "mt-3 flex flex-wrap items-center gap-2" },
+              h("span", { class: "text-ui-xs font-medium text-foreground-subtle" }, L.themeBgPause),
+              pauseCheck("pauseOnHidden", L.themeBgPauseHidden),
+              pauseCheck("pauseOnBlur", L.themeBgPauseBlur),
+              pauseCheck("pauseOnBattery", L.themeBgPauseBattery)
+            ),
+            h(
+              "div",
               { class: "mt-3 flex flex-col gap-2" },
               maskRow(),
               blurRow(),
               panelRow()
             ),
+            section(L.themeBgPlayback, h(
+              "div",
+              { class: "flex flex-col gap-2" },
+              volumeRow(),
+              rateRow(),
+              fpsRow()
+            )),
             bgInput
           );
         };
@@ -6873,7 +7546,7 @@
           compressThresholdKB: 1024,
           skipAfterFailures: 2,
           skipMinutes: 30
-          // forceIntercept 不写：缺省 = 自动（跟随宿主「模型设置」图片开关，zcode-vision ≥1.7.10）
+          // forceIntercept 不写：缺省 = 自动（跟随宿主「模型设置」图片开关，zcode-vision ≥1.7.9）
         };
         let visionCfg = visionRes.ok && visionRes.config && typeof visionRes.config === "object" ? structuredClone(visionRes.config) : null;
         let visionAutoInitTried = false;
@@ -8869,6 +9542,10 @@
   function startWsRunningSpin() {
     if (installed2 || typeof document === "undefined") return;
     installed2 = true;
+    const st = document.createElement("style");
+    st.id = "__zcodepro_ws_style__";
+    st.textContent = ".zcodepro-ws-loader{color:color-mix(in srgb, currentColor 85%, black) !important}";
+    document.head.append(st);
     void refreshConfig();
     pollConfig();
     const observer2 = new MutationObserver((muts) => {
@@ -11247,7 +11924,23 @@
     if (window.__zcodeproInjected) {
       const boot = window.__ZCODEPRO__ || {};
       const sameGeneration = window.__zcodeproBootedToken && boot.token && window.__zcodeproBootedToken === boot.token;
-      if (!sameGeneration) location.reload();
+      if (!sameGeneration) {
+        const key = "zcodeproReloadLog";
+        let log = [];
+        try {
+          log = JSON.parse(sessionStorage.getItem(key) || "[]");
+        } catch {
+        }
+        if (!Array.isArray(log)) log = [];
+        log = log.filter((ts) => Date.now() - ts < 3e4);
+        if (log.length < 2) {
+          try {
+            sessionStorage.setItem(key, JSON.stringify([...log, Date.now()]));
+          } catch {
+          }
+          location.reload();
+        }
+      }
       return;
     }
     window.__zcodeproInjected = true;

@@ -36,7 +36,19 @@ import { ensureStyle } from './ui.js';
     const boot = window.__ZCODEPRO__ || {};
     const sameGeneration = window.__zcodeproBootedToken && boot.token
       && window.__zcodeproBootedToken === boot.token;
-    if (!sameGeneration) location.reload();
+    if (!sameGeneration) {
+      // 换代刷新限次（记在 sessionStorage，跨刷新存活）：两个不同 token 的注入器
+      // 互相看对方不顺眼时，30 秒内最多刷 2 次，别进无限刷新
+      const key = 'zcodeproReloadLog';
+      let log = [];
+      try { log = JSON.parse(sessionStorage.getItem(key) || '[]'); } catch { /* ignore */ }
+      if (!Array.isArray(log)) log = [];
+      log = log.filter((ts) => Date.now() - ts < 30000);
+      if (log.length < 2) {
+        try { sessionStorage.setItem(key, JSON.stringify([...log, Date.now()])); } catch { /* ignore */ }
+        location.reload();
+      }
+    }
     return;
   }
   window.__zcodeproInjected = true;

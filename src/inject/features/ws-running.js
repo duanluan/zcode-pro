@@ -893,6 +893,12 @@ let scanDebounce = 0;
 export function startWsRunningSpin() {
   if (installed || typeof document === 'undefined') return;
   installed = true;
+  // 加载中图标用默认灰压深一点点：既比默认灰显眼，又不像主题色那么跳
+  //（描边是 currentColor，改 color 即可）
+  const st = document.createElement('style');
+  st.id = '__zcodepro_ws_style__';
+  st.textContent = '.zcodepro-ws-loader{color:color-mix(in srgb, currentColor 85%, black) !important}';
+  document.head.append(st);
   void refreshConfig();
   pollConfig();
 

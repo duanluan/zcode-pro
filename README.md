@@ -2,7 +2,7 @@
 
 [English](README.en.md) | 简体中文
 
-ZCode 桌面版界面增强工具。不修改客户端文件，通过 ZCode Pro 快捷方式或终端命令 `zcode-pro` 启动即可。
+ZCode 桌面版增强工具：壁纸引擎（图片/视频/网页）、皮肤主题、会话快捷切换、状态栏统计等二十余项界面与体验增强。不修改客户端文件，通过 ZCode Pro 快捷方式或终端命令 `zcode-pro` 启动即可生效。
 
 [![npm](https://img.shields.io/npm/v/zcode-pro?logo=npm&logoColor=white)](https://www.npmjs.com/package/zcode-pro) [![PyPI](https://img.shields.io/pypi/v/zcode-pro?logo=pypi&logoColor=white)](https://pypi.org/project/zcode-pro/) [![AUR 版本](https://img.shields.io/aur/version/zcode-pro?logo=archlinux&logoColor=white)](https://aur.archlinux.org/packages/zcode-pro) [![Windows](https://img.shields.io/badge/-Windows-0078D6?logo=data:image/svg%2Bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI2ZmZmZmZiIgZD0iTTAsMEgxMS4zNzdWMTEuMzcySDBaTTEyLjYyMywwSDI0VjExLjM3MkgxMi42MjNaTTAsMTIuNjIzSDExLjM3N1YyNEgwWm0xMi42MjMsMEgyNFYyNEgxMi42MjMiLz48L3N2Zz4%3D)](https://github.com/duanluan/zcode-pro#-windows) [![macOS](https://img.shields.io/badge/-macOS-000000?logo=apple&logoColor=white)](https://github.com/duanluan/zcode-pro#-linux--macos) [![Linux](https://img.shields.io/badge/-Linux-FCC624?logo=linux&logoColor=black)](https://github.com/duanluan/zcode-pro#-linux--macos) [![QQ 群](https://img.shields.io/badge/QQ-428403354-12B7F5?logo=qq&logoColor=white)](https://github.com/duanluan/zcode-pro#-交流与反馈) [![微信](https://img.shields.io/badge/%E5%BE%AE%E4%BF%A1-ai4only-07C160?logo=wechat&logoColor=white)](https://github.com/duanluan/zcode-pro#-交流与反馈)
 
