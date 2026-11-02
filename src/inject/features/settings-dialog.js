@@ -922,14 +922,18 @@ export function openSettingsDialog() {
       let bgLoading = false;
       let folderInfo = { count: 0, dir: '' };
       const themeInputCls = 'h-8 w-full rounded-lg border border-border bg-input px-2.5 text-ui-sm text-foreground outline-none transition-shadow placeholder:text-foreground-subtle focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40';
-      const numField = (val, min, max, commit, title) => {
+      const numField = (val, min, max, commit, title, step = 1) => {
         const n = h('input', {
-          type: 'number', min: String(min), max: String(max), step: '1', title,
-          class: 'h-7 w-24 rounded-lg border border-border bg-input px-2 text-right text-ui-xs tabular-nums text-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40',
+          type: 'number', min: String(min), max: String(max), step: String(step), title,
+          inputmode: step < 1 ? 'decimal' : 'numeric',
+          class: 'h-7 w-24 rounded-lg border border-border bg-input px-2 text-right text-ui-sm tabular-nums text-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40',
         });
         n.value = String(val);
         n.addEventListener('change', () => {
-          const v = Math.max(min, Math.min(max, Math.round(Number(n.value) || 0)));
+          // 按步进精度取整；step 带小数时（倍速）取两位小数并限制范围
+          const d = String(step).includes('.') ? String(step).split('.')[1].length : 0;
+          const raw = Number(n.value);
+          const v = Math.max(min, Math.min(max, Number.isFinite(raw) ? Number(raw.toFixed(d)) : min));
           n.value = String(v);
           commit(v);
         });
@@ -1084,6 +1088,9 @@ export function openSettingsDialog() {
         );
       };
       // 分区背景行：跟随全局 / 图库（下拉选图）/ 文件夹 / 网址
+      // regionMaskTimers 记各分区遮罩滑杆的防抖提交（按行分开，互不误撤）；
+      // 只有"跟随全局"胶囊撤本行在途提交（它写 null 与拖动值直接冲突）
+      const regionMaskTimers = {};
       const setRegion = (region, value) => {
         void saveTheme({ bg: { regions: { ...themeCfg.bg.regions, [region]: value } } });
       };
@@ -1096,47 +1103,104 @@ export function openSettingsDialog() {
           onClick: () => {
             if (id === null) { setRegion(region, null); return; }
             const keep = themeCfg.bg.regions[region];
-            setRegion(region, { mode: id, file: keep && keep.file || '', folder: keep && keep.folder || '', url: keep && keep.url || '' });
+            setRegion(region, {
+              mode: id, file: keep && keep.file || '', folder: keep && keep.folder || '', url: keep && keep.url || '',
+              fit: (keep && keep.fit) || null, maskOpacity: keep && keep.maskOpacity != null ? keep.maskOpacity : null,
+            });
           },
         }, text);
         let valueCtrl = null;
         if (mode === 'library') {
-          const sel = h('select', { class: 'h-7 max-w-40 rounded-lg border border-border bg-input px-1.5 text-ui-xs text-foreground outline-none' });
+          const sel = h('select', { class: 'h-7 max-w-40 rounded-lg border border-border bg-input px-1.5 text-ui-sm text-foreground outline-none' });
           sel.append(h('option', { value: '' }, '—'));
           for (const f of bgFiles) {
             if (/\.(mp4|webm|mov)$/i.test(f.name)) continue; // 分区是 CSS 铺图，视频播不了
             sel.append(h('option', { value: f.name }, f.name));
           }
           sel.value = (cur && cur.file) || '';
-          sel.addEventListener('change', () => setRegion(region, { ...cur, file: sel.value }));
+          sel.addEventListener('change', () => {
+            const fresh = themeCfg.bg.regions[region];
+            if (fresh) setRegion(region, { ...fresh, file: sel.value });
+          });
           valueCtrl = sel;
         } else if (mode === 'folder') {
           const inp = h('input', { type: 'text', value: (cur && cur.folder) || '', class: themeInputCls.replace('h-8', 'h-7'), placeholder: '/path/to/wallpapers' });
-          inp.addEventListener('change', () => { setRegion(region, { ...cur, folder: inp.value.trim() }); }); // 空值 = 清空目录，应用侧会撤掉旧图规则
+          inp.addEventListener('change', () => { // 空值 = 清空目录，应用侧会撤掉旧图规则
+            const fresh = themeCfg.bg.regions[region];
+            if (fresh) setRegion(region, { ...fresh, folder: inp.value.trim() });
+          });
           valueCtrl = inp;
         } else if (mode === 'url') {
           const inp = h('input', { type: 'url', value: (cur && cur.url) || '', class: themeInputCls.replace('h-8', 'h-7'), placeholder: 'https://...' });
           inp.addEventListener('change', () => {
             const v = inp.value.trim();
-            if (/^https?:\/\/\S+$/.test(v) && !/[<>"'\\]/.test(v)) setRegion(region, { ...cur, url: v });
-            else { showToast(L.themeBgUrlInvalid, 'warning'); renderThemeBg(); } // 非法网址不保存：提示并回显已存值
+            if (!/^https?:\/\/\S+$/.test(v) || /[<>"'\\]/.test(v)) { showToast(L.themeBgUrlInvalid, 'warning'); renderThemeBg(); return; } // 非法网址不保存：提示并回显已存值
+            const fresh = themeCfg.bg.regions[region];
+            if (fresh) setRegion(region, { ...fresh, url: v });
           });
           valueCtrl = inp;
         }
-        return h('div', { class: 'flex flex-wrap items-center gap-2' },
-          h('span', { class: 'w-16 shrink-0 text-ui-xs text-foreground' }, label),
-          h('div', { class: 'flex flex-wrap gap-1' },
-            rBtn(null, L.themeBgRegionFollow), rBtn('library', L.themeBgModeLibrary),
-            rBtn('folder', L.themeBgModeFolder), rBtn('url', L.themeBgModeUrl)),
-          valueCtrl || h('span', { class: 'text-ui-xs text-foreground-subtle' }, ''));
+        // 分区缩放/遮罩：与"画面"同款组件、分两列一行；跟随态由"跟随全局"胶囊表示
+        const fitChip = (id, text) => h('button', {
+          type: 'button', class: 'zcodepro-tab',
+          'data-state': (cur && cur.fit ? cur.fit === id : id === '') ? 'active' : 'inactive',
+          onClick: () => {
+            const fresh = themeCfg.bg.regions[region];
+            if (fresh) setRegion(region, { ...fresh, fit: id || null });
+          },
+        }, text);
+        const maskFollow = !(cur && cur.maskOpacity != null);
+        const maskVal = Math.round((maskFollow ? themeCfg.bg.maskOpacity : cur.maskOpacity) * 100);
+        const maskValLabel = h('span', { class: 'shrink-0 whitespace-nowrap text-ui-sm tabular-nums text-foreground-subtle' }, maskVal + '%');
+        // 跟随中滑杆仍可拖：一拖就自动退出跟随（变淡只是视觉提示，不禁用）
+        const maskRange = h('input', {
+          type: 'range', min: '0', max: '99', step: '1', value: String(maskVal),
+          class: 'zcodepro-range', 'aria-label': L.themeBgMask, style: 'flex:1' + (maskFollow ? ';opacity:0.55' : ''),
+        });
+        maskRange.addEventListener('input', () => {
+          const v = Number(maskRange.value);
+          maskValLabel.textContent = v + '%';
+          clearTimeout(regionMaskTimers[region]);
+          regionMaskTimers[region] = setTimeout(() => {
+            // 调用时读取分区当前值再合并：防抖期间点过胶囊/换过来源时不拿旧对象盖回去
+            const fresh = themeCfg.bg.regions[region];
+            if (fresh) setRegion(region, { ...fresh, maskOpacity: v / 100 });
+          }, 300);
+        });
+        const maskChip = h('button', {
+          type: 'button', class: 'zcodepro-tab',
+          'data-state': maskFollow ? 'active' : 'inactive',
+          // 与缩放的"跟随全局"钮同为"回到跟随"：跟随中点按无操作，退出跟随拖滑杆
+          onClick: () => {
+            if (maskFollow) return;
+            clearTimeout(regionMaskTimers[region]);
+            const fresh = themeCfg.bg.regions[region];
+            if (fresh) setRegion(region, { ...fresh, maskOpacity: null });
+          },
+        }, L.themeBgFollowGlobal);
+        return h('div', { class: 'flex flex-col gap-1' },
+          h('div', { class: 'flex flex-wrap items-center gap-2' },
+            h('span', { class: 'w-16 shrink-0 text-ui-sm text-foreground' }, label),
+            h('div', { class: 'flex flex-wrap gap-1' },
+              rBtn(null, L.themeBgRegionFollow), rBtn('library', L.themeBgModeLibrary),
+              rBtn('folder', L.themeBgModeFolder), rBtn('url', L.themeBgModeUrl)),
+            valueCtrl || h('span', { class: 'text-ui-xs text-foreground-subtle' }, '')),
+          cur ? h('div', { class: 'grid grid-cols-2 gap-x-6 gap-y-2' },
+            h('div', { class: 'flex flex-wrap items-center gap-2' },
+              h('span', { class: 'text-ui-sm font-medium text-foreground-subtle', style: 'width:72px' }, L.themeBgFit),
+              fitChip('', L.themeBgFollowGlobal), fitChip('cover', L.themeBgFitCover), fitChip('contain', L.themeBgFitContain),
+              fitChip('fill', L.themeBgFitFill), fitChip('tile', L.themeBgFitTile)),
+            h('div', { class: 'flex items-center gap-2' },
+              h('span', { class: 'shrink-0 whitespace-nowrap text-ui-sm font-medium text-foreground-subtle', style: 'width:72px' }, L.themeBgMask),
+              maskRange, maskValLabel, maskChip)) : null);
       };
       const renderThemeBg = () => {
         // 三个调节参数（滑杆行构造器：label + 范围 + 单位 + 提示 + 防抖保存）
         const sliderRow = (label, title, min, max, step, val, unit, commit, hint) => {
           // 标签列固定宽（容最长标签六字；内联样式——应用的 Tailwind 按需编译
           // 不包含 w-[72px] 这类任意值类）：多行滑杆的轨道起点对齐同一竖线
-          const lab = h('span', { class: 'shrink-0 whitespace-nowrap text-ui-xs font-medium text-foreground-subtle', title, style: 'width:72px' }, label);
-          const valLabel = h('span', { class: 'w-12 text-right text-ui-xs tabular-nums text-foreground-subtle' }, val + unit);
+          const lab = h('span', { class: 'shrink-0 whitespace-nowrap text-ui-sm font-medium text-foreground-subtle', title, style: 'width:72px' }, label);
+          const valLabel = h('span', { class: 'shrink-0 whitespace-nowrap text-ui-sm tabular-nums text-foreground-subtle' }, val + unit);
           const range = h('input', {
             type: 'range', min: String(min), max: String(max), step: String(step), value: String(val),
             class: 'zcodepro-range', 'aria-label': label, style: 'flex:1',
@@ -1149,25 +1213,24 @@ export function openSettingsDialog() {
             timer = setTimeout(() => commit(v), 300);
           });
           return h('div', { class: 'flex flex-col gap-0.5' },
-            h('div', { class: 'flex items-center gap-3' }, lab, range, valLabel),
+            h('div', { class: 'flex items-center gap-2' }, lab, range, valLabel),
             hint ? h('span', { class: 'text-ui-xs/relaxed text-foreground-subtle' }, hint) : null);
         };
         // 数值兜底：null（旧配置带入）与 undefined 都要落默认，?? 只兜 undefined
         const numOr = (v, d) => (typeof v === 'number' && Number.isFinite(v) ? v : d);
-        const maskRow = () => sliderRow(L.themeBgMask, L.themeBgMaskHint, 0, 99, 1, Math.round(numOr(themeCfg.bg.maskOpacity, 0.82) * 100), '%',
-          (v) => { void saveTheme({ bg: { maskOpacity: v / 100 } }); }, L.themeBgMaskHint2);
+        const maskRow = () => sliderRow(L.themeBgMask, '', 0, 99, 1, Math.round(numOr(themeCfg.bg.maskOpacity, 0.82) * 100), '%',
+          (v) => { void saveTheme({ bg: { maskOpacity: v / 100 } }); }, '');
         const blurRow = () => sliderRow(L.themeBgBlur, '', 0, 24, 1, numOr(themeCfg.bg.blurPx, 0), 'px',
           (v) => { void saveTheme({ bg: { blurPx: v } }); }, '');
         const panelRow = () => sliderRow(L.themeBgPanel, '', 0, 100, 1, Math.round(numOr(themeCfg.bg.panelOpacity, 0.3) * 100), '%',
-          (v) => { void saveTheme({ bg: { panelOpacity: v / 100 } }); }, L.themeBgPanelHint);
+          (v) => { void saveTheme({ bg: { panelOpacity: v / 100 } }); }, '');
         const modeBtn = (id, label) => h('button', {
           type: 'button', class: 'zcodepro-tab',
           'data-state': themeCfg.bg.mode === id ? 'active' : 'inactive',
           onClick: () => {
-            // url 与 web 共用 bg.url：互切时清空，别让另一模式的网址留着静默失效
-            const cur = themeCfg.bg.mode;
-            const cross = (cur === 'url' || cur === 'web') && (id === 'url' || id === 'web') && cur !== id;
-            void saveTheme({ bg: cross ? { mode: id, url: '' } : { mode: id } });
+            // url 与 web 共用 bg.url：互切保留已填网址（输入框里可见，不算静默失效），
+            // 免得误点一下模式就把输入清空
+            void saveTheme({ bg: { mode: id } });
           },
         }, label);
         // 文件夹路径输入 + 浏览（系统对话框）；确认时先校验目录再保存
@@ -1197,9 +1260,29 @@ export function openSettingsDialog() {
             } finally { browseBtn.disabled = false; }
           })();
         });
-        const randomCheck = h('input', { type: 'checkbox' });
-        randomCheck.checked = themeCfg.bg.folderRandom !== false;
-        randomCheck.addEventListener('change', () => { void saveTheme({ bg: { folderRandom: randomCheck.checked } }); });
+        // 开关用功能页同款 [data-zcodepro-switch]；整行可点，按钮只做视觉（点击
+        // 冒泡到行统一处理，不会切两次）
+        const mkSwitch = (checked) => h('button', {
+          type: 'button', role: 'switch', 'aria-checked': String(checked),
+          class: 'relative inline-flex shrink-0 cursor-pointer items-center',
+        }, h('span', { class: 'zcodepro-switch', 'data-zcodepro-switch': '', 'data-state': checked ? 'on' : 'off' },
+          h('span', { class: 'zcodepro-switch-knob' })));
+        const switchRow = (text, checked, onToggle) => h('div', {
+          class: 'flex cursor-pointer items-center gap-2 text-ui-sm text-foreground-subtle', onClick: onToggle,
+        }, text, mkSwitch(checked));
+        const randomRow = () => {
+          const checked = themeCfg.bg.folderRandom !== false;
+          return switchRow(L.themeBgFolderRandom, checked, () => {
+            void saveTheme({ bg: { folderRandom: !(themeCfg.bg.folderRandom !== false) } });
+          });
+        };
+        // 设置弹窗磨砂开关：默认开（旧配置没有该键也按开处理）
+        const dialogFrostRow = () => {
+          const checked = themeCfg.bg.dialogFrost !== false;
+          return switchRow(L.themeBgDialogFrost, checked, () => {
+            void saveTheme({ bg: { dialogFrost: !(themeCfg.bg.dialogFrost !== false) } });
+          });
+        };
         // 图片网址输入：change 提交；空值回无壁纸
         const urlInput = h('input', { type: 'url', value: themeCfg.bg.url, class: themeInputCls, placeholder: 'https://...' });
         urlInput.addEventListener('change', () => {
@@ -1242,35 +1325,33 @@ export function openSettingsDialog() {
         };
         const section = (titleText, body) => h('div', { class: 'mt-3' },
           h('div', { class: 'mb-1.5 text-ui-xs font-medium text-foreground-subtle' }, titleText), body);
+        // 分组卡片：与设置弹窗其他面板（如视觉代理）的卡片风格一致
+        const card = (titleText, body) => h('div', { class: 'mt-3 rounded-xl border border-border p-2' },
+          h('div', { class: 'mb-1.5 text-ui-xs font-medium text-foreground-subtle' }, titleText), body);
         const modeArea = themeCfg.bg.mode === 'library' ? [
           section(L.themeBgLibrary + (bgFiles.length ? `（${bgFiles.length}）` : ''), h('div', { class: 'flex flex-col gap-2' },
             h('div', { class: 'flex items-center justify-between gap-2' },
               h('span', { class: 'text-ui-xs/relaxed text-foreground-subtle' }, bgLoading ? '…' : (bgFiles.length ? '' : L.themeBgEmpty)),
               btnSmall(L.themeBgUpload, () => bgInput.click())),
             bgFiles.length ? h('div', { class: 'grid grid-cols-4 gap-2', style: 'max-height:13.5rem;overflow-y:auto;' },
-              ...bgFiles.map(libCard)) : null,
-            h('div', { class: 'flex items-center gap-2' },
-              h('label', { class: 'flex items-center gap-1.5 text-ui-xs text-foreground-subtle' }, randomCheck, L.themeBgFolderRandom),
-              numField(themeCfg.bg.intervalMin, 0, 1440, (v) => { void saveTheme({ bg: { intervalMin: v } }); }, L.themeBgIntervalHint),
-              h('span', { class: 'text-ui-xs text-foreground-subtle' }, L.themeBgIntervalUnit)))),
+              ...bgFiles.map(libCard)) : null)),
         ] : themeCfg.bg.mode === 'folder' ? [
           section(L.themeBgModeFolder, h('div', { class: 'flex flex-col gap-2' },
             h('div', { class: 'flex items-center gap-2' }, folderInput, browseBtn),
             h('div', { class: 'flex items-center gap-2' },
-              h('label', { class: 'flex items-center gap-1.5 text-ui-xs text-foreground-subtle' }, randomCheck, L.themeBgFolderRandom),
+              randomRow(),
               numField(themeCfg.bg.intervalMin, 0, 1440, (v) => { void saveTheme({ bg: { intervalMin: v } }); }, L.themeBgIntervalHint)
-                , h('span', { class: 'text-ui-xs text-foreground-subtle' }, L.themeBgIntervalUnit)),
+                , h('span', { class: 'text-ui-sm text-foreground-subtle' }, L.themeBgIntervalUnit)),
             h('p', { class: 'text-ui-xs/relaxed text-foreground-subtle' },
               themeCfg.bg.folder
                 ? (folderInfo.count > 0 ? L.themeBgFolderCount.replaceAll('{n}', String(folderInfo.count)) : L.themeBgFolderMissing)
                 : L.themeBgFolderHint))),
         ] : themeCfg.bg.mode === 'url' ? [
-          section(L.themeBgModeUrl, h('div', { class: 'flex flex-col gap-2' },
+          h('div', { class: 'flex flex-col gap-2' },
             urlInput,
             h('div', { class: 'flex items-center gap-2' },
-              numField(themeCfg.bg.intervalMin, 0, 1440, (v) => { void saveTheme({ bg: { intervalMin: v } }); }, L.themeBgUrlIntervalHint),
-              h('span', { class: 'text-ui-xs text-foreground-subtle' }, L.themeBgIntervalUnit)),
-            h('p', { class: 'text-ui-xs/relaxed text-foreground-subtle' }, L.themeBgUrlHint))),
+              numField(themeCfg.bg.intervalMin, 0, 1440, (v) => { void saveTheme({ bg: { intervalMin: v } }); }, ''),
+              h('span', { class: 'text-ui-sm text-foreground-subtle' }, L.themeBgUrlIntervalUnit))),
         ] : themeCfg.bg.mode === 'web' ? [
           section(L.themeBgModeWeb, h('div', { class: 'flex flex-col gap-2' },
             webInput,
@@ -1287,57 +1368,64 @@ export function openSettingsDialog() {
           onClick: () => void saveTheme({ bg: { transition: id } }),
         }, label);
         const pauseCheck = (key, label) => {
-          const c = h('input', { type: 'checkbox' });
-          c.checked = key === 'pauseOnHidden' ? themeCfg.bg.pauseOnHidden !== false : !!themeCfg.bg[key];
-          c.addEventListener('change', () => void saveTheme({ bg: { [key]: c.checked } }));
-          return h('label', { class: 'flex items-center gap-1.5 text-ui-xs text-foreground-subtle' }, c, label);
+          const checked = key === 'pauseOnHidden' ? themeCfg.bg.pauseOnHidden !== false : !!themeCfg.bg[key];
+          return switchRow(label, checked, () => {
+            // 点按时现算当前值取反：快速连点两次不会都打成同一个目标值
+            const curVal = key === 'pauseOnHidden' ? themeCfg.bg[key] !== false : !!themeCfg.bg[key];
+            void saveTheme({ bg: { [key]: !curVal } });
+          });
         };
         // 播放行只作用于视频壁纸：音量滑杆 + 倍速/帧率下拉
         const selectField = (value, options, commit) => {
-          const sel = h('select', { class: 'h-7 rounded-lg border border-border bg-input px-1.5 text-ui-xs text-foreground outline-none' });
+          const sel = h('select', { class: 'h-7 rounded-lg border border-border bg-input px-1.5 text-ui-sm text-foreground outline-none' });
           for (const [v, label] of options) sel.append(h('option', { value: String(v) }, label));
           sel.value = String(value);
           sel.addEventListener('change', () => commit(sel.value));
           return sel;
         };
         const labelledRow = (label, ctrl) => h('div', { class: 'flex items-center gap-3' },
-          h('span', { class: 'shrink-0 whitespace-nowrap text-ui-xs font-medium text-foreground-subtle', style: 'width:72px' }, label), ctrl);
+          h('span', { class: 'shrink-0 whitespace-nowrap text-ui-sm font-medium text-foreground-subtle', style: 'width:72px' }, label), ctrl);
         const volumeRow = () => sliderRow(L.themeBgVolume, L.themeBgVolumeHint, 0, 100, 1, Math.round(numOr(themeCfg.bg.videoVolume, 0) * 100), '%',
           (v) => { void saveTheme({ bg: { videoVolume: v / 100 } }); }, '');
-        const rateRow = () => labelledRow(L.themeBgRate,
-          selectField(numOr(themeCfg.bg.playbackRate, 1), [['0.5', '0.5x'], ['0.75', '0.75x'], ['1', '1x'], ['1.25', '1.25x'], ['1.5', '1.5x'], ['2', '2x']],
-            (v) => { void saveTheme({ bg: { playbackRate: Number(v) } }); }));
-        const fpsRow = () => h('div', { class: 'flex flex-col gap-0.5' },
-          labelledRow(L.themeBgFps, selectField(numOr(themeCfg.bg.fpsCap, 0), [['0', L.themeBgFpsOff], ['15', '15 fps'], ['30', '30 fps'], ['60', '60 fps']],
-            (v) => { void saveTheme({ bg: { fpsCap: Number(v) } }); })),
-          h('span', { class: 'text-ui-xs/relaxed text-foreground-subtle' }, L.themeBgFpsHint));
+        const rateRow = () => labelledRow(L.themeBgRate, h('div', { class: 'flex items-center gap-1' },
+          numField(numOr(themeCfg.bg.playbackRate, 1), 0.5, 2, (v) => { void saveTheme({ bg: { playbackRate: v } }); }, '0.5-2', 0.25),
+          h('span', { class: 'text-ui-sm text-foreground-subtle' }, 'x')));
+        const fpsRow = () => labelledRow(L.themeBgFps, selectField(numOr(themeCfg.bg.fpsCap, 0), [['0', L.themeBgFpsOff], ['15', '15 fps'], ['30', '30 fps'], ['60', '60 fps'], ['90', '90 fps'], ['120', '120 fps']],
+          (v) => { void saveTheme({ bg: { fpsCap: Number(v) } }); }));
         paneStylesSub4.replaceChildren(
           h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.themeBgDesc),
-          h('div', { class: 'mt-2 flex flex-wrap gap-1' },
-            modeBtn('none', L.themeBgModeNone), modeBtn('library', L.themeBgModeLibrary),
-            modeBtn('folder', L.themeBgModeFolder), modeBtn('url', L.themeBgModeUrl),
-            modeBtn('web', L.themeBgModeWeb)),
-          ...modeArea,
-          section(L.themeBgRegions, h('div', { class: 'flex flex-col gap-2' },
+          card(L.themeBgSource, h('div', { class: 'flex flex-col gap-2' },
+            h('div', { class: 'flex flex-wrap gap-1' },
+              modeBtn('none', L.themeBgModeNone), modeBtn('library', L.themeBgModeLibrary),
+              modeBtn('folder', L.themeBgModeFolder), modeBtn('url', L.themeBgModeUrl),
+              modeBtn('web', L.themeBgModeWeb)),
+            ...modeArea)),
+          card(L.themeBgImage, h('div', { class: 'grid grid-cols-2 gap-x-6 gap-y-2' },
+            h('div', { class: 'flex flex-wrap items-center gap-2' },
+              h('span', { class: 'text-ui-sm font-medium text-foreground-subtle', style: 'width:72px' }, L.themeBgFit),
+              fitBtn('cover', L.themeBgFitCover), fitBtn('contain', L.themeBgFitContain),
+              fitBtn('fill', L.themeBgFitFill), fitBtn('tile', L.themeBgFitTile)),
+            h('div', { class: 'flex flex-wrap items-center gap-2' },
+              h('span', { class: 'text-ui-sm font-medium text-foreground-subtle', style: 'width:72px' }, L.themeBgTransition),
+              transBtn('cut', L.themeBgTransitionCut), transBtn('fade', L.themeBgTransitionFade)),
+            h('div', { class: 'col-span-2' }, maskRow()),
+            blurRow(), panelRow())),
+          card(L.themeBgPlayback, h('div', { class: 'grid grid-cols-2 gap-x-6 gap-y-2' },
+            h('div', { class: 'col-span-2' }, volumeRow()),
+            rateRow(), fpsRow(),
+            h('p', { class: 'col-span-2 text-ui-xs/relaxed text-foreground-subtle' }, L.themeBgFpsHint))),
+          card(L.themeBgRegions, h('div', { class: 'flex flex-col gap-2' },
             regionRow('left', L.themeBgRegionLeft),
             regionRow('center', L.themeBgRegionCenter),
-            regionRow('right', L.themeBgRegionRight))),
-          h('div', { class: 'mt-3 flex flex-wrap items-center gap-2' },
-            h('span', { class: 'text-ui-xs font-medium text-foreground-subtle' }, L.themeBgFit),
-            fitBtn('cover', L.themeBgFitCover), fitBtn('contain', L.themeBgFitContain),
-            fitBtn('fill', L.themeBgFitFill), fitBtn('tile', L.themeBgFitTile)),
-          h('div', { class: 'mt-3 flex flex-wrap items-center gap-2' },
-            h('span', { class: 'text-ui-xs font-medium text-foreground-subtle' }, L.themeBgTransition),
-            transBtn('cut', L.themeBgTransitionCut), transBtn('fade', L.themeBgTransitionFade)),
-          h('div', { class: 'mt-3 flex flex-wrap items-center gap-2' },
-            h('span', { class: 'text-ui-xs font-medium text-foreground-subtle' }, L.themeBgPause),
-            pauseCheck('pauseOnHidden', L.themeBgPauseHidden),
-            pauseCheck('pauseOnBlur', L.themeBgPauseBlur),
-            pauseCheck('pauseOnBattery', L.themeBgPauseBattery)),
-          h('div', { class: 'mt-3 flex flex-col gap-2' },
-            maskRow(), blurRow(), panelRow()),
-          section(L.themeBgPlayback, h('div', { class: 'flex flex-col gap-2' },
-            volumeRow(), rateRow(), fpsRow())),
+            regionRow('right', L.themeBgRegionRight),
+            h('p', { class: 'text-ui-xs/relaxed text-foreground-subtle' }, L.themeBgRegionsHint))),
+          card(L.themeBgMisc, h('div', { class: 'flex flex-col gap-2' },
+            h('div', { class: 'flex flex-wrap items-center gap-x-4 gap-y-2' },
+              h('span', { class: 'text-ui-sm font-medium text-foreground-subtle' }, L.themeBgPause),
+              pauseCheck('pauseOnHidden', L.themeBgPauseHidden),
+              pauseCheck('pauseOnBlur', L.themeBgPauseBlur),
+              pauseCheck('pauseOnBattery', L.themeBgPauseBattery)),
+            dialogFrostRow())),
           bgInput,
         );
       };

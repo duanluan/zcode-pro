@@ -2,7 +2,7 @@
 // 皮肤：覆盖 ZCode 明/暗两套 CSS 变量（theme-zai-light / theme-zai-dark 根 class），
 //   每套皮肤含明、暗两份色值，跟随 ZCode 当前明暗自动选用，不改用户的明暗设置。
 // 壁纸：图片/视频/网页三类，全窗铺在界面后方（fixed slide 层 + 同色遮罩，遮罩
-//   浓度 = 1 - 可见度），换壁纸可硬切或淡入淡出，可定时轮换；素材存 helper 数据
+//   浓度 = 1 - 可见度），换壁纸可直接切换或淡入淡出，可定时轮换；素材存 helper 数据
 //   目录（/bg/file/<name> 引用，免 token）。侧栏/会话流/输入框等表面 token 改写
 //   为 color-mix 半透明让画面透出；弹窗/菜单等浮层 token 不动，保可读。分区背景
 //   仅静态图。表面半透明在 JS 里做而不是纯 CSS：需要先读皮肤应用后的计算值再
@@ -218,7 +218,7 @@ const REGION_SELECTORS = {
   center: '[data-testid="conversation-column"]',
   right: '[data-testid="conversation-column"] ~ [data-testid="browser"]',
 };
-let rotateIdx = -1;   // 顺序轮换的当前索引（图库/文件夹共用，-1 → 首次取第 0 张）
+let rotateIdx = -1;   // 文件夹顺序轮换的当前索引（-1 → 首次取第 0 张）
 let wpTickFn = null;  // 当前来源的轮换/刷新 tick（重新装订计时用）
 let wpItem = null;    // 当前 slide 的来源 {name, from}（帧率上限补转码用）
 let urlTick = 0;      // 网址刷新的缓存戳（只在定时刷新时递增，调参数不换图）
@@ -235,6 +235,15 @@ const sameName = (a, b) => String(a).normalize('NFC').toLowerCase() === String(b
 
 const isDarkMode = () => document.documentElement.classList.contains('theme-zai-dark')
   || document.documentElement.classList.contains('dark');
+
+// backdrop-filter 只有 GPU 合成才渲染；webgl 可用性当代理信号，结果按环境缓存
+let blurUsableMemo = null;
+function backdropBlurUsable() {
+  if (blurUsableMemo === null) {
+    try { blurUsableMemo = !!document.createElement('canvas').getContext('webgl'); } catch { blurUsableMemo = false; }
+  }
+  return blurUsableMemo;
+}
 
 // 读表面 token 的解析色（rgb()/rgba()）：自定义皮肤的多数表面 token 是
 // color-mix() 字符串，直接读自定义属性拿到的是未解析的 token 流（半透明化与
@@ -546,7 +555,7 @@ function maybeTranscode(el, name, from) {
   })();
 }
 
-// 壁纸五模式：none 无 / library 本地图库（intervalMin > 0 时全库轮换）/ folder
+// 壁纸五模式：none 无 / library 本地图库（单选一张，轮换归文件夹）/ folder
 // 文件夹轮换（随机或顺序，intervalMin 分钟，0 = 不轮换）/ url 图片网址（intervalMin
 // 分钟刷新，配随机图 API 用，刷新带缓存戳）/ web 网页（iframe 铺界面后方）。
 // 列表经 helper 取（页面读不了磁盘），取不到一律降级为无壁纸
@@ -559,8 +568,14 @@ async function applyBackground(bg) {
 
   // 全局壁纸与分区背景任一在用，都需要后面的遮罩/半透明化；
   // 全局关闭时只清 slide 层，分区规则交给 applyRegionBackgrounds 自己清
-  const bgActive = !!(bg && bg.mode && bg.mode !== 'none');
-  const anyRegion = !!(bg && bg.regions && (bg.regions.left || bg.regions.center || bg.regions.right));
+  // 选了模式但还没选文件/目录/网址不算启用：半透明要等真有画面可透，否则图
+  // 没上、面板先变透明露出底下的窗口内容
+  // shortcut: 只挡"配置里没填来源"；配置填了但运行时取不到图（文件被删、
+  // 目录为空、网址失效）时半透明仍保持，要跟着回退需要装载失败分支一起改，暂不做
+  const srcLive = (s) => !!s && ((s.mode === 'library' && !!s.file)
+    || (s.mode === 'folder' && !!s.folder) || ((s.mode === 'url' || s.mode === 'web') && !!s.url));
+  const bgActive = srcLive(bg);
+  const anyRegion = !!(bg && bg.regions && (srcLive(bg.regions.left) || srcLive(bg.regions.center) || srcLive(bg.regions.right)));
   if (!bgActive) {
     bgStyleEl.textContent = '';
     ensureEl('__zcodepro_bg_extra__').textContent = ''; // 磨砂/浮层规则不挂类门了，关壁纸要自己清
@@ -618,6 +633,20 @@ async function applyBackground(bg) {
     `[data-testid="v4-composer"] form > .rounded-2xl{` +
     `background-color:rgba(${inputTriple},${composerVeil / 100}) !important;` +
     `backdrop-filter:blur(24px) saturate(1.15);-webkit-backdrop-filter:blur(24px) saturate(1.15);}` +
+    // 设置弹窗卡片（data-zcodepro-settings）同款磨砂：卡片自带 98% 不透明的
+    // popover 底把壁纸盖死，换成不透明度下限的底 + 糊掉背后滚过的会话文字。
+    // 下限 35%（低于输入框的 65%）：弹窗要看得见壁纸，实测 35% 底 + blur(24px)
+    // 壁纸明显可见、卡片内文字仍清楚；再高就"透出等于没透出"。
+    // backdrop-filter 只有 GPU 合成才渲染（软件渲染下静默失效、只剩透明底
+    // 叠字），用 webgl 可用性当代理信号，webgl 不可用时下限抬到 75% 防叠影——
+    // 实测 75% 无模糊也文字清楚、壁纸可见。GPU 在但禁 webgl 的机器会把底色
+    // 再加实一点（75%）
+    // dialogFrost 关掉时不写这条，卡片回落原不透明底
+    (bg.dialogFrost !== false
+      ? `[data-zcodepro-settings="1"]{` +
+        `background-color:color-mix(in srgb, var(--color-popover) ${Math.max(panelMix, backdropBlurUsable() ? 35 : 75)}%, transparent) !important;` +
+        `backdrop-filter:blur(24px) saturate(1.15);-webkit-backdrop-filter:blur(24px) saturate(1.15);}`
+      : '') +
     // 侧栏细线图标加深到正文实色（描边是 currentColor，改 color 即可）：
     // 灰色/半透明图标在透出的壁纸上没有对比度；背景和透明度不动。
     // 加载图标（zcodepro-ws-loader）另有自己的颜色，排除掉
@@ -722,6 +751,11 @@ async function applyBackground(bg) {
     const ticket = ++wpShowTicket;
     const probe = new Image();
     probe.onload = () => { if (ticket === wpShowTicket) setSlide(el); };
+    probe.onerror = () => {
+      // 预载失败（网址失效、或切到另一模式留下的网址）：旧画面不能顶着新签名
+      // 永久挂着，清掉两份签名让 5 秒轮询与后续应用都重试
+      if (ticket === wpShowTicket) { lastWpSig = ''; lastThemeSig = ''; }
+    };
     probe.src = rawUrl;
   };
   // 视频：静音起播（自动播放策略要求）成功后按音量设置放开；音量 0 = 保持静音
@@ -747,7 +781,11 @@ async function applyBackground(bg) {
       maybeTranscode(el, name, from);
     };
     el.addEventListener('loadeddata', go, { once: true });
-    el.addEventListener('error', () => { done = true; }, { once: true }); // 加载失败不上屏，旧壁纸保持
+    el.addEventListener('error', () => {
+      done = true;
+      // 加载失败不上屏，旧壁纸保持；清两份签名让轮询与后续应用重试（同图片路径）
+      if (ticket === wpShowTicket) { lastWpSig = ''; lastThemeSig = ''; }
+    }, { once: true });
     wpTimers.add(setTimeout(go, 8000)); // 首帧迟迟不来也上屏，避免一直挂着旧图
   };
   const setupWeb = (u) => {
@@ -766,7 +804,11 @@ async function applyBackground(bg) {
       setSlide(el);
     };
     el.addEventListener('load', go, { once: true });
-    el.addEventListener('error', () => { done = true; }, { once: true }); // 加载失败不上屏
+    el.addEventListener('error', () => {
+      done = true;
+      // 加载失败不上屏；清两份签名让轮询与后续应用重试（同图片路径）
+      if (ticket === wpShowTicket) { lastWpSig = ''; lastThemeSig = ''; }
+    }, { once: true });
     wpTimers.add(setTimeout(go, 8000));
   };
   const showFile = (f, from) => {
@@ -787,21 +829,14 @@ async function applyBackground(bg) {
   if (bg.mode === 'library') {
     const res = await rpc('/bg');
     if (seq !== applySeq) return; // 等待期间配置又变了，本次作废
-    if (!res.ok) { lastThemeSig = ''; return; } // 取列表失败（helper 重启窗口）：保持旧壁纸与旧轮换；清主题签名让 5 秒轮询重试
+    if (!res.ok) { lastThemeSig = ''; return; } // 取列表失败（helper 重启窗口）：保持旧壁纸；清主题签名让 5 秒轮询重试
     commit();
     const files = Array.isArray(res.files) ? res.files.filter((f) => f && f.name) : [];
     if (!files.length) { clearWallpaper(); return; }
-    const tick = () => showFile(files[nextIdx(files.length)], 'library');
-    wpTickFn = tick;
-    if (!(Math.max(0, Number(bg.intervalMin) || 0) * 60000 >= 30000)) {
-      // 不轮换：只显示选中那一个（没选中就无壁纸，与合并前的行为一致）
-      const pickFile = files.find((f) => sameName(f.name, bg.file));
-      if (!pickFile) { clearWallpaper(); return; }
-      showFile(pickFile, 'library');
-      return;
-    }
-    tick();
-    armRotateTimer(bg);
+    // 图库单选：只显示选中的那张（没选中就无壁纸）；整库轮换归文件夹模式
+    const pickFile = files.find((f) => sameName(f.name, bg.file));
+    if (!pickFile) { clearWallpaper(); return; }
+    showFile(pickFile, 'library');
     return;
   }
   if (bg.mode === 'folder') {
@@ -867,8 +902,16 @@ async function applyRegionBackgrounds(bg, pre) {
   const safeUrl = (u) => (/^https?:\/\/\S+$/i.test(u || '') && !/[<>"'\\]/.test(u) ? u : '');
   const addRule = (region, image) => {
     if (!image) return;
-    regionRules.set(region, `${REGION_SELECTORS[region]}{background-image:linear-gradient(rgba(${regionPaint.rgb},${regionPaint.alpha}),rgba(${regionPaint.rgb},${regionPaint.alpha})),${image} !important;` +
-      `background-size:${regionPaint.sizeVal} !important;background-position:center !important;background-repeat:${regionPaint.repeatVal} !important;}`);
+    // 分区独立缩放/遮罩：调用时读取当前主题里的分区值（轮换 tick 是旧调用留下的
+    // 闭包，读形参 bg 会拿旧值把新设置盖回去），没设（null）跟随全局
+    const rbg = currentTheme.bg || bg;
+    const r = rbg && rbg.regions && rbg.regions[region];
+    const fit = r && r.fit ? r.fit : '';
+    const sizeVal = fit ? (FIT_CSS[fit] || FIT_CSS.cover) : regionPaint.sizeVal;
+    const repeatVal = fit ? (fit === 'tile' ? 'no-repeat,repeat' : 'no-repeat') : regionPaint.repeatVal;
+    const a = r && r.maskOpacity != null ? r.maskOpacity : regionPaint.alpha;
+    regionRules.set(region, `${REGION_SELECTORS[region]}{background-image:linear-gradient(rgba(${regionPaint.rgb},${a}),rgba(${regionPaint.rgb},${a})),${image} !important;` +
+      `background-size:${sizeVal} !important;background-position:center !important;background-repeat:${repeatVal} !important;}`);
   };
   const seq = applySeq;
   const ms = (Math.max(0, Number(bg && bg.intervalMin) || 0)) * 60000;

@@ -144,7 +144,7 @@ export function listBgFiles(dataRoot) {
 
 // 视频壁纸帧率上限：ffmpeg 一次性转码出抽帧版存缓存目录，注入层先播原片、
 // 转码完成再换。没有 ffmpeg 时接口直接报缺依赖，注入层保持原片播放
-export const TRANSCODE_FPS = new Set([15, 30, 60]);
+export const TRANSCODE_FPS = new Set([15, 30, 60, 90, 120]);
 let ffmpegOk = null; // 三态：null 未探测 / true / false
 function hasFfmpeg() {
   if (ffmpegOk === null) {
@@ -166,14 +166,14 @@ function decodeName(raw) {
 
 // 主题配置（设置 → 外观 → 主题/壁纸）：skin 为皮肤 id（default = 不覆盖，
 // custom = 用 custom 锚点色现算色阶）；bg.mode 选壁纸来源——none 无壁纸 /
-// library 本地图库（file 为当前文件，intervalMin > 0 时全库轮换）/ folder 文件夹
+// library 本地图库（file 为当前文件，单选一张，轮换归文件夹）/ folder 文件夹
 // （定时轮换，folderRandom 随机或顺序）/ url 图片网址（intervalMin 定时刷新）/
 // web 网页（url 为页面地址，iframe 铺在界面后方）；
 // maskOpacity 遮罩不透明度 0-0.99（越高画面越向主题背景色淡化，文字对比越
 // 清晰，默认 0.82）、blurPx 画面模糊 0-24px（默认 0）、panelOpacity 面板
 // 不透明度 0-1（侧栏/面板/标签栏，越低透出画面越多，默认 0.3）；
-// transition 换壁纸转场（cut 硬切 / fade 淡入淡出）、fpsCap 视频帧率上限
-// （0 原始，其余 15/30/60，需 ffmpeg 抽帧转码）、videoVolume 音量 0-1（默认 0
+// transition 换壁纸转场（cut 直接切换 / fade 淡入淡出）、fpsCap 视频帧率上限
+// （0 原始，其余 15/30/60/90/120，需 ffmpeg 抽帧转码）、videoVolume 音量 0-1（默认 0
 // 静音）、playbackRate 倍速 0.5-2（默认 1）；pauseOnHidden/pauseOnBlur/
 // pauseOnBattery 三个暂停条件（默认开/关/关）
 const THEME_SKINS = new Set(['default', 'dracula', 'nord', 'tokyonight', 'catppuccin', 'gruvbox', 'onedark', 'solarized', 'rosepine', 'everforest', 'nightowl', 'kanagawa', 'custom']);
@@ -204,6 +204,10 @@ function mergeBgRegion(src) {
     file: mode === 'library' ? (str(src.file, 200) || '') : '',
     folder: mode === 'folder' ? (str(src.folder, 4096) || '') : '',
     url: mode === 'url' ? (str(src.url, 2000) || '').trim() : '',
+    // 分区独立缩放/遮罩：null = 跟随全局（只有分区行的控件会写这两项）
+    fit: BG_FITS.has(src.fit) ? src.fit : null,
+    maskOpacity: src.maskOpacity != null && src.maskOpacity !== '' && Number.isFinite(Number(src.maskOpacity))
+      ? Math.min(0.99, Math.max(0, Number(src.maskOpacity))) : null,
   };
 }
 export function mergeThemeConfig(saved) {
@@ -222,12 +226,13 @@ export function mergeThemeConfig(saved) {
       intervalMin: bg.intervalMin != null && Number.isFinite(Number(bg.intervalMin)) ? Math.min(1440, Math.max(0, Math.round(Number(bg.intervalMin)))) : 0,
       fit: BG_FITS.has(bg.fit) ? bg.fit : 'cover',
       // null/undefined/非数值都落默认（Number(null)=0 是有限数，须先排除 null）
-      maskOpacity: bg.maskOpacity != null && Number.isFinite(Number(bg.maskOpacity))
+      maskOpacity: bg.maskOpacity != null && bg.maskOpacity !== '' && Number.isFinite(Number(bg.maskOpacity))
         ? Math.min(0.99, Math.max(0, Number(bg.maskOpacity))) : 0.82,
       blurPx: bg.blurPx != null && Number.isFinite(Number(bg.blurPx)) ? Math.min(24, Math.max(0, Math.round(bg.blurPx))) : 0,
-      panelOpacity: bg.panelOpacity != null && Number.isFinite(Number(bg.panelOpacity)) ? Math.min(1, Math.max(0, Number(bg.panelOpacity))) : 0.3,
+      panelOpacity: bg.panelOpacity != null && bg.panelOpacity !== '' && Number.isFinite(Number(bg.panelOpacity)) ? Math.min(1, Math.max(0, Number(bg.panelOpacity))) : 0.3,
       transition: bg.transition === 'fade' ? 'fade' : 'cut',
       fpsCap: TRANSCODE_FPS.has(Number(bg.fpsCap)) ? Number(bg.fpsCap) : 0,
+      dialogFrost: bg.dialogFrost !== false,
       videoVolume: bg.videoVolume != null && Number.isFinite(Number(bg.videoVolume))
         ? Math.min(1, Math.max(0, Number(bg.videoVolume))) : 0,
       playbackRate: bg.playbackRate != null && Number.isFinite(Number(bg.playbackRate))
@@ -252,7 +257,7 @@ export function mergeThemeConfig(saved) {
 // mergeThemeConfig（clamp + 默认值）
 export const BG_PARAM_KEYS = {
   maskOpacity: 'number', blurPx: 'number', panelOpacity: 'number', videoVolume: 'number', playbackRate: 'number',
-  pauseOnHidden: 'boolean', pauseOnBlur: 'boolean', pauseOnBattery: 'boolean',
+  pauseOnHidden: 'boolean', pauseOnBlur: 'boolean', pauseOnBattery: 'boolean', dialogFrost: 'boolean',
   fit: BG_FITS, transition: new Set(['cut', 'fade']), fpsCap: new Set([0, ...TRANSCODE_FPS]),
 };
 
@@ -819,6 +824,7 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
               pauseOnHidden: bt.bg && bt.bg.pauseOnHidden !== undefined ? bt.bg.pauseOnHidden : cur.bg.pauseOnHidden,
               pauseOnBlur: bt.bg && bt.bg.pauseOnBlur !== undefined ? bt.bg.pauseOnBlur : cur.bg.pauseOnBlur,
               pauseOnBattery: bt.bg && bt.bg.pauseOnBattery !== undefined ? bt.bg.pauseOnBattery : cur.bg.pauseOnBattery,
+              dialogFrost: bt.bg && bt.bg.dialogFrost !== undefined ? bt.bg.dialogFrost : cur.bg.dialogFrost,
               regions: bt.bg && bt.bg.regions !== undefined ? bt.bg.regions : cur.bg.regions,
             },
           };
@@ -1031,7 +1037,7 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
           return;
         }
         if (!TRANSCODE_FPS.has(fps)) {
-          json(res, 400, { ok: false, code: 'transcode-fps', error: '帧率上限仅支持 15/30/60' });
+          json(res, 400, { ok: false, code: 'transcode-fps', error: `帧率上限仅支持 ${[...TRANSCODE_FPS].join('/')}` });
           return;
         }
         const srcStat = statSync(src);
