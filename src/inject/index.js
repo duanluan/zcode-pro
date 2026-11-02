@@ -15,6 +15,7 @@ import { startStatusBar } from './features/status-bar.js';
 import { startTurnUsage } from './features/turn-usage.js';
 import { startTitleLock } from './features/title-lock.js';
 import { startTitleGen } from './features/title-gen.js';
+import { startAutoRename, handleTaskRowMenu } from './features/auto-rename.js';
 import { startWsRunningSpin } from './features/ws-running.js';
 import { startIdleReclaim } from './features/idle-reclaim.js';
 import { startSandboxReclaim } from './features/sandbox-reclaim.js';
@@ -66,6 +67,7 @@ import { ensureStyle } from './ui.js';
     observeRadixPopups((content) => {
       try { handleProjectMenu(content); } catch { /* 单个功能失败不影响其他 */ }
       try { handleFileMenu(content); } catch { /* ignore */ }
+      try { handleTaskRowMenu(content); } catch { /* ignore */ }
     });
     try { void startAliasWatcher(); } catch { /* ignore */ }
     // 别名迁移弹窗（3.16.1+ 且仍有存量别名时才动作），内部自带等待与窗口聚焦判断
@@ -74,6 +76,7 @@ import { ensureStyle } from './ui.js';
     try { startSessionSwitch(); } catch { /* ignore */ }
     try { startTitleLock(); } catch { /* ignore */ }
     try { startTitleGen(); } catch { /* ignore */ }
+    try { startAutoRename(); } catch { /* ignore */ }
     try { startImageMenu(); } catch { /* ignore */ }
     try { startWsRunningSpin(); } catch { /* ignore */ }
     try { startIdleReclaim(); } catch { /* ignore */ }

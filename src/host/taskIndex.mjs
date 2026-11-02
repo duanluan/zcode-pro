@@ -350,7 +350,8 @@ export async function isTaskTitleOverridden(dataRoot, sessId) {
 // 之后官方自动标题不会再覆盖这条记录。仅在会话未删除、且从未被手动重命名过
 // （title_overridden = 0）时写入——手动重命名永远优先。返回 { written, title }；
 // written = false 表示没写（已重命名或会话不在索引中）。库被占用时抛 index-busy。
-export async function setTaskTitleIfNotOverridden(dataRoot, sessId, title) {
+// force：用户显式“自动重命名”已重命名过的会话也照写（改名意图明确，不守旧行）。
+export async function setTaskTitleIfNotOverridden(dataRoot, sessId, title, { force = false } = {}) {
   const dbFile = taskIndexPath(dataRoot);
   if (!existsSync(dbFile)) return { written: false, title };
   const driver = await loadDriver();
@@ -367,7 +368,8 @@ export async function setTaskTitleIfNotOverridden(dataRoot, sessId, title) {
         db.exec('BEGIN IMMEDIATE');
         try {
           const r = db.prepare(
-            'UPDATE tasks SET title = ?, title_overridden = 1 WHERE task_id = ? AND deleted = 0 AND title_overridden = 0'
+            'UPDATE tasks SET title = ?, title_overridden = 1 WHERE task_id = ? AND deleted = 0'
+            + (force ? '' : ' AND title_overridden = 0')
           ).run(title, sessId);
           db.exec('COMMIT');
           return { written: r.changes > 0, title };
@@ -381,7 +383,7 @@ export async function setTaskTitleIfNotOverridden(dataRoot, sessId, title) {
     const r = runCli(dbFile,
       'BEGIN IMMEDIATE;\n'
       + `UPDATE tasks SET title = ${esc(title)}, title_overridden = 1`
-      + ` WHERE task_id = ${esc(sessId)} AND deleted = 0 AND title_overridden = 0;\n`
+      + ` WHERE task_id = ${esc(sessId)} AND deleted = 0${force ? '' : ' AND title_overridden = 0'};\n`
       + 'SELECT changes();\nCOMMIT;');
     return { written: Number(r.stdout.trim()) > 0, title };
   } catch (err) {
@@ -634,4 +636,63 @@ export async function setCustomSessionTitle(dataRoot, sessId, title) {
     e.code = 'index-error';
     throw e;
   }
+}
+
+// 手动自动重命名的素材：会话最近 N 轮问答（问/答文本，按时间先后）。一轮 =
+// 一条用户消息 + 其后的助手回答文本；跳过 model-only 的注入消息（agent 列表
+// 等）与没有文本的部分。超 1200 字（generateTitleWith 的素材上限）时从最旧
+// 一轮丢起，保住最新内容。返回 '' = 没有可用问答。
+export async function readRecentQa(dataRoot, sessId, rounds) {
+  const dbFile = join(dataRoot, 'cli', 'db', 'db.sqlite');
+  if (!existsSync(dbFile)) return '';
+  const driver = await loadDriver();
+  if (!driver) return '';
+  const n = Math.min(20, Math.max(1, Math.round(Number(rounds) || 3)));
+  const esc = (v) => "'" + String(v).replace(/'/g, "''") + "'";
+  // 单行 JSON 查询：node 驱动与 sqlite3 命令两种驱动共用同一条 SQL
+  const one = (sql) => {
+    if (driver.kind === 'node') {
+      const db = new driver.DatabaseSync(dbFile, { readOnly: true });
+      try { return String(db.prepare(sql).get()?.out || ''); } finally { db.close(); }
+    }
+    return runCli(dbFile, sql).stdout.trim();
+  };
+  const msgs = JSON.parse(one(
+    "SELECT coalesce(json_group_array(json_array(id, data)), '[]') AS out FROM"
+    + ` (SELECT id, data FROM message WHERE session_id = ${esc(sessId)} ORDER BY sequence, time_created);`
+  ) || '[]');
+  if (!Array.isArray(msgs) || !msgs.length) return '';
+  const parts = JSON.parse(one(
+    "SELECT coalesce(json_group_array(json_array(message_id, data)), '[]') AS out FROM"
+    + ` (SELECT message_id, data FROM part WHERE session_id = ${esc(sessId)}`
+    + " AND json_extract(data, '$.type') = 'text' ORDER BY message_id, sequence);"
+  ) || '[]');
+  const textOf = new Map(); // message_id → 拼接后的文本
+  for (const row of (Array.isArray(parts) ? parts : [])) {
+    try {
+      const text = JSON.parse(row[1])?.text;
+      if (typeof text === 'string' && text.trim()) {
+        textOf.set(row[0], (textOf.get(row[0]) ? textOf.get(row[0]) + '\n' : '') + text.trim());
+      }
+    } catch { /* 坏行跳过 */ }
+  }
+  // 按 sequence 分轮：用户消息开新一轮，助手文本并入当前轮
+  const roundsList = [];
+  for (const [id, data] of msgs) {
+    let m;
+    try { m = JSON.parse(data); } catch { continue; }
+    const text = textOf.get(id);
+    if (!m || !text) continue;
+    if (m.role === 'user') {
+      if (m.metadata && m.metadata.visibility === 'model-only') continue;
+      roundsList.push({ q: text.slice(0, 600), a: '' });
+    } else if (m.role === 'assistant' && roundsList.length) {
+      const r = roundsList[roundsList.length - 1];
+      r.a = ((r.a ? r.a + '\n' : '') + text).slice(0, 600);
+    }
+  }
+  const sel = roundsList.slice(-n);
+  const fmt = (rs) => rs.map((r) => '问：' + r.q + (r.a ? '\n答：' + r.a : '')).join('\n');
+  while (sel.length > 1 && fmt(sel).length > 1200) sel.shift();
+  return fmt(sel);
 }

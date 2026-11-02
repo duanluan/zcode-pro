@@ -255,7 +255,7 @@
     featureSessionSwitchDesc: "{last} \u6765\u56DE\u4E0A\u6B21\u4F1A\u8BDD\uFF1Balt+\u65B9\u5411\u952E/\u5FEB\u6377\u952E\u9009\u6700\u8FD1\u4F1A\u8BDD\uFF1B\u952E\u4F4D\u53EF\u6539",
     featureTitleLock: "\u91CD\u547D\u540D\u4F1A\u8BDD\u540D\u9501\u5B9A",
     featureTitleLockDesc: "\u624B\u52A8\u91CD\u547D\u540D\u8FC7\u7684\u4F1A\u8BDD\u4E0D\u88AB\u81EA\u52A8\u6807\u9898\u8986\u76D6\uFF0C\u4FA7\u680F\u59CB\u7EC8\u663E\u793A\u91CD\u547D\u540D\u540E\u7684\u540D\u5B57\u3002",
-    tabTitleGen: "\u4EFB\u52A1\u540D\u63D0\u793A\u8BCD",
+    tabTitleGen: "\u81EA\u52A8\u91CD\u547D\u540D",
     titleGenShortDesc: "\u65B0\u4F1A\u8BDD\u5F00\u59CB\u4F5C\u7B54\u65F6\uFF0C\u6309\u6240\u9009\u4F9B\u5E94\u5546\u4E0E\u63D0\u793A\u8BCD\u751F\u6210\u4EFB\u52A1\u540D\u5E76\u6309\u624B\u52A8\u91CD\u547D\u540D\u4FDD\u5B58\uFF0C\u5B98\u65B9\u81EA\u52A8\u6807\u9898\u4E0D\u518D\u8986\u76D6\u3002",
     titleGenEnabled: "\u542F\u7528",
     titleGenProvider: "\u4F9B\u5E94\u5546",
@@ -279,6 +279,17 @@
     titleGenTesting: "\u751F\u6210\u4E2D\u2026",
     titleGenTestOk: "\u751F\u6210\u7ED3\u679C\uFF1A",
     titleGenTestFailed: "\u751F\u6210\u5931\u8D25",
+    // 手动“自动重命名”（任务行悬浮按钮 / 右键菜单入口）与其开关
+    titleGenManual: "\u624B\u52A8\u91CD\u547D\u540D",
+    titleGenHoverBtn: "\u4EFB\u52A1\u884C\u60AC\u6D6E\u6309\u94AE",
+    titleGenHoverBtnDesc: "\u9F20\u6807\u60AC\u505C\u4EFB\u52A1\u884C\u65F6\uFF0C\u5728\u5F52\u6863\u6309\u94AE\u65C1\u663E\u793A\u201C\u81EA\u52A8\u91CD\u547D\u540D\u201D\u6309\u94AE\u3002",
+    titleGenMenuEntry: "\u53F3\u952E\u83DC\u5355\u9879",
+    titleGenMenuEntryDesc: "\u4EFB\u52A1\u53F3\u952E\u83DC\u5355\u201C\u91CD\u547D\u540D\u4EFB\u52A1\u201D\u4E0B\u65B9\u663E\u793A\u201C\u81EA\u52A8\u91CD\u547D\u540D\u201D\u3002",
+    titleGenRecentQa: "\u6700\u8FD1\u95EE\u7B54\u6570",
+    titleGenRecentQaDesc: "\u624B\u52A8\u91CD\u547D\u540D\u53D6\u4F1A\u8BDD\u6700\u8FD1\u51E0\u8F6E\u95EE\u7B54\u4F5C\u4E3A\u8D77\u540D\u7D20\u6750\u3002",
+    autoRenameItem: "\u81EA\u52A8\u91CD\u547D\u540D",
+    autoRenameWorking: "\u6B63\u5728\u751F\u6210\u4EFB\u52A1\u540D\u2026",
+    autoRenameDone: "\u5DF2\u91CD\u547D\u540D\uFF1A",
     featureWsRunning: "\u6298\u53E0\u65F6\u4EFB\u52A1\u8FD0\u884C\u4E2D\u63D0\u793A",
     featureWsRunningDesc: "\u6709\u4F1A\u8BDD\u8FD0\u884C\u65F6\uFF0C\u6298\u53E0\u7684\u9879\u76EE\u4E0E\u4EFB\u52A1\u5206\u533A\u5934\u663E\u793A\u52A0\u8F7D\u56FE\u6807\uFF0C\u5168\u90E8\u7ED3\u675F\u6D88\u5931\u3002",
     tabPerformance: "\u6027\u80FD",
@@ -348,7 +359,7 @@
     themeCustomFg: "\u6B63\u6587",
     themeCustomMuted: "\u6B21\u7EA7\u6587\u5B57",
     themeCustomAccent: "\u5F3A\u8C03\u8272",
-    themeBgDesc: "\u58C1\u7EB8\u652F\u6301\u56FE\u7247\u3001\u89C6\u9891\u3001\u7F51\u9875\u4E09\u7C7B\uFF0C\u94FA\u5728\u754C\u9762\u540E\u65B9\uFF1B\u6765\u6E90\u53EF\u9009\u672C\u5730\u56FE\u5E93\u3001\u6587\u4EF6\u5939\uFF08\u5B9A\u65F6\u8F6E\u6362\uFF09\u3001\u56FE\u7247\u7F51\u5740\uFF08\u5B9A\u65F6\u5237\u65B0\uFF09\u6216\u7F51\u9875\u5730\u5740\uFF0C\u5DE6\u680F / \u4E2D\u680F / \u53F3\u680F\u53EF\u5206\u533A\u72EC\u7ACB\u8BBE\u7F6E\uFF08\u4EC5\u9759\u6001\u56FE\uFF09\uFF1B\u4FA7\u680F\u3001\u4F1A\u8BDD\u6D41\u3001\u8F93\u5165\u6846\u900F\u51FA\u753B\u9762\uFF0C\u5F39\u7A97\u83DC\u5355\u4FDD\u6301\u4E0D\u900F\u660E\u4FDD\u53EF\u8BFB\u3002\u672C\u5730\u56FE\u5E93\u968F WebDAV \u540C\u6B65\u4E0A\u4F20\uFF08\u8986\u76D6\u5F0F\uFF0C\u4E0D\u7559\u5386\u53F2\u7248\u672C\uFF09\u3002",
+    themeBgDesc: "\u58C1\u7EB8\u652F\u6301\u56FE\u7247\u3001\u89C6\u9891\u3001\u7F51\u9875\u4E09\u7C7B\uFF0C\u94FA\u5728\u754C\u9762\u540E\u65B9\uFF1B\u6765\u6E90\u53EF\u9009\u672C\u5730\u56FE\u5E93\uFF08\u5355\u9009\u4E00\u5F20\uFF09\u3001\u6587\u4EF6\u5939\uFF08\u5B9A\u65F6\u8F6E\u6362\uFF09\u3001\u56FE\u7247\u7F51\u5740\uFF08\u5B9A\u65F6\u5237\u65B0\uFF09\u6216\u7F51\u9875\u5730\u5740\uFF1B\u5DE6\u680F / \u4E2D\u680F / \u53F3\u680F\u53EF\u5206\u533A\u72EC\u7ACB\u8BBE\u7F6E\uFF08\u4EC5\u9759\u6001\u56FE\uFF0C\u7F29\u653E\u4E0E\u906E\u7F69\u53EF\u5355\u72EC\u8C03\uFF09\u3002\u4FA7\u680F\u3001\u4F1A\u8BDD\u6D41\u3001\u8F93\u5165\u6846\u548C\u8BBE\u7F6E\u5F39\u7A97\u90FD\u53EF\u900F\u51FA\u753B\u9762\u2014\u2014\u8BBE\u7F6E\u5F39\u7A97\u662F\u78E8\u7802\u73BB\u7483\uFF0C\u78E8\u7802\u6548\u679C\u53EF\u5728\u672C\u9875\u5173\u6389\uFF1B\u53F3\u952E\u83DC\u5355\u4E0E\u5176\u4ED6\u5F39\u7A97\u4FDD\u6301\u4E0D\u900F\u660E\u4FDD\u53EF\u8BFB\u3002\u672C\u5730\u56FE\u5E93\u968F WebDAV \u540C\u6B65\u4E0A\u4F20\uFF08\u8986\u76D6\u5F0F\uFF0C\u4E0D\u7559\u5386\u53F2\u7248\u672C\uFF09\u3002",
     themeBgModeNone: "\u65E0\u58C1\u7EB8",
     themeBgModeLibrary: "\u672C\u5730\u56FE\u5E93",
     themeBgModeFolder: "\u6587\u4EF6\u5939",
@@ -358,31 +369,33 @@
     themeBgUpload: "\u4E0A\u4F20\u56FE\u7247/\u89C6\u9891",
     themeBgEmpty: "\u8FD8\u6CA1\u6709\u4E0A\u4F20\u6587\u4EF6\uFF1B\u56FE\u7247\u652F\u6301 png / jpg / webp / gif / bmp / avif\uFF0810MB \u4EE5\u5185\uFF09\uFF0C\u89C6\u9891\u652F\u6301 mp4 / webm / mov\uFF08200MB \u4EE5\u5185\uFF09",
     themeBgDelete: "\u5220\u9664",
-    themeBgNoneHint: "\u9009\u62E9\u4E00\u79CD\u58C1\u7EB8\u6765\u6E90\uFF1B\u56FE\u5E93\u548C\u6587\u4EF6\u5939\u53EF\u5B9A\u65F6\u8F6E\u6362\uFF0C\u56FE\u7247\u7F51\u5740\u53EF\u914D\u5408\u968F\u673A\u56FE API \u5B9A\u65F6\u5237\u65B0\u3002",
+    themeBgNoneHint: "\u9009\u62E9\u4E00\u79CD\u58C1\u7EB8\u6765\u6E90\uFF1B\u6587\u4EF6\u5939\u53EF\u5B9A\u65F6\u8F6E\u6362\uFF0C\u56FE\u7247\u7F51\u5740\u53EF\u914D\u5408\u968F\u673A\u56FE API \u5B9A\u65F6\u5237\u65B0\u3002",
     themeBgFolderPick: "\u6D4F\u89C8",
     themeBgFolderPickTitle: "\u9009\u62E9\u58C1\u7EB8\u6587\u4EF6\u5939",
     themeBgFolderHint: "\u9009\u62E9\u4E00\u4E2A\u88C5\u58C1\u7EB8\u7684\u6587\u4EF6\u5939\uFF0C\u6587\u4EF6\u539F\u5730\u8BFB\u53D6\u4E0D\u590D\u5236\u3002",
     themeBgFolderRandom: "\u968F\u673A\u987A\u5E8F",
-    themeBgIntervalHint: "\u5207\u6362\u95F4\u9694\uFF08\u5206\u949F\uFF09",
-    themeBgIntervalUnit: "\u5206\u949F\uFF0C0 = \u4E0D\u5207\u6362",
+    themeBgIntervalHint: "\u8F6E\u6362\u95F4\u9694\uFF08\u5206\u949F\uFF09",
+    themeBgIntervalUnit: "\u5206\u949F\u540E\u8F6E\u6362\uFF0C\u8BBE\u4E3A 0 \u4E0D\u8F6E\u6362",
     themeBgFolderCount: "\u6587\u4EF6\u5939\u91CC\u6709 {n} \u4E2A\u58C1\u7EB8\u6587\u4EF6\uFF0C\u5B9A\u65F6\u8F6E\u6362\u4E2D\u3002",
     themeBgFolderMissing: "\u6587\u4EF6\u5939\u4E0D\u5B58\u5728\u6216\u91CC\u9762\u6CA1\u6709\u58C1\u7EB8\u6587\u4EF6\u3002",
-    themeBgUrlHint: "\u5B9A\u65F6\u5237\u65B0\u9002\u5408\u968F\u673A\u56FE API\uFF08\u6BCF\u6B21\u8BF7\u6C42\u8FD4\u56DE\u4E0D\u540C\u56FE\uFF09\uFF1B\u5237\u65B0\u65F6\u5E26\u7F13\u5B58\u53C2\u6570\u907F\u514D\u547D\u4E2D\u7F13\u5B58\u3002",
-    themeBgUrlIntervalHint: "\u5237\u65B0\u95F4\u9694\uFF08\u5206\u949F\uFF09",
+    themeBgUrlIntervalUnit: "\u5206\u949F\u540E\u5237\u65B0\uFF0C\u8BBE\u4E3A 0 \u4E0D\u5237\u65B0",
     themeBgUrlInvalid: "\u7F51\u5740\u9700\u4EE5 http(s):// \u5F00\u5934",
     themeBgWebHint: "\u7F51\u9875\u58C1\u7EB8\u7528\u6C99\u7BB1 iframe \u94FA\u5728\u754C\u9762\u540E\u65B9\uFF0C\u9875\u9762\u9700\u81EA\u884C\u64AD\u653E\u52A8\u753B\u6216\u89C6\u9891\uFF1B\u4EC5\u9875\u9762\u81EA\u8EAB\u900F\u660E\u5E95\u65F6\u80FD\u900F\u51FA\u58C1\u7EB8\uFF0C\u90E8\u5206\u4F9D\u8D56\u767B\u5F55\u6001\u7684\u9875\u9762\u65E0\u6CD5\u663E\u793A\u3002",
+    themeBgSource: "\u6765\u6E90",
+    themeBgImage: "\u753B\u9762",
     themeBgFit: "\u7F29\u653E\u65B9\u5F0F",
     themeBgFitCover: "\u586B\u6EE1",
     themeBgFitContain: "\u9002\u5E94",
     themeBgFitFill: "\u62C9\u4F38",
     themeBgFitTile: "\u5E73\u94FA",
     themeBgMask: "\u906E\u7F69\u4E0D\u900F\u660E\u5EA6",
-    themeBgMaskHint: "\u6570\u503C\u8D8A\u9AD8\uFF0C\u753B\u9762\u8D8A\u5411\u4E3B\u9898\u80CC\u666F\u8272\u6DE1\u5316\uFF0C\u6587\u5B57\u5BF9\u6BD4\u8D8A\u6E05\u6670",
-    themeBgMaskHint2: "\u753B\u9762\u5411\u4E3B\u9898\u80CC\u666F\u8272\u6DE1\u5316\u7684\u7A0B\u5EA6",
     themeBgBlur: "\u753B\u9762\u6A21\u7CCA",
     themeBgPanel: "\u9762\u677F\u4E0D\u900F\u660E\u5EA6",
-    themeBgPanelHint: "\u4FA7\u680F\u3001\u9762\u677F\u4E0E\u6807\u7B7E\u680F\u7684\u4E0D\u900F\u660E\u7A0B\u5EA6\u3002\u8D8A\u4F4E\uFF0C\u900F\u51FA\u7684\u753B\u9762\u8D8A\u591A\u3002",
-    themeBgPlayback: "\u64AD\u653E",
+    themeBgDialogFrost: "\u8BBE\u7F6E\u5F39\u7A97\u78E8\u7802",
+    themeBgMisc: "\u5176\u4ED6",
+    themeBgFollowGlobal: "\u8DDF\u968F\u5168\u5C40",
+    themeBgRegionsHint: '\u6BCF\u884C\u7684\u7F29\u653E\u3001\u906E\u7F69\u53EF\u5355\u72EC\u8BBE\u7F6E\uFF0C\u9009"\u8DDF\u968F\u5168\u5C40"\u5373\u8DDF\u968F"\u753B\u9762"\u7684\u503C\uFF1B\u6A21\u7CCA\u3001\u8F6C\u573A\u3001\u64AD\u653E\u4EC5\u4F5C\u7528\u4E8E\u5168\u5C40\u58C1\u7EB8\uFF08\u5206\u533A\u53EA\u80FD\u94FA\u56FE\uFF0C\u4E0D\u80FD\u64AD\u89C6\u9891\uFF09\u3002\u5206\u533A\u7528\u6587\u4EF6\u5939\u65F6\uFF0C\u8F6E\u6362\u95F4\u9694\u4E0E\u968F\u673A\u987A\u5E8F\u6CBF\u7528\u5168\u5C40\u8BBE\u7F6E\u3002',
+    themeBgPlayback: "\u64AD\u653E\uFF08\u89C6\u9891\u58C1\u7EB8\uFF09",
     themeBgVolume: "\u97F3\u91CF",
     themeBgVolumeHint: "\u89C6\u9891\u58C1\u7EB8\u7684\u97F3\u8F68\u97F3\u91CF\uFF0C0 = \u9759\u97F3\uFF08\u9ED8\u8BA4\uFF09",
     themeBgRate: "\u500D\u901F",
@@ -390,7 +403,7 @@
     themeBgFpsOff: "\u539F\u59CB\u5E27\u7387",
     themeBgFpsHint: "\u5BF9\u89C6\u9891\u58C1\u7EB8\u91CD\u7F16\u7801\u62BD\u5E27\u4EE5\u7701\u8D44\u6E90\uFF0C\u9700\u8981 ffmpeg\uFF1B\u672A\u5B89\u88C5\u65F6\u4FDD\u6301\u539F\u59CB\u5E27\u7387\u3002",
     themeBgTransition: "\u5207\u6362\u8F6C\u573A",
-    themeBgTransitionCut: "\u786C\u5207",
+    themeBgTransitionCut: "\u76F4\u63A5\u5207\u6362",
     themeBgTransitionFade: "\u6DE1\u5165\u6DE1\u51FA",
     themeBgPause: "\u6682\u505C\u6761\u4EF6",
     themeBgPauseHidden: "\u7A97\u53E3\u6700\u5C0F\u5316\u65F6",
@@ -818,7 +831,7 @@
     featureSessionSwitchDesc: "{last} toggles to the last session; alt + arrows pick recent sessions; keys remappable",
     featureTitleLock: "Keep renamed session titles",
     featureTitleLockDesc: "Sessions you renamed keep their custom title in the sidebar.",
-    tabTitleGen: "Task name prompt",
+    tabTitleGen: "Auto rename",
     titleGenShortDesc: "When a new session starts answering, generates the task name with the chosen provider and prompt and saves it as a manual rename the built-in title never overrides.",
     titleGenEnabled: "Enable",
     titleGenProvider: "Provider",
@@ -842,6 +855,16 @@
     titleGenTesting: "Generating\u2026",
     titleGenTestOk: "Result: ",
     titleGenTestFailed: "Generation failed",
+    titleGenManual: "Manual rename",
+    titleGenHoverBtn: "Task row hover button",
+    titleGenHoverBtnDesc: "Show an \u201CAuto rename\u201D button next to the archive button when hovering a task row.",
+    titleGenMenuEntry: "Context menu item",
+    titleGenMenuEntryDesc: "Show \u201CAuto rename\u201D below \u201CRename task\u201D in the task context menu.",
+    titleGenRecentQa: "Recent Q&A rounds",
+    titleGenRecentQaDesc: "Manual rename takes this many recent Q&A rounds as material.",
+    autoRenameItem: "Auto rename",
+    autoRenameWorking: "Generating title\u2026",
+    autoRenameDone: "Renamed: ",
     featureWsRunning: "Running indicator when collapsed",
     featureWsRunningDesc: "Collapsed project and task headers show a loader while sessions run.",
     tabPerformance: "Performance",
@@ -911,7 +934,7 @@
     themeCustomFg: "Text",
     themeCustomMuted: "Muted text",
     themeCustomAccent: "Accent",
-    themeBgDesc: "Wallpapers can be images, videos or web pages, rendered behind the UI. Sources: local library, folder (rotate on a timer), image URL (refresh on a timer) or a web page; left / center / right regions can each have their own (static images only). Sidebar, chat and composer reveal the wallpaper while menus and dialogs stay opaque. The library uploads with the zcode-pro sync group (overwrite, no history versions).",
+    themeBgDesc: "Wallpapers can be images, videos or web pages, rendered behind the UI. Sources: local library (pick one image), folder (rotate on a timer), image URL (refresh on a timer) or a web page; left / center / right regions can each have their own (static images only, with their own fit and mask). Sidebar, chat, composer and the settings dialog reveal the wallpaper \u2014 the settings dialog is frosted; the frosting can be turned off here; context menus and other dialogs stay opaque for readability. The library uploads over WebDAV with the zcode-pro sync group (overwrite, no history versions).",
     themeBgModeNone: "None",
     themeBgModeLibrary: "Library",
     themeBgModeFolder: "Folder",
@@ -921,31 +944,33 @@
     themeBgUpload: "Upload images/videos",
     themeBgEmpty: "Nothing uploaded yet. Images: png / jpg / webp / gif / bmp / avif (up to 10MB); videos: mp4 / webm / mov (up to 200MB)",
     themeBgDelete: "Delete",
-    themeBgNoneHint: "Pick a wallpaper source; library and folder rotate on a timer, image URLs refresh on a timer for random-image APIs.",
+    themeBgNoneHint: "Pick a wallpaper source; folders rotate on a timer, image URLs refresh on a timer for random-image APIs.",
     themeBgFolderPick: "Browse",
     themeBgFolderPickTitle: "Choose a wallpaper folder",
     themeBgFolderHint: "Pick a folder of wallpapers; files are read in place, not copied.",
     themeBgFolderRandom: "Random order",
-    themeBgIntervalHint: "Switch interval (minutes)",
-    themeBgIntervalUnit: "min, 0 = off",
+    themeBgIntervalHint: "Rotation interval (minutes)",
+    themeBgIntervalUnit: "minutes before rotation; 0 = no rotation",
     themeBgFolderCount: "{n} wallpaper files in the folder, rotating on the timer.",
     themeBgFolderMissing: "Folder missing or contains no wallpaper files.",
-    themeBgUrlHint: "Timed refresh suits random-image APIs (each request returns a new image); a cache-buster is appended on refresh.",
-    themeBgUrlIntervalHint: "Refresh interval (minutes)",
+    themeBgUrlIntervalUnit: "minutes before refresh; 0 = no refresh",
     themeBgUrlInvalid: "URL must start with http(s)://",
     themeBgWebHint: "Web wallpapers render behind the UI in a sandboxed iframe; the page plays its own animation or video. Only pages with their own transparent background reveal the wallpaper; pages that need a login session may not show.",
+    themeBgSource: "Source",
+    themeBgImage: "Display",
     themeBgFit: "Fit",
     themeBgFitCover: "Fill",
     themeBgFitContain: "Fit",
     themeBgFitFill: "Stretch",
     themeBgFitTile: "Tile",
     themeBgMask: "Mask opacity",
-    themeBgMaskHint: "Higher values fade the wallpaper toward the theme background color for clearer text",
-    themeBgMaskHint2: "How much the wallpaper fades toward the theme background color",
     themeBgBlur: "Wallpaper blur",
     themeBgPanel: "Panel opacity",
-    themeBgPanelHint: "Opacity of sidebar, panels and tab bar. Lower reveals more of the wallpaper.",
-    themeBgPlayback: "Playback",
+    themeBgDialogFrost: "Frosted settings dialog",
+    themeBgMisc: "Other",
+    themeBgFollowGlobal: "Follow global",
+    themeBgRegionsHint: 'Fit and mask can be set per row; "Follow global" uses the Display values. Blur, transition and playback apply only to the global wallpaper (regions are static images, no video). Region folders reuse the global rotation interval and order settings.',
+    themeBgPlayback: "Playback (video)",
     themeBgVolume: "Volume",
     themeBgVolumeHint: "Audio track volume of video wallpapers, 0 = muted (default)",
     themeBgRate: "Speed",
@@ -953,7 +978,7 @@
     themeBgFpsOff: "Native",
     themeBgFpsHint: "Re-encodes video wallpapers to a lower frame rate to save resources; needs ffmpeg, otherwise the native rate is kept.",
     themeBgTransition: "Transition",
-    themeBgTransitionCut: "Cut",
+    themeBgTransitionCut: "Instant",
     themeBgTransitionFade: "Fade",
     themeBgPause: "Pause when",
     themeBgPauseHidden: "Window minimized",
@@ -4373,6 +4398,17 @@
   ];
   var sameName = (a, b) => String(a).normalize("NFC").toLowerCase() === String(b).normalize("NFC").toLowerCase();
   var isDarkMode = () => document.documentElement.classList.contains("theme-zai-dark") || document.documentElement.classList.contains("dark");
+  var blurUsableMemo = null;
+  function backdropBlurUsable() {
+    if (blurUsableMemo === null) {
+      try {
+        blurUsableMemo = !!document.createElement("canvas").getContext("webgl");
+      } catch {
+        blurUsableMemo = false;
+      }
+    }
+    return blurUsableMemo;
+  }
   var probeEl = null;
   function resolvedColor(token) {
     try {
@@ -4684,8 +4720,9 @@
     const root = document.documentElement;
     root.classList.remove("zcodepro-bg-on");
     clearBgOverrides();
-    const bgActive = !!(bg && bg.mode && bg.mode !== "none");
-    const anyRegion = !!(bg && bg.regions && (bg.regions.left || bg.regions.center || bg.regions.right));
+    const srcLive = (s) => !!s && (s.mode === "library" && !!s.file || s.mode === "folder" && !!s.folder || (s.mode === "url" || s.mode === "web") && !!s.url);
+    const bgActive = srcLive(bg);
+    const anyRegion = !!(bg && bg.regions && (srcLive(bg.regions.left) || srcLive(bg.regions.center) || srcLive(bg.regions.right)));
     if (!bgActive) {
       bgStyleEl.textContent = "";
       ensureEl("__zcodepro_bg_extra__").textContent = "";
@@ -4717,7 +4754,19 @@
         injectedKeys.add(t2);
       }
     }
-    ensureEl("__zcodepro_bg_extra__").textContent = `[data-testid="chat-summary-panel"]{background-color:color-mix(in srgb, var(--color-popover) ${panelMix}%, transparent) !important;backdrop-filter:blur(24px) saturate(1.15);-webkit-backdrop-filter:blur(24px) saturate(1.15);}[data-testid="v4-composer"] form > .rounded-2xl{background-color:rgba(${inputTriple},${composerVeil / 100}) !important;backdrop-filter:blur(24px) saturate(1.15);-webkit-backdrop-filter:blur(24px) saturate(1.15);}aside[data-testid="sidebar"] svg:not(.zcodepro-ws-loader){color:var(--color-foreground) !important;stroke:currentColor !important;}`;
+    ensureEl("__zcodepro_bg_extra__").textContent = `[data-testid="chat-summary-panel"]{background-color:color-mix(in srgb, var(--color-popover) ${panelMix}%, transparent) !important;backdrop-filter:blur(24px) saturate(1.15);-webkit-backdrop-filter:blur(24px) saturate(1.15);}[data-testid="v4-composer"] form > .rounded-2xl{background-color:rgba(${inputTriple},${composerVeil / 100}) !important;backdrop-filter:blur(24px) saturate(1.15);-webkit-backdrop-filter:blur(24px) saturate(1.15);}` + // 设置弹窗卡片（data-zcodepro-settings）同款磨砂：卡片自带 98% 不透明的
+    // popover 底把壁纸盖死，换成不透明度下限的底 + 糊掉背后滚过的会话文字。
+    // 下限 35%（低于输入框的 65%）：弹窗要看得见壁纸，实测 35% 底 + blur(24px)
+    // 壁纸明显可见、卡片内文字仍清楚；再高就"透出等于没透出"。
+    // backdrop-filter 只有 GPU 合成才渲染（软件渲染下静默失效、只剩透明底
+    // 叠字），用 webgl 可用性当代理信号，webgl 不可用时下限抬到 75% 防叠影——
+    // 实测 75% 无模糊也文字清楚、壁纸可见。GPU 在但禁 webgl 的机器会把底色
+    // 再加实一点（75%）
+    // dialogFrost 关掉时不写这条，卡片回落原不透明底
+    (bg.dialogFrost !== false ? `[data-zcodepro-settings="1"]{background-color:color-mix(in srgb, var(--color-popover) ${Math.max(panelMix, backdropBlurUsable() ? 35 : 75)}%, transparent) !important;backdrop-filter:blur(24px) saturate(1.15);-webkit-backdrop-filter:blur(24px) saturate(1.15);}` : "") + // 侧栏细线图标加深到正文实色（描边是 currentColor，改 color 即可）：
+    // 灰色/半透明图标在透出的壁纸上没有对比度；背景和透明度不动。
+    // 加载图标（zcodepro-ws-loader）另有自己的颜色，排除掉
+    `aside[data-testid="sidebar"] svg:not(.zcodepro-ws-loader){color:var(--color-foreground) !important;stroke:currentColor !important;}`;
     await applyRegionBackgrounds(bg, { rgb, alpha, fit: bg.fit, seq });
     if (seq !== applySeq) return;
     if (!bgActive) return;
@@ -4797,6 +4846,12 @@
       probe.onload = () => {
         if (ticket === wpShowTicket) setSlide(el);
       };
+      probe.onerror = () => {
+        if (ticket === wpShowTicket) {
+          lastWpSig = "";
+          lastThemeSig = "";
+        }
+      };
       probe.src = rawUrl;
     };
     const setupVideo = (srcUrl, name, from) => {
@@ -4822,6 +4877,10 @@
       el.addEventListener("loadeddata", go, { once: true });
       el.addEventListener("error", () => {
         done = true;
+        if (ticket === wpShowTicket) {
+          lastWpSig = "";
+          lastThemeSig = "";
+        }
       }, { once: true });
       wpTimers.add(setTimeout(go, 8e3));
     };
@@ -4843,6 +4902,10 @@
       el.addEventListener("load", go, { once: true });
       el.addEventListener("error", () => {
         done = true;
+        if (ticket === wpShowTicket) {
+          lastWpSig = "";
+          lastThemeSig = "";
+        }
       }, { once: true });
       wpTimers.add(setTimeout(go, 8e3));
     };
@@ -4870,19 +4933,12 @@
         clearWallpaper();
         return;
       }
-      const tick6 = () => showFile(files[nextIdx(files.length)], "library");
-      wpTickFn = tick6;
-      if (!(Math.max(0, Number(bg.intervalMin) || 0) * 6e4 >= 3e4)) {
-        const pickFile = files.find((f) => sameName(f.name, bg.file));
-        if (!pickFile) {
-          clearWallpaper();
-          return;
-        }
-        showFile(pickFile, "library");
+      const pickFile = files.find((f) => sameName(f.name, bg.file));
+      if (!pickFile) {
+        clearWallpaper();
         return;
       }
-      tick6();
-      armRotateTimer(bg);
+      showFile(pickFile, "library");
       return;
     }
     if (bg.mode === "folder") {
@@ -4957,7 +5013,13 @@
     const safeUrl = (u) => /^https?:\/\/\S+$/i.test(u || "") && !/[<>"'\\]/.test(u) ? u : "";
     const addRule = (region, image) => {
       if (!image) return;
-      regionRules.set(region, `${REGION_SELECTORS[region]}{background-image:linear-gradient(rgba(${regionPaint.rgb},${regionPaint.alpha}),rgba(${regionPaint.rgb},${regionPaint.alpha})),${image} !important;background-size:${regionPaint.sizeVal} !important;background-position:center !important;background-repeat:${regionPaint.repeatVal} !important;}`);
+      const rbg = currentTheme.bg || bg;
+      const r = rbg && rbg.regions && rbg.regions[region];
+      const fit = r && r.fit ? r.fit : "";
+      const sizeVal = fit ? FIT_CSS[fit] || FIT_CSS.cover : regionPaint.sizeVal;
+      const repeatVal = fit ? fit === "tile" ? "no-repeat,repeat" : "no-repeat" : regionPaint.repeatVal;
+      const a = r && r.maskOpacity != null ? r.maskOpacity : regionPaint.alpha;
+      regionRules.set(region, `${REGION_SELECTORS[region]}{background-image:linear-gradient(rgba(${regionPaint.rgb},${a}),rgba(${regionPaint.rgb},${a})),${image} !important;background-size:${sizeVal} !important;background-position:center !important;background-repeat:${repeatVal} !important;}`);
     };
     const seq = applySeq;
     const ms = Math.max(0, Number(bg && bg.intervalMin) || 0) * 6e4;
@@ -6068,18 +6130,21 @@
         let bgLoading = false;
         let folderInfo = { count: 0, dir: "" };
         const themeInputCls = "h-8 w-full rounded-lg border border-border bg-input px-2.5 text-ui-sm text-foreground outline-none transition-shadow placeholder:text-foreground-subtle focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40";
-        const numField = (val, min, max, commit, title) => {
+        const numField = (val, min, max, commit, title, step = 1) => {
           const n = h("input", {
             type: "number",
             min: String(min),
             max: String(max),
-            step: "1",
+            step: String(step),
             title,
-            class: "h-7 w-24 rounded-lg border border-border bg-input px-2 text-right text-ui-xs tabular-nums text-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
+            inputmode: step < 1 ? "decimal" : "numeric",
+            class: "h-7 w-24 rounded-lg border border-border bg-input px-2 text-right text-ui-sm tabular-nums text-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
           });
           n.value = String(val);
           n.addEventListener("change", () => {
-            const v = Math.max(min, Math.min(max, Math.round(Number(n.value) || 0)));
+            const d = String(step).includes(".") ? String(step).split(".")[1].length : 0;
+            const raw = Number(n.value);
+            const v = Math.max(min, Math.min(max, Number.isFinite(raw) ? Number(raw.toFixed(d)) : min));
             n.value = String(v);
             commit(v);
           });
@@ -6268,6 +6333,7 @@
             )
           );
         };
+        const regionMaskTimers = {};
         const setRegion = (region, value) => {
           void saveTheme({ bg: { regions: { ...themeCfg.bg.regions, [region]: value } } });
         };
@@ -6284,57 +6350,139 @@
                 return;
               }
               const keep = themeCfg.bg.regions[region];
-              setRegion(region, { mode: id, file: keep && keep.file || "", folder: keep && keep.folder || "", url: keep && keep.url || "" });
+              setRegion(region, {
+                mode: id,
+                file: keep && keep.file || "",
+                folder: keep && keep.folder || "",
+                url: keep && keep.url || "",
+                fit: keep && keep.fit || null,
+                maskOpacity: keep && keep.maskOpacity != null ? keep.maskOpacity : null
+              });
             }
           }, text);
           let valueCtrl = null;
           if (mode === "library") {
-            const sel = h("select", { class: "h-7 max-w-40 rounded-lg border border-border bg-input px-1.5 text-ui-xs text-foreground outline-none" });
+            const sel = h("select", { class: "h-7 max-w-40 rounded-lg border border-border bg-input px-1.5 text-ui-sm text-foreground outline-none" });
             sel.append(h("option", { value: "" }, "\u2014"));
             for (const f of bgFiles) {
               if (/\.(mp4|webm|mov)$/i.test(f.name)) continue;
               sel.append(h("option", { value: f.name }, f.name));
             }
             sel.value = cur && cur.file || "";
-            sel.addEventListener("change", () => setRegion(region, { ...cur, file: sel.value }));
+            sel.addEventListener("change", () => {
+              const fresh = themeCfg.bg.regions[region];
+              if (fresh) setRegion(region, { ...fresh, file: sel.value });
+            });
             valueCtrl = sel;
           } else if (mode === "folder") {
             const inp = h("input", { type: "text", value: cur && cur.folder || "", class: themeInputCls.replace("h-8", "h-7"), placeholder: "/path/to/wallpapers" });
             inp.addEventListener("change", () => {
-              setRegion(region, { ...cur, folder: inp.value.trim() });
+              const fresh = themeCfg.bg.regions[region];
+              if (fresh) setRegion(region, { ...fresh, folder: inp.value.trim() });
             });
             valueCtrl = inp;
           } else if (mode === "url") {
             const inp = h("input", { type: "url", value: cur && cur.url || "", class: themeInputCls.replace("h-8", "h-7"), placeholder: "https://..." });
             inp.addEventListener("change", () => {
               const v = inp.value.trim();
-              if (/^https?:\/\/\S+$/.test(v) && !/[<>"'\\]/.test(v)) setRegion(region, { ...cur, url: v });
-              else {
+              if (!/^https?:\/\/\S+$/.test(v) || /[<>"'\\]/.test(v)) {
                 showToast(L.themeBgUrlInvalid, "warning");
                 renderThemeBg();
+                return;
               }
+              const fresh = themeCfg.bg.regions[region];
+              if (fresh) setRegion(region, { ...fresh, url: v });
             });
             valueCtrl = inp;
           }
+          const fitChip = (id, text) => h("button", {
+            type: "button",
+            class: "zcodepro-tab",
+            "data-state": (cur && cur.fit ? cur.fit === id : id === "") ? "active" : "inactive",
+            onClick: () => {
+              const fresh = themeCfg.bg.regions[region];
+              if (fresh) setRegion(region, { ...fresh, fit: id || null });
+            }
+          }, text);
+          const maskFollow = !(cur && cur.maskOpacity != null);
+          const maskVal = Math.round((maskFollow ? themeCfg.bg.maskOpacity : cur.maskOpacity) * 100);
+          const maskValLabel = h("span", { class: "shrink-0 whitespace-nowrap text-ui-sm tabular-nums text-foreground-subtle" }, maskVal + "%");
+          const maskRange = h("input", {
+            type: "range",
+            min: "0",
+            max: "99",
+            step: "1",
+            value: String(maskVal),
+            class: "zcodepro-range",
+            "aria-label": L.themeBgMask,
+            style: "flex:1" + (maskFollow ? ";opacity:0.55" : "")
+          });
+          maskRange.addEventListener("input", () => {
+            const v = Number(maskRange.value);
+            maskValLabel.textContent = v + "%";
+            clearTimeout(regionMaskTimers[region]);
+            regionMaskTimers[region] = setTimeout(() => {
+              const fresh = themeCfg.bg.regions[region];
+              if (fresh) setRegion(region, { ...fresh, maskOpacity: v / 100 });
+            }, 300);
+          });
+          const maskChip = h("button", {
+            type: "button",
+            class: "zcodepro-tab",
+            "data-state": maskFollow ? "active" : "inactive",
+            // 与缩放的"跟随全局"钮同为"回到跟随"：跟随中点按无操作，退出跟随拖滑杆
+            onClick: () => {
+              if (maskFollow) return;
+              clearTimeout(regionMaskTimers[region]);
+              const fresh = themeCfg.bg.regions[region];
+              if (fresh) setRegion(region, { ...fresh, maskOpacity: null });
+            }
+          }, L.themeBgFollowGlobal);
           return h(
             "div",
-            { class: "flex flex-wrap items-center gap-2" },
-            h("span", { class: "w-16 shrink-0 text-ui-xs text-foreground" }, label),
+            { class: "flex flex-col gap-1" },
             h(
               "div",
-              { class: "flex flex-wrap gap-1" },
-              rBtn(null, L.themeBgRegionFollow),
-              rBtn("library", L.themeBgModeLibrary),
-              rBtn("folder", L.themeBgModeFolder),
-              rBtn("url", L.themeBgModeUrl)
+              { class: "flex flex-wrap items-center gap-2" },
+              h("span", { class: "w-16 shrink-0 text-ui-sm text-foreground" }, label),
+              h(
+                "div",
+                { class: "flex flex-wrap gap-1" },
+                rBtn(null, L.themeBgRegionFollow),
+                rBtn("library", L.themeBgModeLibrary),
+                rBtn("folder", L.themeBgModeFolder),
+                rBtn("url", L.themeBgModeUrl)
+              ),
+              valueCtrl || h("span", { class: "text-ui-xs text-foreground-subtle" }, "")
             ),
-            valueCtrl || h("span", { class: "text-ui-xs text-foreground-subtle" }, "")
+            cur ? h(
+              "div",
+              { class: "grid grid-cols-2 gap-x-6 gap-y-2" },
+              h(
+                "div",
+                { class: "flex flex-wrap items-center gap-2" },
+                h("span", { class: "text-ui-sm font-medium text-foreground-subtle", style: "width:72px" }, L.themeBgFit),
+                fitChip("", L.themeBgFollowGlobal),
+                fitChip("cover", L.themeBgFitCover),
+                fitChip("contain", L.themeBgFitContain),
+                fitChip("fill", L.themeBgFitFill),
+                fitChip("tile", L.themeBgFitTile)
+              ),
+              h(
+                "div",
+                { class: "flex items-center gap-2" },
+                h("span", { class: "shrink-0 whitespace-nowrap text-ui-sm font-medium text-foreground-subtle", style: "width:72px" }, L.themeBgMask),
+                maskRange,
+                maskValLabel,
+                maskChip
+              )
+            ) : null
           );
         };
         const renderThemeBg = () => {
           const sliderRow = (label, title, min, max, step, val, unit, commit, hint) => {
-            const lab = h("span", { class: "shrink-0 whitespace-nowrap text-ui-xs font-medium text-foreground-subtle", title, style: "width:72px" }, label);
-            const valLabel = h("span", { class: "w-12 text-right text-ui-xs tabular-nums text-foreground-subtle" }, val + unit);
+            const lab = h("span", { class: "shrink-0 whitespace-nowrap text-ui-sm font-medium text-foreground-subtle", title, style: "width:72px" }, label);
+            const valLabel = h("span", { class: "shrink-0 whitespace-nowrap text-ui-sm tabular-nums text-foreground-subtle" }, val + unit);
             const range = h("input", {
               type: "range",
               min: String(min),
@@ -6355,14 +6503,14 @@
             return h(
               "div",
               { class: "flex flex-col gap-0.5" },
-              h("div", { class: "flex items-center gap-3" }, lab, range, valLabel),
+              h("div", { class: "flex items-center gap-2" }, lab, range, valLabel),
               hint ? h("span", { class: "text-ui-xs/relaxed text-foreground-subtle" }, hint) : null
             );
           };
           const numOr = (v, d) => typeof v === "number" && Number.isFinite(v) ? v : d;
           const maskRow = () => sliderRow(
             L.themeBgMask,
-            L.themeBgMaskHint,
+            "",
             0,
             99,
             1,
@@ -6371,7 +6519,7 @@
             (v) => {
               void saveTheme({ bg: { maskOpacity: v / 100 } });
             },
-            L.themeBgMaskHint2
+            ""
           );
           const blurRow = () => sliderRow(
             L.themeBgBlur,
@@ -6397,16 +6545,14 @@
             (v) => {
               void saveTheme({ bg: { panelOpacity: v / 100 } });
             },
-            L.themeBgPanelHint
+            ""
           );
           const modeBtn = (id, label) => h("button", {
             type: "button",
             class: "zcodepro-tab",
             "data-state": themeCfg.bg.mode === id ? "active" : "inactive",
             onClick: () => {
-              const cur = themeCfg.bg.mode;
-              const cross = (cur === "url" || cur === "web") && (id === "url" || id === "web") && cur !== id;
-              void saveTheme({ bg: cross ? { mode: id, url: "" } : { mode: id } });
+              void saveTheme({ bg: { mode: id } });
             }
           }, label);
           const folderInput = h("input", { type: "text", value: themeCfg.bg.folder, class: themeInputCls, placeholder: "/path/to/wallpapers" });
@@ -6439,11 +6585,32 @@
               }
             })();
           });
-          const randomCheck = h("input", { type: "checkbox" });
-          randomCheck.checked = themeCfg.bg.folderRandom !== false;
-          randomCheck.addEventListener("change", () => {
-            void saveTheme({ bg: { folderRandom: randomCheck.checked } });
-          });
+          const mkSwitch = (checked) => h("button", {
+            type: "button",
+            role: "switch",
+            "aria-checked": String(checked),
+            class: "relative inline-flex shrink-0 cursor-pointer items-center"
+          }, h(
+            "span",
+            { class: "zcodepro-switch", "data-zcodepro-switch": "", "data-state": checked ? "on" : "off" },
+            h("span", { class: "zcodepro-switch-knob" })
+          ));
+          const switchRow = (text, checked, onToggle) => h("div", {
+            class: "flex cursor-pointer items-center gap-2 text-ui-sm text-foreground-subtle",
+            onClick: onToggle
+          }, text, mkSwitch(checked));
+          const randomRow = () => {
+            const checked = themeCfg.bg.folderRandom !== false;
+            return switchRow(L.themeBgFolderRandom, checked, () => {
+              void saveTheme({ bg: { folderRandom: !(themeCfg.bg.folderRandom !== false) } });
+            });
+          };
+          const dialogFrostRow = () => {
+            const checked = themeCfg.bg.dialogFrost !== false;
+            return switchRow(L.themeBgDialogFrost, checked, () => {
+              void saveTheme({ bg: { dialogFrost: !(themeCfg.bg.dialogFrost !== false) } });
+            });
+          };
           const urlInput = h("input", { type: "url", value: themeCfg.bg.url, class: themeInputCls, placeholder: "https://..." });
           urlInput.addEventListener("change", () => {
             const v = urlInput.value.trim();
@@ -6505,6 +6672,12 @@
             h("div", { class: "mb-1.5 text-ui-xs font-medium text-foreground-subtle" }, titleText),
             body2
           );
+          const card = (titleText, body2) => h(
+            "div",
+            { class: "mt-3 rounded-xl border border-border p-2" },
+            h("div", { class: "mb-1.5 text-ui-xs font-medium text-foreground-subtle" }, titleText),
+            body2
+          );
           const modeArea = themeCfg.bg.mode === "library" ? [
             section(L.themeBgLibrary + (bgFiles.length ? `\uFF08${bgFiles.length}\uFF09` : ""), h(
               "div",
@@ -6519,16 +6692,7 @@
                 "div",
                 { class: "grid grid-cols-4 gap-2", style: "max-height:13.5rem;overflow-y:auto;" },
                 ...bgFiles.map(libCard)
-              ) : null,
-              h(
-                "div",
-                { class: "flex items-center gap-2" },
-                h("label", { class: "flex items-center gap-1.5 text-ui-xs text-foreground-subtle" }, randomCheck, L.themeBgFolderRandom),
-                numField(themeCfg.bg.intervalMin, 0, 1440, (v) => {
-                  void saveTheme({ bg: { intervalMin: v } });
-                }, L.themeBgIntervalHint),
-                h("span", { class: "text-ui-xs text-foreground-subtle" }, L.themeBgIntervalUnit)
-              )
+              ) : null
             ))
           ] : themeCfg.bg.mode === "folder" ? [
             section(L.themeBgModeFolder, h(
@@ -6538,11 +6702,11 @@
               h(
                 "div",
                 { class: "flex items-center gap-2" },
-                h("label", { class: "flex items-center gap-1.5 text-ui-xs text-foreground-subtle" }, randomCheck, L.themeBgFolderRandom),
+                randomRow(),
                 numField(themeCfg.bg.intervalMin, 0, 1440, (v) => {
                   void saveTheme({ bg: { intervalMin: v } });
                 }, L.themeBgIntervalHint),
-                h("span", { class: "text-ui-xs text-foreground-subtle" }, L.themeBgIntervalUnit)
+                h("span", { class: "text-ui-sm text-foreground-subtle" }, L.themeBgIntervalUnit)
               ),
               h(
                 "p",
@@ -6551,7 +6715,7 @@
               )
             ))
           ] : themeCfg.bg.mode === "url" ? [
-            section(L.themeBgModeUrl, h(
+            h(
               "div",
               { class: "flex flex-col gap-2" },
               urlInput,
@@ -6560,11 +6724,10 @@
                 { class: "flex items-center gap-2" },
                 numField(themeCfg.bg.intervalMin, 0, 1440, (v) => {
                   void saveTheme({ bg: { intervalMin: v } });
-                }, L.themeBgUrlIntervalHint),
-                h("span", { class: "text-ui-xs text-foreground-subtle" }, L.themeBgIntervalUnit)
-              ),
-              h("p", { class: "text-ui-xs/relaxed text-foreground-subtle" }, L.themeBgUrlHint)
-            ))
+                }, ""),
+                h("span", { class: "text-ui-sm text-foreground-subtle" }, L.themeBgUrlIntervalUnit)
+              )
+            )
           ] : themeCfg.bg.mode === "web" ? [
             section(L.themeBgModeWeb, h(
               "div",
@@ -6586,13 +6749,14 @@
             onClick: () => void saveTheme({ bg: { transition: id } })
           }, label);
           const pauseCheck = (key, label) => {
-            const c = h("input", { type: "checkbox" });
-            c.checked = key === "pauseOnHidden" ? themeCfg.bg.pauseOnHidden !== false : !!themeCfg.bg[key];
-            c.addEventListener("change", () => void saveTheme({ bg: { [key]: c.checked } }));
-            return h("label", { class: "flex items-center gap-1.5 text-ui-xs text-foreground-subtle" }, c, label);
+            const checked = key === "pauseOnHidden" ? themeCfg.bg.pauseOnHidden !== false : !!themeCfg.bg[key];
+            return switchRow(label, checked, () => {
+              const curVal = key === "pauseOnHidden" ? themeCfg.bg[key] !== false : !!themeCfg.bg[key];
+              void saveTheme({ bg: { [key]: !curVal } });
+            });
           };
           const selectField = (value, options, commit) => {
-            const sel = h("select", { class: "h-7 rounded-lg border border-border bg-input px-1.5 text-ui-xs text-foreground outline-none" });
+            const sel = h("select", { class: "h-7 rounded-lg border border-border bg-input px-1.5 text-ui-sm text-foreground outline-none" });
             for (const [v, label] of options) sel.append(h("option", { value: String(v) }, label));
             sel.value = String(value);
             sel.addEventListener("change", () => commit(sel.value));
@@ -6601,7 +6765,7 @@
           const labelledRow = (label, ctrl) => h(
             "div",
             { class: "flex items-center gap-3" },
-            h("span", { class: "shrink-0 whitespace-nowrap text-ui-xs font-medium text-foreground-subtle", style: "width:72px" }, label),
+            h("span", { class: "shrink-0 whitespace-nowrap text-ui-sm font-medium text-foreground-subtle", style: "width:72px" }, label),
             ctrl
           );
           const volumeRow = () => sliderRow(
@@ -6617,84 +6781,88 @@
             },
             ""
           );
-          const rateRow = () => labelledRow(
-            L.themeBgRate,
-            selectField(
-              numOr(themeCfg.bg.playbackRate, 1),
-              [["0.5", "0.5x"], ["0.75", "0.75x"], ["1", "1x"], ["1.25", "1.25x"], ["1.5", "1.5x"], ["2", "2x"]],
-              (v) => {
-                void saveTheme({ bg: { playbackRate: Number(v) } });
-              }
-            )
-          );
-          const fpsRow = () => h(
+          const rateRow = () => labelledRow(L.themeBgRate, h(
             "div",
-            { class: "flex flex-col gap-0.5" },
-            labelledRow(L.themeBgFps, selectField(
-              numOr(themeCfg.bg.fpsCap, 0),
-              [["0", L.themeBgFpsOff], ["15", "15 fps"], ["30", "30 fps"], ["60", "60 fps"]],
-              (v) => {
-                void saveTheme({ bg: { fpsCap: Number(v) } });
-              }
-            )),
-            h("span", { class: "text-ui-xs/relaxed text-foreground-subtle" }, L.themeBgFpsHint)
-          );
+            { class: "flex items-center gap-1" },
+            numField(numOr(themeCfg.bg.playbackRate, 1), 0.5, 2, (v) => {
+              void saveTheme({ bg: { playbackRate: v } });
+            }, "0.5-2", 0.25),
+            h("span", { class: "text-ui-sm text-foreground-subtle" }, "x")
+          ));
+          const fpsRow = () => labelledRow(L.themeBgFps, selectField(
+            numOr(themeCfg.bg.fpsCap, 0),
+            [["0", L.themeBgFpsOff], ["15", "15 fps"], ["30", "30 fps"], ["60", "60 fps"], ["90", "90 fps"], ["120", "120 fps"]],
+            (v) => {
+              void saveTheme({ bg: { fpsCap: Number(v) } });
+            }
+          ));
           paneStylesSub4.replaceChildren(
             h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.themeBgDesc),
-            h(
+            card(L.themeBgSource, h(
               "div",
-              { class: "mt-2 flex flex-wrap gap-1" },
-              modeBtn("none", L.themeBgModeNone),
-              modeBtn("library", L.themeBgModeLibrary),
-              modeBtn("folder", L.themeBgModeFolder),
-              modeBtn("url", L.themeBgModeUrl),
-              modeBtn("web", L.themeBgModeWeb)
-            ),
-            ...modeArea,
-            section(L.themeBgRegions, h(
+              { class: "flex flex-col gap-2" },
+              h(
+                "div",
+                { class: "flex flex-wrap gap-1" },
+                modeBtn("none", L.themeBgModeNone),
+                modeBtn("library", L.themeBgModeLibrary),
+                modeBtn("folder", L.themeBgModeFolder),
+                modeBtn("url", L.themeBgModeUrl),
+                modeBtn("web", L.themeBgModeWeb)
+              ),
+              ...modeArea
+            )),
+            card(L.themeBgImage, h(
+              "div",
+              { class: "grid grid-cols-2 gap-x-6 gap-y-2" },
+              h(
+                "div",
+                { class: "flex flex-wrap items-center gap-2" },
+                h("span", { class: "text-ui-sm font-medium text-foreground-subtle", style: "width:72px" }, L.themeBgFit),
+                fitBtn("cover", L.themeBgFitCover),
+                fitBtn("contain", L.themeBgFitContain),
+                fitBtn("fill", L.themeBgFitFill),
+                fitBtn("tile", L.themeBgFitTile)
+              ),
+              h(
+                "div",
+                { class: "flex flex-wrap items-center gap-2" },
+                h("span", { class: "text-ui-sm font-medium text-foreground-subtle", style: "width:72px" }, L.themeBgTransition),
+                transBtn("cut", L.themeBgTransitionCut),
+                transBtn("fade", L.themeBgTransitionFade)
+              ),
+              h("div", { class: "col-span-2" }, maskRow()),
+              blurRow(),
+              panelRow()
+            )),
+            card(L.themeBgPlayback, h(
+              "div",
+              { class: "grid grid-cols-2 gap-x-6 gap-y-2" },
+              h("div", { class: "col-span-2" }, volumeRow()),
+              rateRow(),
+              fpsRow(),
+              h("p", { class: "col-span-2 text-ui-xs/relaxed text-foreground-subtle" }, L.themeBgFpsHint)
+            )),
+            card(L.themeBgRegions, h(
               "div",
               { class: "flex flex-col gap-2" },
               regionRow("left", L.themeBgRegionLeft),
               regionRow("center", L.themeBgRegionCenter),
-              regionRow("right", L.themeBgRegionRight)
+              regionRow("right", L.themeBgRegionRight),
+              h("p", { class: "text-ui-xs/relaxed text-foreground-subtle" }, L.themeBgRegionsHint)
             )),
-            h(
-              "div",
-              { class: "mt-3 flex flex-wrap items-center gap-2" },
-              h("span", { class: "text-ui-xs font-medium text-foreground-subtle" }, L.themeBgFit),
-              fitBtn("cover", L.themeBgFitCover),
-              fitBtn("contain", L.themeBgFitContain),
-              fitBtn("fill", L.themeBgFitFill),
-              fitBtn("tile", L.themeBgFitTile)
-            ),
-            h(
-              "div",
-              { class: "mt-3 flex flex-wrap items-center gap-2" },
-              h("span", { class: "text-ui-xs font-medium text-foreground-subtle" }, L.themeBgTransition),
-              transBtn("cut", L.themeBgTransitionCut),
-              transBtn("fade", L.themeBgTransitionFade)
-            ),
-            h(
-              "div",
-              { class: "mt-3 flex flex-wrap items-center gap-2" },
-              h("span", { class: "text-ui-xs font-medium text-foreground-subtle" }, L.themeBgPause),
-              pauseCheck("pauseOnHidden", L.themeBgPauseHidden),
-              pauseCheck("pauseOnBlur", L.themeBgPauseBlur),
-              pauseCheck("pauseOnBattery", L.themeBgPauseBattery)
-            ),
-            h(
-              "div",
-              { class: "mt-3 flex flex-col gap-2" },
-              maskRow(),
-              blurRow(),
-              panelRow()
-            ),
-            section(L.themeBgPlayback, h(
+            card(L.themeBgMisc, h(
               "div",
               { class: "flex flex-col gap-2" },
-              volumeRow(),
-              rateRow(),
-              fpsRow()
+              h(
+                "div",
+                { class: "flex flex-wrap items-center gap-x-4 gap-y-2" },
+                h("span", { class: "text-ui-sm font-medium text-foreground-subtle" }, L.themeBgPause),
+                pauseCheck("pauseOnHidden", L.themeBgPauseHidden),
+                pauseCheck("pauseOnBlur", L.themeBgPauseBlur),
+                pauseCheck("pauseOnBattery", L.themeBgPauseBattery)
+              ),
+              dialogFrostRow()
             )),
             bgInput
           );
@@ -8740,6 +8908,43 @@
               ),
               promptArea
             ),
+            // 手动重命名：任务行悬浮按钮 / 右键菜单两个入口的开关 + 起名素材轮数
+            h(
+              "div",
+              { class: "mt-2 rounded-xl border border-border p-2" },
+              h("div", { class: "mb-1 text-ui-xs font-medium text-foreground-subtle" }, L.titleGenManual),
+              settingRow(L.titleGenHoverBtn, L.titleGenHoverBtnDesc, titleGenCfg.hoverBtn !== false, () => {
+                titleGenCfg.hoverBtn = !(titleGenCfg.hoverBtn !== false);
+                void persistTitleGen();
+                renderTitleGenPane();
+              }),
+              settingRow(L.titleGenMenuEntry, L.titleGenMenuEntryDesc, titleGenCfg.menuEntry !== false, () => {
+                titleGenCfg.menuEntry = !(titleGenCfg.menuEntry !== false);
+                void persistTitleGen();
+                renderTitleGenPane();
+              }),
+              h(
+                "div",
+                { class: "flex items-center gap-2 rounded-lg p-1.5" },
+                h(
+                  "div",
+                  { class: "min-w-0 flex-1" },
+                  h("div", { class: "text-ui-sm font-medium text-foreground" }, L.titleGenRecentQa),
+                  h("div", { class: "mt-0.5 text-ui-xs/relaxed text-foreground-subtle" }, L.titleGenRecentQaDesc)
+                ),
+                numberField({
+                  value: Number.isFinite(Number(titleGenCfg.recentQa)) ? Number(titleGenCfg.recentQa) : 3,
+                  fallback: 3,
+                  min: 1,
+                  max: 20,
+                  step: 1,
+                  onCommit: (v) => {
+                    titleGenCfg.recentQa = v;
+                    saveTitleGenSoon();
+                  }
+                }).el
+              )
+            ),
             // 测试（两行：输入框整行；说明 + 按钮一行。结果只显示在本区下方，
             // 不弹窗；从没对话过时的引导见 testState 错误文案）
             h(
@@ -9724,16 +9929,16 @@
     return titles.get(key) || `sess ${id.slice(0, 8)}`;
   }
   async function fetchMissingTitles(keys) {
-    const sessIdOf3 = (k) => k.slice(k.lastIndexOf(":") + 1);
+    const sessIdOf4 = (k) => k.slice(k.lastIndexOf(":") + 1);
     const missing = keys.filter((k) => {
-      const id = sessIdOf3(k);
+      const id = sessIdOf4(k);
       return id && !titles.get(k) && !document.querySelector(`[data-task-item-key$=":${CSS.escape(id)}"]`);
     });
     if (!missing.length) return;
-    const st = await rpc("/task-statuses?ids=" + encodeURIComponent(missing.map(sessIdOf3).join(","))).catch(() => null);
+    const st = await rpc("/task-statuses?ids=" + encodeURIComponent(missing.map(sessIdOf4).join(","))).catch(() => null);
     if (!st || !st.ok || !st.available || !st.statuses) return;
     for (const k of missing) {
-      const rec = st.statuses[sessIdOf3(k)];
+      const rec = st.statuses[sessIdOf4(k)];
       if (rec && rec.title) titles.set(k, String(rec.title));
     }
   }
@@ -11010,6 +11215,150 @@
     });
   }
 
+  // src/inject/features/auto-rename.js
+  var TASK_SEL4 = "[data-task-item-key]";
+  var ACTIONS_SEL = "[data-task-row-actions]";
+  var SCAN_DEBOUNCE_MS5 = 300;
+  var RENAME_CTX_VALID_MS2 = 15e3;
+  var installed5 = false;
+  var runningKeys = /* @__PURE__ */ new Set();
+  var ctxKey = "";
+  var ctxAt = 0;
+  function sessIdOf3(key) {
+    const i = key.lastIndexOf(":");
+    return i > 0 ? key.slice(i + 1) : "";
+  }
+  async function runAutoRename(key) {
+    const L = t();
+    const sessId = sessIdOf3(key);
+    if (!sessId || runningKeys.has(key)) return;
+    runningKeys.add(key);
+    showToast(L.autoRenameWorking, "info");
+    try {
+      const res = await rpc("/title-gen/rename", { method: "POST", body: { sessId } }).catch(() => null);
+      if (res && res.ok && res.title) {
+        setRowTitle(key, res.title);
+        void refreshPinnedTitles();
+        showToast(L.autoRenameDone + res.title, "success");
+      } else {
+        showToast(res && res.error || L.failed, "error");
+      }
+    } finally {
+      runningKeys.delete(key);
+    }
+  }
+  function sparklesSvg(cls) {
+    const ns = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor");
+    svg.setAttribute("stroke-width", "1.5");
+    svg.setAttribute("stroke-linecap", "round");
+    svg.setAttribute("stroke-linejoin", "round");
+    svg.setAttribute("class", cls);
+    svg.setAttribute("aria-hidden", "true");
+    const star = document.createElementNS(ns, "path");
+    star.setAttribute("d", "M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z");
+    const spark = document.createElementNS(ns, "path");
+    spark.setAttribute("d", "M19 14.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2z");
+    svg.append(star, spark);
+    return svg;
+  }
+  async function injectHoverButtons() {
+    const cfg = await getConfig();
+    if (!cfg || !cfg.titleGen) return;
+    const enabled11 = cfg.titleGen.hoverBtn !== false;
+    const L = t();
+    for (const area of document.querySelectorAll(ACTIONS_SEL)) {
+      const existing = area.querySelector('[data-zcodepro-item="auto-rename"]');
+      if (!enabled11) {
+        existing?.remove();
+        continue;
+      }
+      if (existing) continue;
+      const row = area.closest(TASK_SEL4);
+      const key = row ? row.getAttribute("data-task-item-key") : "";
+      if (!key) continue;
+      const archive = area.querySelector('button[data-testid^="task-archive-"]');
+      if (!archive) continue;
+      const anchor = archive.closest('[data-slot="tooltip-trigger"]') || archive;
+      const node = anchor.cloneNode(true);
+      const btn = node.tagName === "BUTTON" ? node : node.querySelector("button");
+      if (!btn) continue;
+      btn.removeAttribute("data-testid");
+      btn.setAttribute("data-zcodepro-item", "auto-rename");
+      btn.setAttribute("aria-label", L.autoRenameItem);
+      btn.setAttribute("title", L.autoRenameItem);
+      btn.querySelector("svg")?.remove();
+      btn.append(sparklesSvg("h-3.5 w-3.5"));
+      btn.addEventListener("mousedown", (e) => e.stopPropagation());
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        void runAutoRename(key);
+      });
+      anchor.parentNode.insertBefore(node, anchor);
+    }
+  }
+  function handleTaskRowMenu(content) {
+    if (!ctxKey || Date.now() - ctxAt > RENAME_CTX_VALID_MS2) return;
+    if (content.querySelector('[data-zcodepro-item="auto-rename"]')) return;
+    const anchor = itemsOf(content).find((el) => /^重命名|^rename/i.test(itemText(el)));
+    if (!anchor) return;
+    const key = ctxKey;
+    void getConfig().then((cfg) => {
+      if (!cfg || !cfg.titleGen || cfg.titleGen.menuEntry === false) return;
+      if (content.querySelector('[data-zcodepro-item="auto-rename"]')) return;
+      const L = t();
+      const item = anchor.cloneNode(false);
+      item.removeAttribute("id");
+      item.removeAttribute("data-highlighted");
+      item.setAttribute("data-zcodepro-item", "auto-rename");
+      item.textContent = L.autoRenameItem;
+      item.addEventListener("mouseenter", () => {
+        for (const el of content.querySelectorAll('[role="menuitem"]')) el.removeAttribute("data-highlighted");
+        item.setAttribute("data-highlighted", "");
+      });
+      item.addEventListener("mouseleave", () => item.removeAttribute("data-highlighted"));
+      item.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        closeRadixMenu(content);
+        void runAutoRename(key);
+      });
+      anchor.after(item);
+    });
+  }
+  function startAutoRename() {
+    if (installed5 || typeof document === "undefined") return;
+    installed5 = true;
+    document.addEventListener("contextmenu", (e) => {
+      const row = e.target instanceof Element && e.target.closest(TASK_SEL4);
+      ctxKey = row ? row.getAttribute("data-task-item-key") || "" : "";
+      ctxAt = Date.now();
+    }, true);
+    let scanTimer2 = 0;
+    const schedule = () => {
+      if (scanTimer2) return;
+      scanTimer2 = setTimeout(() => {
+        scanTimer2 = 0;
+        void injectHoverButtons();
+      }, SCAN_DEBOUNCE_MS5);
+    };
+    const inTaskRow4 = (node) => !!(node instanceof Element && node.closest && node.closest(TASK_SEL4));
+    new MutationObserver((muts) => {
+      for (const m of muts) {
+        if (inTaskRow4(m.target) || [...m.addedNodes].some((n) => inTaskRow4(n))) {
+          schedule();
+          return;
+        }
+      }
+    }).observe(document.body, { childList: true, subtree: true });
+    void injectHoverButtons();
+    window.addEventListener("zcodepro:config-changed", schedule);
+  }
+
   // src/inject/features/idle-reclaim.js
   var CHECK_MS = 3e4;
   var MIN_MINUTES = 1;
@@ -11649,7 +11998,7 @@
   }
 
   // src/inject/features/table-copy.js
-  var installed5 = false;
+  var installed6 = false;
   var enabled9 = true;
   function cleanTable(table) {
     const clone = table.cloneNode(false);
@@ -11741,8 +12090,8 @@
     return btn;
   }
   function startTableCopy() {
-    if (installed5 || typeof document === "undefined") return;
-    installed5 = true;
+    if (installed6 || typeof document === "undefined") return;
+    installed6 = true;
     ensureStyle();
     const tableOf = (bar) => {
       let scope = bar.parentElement;
@@ -11783,7 +12132,7 @@
   }
 
   // src/inject/features/composer-provider.js
-  var installed6 = false;
+  var installed7 = false;
   var enabled10 = true;
   var TRIGGER_SEL = '[data-testid="chat-model-select-trigger"]';
   function labelParts(label) {
@@ -11840,8 +12189,8 @@
     }
   }
   function startComposerProvider() {
-    if (installed6 || typeof document === "undefined") return;
-    installed6 = true;
+    if (installed7 || typeof document === "undefined") return;
+    installed7 = true;
     const COMPOSER_SEL = '[data-composer-layout], [data-composer-leading-actions], [data-composer-leading-content], [data-testid="chat-model-select-trigger"]';
     const relevant2 = (muts) => {
       for (const m of muts) {
@@ -11964,6 +12313,10 @@
           handleFileMenu(content);
         } catch {
         }
+        try {
+          handleTaskRowMenu(content);
+        } catch {
+        }
       });
       try {
         void startAliasWatcher();
@@ -11987,6 +12340,10 @@
       }
       try {
         startTitleGen();
+      } catch {
+      }
+      try {
+        startAutoRename();
       } catch {
       }
       try {

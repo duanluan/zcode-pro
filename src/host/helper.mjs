@@ -11,7 +11,7 @@ import { basename, delimiter, dirname, isAbsolute, join, resolve, sep } from 'no
 import { homedir, tmpdir, userInfo } from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { readSettings, writeSettingsAtomic, remapSettingsPaths, isProjectOpenInTabs } from './settings.mjs';
-import { taskIndexPath, probeTaskIndexWritable, remapTaskIndexPaths, taskIndexDriverAvailable, listOverriddenTitles, listTaskWorkspaceMap, listTaskStatuses, setTaskTitleIfNotOverridden, setCustomSessionTitle, isTaskTitleOverridden, reconcileCustomTitles, getTaskProviderModel, listVirtualProjects, countTasks } from './taskIndex.mjs';
+import { taskIndexPath, probeTaskIndexWritable, remapTaskIndexPaths, taskIndexDriverAvailable, listOverriddenTitles, listTaskWorkspaceMap, listTaskStatuses, setTaskTitleIfNotOverridden, setCustomSessionTitle, isTaskTitleOverridden, reconcileCustomTitles, getTaskProviderModel, listVirtualProjects, countTasks, readRecentQa } from './taskIndex.mjs';
 import { pickFolderSystem } from './pickFolder.mjs';
 import { reorderWorkspaceTasks, reorderGroupMembers } from './taskOrder.mjs';
 import { webdavRequest, webdavPutWithMkcol, webdavHttpText, parseWebdavListing, findCurl } from './webdav.mjs';
@@ -323,13 +323,16 @@ export function defaultConfig() {
     // headroom 启用开关的记忆（供应商 id → { proxy, direct }）：关闭时把走 headroom 的
     // 供应商地址切回直连并记录下来，再次开启时按记录把地址切回代理
     headroomRoutes: {},
-    // 任务名提示词（自动起名）：新会话开始作答后按可配置的供应商与提示词生成
-    // 标题，并按“手动重命名”写入任务索引。默认关闭。provider：
+    // 自动重命名（原“任务名提示词”）：新会话开始作答后按可配置的供应商与
+    // 提示词生成标题，并按“手动重命名”写入任务索引。默认关闭。provider：
     // 'session' = 跟随当前会话（调用时从任务索引解析该会话的供应商，默认）、
     // '' = 不跟随（自填 baseUrl/apiKey/format）、其余 = 供应商 id（保存时同步
     // 解析一份 baseUrl/apiKey/format 副本，供应商日后被删仍可直连）；
     // model 默认 glm-5.3-flash（起名用快模型即可），跟随会话时可留空
-    //（用会话当前模型）；prompt 留空 = 内置默认提示词
+    //（用会话当前模型）；prompt 留空 = 内置默认提示词。
+    // 手动“自动重命名”（任务行悬浮按钮 / 右键菜单入口，取会话最近 recentQa
+    // 轮问答起名、已重命名也覆盖）不受 enabled 限制，入口各有开关：
+    // hoverBtn 任务行按钮、menuEntry 右键菜单项
     titleGen: {
       enabled: false,
       customWritten: {},
@@ -339,6 +342,9 @@ export function defaultConfig() {
       baseUrl: '',
       apiKey: '',
       format: '',
+      recentQa: 3,
+      hoverBtn: true,
+      menuEntry: true,
     },
     // HTTP 代理（http(s)://host:port）：helper 发起的网络访问走它——插件市场更新/安装
     // （zcode CLI → git）、headroom/rtk 的安装与升级（pip/GitHub）。空 = 不用代理。
@@ -1335,51 +1341,53 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
             json(res, 200, { ok: true, title, written: false, store: 'skipped: overridden' });
             return;
           }
-          // 双写，顺序不能反：先写 CLI 会话库（title_source=custom，权威层——
-          // 官方自动起名看到 custom 会放弃，桌面同步器会把 custom 标题带着
-          // overridden=1 送回任务索引），再写任务索引（展示层，立即上屏）。
-          // 只写任务索引时，官方运行时排队的自动标题会在几秒后把它覆盖（实测）。
-          // CLI 库不可写（旧版无 title_source 列 / 无该会话行）不阻断：退回
-          // 单写任务索引的旧行为；任务索引随后失败也不回滚 CLI——同步器会补
-          for (let attempt = 0; ; attempt++) {
-            try {
-              const r = await setCustomSessionTitle(dataRoot, sessId, title);
-              store = r.written ? '' : (r.skipped || 'skipped');
-              break;
-            } catch (err) {
-              if (err.code === 'index-busy' && attempt < 2) {
-                await new Promise((r) => setTimeout(r, 1200));
-                continue;
-              }
-              store = 'error: ' + (err?.message || err);
-              titleGenLog(dataRoot, `cli-store-error sess=${sessId.slice(0, 13)} err=${err?.message || err}`);
-              break;
-            }
+          const r = await writeGeneratedTitle(dataRoot, configFile, sessId, title);
+          if (r.error) {
+            json(res, 500, { ok: false, code: r.error.code || 'index-error', error: r.error.message });
+            return;
           }
-          // 写库撞上宿主写入时稍候重试（起名不急这几秒）
-          for (let attempt = 0; ; attempt++) {
-            try {
-              const r = await setTaskTitleIfNotOverridden(dataRoot, sessId, title);
-              written = r.written;
-              break;
-            } catch (err) {
-              if (err.code === 'index-busy' && attempt < 2) {
-                await new Promise((r) => setTimeout(r, 1200));
-                continue;
-              }
-              titleGenLog(dataRoot, `index-error sess=${sessId.slice(0, 13)} err=${err?.message || err}`);
-              json(res, 500, { ok: false, code: err.code || 'index-error', error: err.message });
-              return;
-            }
-          }
-        }
-        // CLI 库写成功了才登记回查记录（reconcileCustomTitles 只认这些记录校正）
-        if (sessId && store === '') {
-          const c = loadConfig(configFile);
-          c.titleGen.customWritten = { ...(c.titleGen.customWritten || {}), [sessId]: { title, at: Date.now() } };
-          saveConfig(configFile, c);
+          written = r.written;
+          store = r.store;
         }
         json(res, 200, { ok: true, title, written, store });
+        return;
+      }
+      // 手动自动重命名（任务行悬浮按钮 / 右键菜单入口）：取会话最近 N 轮问答按
+      // 提示词生成标题并按“手动重命名”写库。用户显式动作：已重命名过也照写
+      //（force），不受启用开关限制（入口各有开关）；生成失败交外层统一 500
+      if (req.method === 'POST' && url.pathname === '/title-gen/rename') {
+        const body = await readBody(req);
+        const sessId = typeof body?.sessId === 'string' && /^(?:sess|session)_[A-Za-z0-9._-]+$/.test(body.sessId) ? body.sessId : '';
+        if (!sessId) {
+          json(res, 400, { ok: false, code: 'invalid-request', error: 'sessId 不能为空' });
+          return;
+        }
+        const cfg = loadConfig(configFile).titleGen;
+        let material;
+        try {
+          material = await readRecentQa(dataRoot, sessId, cfg.recentQa);
+        } catch (err) {
+          titleGenLog(dataRoot, `rename-read-error sess=${sessId.slice(0, 13)} err=${err?.message || err}`);
+          json(res, 500, { ok: false, code: 'read-error', error: err?.message || '读取会话内容失败' });
+          return;
+        }
+        if (!material) {
+          json(res, 200, { ok: false, code: 'no-content', error: '会话还没有问答内容' });
+          return;
+        }
+        let title;
+        try {
+          title = await generateTitleWith(cfg, material, dataRoot, sessId);
+        } catch (err) {
+          titleGenLog(dataRoot, `rename-generate-failed sess=${sessId.slice(0, 13)} err=${err?.message || err}`);
+          throw err; // 交给外层统一 500
+        }
+        const r = await writeGeneratedTitle(dataRoot, configFile, sessId, title, { force: true });
+        if (r.error) {
+          json(res, 500, { ok: false, code: r.error.code || 'index-error', error: r.error.message });
+          return;
+        }
+        json(res, 200, { ok: true, title, written: r.written, store: r.store });
         return;
       }
       // —— zcode-vision 插件（图片视觉代理）：设置弹窗“视觉代理”标签页读写 ————
@@ -2208,6 +2216,9 @@ function mergeTitleGenConfig(saved) {
     baseUrl: typeof s.baseUrl === 'string' ? s.baseUrl.trim().slice(0, 500) : d.baseUrl,
     apiKey: typeof s.apiKey === 'string' ? s.apiKey.trim().slice(0, 500) : d.apiKey,
     format: s.format === 'openai' ? 'openai' : s.format === 'anthropic' ? 'anthropic' : '',
+    recentQa: Number.isFinite(Number(s.recentQa)) ? Math.min(20, Math.max(1, Math.round(Number(s.recentQa)))) : d.recentQa,
+    hoverBtn: s.hoverBtn !== false,
+    menuEntry: s.menuEntry !== false,
     customWritten: written,
   };
 }
@@ -3265,6 +3276,61 @@ async function callOpenAiText(baseUrl, apiKey, model, content) {
     if (err && err.name === 'AbortError') throw new Error(`请求超时（${Math.round(TITLE_GEN_TIMEOUT_MS / 1000)} 秒）`);
     throw err;
   } finally { clearTimeout(timer); }
+}
+
+// 生成标题的双写收尾，顺序不能反：先写 CLI 会话库（title_source=custom，权威层
+// ——官方自动起名看到 custom 会放弃，桌面同步器会把 custom 标题带着 overridden=1
+// 送回任务索引），再写任务索引（展示层，立即上屏）。只写任务索引时，官方运行时
+// 排队的自动标题会在几秒后把它覆盖（实测）。CLI 库不可写（旧版无 title_source
+// 列 / 无该会话行）不阻断：退回单写任务索引的旧行为；任务索引随后失败也不回滚
+// CLI——同步器会补。写库撞上宿主写入时稍候重试（起名不急这几秒）。
+// force = 手动“自动重命名”：已重命名的会话也照写（用户显式改名）。
+// 返回 { written, store, error }：store '' 成功 | skipped 原因 | 'error…'；
+// error 非空 = 任务索引最终没写成（err 带 code，由调用方转 500）。
+// CLI 库写成功才登记回查记录（reconcileCustomTitles 只认这些记录校正），
+// 登记只是回查簿记，失败不影响改名结果。导出以便测试
+export async function writeGeneratedTitle(dataRoot, configFile, sessId, title, { force = false } = {}) {
+  let written = false;
+  let store = ''; // CLI 会话库写入结果：'' 成功 | skipped 原因 | 'error…'
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const r = await setCustomSessionTitle(dataRoot, sessId, title);
+      store = r.written ? '' : (r.skipped || 'skipped');
+      break;
+    } catch (err) {
+      if (err.code === 'index-busy' && attempt < 2) {
+        await new Promise((r) => setTimeout(r, 1200));
+        continue;
+      }
+      store = 'error: ' + (err?.message || err);
+      titleGenLog(dataRoot, `cli-store-error sess=${sessId.slice(0, 13)} err=${err?.message || err}`);
+      break;
+    }
+  }
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const r = await setTaskTitleIfNotOverridden(dataRoot, sessId, title, { force });
+      written = r.written;
+      break;
+    } catch (err) {
+      if (err.code === 'index-busy' && attempt < 2) {
+        await new Promise((r) => setTimeout(r, 1200));
+        continue;
+      }
+      titleGenLog(dataRoot, `index-error sess=${sessId.slice(0, 13)} err=${err?.message || err}`);
+      return { written, store, error: err };
+    }
+  }
+  if (store === '') {
+    try {
+      const c = loadConfig(configFile);
+      c.titleGen.customWritten = { ...(c.titleGen.customWritten || {}), [sessId]: { title, at: Date.now() } };
+      saveConfig(configFile, c);
+    } catch (err) {
+      titleGenLog(dataRoot, `customWritten-save-error sess=${sessId.slice(0, 13)} err=${err?.message || err}`);
+    }
+  }
+  return { written, store };
 }
 
 // 生成标题。provider 三种取值：

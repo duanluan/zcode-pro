@@ -3243,6 +3243,28 @@ export function openSettingsDialog() {
                 promptArea.focus();
               })),
             promptArea),
+          // 手动重命名：任务行悬浮按钮 / 右键菜单两个入口的开关 + 起名素材轮数
+          h('div', { class: 'mt-2 rounded-xl border border-border p-2' },
+            h('div', { class: 'mb-1 text-ui-xs font-medium text-foreground-subtle' }, L.titleGenManual),
+            settingRow(L.titleGenHoverBtn, L.titleGenHoverBtnDesc, titleGenCfg.hoverBtn !== false, () => {
+              titleGenCfg.hoverBtn = !(titleGenCfg.hoverBtn !== false);
+              void persistTitleGen();
+              renderTitleGenPane();
+            }),
+            settingRow(L.titleGenMenuEntry, L.titleGenMenuEntryDesc, titleGenCfg.menuEntry !== false, () => {
+              titleGenCfg.menuEntry = !(titleGenCfg.menuEntry !== false);
+              void persistTitleGen();
+              renderTitleGenPane();
+            }),
+            h('div', { class: 'flex items-center gap-2 rounded-lg p-1.5' },
+              h('div', { class: 'min-w-0 flex-1' },
+                h('div', { class: 'text-ui-sm font-medium text-foreground' }, L.titleGenRecentQa),
+                h('div', { class: 'mt-0.5 text-ui-xs/relaxed text-foreground-subtle' }, L.titleGenRecentQaDesc)),
+              numberField({
+                value: Number.isFinite(Number(titleGenCfg.recentQa)) ? Number(titleGenCfg.recentQa) : 3,
+                fallback: 3, min: 1, max: 20, step: 1,
+                onCommit: (v) => { titleGenCfg.recentQa = v; saveTitleGenSoon(); },
+              }).el)),
           // 测试（两行：输入框整行；说明 + 按钮一行。结果只显示在本区下方，
           // 不弹窗；从没对话过时的引导见 testState 错误文案）
           h('div', { class: 'mt-2 rounded-xl border border-border p-2' },
