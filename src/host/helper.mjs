@@ -433,6 +433,8 @@ function writeJsonAtomic(file, obj) {
   renameSync(tmp, file);
 }
 
+// 读改写必须同步完成（loadConfig→改→saveConfig 中间不能加 await）：
+// HTTP 处理器靠单线程的同步原子性保证并发保存不互相覆盖字段
 export function saveConfig(configFile, config) {
   // 配置"存在但损坏"时拒绝写回：否则 title-gen/同步/别名等写路径会把默认值
   // 整份覆盖上去（WebDAV 账号、样式、主题全丢且不可恢复）。POST /config 另有
@@ -575,7 +577,8 @@ function zcodeConfigSnapshot(dataRoot) {
   return { ok: true, values, configured, stats };
 }
 
-export function startHelper({ port, token, dataRoot, state, agentsFile = defaultAgentsFile() }) {
+export function startHelper({ port, token, dataRoot, state, agentsFile = defaultAgentsFile(), listenTries = 40, rolloutDir = '' }) {
+  if (rolloutDir) rolloutDirOverride = rolloutDir;
   const configFile = join(dataRoot, 'zcodepro.json');
   const settingsFile = join(dataRoot, 'v2', 'setting.json');
   const bootConfig = loadConfig(configFile);
@@ -780,7 +783,7 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         if (body && typeof body === 'object' && body.statusBar && typeof body.statusBar === 'object') {
           const next = { ...(current.statusBar || {}) };
           if (Array.isArray(body.statusBar.items)) {
-            const valid = new Set(['ctx', 'questions', 'todayTokens', 'totalTokens', 'tasks']);
+            const valid = new Set(['ctx', 'tokRate', 'questions', 'todayTokens', 'totalTokens', 'tasks']);
             const seen = new Set();
             const items = [];
             for (const it of body.statusBar.items) {
@@ -1937,8 +1940,13 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
       // model-io-*.jsonl 每行一次模型调用，response.usage 有分项 token；成本字段
       // 官方未落本地，成本类统计项由注入侧按“无数据自动隐藏”处理
       if (req.method === 'GET' && url.pathname === '/stats/usage') {
-        const sessionId = url.searchParams.get('session') || '';
-        const { global, recentTurns } = collectUsageStats(sessionId);
+        // 会话 id 校验同 sessId 白名单：不像会话 id 的一律按全局口径处理
+        //（降级后注入侧仍按“本会话”展示全局速率，官方改 key 格式时才会踩到）
+        const rawSid = url.searchParams.get('session') || '';
+        const sessionId = /^(?:sess|session)_[A-Za-z0-9._-]+$/.test(rawSid) ? rawSid : '';
+        // turns=0 跳过分钟桶聚合（状态栏只读 global，不白建每轮桶）
+        const wantTurns = url.searchParams.get('turns') !== '0';
+        const { global, recentTurns } = collectUsageStats(sessionId, wantTurns);
         // 任务总数 60 秒缓存：状态栏每 2 秒请求一次，不必每次开关 SQLite
         if (Date.now() - tasksCountAt > 60_000) {
           tasksCountAt = Date.now();
@@ -1978,14 +1986,15 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
   });
 
   // 端口被占时重试：开发重载的交接窗口内，旧进程退出略晚于新进程启动，
-  // 新进程在这里等它让出端口（最多 20 秒），而不是启动失败
+  // 新进程在这里等它让出端口（默认最多 20 秒），而不是启动失败；
+  // 热替换路径传小的 listenTries，别把启动器主循环卡在这里
   return new Promise((resolveStarted, rejectStarted) => {
     let attempts = 0;
     const tryListen = () => {
       attempts += 1;
       server.removeAllListeners('error');
       server.once('error', (err) => {
-        if (err && err.code === 'EADDRINUSE' && attempts < 40) {
+        if (err && err.code === 'EADDRINUSE' && attempts < listenTries) {
           try { server.close(); } catch { /* ignore */ }
           setTimeout(tryListen, 500);
           return;
@@ -2020,7 +2029,13 @@ let tasksCountCache = 0; // 任务总数缓存（/stats/usage 高频轮询，60 
 // ~/.zcode/cli/rollout/model-io-*.jsonl 每行一次模型调用；usage 字段有两种键风格
 // （协议 camelCase 与原始 snake_case），两种都解析。文件小（个位数、每会话一个），
 // 按 mtime+size 缓存只重读变过的文件；聚合结果含按日分桶（本地时区）供“今日”用
-const usageFileCache = new Map(); // 文件名 → { mtime, size, recs: [{at, in, out, session, model}] }
+const usageFileCache = new Map(); // 文件名 → { mtime, size, recs: [{at, ts, ms, in, out, cacheRead, session}] }
+// 测试缝：覆盖 rollout 记录目录（scripts/test-usage-stats.mjs 用假数据跑真实聚合）
+let rolloutDirOverride = '';
+// 供启动器热替换前调用：旧模块实例被 ESM 模块表永久持有，清掉大块缓存省内存
+export function dispose() {
+  usageFileCache.clear();
+}
 // 解析一段 rollout 文本为记录；completeBytes = 已完整解析的整行字节数
 //（末行若是不完整 JSON（写入中途）不计入，调用方据此决定偏移推进量）
 function parseRolloutLines(text) {
@@ -2064,8 +2079,11 @@ function parseRolloutLines(text) {
         input = num(u.input_tokens) + cacheRead + cacheWrite;
       }
       const output = num(u.outputTokens ?? u.output_tokens);
+      const at = d.completedAt || d.startedAt || '';
       recs.push({
-        at: d.completedAt || d.startedAt || '',
+        at,
+        ts: Date.parse(at),
+        ms: Number(d.durationMs) || 0,
         in: input, out: output,
         cacheRead,
         session: String(d.sessionId || ''),
@@ -2078,12 +2096,13 @@ function parseRolloutLines(text) {
 }
 
 function rolloutRecords() {
-  const dir = join(homedir(), '.zcode', 'cli', 'rollout');
+  const dir = rolloutDirOverride || join(homedir(), '.zcode', 'cli', 'rollout');
   let names = [];
   try { names = readdirSync(dir).filter((n) => n.startsWith('model-io-') && n.endsWith('.jsonl')); } catch { return []; }
   // 缓存条目随文件淘汰：会话记录滚动删除后残留条目不再增长（虽小但是纯泄漏）
+  const nameSet = new Set(names); // Set 判定：文件数上千时 names.includes 是 O(F²)
   for (const k of usageFileCache.keys()) {
-    if (!names.includes(k)) usageFileCache.delete(k);
+    if (!nameSet.has(k)) usageFileCache.delete(k);
   }
   const recs = [];
   for (const name of names) {
@@ -2092,7 +2111,7 @@ function rolloutRecords() {
     try { st = statSync(full); } catch { continue; }
     const cached = usageFileCache.get(name);
     if (cached && cached.mtime === st.mtimeMs && cached.size === st.size) {
-      recs.push(...cached.recs);
+      for (const r of cached.recs) recs.push(r); // 不用展开语法：单文件 13 万条会 RangeError
       continue;
     }
     // 追加式增量解析：jsonl 只追加（流式输出期间当前会话文件持续增长，整文件
@@ -2112,7 +2131,8 @@ function rolloutRecords() {
         size: cached.size + completeBytes,
         recs: cached.recs.concat(added),
       });
-      recs.push(...cached.recs, ...added);
+      for (const r of cached.recs) recs.push(r);
+      for (const r of added) recs.push(r);
       continue;
     }
     let parsed = [];
@@ -2126,35 +2146,60 @@ function rolloutRecords() {
       parsedBytes = Math.min(r.completeBytes, Buffer.byteLength(text, 'utf8'));
     } catch { /* 文件读失败跳过 */ }
     usageFileCache.set(name, { mtime: st.mtimeMs, size: parsedBytes, recs: parsed });
-    recs.push(...parsed);
+    for (const r of parsed) recs.push(r);
   }
   return recs;
 }
 
-function collectUsageStats(sessionId) {
+function collectUsageStats(sessionId, wantTurns = true) {
   const recs = rolloutRecords();
-  // 分钟桶只服务每轮统计（必须带 session）；不带 session 的调用（状态栏
-  // 回退路径）只要全局累计，跳过分桶省去全记录遍历与 60 桶序列化
-  const wantTurns = !!sessionId;
+  // 分钟桶只服务每轮统计（turn-usage 带 session 拉取），状态栏请求带 turns=0
+  // 跳过：省掉全记录分桶与 60 桶序列化（大记录集下每请求几十毫秒）
+  wantTurns = wantTurns && !!sessionId;
   const today = new Date();
   const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   const global = { todayTokens: 0, todayOut: 0, totalTokens: 0, totalOut: 0, tasks: 0, records: recs.length };
   // 每轮用量按本地 HH:mm 分桶（回答末尾的显示时间与之匹配）；
   // 本地记录只留最近几轮，注入侧只给能对上时间的回答显示
   const byMinute = new Map();
+  // 最近 60 秒速率（状态栏 tokRate 项）：token 按调用耗时摊到时间轴（完成
+  // 时刻往前 durationMs 一段），按窗口重叠比例折算，长调用完成瞬间不会出现
+  // 假尖峰。窗口以该口径最新一条记录的完成时刻为锚、往前 60 秒——回答结束
+  // 后锚不再移动，速率自然停在最后的值：不衰减归零，也不依赖进程内状态
+  //（重启/热替换后显示一致）；有新调用完成锚前移、数值刷新。
+  // 统计范围：带 ?session= 只算该会话，不带则全局；与每轮桶不同，辅助小调用
+  // 也计入（它们是真实消耗）
+  const winMs = 60_000;
+  let anchor = 0;
+  for (const r of recs) {
+    if (Number.isFinite(r.ts) && (!sessionId || r.session === sessionId)) anchor = Math.max(anchor, r.ts);
+  }
+  anchor = Math.min(anchor, Date.now()); // 未来时间戳（时钟回拨等）别把锚拉到未来
+  let rateTotal = 0;
+  let rateOut = 0;
   for (const r of recs) {
     const total = r.in + r.out;
     global.totalTokens += total;
     global.totalOut += r.out;
     const day = String(r.at || '').slice(0, 10);
     if (day === todayKey) { global.todayTokens += total; global.todayOut += r.out; }
+    const end = r.ts;
+    if (Number.isFinite(end) && (!sessionId || r.session === sessionId)) {
+      const dur = Math.max(r.ms || 0, 1); // 无耗时字段的旧记录按 1ms 点事件计
+      const overlap = Math.min(end, anchor) - Math.max(end - dur, anchor - winMs);
+      if (overlap > 0) {
+        const w = overlap / dur;
+        rateTotal += total * w;
+        rateOut += r.out * w;
+      }
+    }
     // 每轮回答只统计主对话流的调用：起名等辅助请求是独立小上下文、
     // 缓存从零开始，混进分钟桶会把命中率拉到个位数（全局统计仍全量计入）
     if (!wantTurns || total < 5000) continue;
     // 指定会话时每轮桶只算该会话的调用——否则切到别的会话聊天后，
     // 那些调用会被区间归属算进当前会话最后一行的头上
     if (r.session !== sessionId) continue;
-    const t = Date.parse(r.at);
+    const t = r.ts;
     if (!Number.isFinite(t)) continue;
     const d = new Date(t);
     // 键带日期（月-日 时:分）：注入侧按回答行的时间文本（今天/昨天/10-21 三种
@@ -2167,6 +2212,9 @@ function collectUsageStats(sessionId) {
     bucket.ts = Math.max(bucket.ts, t);
     byMinute.set(hm, bucket);
   }
+  // 保留 1 位小数：工具循环期的输出只有零点几每秒，取整会显示成 0/s
+  const perSec = (x) => Math.round((x / (winMs / 1000)) * 10) / 10;
+  global.rate60 = { total: perSec(rateTotal), out: perSec(rateOut) };
   const recentTurns = [...byMinute.values()].sort((a, b) => b.ts - a.ts).slice(0, 60);
   return { global, recentTurns };
 }
@@ -4581,6 +4629,12 @@ export async function ensureZcodePluginsMarketplace() {
 // 同目标（全量或同一插件名）的并发请求共用同一次执行结果；
 // 不同目标的请求排队串行，后到的等前一个结束再跑
 let pluginsUpdateJob = null; // { only, promise }：正在执行或排队的任务
+// 后台任务占用标志：启动器热替换前查询，有任务在跑就延后换——新模块实例
+// 不继承任务锁，立刻换会跟旧实例拉起的子进程（插件更新/转码等）并发。
+// 升级任务对象完成后变量不置回 null（只把 running 置 false），必须看 running
+export function busyJobs() {
+  return !!(pluginsUpdateJob || (headroomUpgradeJob && headroomUpgradeJob.running) || (rtkUpgradeJob && rtkUpgradeJob.running) || transcodeJobs.size);
+}
 let pluginsUpdateQueue = Promise.resolve();
 
 async function runPluginsUpdateJob(body) {

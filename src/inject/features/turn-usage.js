@@ -63,8 +63,8 @@ function findRows() {
   return rows;
 }
 
-// 当前会话 id：优先选中行，回退侧栏最新一行（与状态栏同口径）
-function currentSessionId() {
+// 当前会话 id：优先选中行，回退侧栏最新一行（状态栏共用本函数）
+export function currentSessionId() {
   const rows = [...document.querySelectorAll('[data-task-item-key]')];
   const cur = rows.find((e) => (e.className + '').includes('bg-selected')) || rows[rows.length - 1];
   const key = cur ? cur.getAttribute('data-task-item-key') : '';

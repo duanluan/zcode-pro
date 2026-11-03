@@ -12,7 +12,7 @@ import { randomBytes } from 'node:crypto';
 import { resolveZcodeExecutable, resolveDataRootDir } from './paths.mjs';
 import { readZcodeVersion } from './version.mjs';
 import { CdpConnection, fetchBrowserWsUrl } from './cdp.mjs';
-import { startHelper } from './helper.mjs';
+import * as helperModule from './helper.mjs';
 import { runSetup } from './setup.mjs';
 import { runWallpaperCli, installWallpaperDocs, removeWallpaperDocs } from './wallpaper.mjs';
 
@@ -246,12 +246,31 @@ export async function run(argv) {
   }
 
   // 2. 启动辅助服务
-  const server = await startHelper({ port: args.helperPort, token, dataRoot, state, zcodeVersion });
+  const helperArgs = { port: args.helperPort, token, dataRoot, state, zcodeVersion };
+  let helperMod = helperModule; // 当前在服的 helper 模块实例（热替换后指新实例）
+  let server = await helperModule.startHelper(helperArgs);
   console.log(`[zcodepro] 辅助服务已就绪: http://127.0.0.1:${args.helperPort} (数据目录 ${dataRoot})`);
 
   // 3. 连接 CDP 并注入（断线自动重连）
   const injectedTargets = new Map(); // targetId -> sessionId
+  const scriptIds = new Map(); // targetId -> 新文档脚本 identifier 数组（含没删掉的旧注册）
+  let registeredSource = ''; // 已注册的注入包（内容没变不重复注册）
+  let refreshPending = false; // 有页面重注册失败待重试：期间 handleAttach 不推进已注册标记
+  let lastRefreshError = ''; // 重注册错误日志按内容去重
+  let refreshSkip = 0; // 失败后的退避周期数：单页持续失败时别每 3 秒全量重试
+  let lastTriedSource = null; // 上次尝试重注册的包：包又变了就立即重试，不受退避限制
   let stopping = false;
+
+  // 可注入判定：引导脚本内含 helper 鉴权 token，只能进 ZCode 应用自身的页面。
+  // 规则：放行非 http(s)（file://、应用自有协议）与本机回环地址，拦截其余外部
+  // 网页与非 http 协议子文档（data/blob/view-source/about），沙箱页同样不带
+  // token。refreshInjectScripts 重注册时目标可能已导航离开应用页，需重跑同款判定
+  function isInjectableAppPage(url) {
+    const u = String(url || '');
+    if (/^zcode-sandbox:\/\//i.test(u)) return false;
+    if (/^https?:\/\//i.test(u) && !/^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?(\/|$|\?|#)/i.test(u)) return false;
+    return !/^(data|blob|view-source|about):/i.test(u);
+  }
 
   let healthRes;
   try {
@@ -262,12 +281,29 @@ export async function run(argv) {
     server.close();
     process.exit(1);
   }
-  const source = await buildInjectSource(token, args.helperPort, healthRes.features || {}, zcodeVersion);
+  // 注入包按 mtime+size 缓存：npm run build 之后不用重启启动器——已打开页面
+  // 下次“调试-重新加载”、新页面首次注入都直接吃新构建的包
+  const injectCache = { mtime: 0, size: 0, source: '' };
+  async function getInjectSource() {
+    let mtime = -1;
+    let size = -1;
+    try { const st = statSync(INJECT_BUNDLE); mtime = st.mtimeMs; size = st.size; } catch { /* 缺失/读失败：沿用旧包 */ }
+    // 包内容没变直接用缓存（mtime+size 双键防粗粒度文件系统漏检）；
+    // 构建间隙文件暂时缺失也沿用旧包
+    if (injectCache.source && (mtime < 0 || (mtime === injectCache.mtime && size === injectCache.size))) return injectCache.source;
+    injectCache.source = await buildInjectSource(token, args.helperPort, healthRes.features || {}, zcodeVersion);
+    injectCache.mtime = mtime;
+    injectCache.size = size;
+    return injectCache.source;
+  }
+  await getInjectSource(); // 启动即构建一次：缺 dist/inject.js 尽早报错
 
   async function attachConnection() {
     const conn = new CdpConnection(await fetchBrowserWsUrl(args.cdpPort));
     await conn.connect();
     injectedTargets.clear();
+    scriptIds.clear();
+    refreshPending = false; // 失败待重试的页面随旧会话消亡，重连后 handleAttach 全量注册
 
     const handleAttach = async (sessionId, targetInfo) => {
       const targetId = targetInfo?.targetId;
@@ -297,26 +333,36 @@ export async function run(argv) {
         return;
       }
       if (targetInfo?.type !== 'page') return;
-      // 安全护栏：引导脚本内含 helper 鉴权 token，只能注入 ZCode 应用自身的页面。
-      // 外部网站若以内嵌浏览器/网页形式成为 page target，拿到 token 即可调用本地
-      // helper（改写增强配置/别名表等）。规则：放行非 http(s)（file://、应用自有协议）与
-      // 本机回环地址，拦截其余外部网页。代价是 http(s) 非 localhost 的自有页面不注入。
-      const isExternalWeb = (/^https?:\/\//i.test(pageUrl) && !/^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?(\/|$|\?|#)/i.test(pageUrl))
-        || /^(data|blob|view-source|about):/i.test(pageUrl); // 非 http 协议的子文档也能拿 token，一并跳过
-      if (isExternalWeb) {
+      // 安全护栏：只注入应用自身页面（判定规则集中在 isInjectableAppPage，
+      // 重注册时会再跑一遍）
+      if (!isInjectableAppPage(pageUrl)) {
         log('跳过外部页面注入（防止 token 泄露）: ' + pageUrl.slice(0, 120));
         return;
       }
+      // 取包失败（构建写入中、杀软锁文件）回退上一份包：旧包比没包好，
+      // 下轮 refreshInjectScripts 自然换成新包
+      let source = injectCache.source;
+      try {
+        source = await getInjectSource();
+      } catch (err) {
+        if (!source) { log('注入包读取失败且无缓存，跳过本页: ' + err.message); return; }
+      }
       try {
         await conn.send('Page.enable', {}, sessionId);
-        await conn.send('Page.addScriptToEvaluateOnNewDocument', { source, runImmediately: true }, sessionId);
+        const added = await conn.send('Page.addScriptToEvaluateOnNewDocument', { source, runImmediately: true }, sessionId);
+        if (added && added.identifier) scriptIds.set(targetId, [added.identifier]);
         const res = await conn.send('Runtime.evaluate', { expression: source, silent: true }, sessionId);
         if (res?.exceptionDetails) log('注入执行异常: ' + String(res.exceptionDetails.exception?.description || '').slice(0, 200));
+        // 只有首个页面（没有旧页面挂着旧包）、拿到的仍是当前包、且没有待重试的
+        // 重注册才记已注册标记：其余情况由 refreshInjectScripts 统一推进，
+        // 避免新页面注入把标记推到新包、旧页面却永远停在旧包
+        if (!refreshPending && source === injectCache.source && injectedTargets.size === 0) registeredSource = source;
         injectedTargets.set(targetId, sessionId);
         state.injectedPages = injectedTargets.size;
         conn.onSession(sessionId, (m) => {
           if (m.type === 'detached') {
             injectedTargets.delete(targetId);
+            scriptIds.delete(targetId);
             state.injectedPages = injectedTargets.size;
           }
         });
@@ -356,9 +402,139 @@ export async function run(argv) {
   process.on('SIGINT', () => { stopping = true; try { conn.close(); } catch {} server.close(); process.exit(0); });
   process.on('SIGTERM', () => { stopping = true; try { conn.close(); } catch {} server.close(); process.exit(0); });
 
+  // dist/inject.js 变更后把各页面的新文档脚本换成新包：已打开页面不打断，
+  // 下次“调试-重新加载”即跑新代码（新页面首次注入本来就是新包）
+  async function refreshInjectScripts() {
+    if (!conn || conn.closed) return; // 断连时注册会失败、日志也记不准，跳过；重连后 handleAttach 全量注册
+    let source;
+    try {
+      source = await getInjectSource();
+    } catch (err) {
+      // 读失败也按内容去重：构建产物损坏又没有新 mtime 时别每 3 秒刷一行
+      const msg = '注入包读取失败: ' + err.message;
+      if (msg !== lastRefreshError) { lastRefreshError = msg; console.error('[zcodepro] ' + msg); winLog(msg); }
+      return;
+    }
+    if (source === registeredSource) return; // 包内容没变就不重新注册
+    if (refreshSkip > 0 && source === lastTriedSource) { refreshSkip--; return; }
+    lastTriedSource = source;
+    let want = 0;
+    let ok = 0;
+    for (const [targetId, sessionId] of injectedTargets) {
+      // 目标可能在注入后导航去外部页面/沙箱：重注册前重跑同款可注入判定，
+      // 否则含 token 的脚本串会注册进外部页面的会话（执行层虽有护栏兜底）
+      try {
+        const href = await conn.send('Runtime.evaluate', { expression: 'location.href', returnByValue: true, silent: true }, sessionId);
+        if (!isInjectableAppPage(String((href && href.result && href.result.value) || ''))) {
+          // 踢出前尽力移除已注册脚本：别把带 token 的注册留在外部页面的会话里
+          for (const id of scriptIds.get(targetId) || []) {
+            try { await conn.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: id }, sessionId); } catch { /* ignore */ }
+          }
+          injectedTargets.delete(targetId);
+          scriptIds.delete(targetId);
+          state.injectedPages = injectedTargets.size;
+          continue;
+        }
+      } catch {
+        // 取不到当前 URL 就不注册（宁可少注入，不把 token 注给未知页面），但要
+        // 计入 want 让重试机制接管：否则全卡在这条时空集“全部成功”会误推进标记
+        want++;
+        continue;
+      }
+      want++;
+      // 旧注册逐个移除，没删掉的留 identifier 下轮继续删：删失败不能连累
+      // add，否则该页没有新文档脚本，增强静默消失
+      const oldIds = scriptIds.get(targetId) || [];
+      const keep = [];
+      for (const id of oldIds) {
+        try { await conn.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: id }, sessionId); }
+        catch { keep.push(id); }
+      }
+      try {
+        // runImmediately: false——只对下次新文档生效，不碰当前页面（用户按需刷新）
+        const added = await conn.send('Page.addScriptToEvaluateOnNewDocument', { source, runImmediately: false }, sessionId);
+        if (added && added.identifier) keep.push(added.identifier);
+        ok++;
+      } catch { /* 页面已关闭/会话失效：重连后 handleAttach 会重新注册 */ }
+      scriptIds.set(targetId, keep);
+    }
+    // 全部成功才推进已注册标记：有失败就保留旧值，下一轮继续重试
+    if (ok === want) {
+      registeredSource = source;
+      refreshPending = false;
+      lastRefreshError = '';
+      refreshSkip = 0;
+      if (ok) console.log(`[zcodepro] 注入包已更新，${ok} 个页面下次“调试-重新加载”时生效`);
+    } else {
+      refreshPending = true;
+      refreshSkip = 2; // 约 9 秒后再试；期间构建了新包会立即重试
+      // 错误按内容去重：单页永久失败时别每 3 秒刷一行
+      const msg = `注入包重注册部分失败（成功 ${ok}/${want}），下轮重试`;
+      if (msg !== lastRefreshError) { lastRefreshError = msg; console.error('[zcodepro] ' + msg); winLog(msg); }
+    }
+  }
+
+  // helper.mjs 变更时热替换辅助服务：先导入新模块（语法错在这里抛出、旧服务
+  // 不动），再关旧起新。每次热替换都是全新模块实例，helper 模块级状态
+  //（rollout 解析缓存等）从零开始。shortcut: 只覆盖 helper.mjs
+  // 自身，它的依赖（settings.mjs、taskIndex.mjs 等）与 main.mjs 的改动仍需重启启动器
+  const helperStamp = () => {
+    try { const st = statSync(join(here, 'helper.mjs')); return st.mtimeMs + ':' + st.size; } catch { return ''; }
+  };
+  let helperTriedSig = helperStamp(); // 上次尝试过的文件签名（mtime+size 双键）：
+  // 同一份代码只试一次，失败等保存出新签名再试——别每 3 秒掐一次服务重试同一份坏代码
+  const swapRetry = { sig: '', n: 0 }; // 服务起不来时同一份代码的重试次数（上限 3）
+  let swapLastError = '';
+  async function maybeSwapHelper() {
+    const sig = helperStamp();
+    if (!sig || sig === helperTriedSig) return;
+    // 有后台任务在跑就延后换：新模块实例不继承任务锁，会跟旧实例拉起的
+    // 子进程（插件更新/转码等）并发；不记 triedSig，任务完成自动再试
+    if (helperMod && typeof helperMod.busyJobs === 'function' && helperMod.busyJobs()) return;
+    try {
+      const mod = await import('./helper.mjs?mtime=' + sig);
+      if (typeof mod.startHelper !== 'function') throw new Error('helper.mjs 没有导出 startHelper');
+      try { helperMod.dispose?.(); } catch { /* ignore */ } // 旧实例被 ESM 缓存持有，清大块缓存省内存
+      // 不等优雅关闭：渲染进程的 keep-alive/在途请求（每 2 秒轮询）会让 close
+      // 回调迟迟不来，直接掐掉存量连接。热替换是开发场景，容忍个别请求中断
+      //（前端轮询失败会保旧值，下个周期自动恢复）
+      server.close();
+      server.closeAllConnections();
+      // listenTries 传小值：端口被占别把主循环卡在 startHelper 的重试里
+      server = await mod.startHelper({ ...helperArgs, listenTries: 6 });
+      helperMod = mod;
+      helperTriedSig = sig;
+      swapLastError = '';
+      console.log('[zcodepro] helper.mjs 有改动，辅助服务已热替换（无需重启启动器）');
+    } catch (err) {
+      helperTriedSig = sig; // 失败也记签名
+      // 同一错误只报一次：连续多次保存出同一个错时别刷屏
+      if (err.message !== swapLastError) {
+        swapLastError = err.message;
+        const stateText = server.listening ? '保持旧服务，改好保存后自动重试' : '服务已中断，尝试拉回旧版';
+        console.error(`[zcodepro] helper 热替换失败（${stateText}）: ` + err.message);
+        winLog('helper 热替换失败: ' + err.message);
+      }
+      if (!server.listening) {
+        // 新服务没起来（端口被占、启动抛错）：用上一个在服的模块实例把服务拉回来
+        let recovered = false;
+        try { server = await helperMod.startHelper({ ...helperArgs, listenTries: 6 }); recovered = true; } catch { /* 旧的也起不来 */ }
+        // 没服务或端口瞬时占用才清签名下轮重试；代码本身的错等文件再变
+        if (!recovered || /EADDRINUSE/.test(String(err.message))) {
+          // 服务不在或端口瞬时占用才重试，同一份代码最多 3 次：每次重试都占
+          // 一段 listen 重试窗口，无限重试会把主循环拖慢
+          if (swapRetry.sig !== sig) { swapRetry.sig = sig; swapRetry.n = 0; }
+          if (swapRetry.n < 3) { swapRetry.n += 1; helperTriedSig = ''; }
+        }
+      }
+    }
+  }
+
   while (!stopping) {
     await sleep(3000);
     if (stopping) break;
+    await refreshInjectScripts();
+    await maybeSwapHelper();
     if (!conn.closed) continue;
     // 连接断开：ZCode 退出则一并退出，否则重连
     if (!(await cdpAlive(args.cdpPort))) {

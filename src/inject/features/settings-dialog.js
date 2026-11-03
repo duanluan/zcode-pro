@@ -784,7 +784,7 @@ export function openSettingsDialog() {
       const paneStylesSub3 = h('div', { class: 'mt-2', style: 'display:none' });
       const paneStylesSub4 = h('div', { class: 'mt-2', style: 'display:none' });
       const ITEM_NAMES = {
-        ctx: 'sbItemCtx', questions: 'sbItemQuestions',
+        ctx: 'sbItemCtx', tokRate: 'sbItemTokRate', questions: 'sbItemQuestions',
         todayTokens: 'sbItemTodayTokens', totalTokens: 'sbItemTotalTokens', tasks: 'sbItemTasks',
       };
       // 读取并归一化：会话组项在前、全局组项在后（组内保持保存的顺序），
@@ -792,9 +792,13 @@ export function openSettingsDialog() {
       const sbItems = () => {
         const saved = config.statusBar && Array.isArray(config.statusBar.items) ? config.statusBar.items : null;
         if (!saved) return DEFAULT_STATUS_ITEMS.map((x) => ({ ...x }));
-        const byId = new Map(saved.map((x) => [x.id, x]));
         const list = saved.filter((x) => ITEM_NAMES[x.id]).map((x) => ({ on: x.on !== false, id: x.id }));
-        for (const d of DEFAULT_STATUS_ITEMS) if (!byId.has(d.id)) list.push({ ...d });
+        // 新默认项按默认位插入（同 status-bar.js 的归一化），不补到组末尾；
+        // 缺失判定用过滤后的清单，防止默认项被过滤“藏起来”
+        const known = new Set(list.map((x) => x.id));
+        for (const d of DEFAULT_STATUS_ITEMS) {
+          if (!known.has(d.id)) list.splice(Math.min(DEFAULT_STATUS_ITEMS.indexOf(d), list.length), 0, { ...d });
+        }
         return [
           ...list.filter((x) => STATUS_SESSION_IDS.has(x.id)),
           ...list.filter((x) => STATUS_GLOBAL_IDS.has(x.id)),

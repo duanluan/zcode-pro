@@ -51,7 +51,7 @@
     switchAttention: "r"
     // 打开运行中 / 未查看
   };
-  var STATUS_SESSION_IDS = /* @__PURE__ */ new Set(["ctx", "sessionCost", "questions"]);
+  var STATUS_SESSION_IDS = /* @__PURE__ */ new Set(["ctx", "sessionCost", "questions", "tokRate"]);
   var STATUS_GLOBAL_IDS = /* @__PURE__ */ new Set(["todayTokens", "todayCost", "totalTokens", "totalCost", "tasks"]);
   var DEFAULT_TURN_ITEMS = [
     { id: "turnIn", on: true },
@@ -62,6 +62,8 @@
     // 缓存命中率
   ];
   var DEFAULT_STATUS_ITEMS = [
+    { id: "tokRate", on: true },
+    // 最近输出 tokens/s（60 秒窗口，本会话）
     { id: "ctx", on: true },
     // 上下文占用
     { id: "questions", on: true },
@@ -413,6 +415,7 @@
     tableCopyBtn: "\u590D\u5236\u8868\u683C",
     tableCopied: "\u8868\u683C\u5DF2\u590D\u5236",
     sbItemCtx: "\u4E0A\u4E0B\u6587\u5360\u7528",
+    sbItemTokRate: "\u6700\u8FD1\u8F93\u51FA tokens/s",
     sbItemQuestions: "\u63D0\u95EE\u6B21\u6570",
     sbMaster: "\u542F\u7528\u7EDF\u8BA1",
     sbMasterDesc: "\u603B\u5F00\u5173\uFF1A\u5173\u95ED\u540E\u8F93\u5165\u6846\u53F3\u4E0B\u89D2\u7684\u7EDF\u8BA1\u884C\u4E0E\u6BCF\u8F6E\u56DE\u7B54\u7684\u7528\u91CF\u6807\u6CE8\u4E00\u8D77\u505C\u7528\u3002",
@@ -988,6 +991,7 @@
     tableCopyBtn: "Copy table",
     tableCopied: "Table copied",
     sbItemCtx: "Context usage",
+    sbItemTokRate: "Recent output tokens/s",
     sbItemQuestions: "Questions asked",
     sbMaster: "Enable statistics",
     sbMasterDesc: "Master switch: turning this off disables both the input-box statistics and per-turn labels.",
@@ -5958,6 +5962,7 @@
         const paneStylesSub4 = h("div", { class: "mt-2", style: "display:none" });
         const ITEM_NAMES = {
           ctx: "sbItemCtx",
+          tokRate: "sbItemTokRate",
           questions: "sbItemQuestions",
           todayTokens: "sbItemTodayTokens",
           totalTokens: "sbItemTotalTokens",
@@ -5966,9 +5971,11 @@
         const sbItems = () => {
           const saved = config.statusBar && Array.isArray(config.statusBar.items) ? config.statusBar.items : null;
           if (!saved) return DEFAULT_STATUS_ITEMS.map((x) => ({ ...x }));
-          const byId = new Map(saved.map((x) => [x.id, x]));
           const list = saved.filter((x) => ITEM_NAMES[x.id]).map((x) => ({ on: x.on !== false, id: x.id }));
-          for (const d of DEFAULT_STATUS_ITEMS) if (!byId.has(d.id)) list.push({ ...d });
+          const known = new Set(list.map((x) => x.id));
+          for (const d of DEFAULT_STATUS_ITEMS) {
+            if (!known.has(d.id)) list.splice(Math.min(DEFAULT_STATUS_ITEMS.indexOf(d), list.length), 0, { ...d });
+          }
           return [
             ...list.filter((x) => STATUS_SESSION_IDS.has(x.id)),
             ...list.filter((x) => STATUS_GLOBAL_IDS.has(x.id))
@@ -10362,7 +10369,31 @@
   var items = DEFAULT_STATUS_ITEMS.map((x) => ({ ...x }));
   var barEl = null;
   var lastStats = null;
+  var lastSid = null;
+  var statsSid = null;
+  var tickSeq = 0;
+  var EST_CHARS_PER_TOKEN = 2;
+  var streamSample = null;
+  var streamEst = null;
+  function sampleStream() {
+    const main = document.querySelector("main") || document.body;
+    const ta = document.querySelector("textarea, [contenteditable=true]");
+    const typed = ta ? String(ta.value != null ? ta.value : ta.textContent || "").length : 0;
+    const len = Math.max(0, (main.textContent || "").length - typed);
+    const now = Date.now();
+    const prev = streamSample;
+    streamSample = { len, at: now };
+    if (!prev || len <= prev.len || now - prev.at < 500) return null;
+    streamEst = { value: (len - prev.len) / EST_CHARS_PER_TOKEN / ((now - prev.at) / 1e3), at: now };
+    return streamEst.value;
+  }
   var lastRenderedHtml = null;
+  function selectedSessionId() {
+    const row = [...document.querySelectorAll("[data-task-item-key]")].find((e) => (e.className + "").includes("bg-selected"));
+    const key = row ? row.getAttribute("data-task-item-key") : "";
+    const i = key.lastIndexOf(":sess");
+    return i > 0 ? key.slice(i + 1) : "";
+  }
   function readCtx() {
     for (const el of document.querySelectorAll("[title], [aria-label]")) {
       if (el.closest(".zcodepro-statusbar")) continue;
@@ -10445,6 +10476,7 @@
   }
   var GLOBAL_GROUP = /* @__PURE__ */ new Set(["todayTokens", "totalTokens", "tasks"]);
   var SB_ICONS = {
+    tokRate: '<path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/>',
     ctx: '<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>',
     asks: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
     today: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
@@ -10473,6 +10505,23 @@
     const g = lastStats && lastStats.global;
     const label = (text) => `<em>${text}</em>`;
     switch (id) {
+      case "tokRate": {
+        const sid = selectedSessionId();
+        if (!sid) return null;
+        const streaming = streamEst && Date.now() - streamEst.at < 6e3;
+        const r = g && g.rate60 && statsSid === sid ? g.rate60 : null;
+        const est = streamEst ? streamEst.value : null;
+        const useEst = !!streaming || !(r && r.out > 0);
+        const shown = useEst ? est : r.out;
+        if (shown == null) return null;
+        const estMark = useEst && est != null ? isZhLocale() ? "\u2248" : "\u2248" : "";
+        const detail = r ? `${L.sbLabelOut} ${r.out.toLocaleString()} tok/s \xB7 ${isZhLocale() ? "\u603B\u91CF" : "total"} ${r.total.toLocaleString()} tok/s` : isZhLocale() ? "\u65E0 usage \u6570\u636E\uFF0C\u6309\u6587\u672C\u589E\u957F\u4F30\u7B97" : "no usage data, estimated from text growth";
+        return {
+          html: sbIcon("tokRate") + label(L.sbLabelOut) + `<b>${estMark}${fmtNum(Math.round(shown * 10) / 10)} tok/s</b>`,
+          title: `${L.sbItemTokRate}${isZhLocale() ? "\uFF08\u672C\u4F1A\u8BDD\uFF09" : " (this session)"}\uFF1A${detail}`,
+          tone: ""
+        };
+      }
       case "ctx": {
         const dom = readCtx();
         if (dom) {
@@ -10554,9 +10603,22 @@
   async function tick() {
     if (!enabled4 || document.hidden) return;
     refreshOfficial();
-    if (!official) {
-      const res = await rpc("/stats/usage").catch(() => null);
-      if (res && res.ok) lastStats = res;
+    const wantRate = items.some((it) => it.on && it.id === "tokRate");
+    const sid = wantRate ? selectedSessionId() : "";
+    if (!official || wantRate && sid) {
+      if (sid !== lastSid) {
+        lastSid = sid;
+        lastStats = null;
+        streamSample = null;
+        streamEst = null;
+      }
+      sampleStream();
+      const seq = ++tickSeq;
+      const res = await rpc("/stats/usage?turns=0" + (sid ? "&session=" + encodeURIComponent(sid) : "")).catch(() => null);
+      if (res && res.ok && seq === tickSeq) {
+        lastStats = res;
+        statsSid = sid;
+      }
     }
     renderBar();
   }
@@ -10567,11 +10629,12 @@
         enabled4 = cfg.features ? cfg.features.statusBar !== false : true;
         const saved = cfg.statusBar && Array.isArray(cfg.statusBar.items) ? cfg.statusBar.items : null;
         if (saved) {
-          const byId = new Map(saved.map((x) => [x.id, x]));
           const list = saved.filter((x) => DEFAULT_STATUS_ITEMS.some((d) => d.id === x.id)).map((x) => ({ ...x }));
           const known = new Set(list.map((x) => x.id));
           for (const d of DEFAULT_STATUS_ITEMS) {
-            if (!known.has(d.id)) list.push({ ...d });
+            if (!known.has(d.id)) {
+              list.splice(Math.min(DEFAULT_STATUS_ITEMS.indexOf(d), list.length), 0, { ...d });
+            }
           }
           items = [
             ...list.filter((x) => !GLOBAL_GROUP.has(x.id)),
@@ -10709,12 +10772,12 @@
     if (m) return new Date(now.getFullYear(), +m[1] - 1, +m[2], +m[3], +m[4]).getTime();
     return null;
   }
-  var lastSid = "";
+  var lastSid2 = "";
   function scan3() {
     if (!enabled5) return;
     const sid = currentSessionId();
-    if (sid !== lastSid) {
-      lastSid = sid;
+    if (sid !== lastSid2) {
+      lastSid2 = sid;
       recentTurns = [];
       void tick2();
     }

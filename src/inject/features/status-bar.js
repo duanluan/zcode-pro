@@ -1,5 +1,5 @@
 // 状态栏统计：主界面底部右下角一行小字，按用户配置的顺序显示统计项。
-// 会话项（上下文占用 / 提问次数）跟随当前会话，无选中会话时自动隐藏；
+// 会话项（最近输出速率 / 上下文占用 / 提问次数）跟随当前会话，无选中会话时自动隐藏；
 // 全局项（今日 / 累计 token、任务总数）优先取官方使用统计（云端，5 分钟刷新），
 // 回退本地聚合。数据 2 秒刷新一次；上下文占用读官方输入框工具栏的窗口显示
 //（“已用 497,101 / 总量 1,000,000”），按官方同款格式渲染。
@@ -10,9 +10,43 @@ let enabled = true;
 let items = DEFAULT_STATUS_ITEMS.map((x) => ({ ...x }));
 let barEl = null;
 let lastStats = null; // /stats/usage 响应缓存（失败保旧值）
+let lastSid = null; // 上次取数的会话 id：切换会话即作废缓存，不显示上个会话的速率
+let statsSid = null; // lastStats 取数时的会话 id：渲染时对不上就不用（切会话瞬间不顶旧值）
+let tickSeq = 0; // 在途请求序号：过期响应丢弃，不覆盖新值
+
+// 流式输出速率估算：usage 缺失的模型（部分供应商不回传 token 数）和长调用
+// 生成期间没有真实数据，按最后一行回答的文本增长估算（约 2 字符/token 折算，
+// 标 ≈）。调用完成后有真实 usage 的会话切回真实值，没有的停在最后的估算值
+const EST_CHARS_PER_TOKEN = 2;
+let streamSample = null; // 上一次采样 { len, at }
+let streamEst = null; // 最近一次估算 { value, at }
+
+function sampleStream() {
+  // 采样“主区文本 - 输入框文本”长度：回答文本不在按钮的父链里（实测），
+  // 主区覆盖整个对话；减掉输入框避免用户打字被当成生成
+  const main = document.querySelector('main') || document.body;
+  const ta = document.querySelector('textarea, [contenteditable=true]');
+  const typed = ta ? String(ta.value != null ? ta.value : (ta.textContent || '')).length : 0;
+  const len = Math.max(0, (main.textContent || '').length - typed);
+  const now = Date.now();
+  const prev = streamSample;
+  streamSample = { len, at: now };
+  if (!prev || len <= prev.len || now - prev.at < 500) return null; // 没增长 = 没在生成
+  streamEst = { value: (len - prev.len) / EST_CHARS_PER_TOKEN / ((now - prev.at) / 1000), at: now };
+  return streamEst.value;
+}
 let lastRenderedHtml = null; // renderBar 去重：内容没变不重写 DOM
 
 // —— 工具 ——
+
+// 选中会话的 id：只认 bg-selected 行（不走 turn-usage 的“侧栏最新一行”回退——
+// 那会让新建会话视图顶着别的会话数据）；无选中返回空串
+function selectedSessionId() {
+  const row = [...document.querySelectorAll('[data-task-item-key]')].find((e) => (e.className + '').includes('bg-selected'));
+  const key = row ? row.getAttribute('data-task-item-key') : '';
+  const i = key.lastIndexOf(':sess');
+  return i > 0 ? key.slice(i + 1) : '';
+}
 
 // 官方输入框工具栏的上下文显示：title 形如“上下文已用 61,400 / 总量 1,000,000”，
 // 解析出已用与总量；读不到返回 null（ctx 项回退按会话记录估算 token 数）。
@@ -108,6 +142,7 @@ const GLOBAL_GROUP = new Set(['todayTokens', 'totalTokens', 'tasks']);
 
 // 各统计项的 lucide 图标（12px 内联，描边风格与官方一致）
 const SB_ICONS = {
+  tokRate: '<path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/>',
   ctx: '<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>',
   asks: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
   today: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
@@ -145,6 +180,27 @@ function itemContent(id, L) {
   const g = lastStats && lastStats.global;
   const label = (text) => `<em>${text}</em>`;
   switch (id) {
+    case 'tokRate': {
+      const sid = selectedSessionId();
+      if (!sid) return null; // 无选中会话不显示
+      // 显示优先级：生成中的实时估算（usage 缺失/长调用期间唯一动得起来的信号）
+      // > 真实锚定值（该会话数据就是取自它）> 最近一次估算（usage 缺失的会话答完后）
+      const streaming = streamEst && Date.now() - streamEst.at < 6000;
+      const r = (g && g.rate60 && statsSid === sid) ? g.rate60 : null;
+      const est = streamEst ? streamEst.value : null;
+      const useEst = !!streaming || !(r && r.out > 0);
+      const shown = useEst ? est : r.out;
+      if (shown == null) return null;
+      const estMark = useEst && est != null ? (isZhLocale() ? '≈' : '≈') : '';
+      const detail = r
+        ? `${L.sbLabelOut} ${r.out.toLocaleString()} tok/s · ${isZhLocale() ? '总量' : 'total'} ${r.total.toLocaleString()} tok/s`
+        : (isZhLocale() ? '无 usage 数据，按文本增长估算' : 'no usage data, estimated from text growth');
+      return {
+        html: sbIcon('tokRate') + label(L.sbLabelOut) + `<b>${estMark}${fmtNum(Math.round(shown * 10) / 10)} tok/s</b>`,
+        title: `${L.sbItemTokRate}${isZhLocale() ? '（本会话）' : ' (this session)'}：${detail}`,
+        tone: '',
+      };
+    }
     case 'ctx': {
       const dom = readCtx();
       if (dom) {
@@ -240,10 +296,23 @@ async function tick() {
   refreshOfficial();
   // 全局项优先取官方快照（5 分钟一更）：就绪后不再每 2 秒拉本地聚合——
   // helper 侧聚合每次都要遍历全部 rollout 记录（稳态实测约 13ms/次），
-  // 官方不可用（刚启动/接口失败）时才回退本地轮询
-  if (!official) {
-    const res = await rpc('/stats/usage').catch(() => null);
-    if (res && res.ok) lastStats = res;
+  // 官方不可用（刚启动/接口失败）时才回退本地轮询。
+  // 例外：tokRate 项的速率要每 2 秒更新，启用时官方就绪也继续拉取；
+  // 带 session 让速率只算本会话（今日/累计仍是全局，不受影响），
+  // tokRate 关闭时不带 session，helper 免掉分钟桶聚合
+  const wantRate = items.some((it) => it.on && it.id === 'tokRate');
+  // 取数用严格选中行的会话 id（无选中就不取）：新建会话视图不白算，
+  // 也保证 lastStats 与 itemContent 的隐藏判定同口径
+  const sid = wantRate ? selectedSessionId() : '';
+  if (!official || (wantRate && sid)) {
+    // 切换会话即作废缓存与估算：不顶着“本会话”显示上一个会话的速率
+    if (sid !== lastSid) { lastSid = sid; lastStats = null; streamSample = null; streamEst = null; }
+    sampleStream(); // 2 秒一次采样流式文本增长（估算与真实数据互补）
+    const seq = ++tickSeq;
+    // turns=0：状态栏只读 global，让 helper 跳过每轮分钟桶聚合
+    const res = await rpc('/stats/usage?turns=0' + (sid ? '&session=' + encodeURIComponent(sid) : '')).catch(() => null);
+    // 乱序的在途响应不采纳：快速切会话/切可见性会让旧请求晚到
+    if (res && res.ok && seq === tickSeq) { lastStats = res; statsSid = sid; }
   }
   renderBar();
 }
@@ -257,11 +326,14 @@ export function startStatusBar() {
       if (saved) {
         // 保存的顺序为准（会话组在前已由设置保存时归一化；这里再归一化一次
         // 防御旧版本保存的交错顺序）；新版本新增的默认项按默认组位补齐
-        const byId = new Map(saved.map((x) => [x.id, x]));
         const list = saved.filter((x) => DEFAULT_STATUS_ITEMS.some((d) => d.id === x.id)).map((x) => ({ ...x }));
         const known = new Set(list.map((x) => x.id));
         for (const d of DEFAULT_STATUS_ITEMS) {
-          if (!known.has(d.id)) list.push({ ...d });
+          if (!known.has(d.id)) {
+            // 新默认项按默认位插入（而不是补到组末尾）：存量保存顺序下
+            // 也能落在预期位置（本例 tokRate 在 index 0 = 上下文左边）
+            list.splice(Math.min(DEFAULT_STATUS_ITEMS.indexOf(d), list.length), 0, { ...d });
+          }
         }
         items = [
           ...list.filter((x) => !GLOBAL_GROUP.has(x.id)),

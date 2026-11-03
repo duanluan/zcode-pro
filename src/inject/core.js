@@ -62,7 +62,7 @@ export const DEFAULT_SHORTCUTS = {
 
 // 状态栏任务统计项的两个组：会话级跟随当前会话，全局级始终显示；
 // 设置里两节各自排序，保存时归一化为会话组在前（状态栏两组间一道竖线）
-export const STATUS_SESSION_IDS = new Set(['ctx', 'sessionCost', 'questions']);
+export const STATUS_SESSION_IDS = new Set(['ctx', 'sessionCost', 'questions', 'tokRate']);
 export const STATUS_GLOBAL_IDS = new Set(['todayTokens', 'todayCost', 'totalTokens', 'totalCost', 'tasks']);
 
 // 状态栏统计项的默认清单（顺序即默认显示顺序）；设置 → 外观 → 状态栏里
@@ -75,6 +75,7 @@ export const DEFAULT_TURN_ITEMS = [
 ];
 
 export const DEFAULT_STATUS_ITEMS = [
+  { id: 'tokRate', on: true },        // 最近输出 tokens/s（60 秒窗口，本会话）
   { id: 'ctx', on: true },            // 上下文占用
   { id: 'questions', on: true },     // 提问次数
   { id: 'todayTokens', on: true },    // 今日 token（今天的会话记录完整，数据准确）
@@ -426,6 +427,7 @@ const zh = {
   tableCopyBtn: '复制表格',
   tableCopied: '表格已复制',
   sbItemCtx: '上下文占用',
+  sbItemTokRate: '最近输出 tokens/s',
   sbItemQuestions: '提问次数',
   sbMaster: '启用统计',
   sbMasterDesc: '总开关：关闭后输入框右下角的统计行与每轮回答的用量标注一起停用。',
@@ -1002,6 +1004,7 @@ const en = {
   tableCopyBtn: 'Copy table',
   tableCopied: 'Table copied',
   sbItemCtx: 'Context usage',
+  sbItemTokRate: 'Recent output tokens/s',
   sbItemQuestions: 'Questions asked',
   sbMaster: 'Enable statistics',
   sbMasterDesc: 'Master switch: turning this off disables both the input-box statistics and per-turn labels.',
