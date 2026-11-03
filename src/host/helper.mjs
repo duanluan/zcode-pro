@@ -290,6 +290,7 @@ export function defaultConfig() {
       toolbarIcons: true,      // 侧栏菜单并入顶栏：新建任务/搜索/自动化/插件市场收成顶栏图标按钮（原菜单隐藏，点击转发）
       pinnedCollapse: true,    // 已置顶分区可折叠：标题可点折叠/展开任务列表（状态记 localStorage）
       tableCopy: true,        // 表格工具条"复制表格"按钮：富文本剪贴板，粘贴即表格（table-copy.js）
+      sessionLink: true,      // 会话 ID 显示为任务名链接：聊天里的 sess_/session_ 显示为任务名，点击切换（session-link.js）
       composerProvider: true, // 输入框模型名前显示供应商名（composer-provider.js）
     },
     // 空闲项目内存回收的判定时长（分钟，1–1440）：项目无运行中会话、无后台命令

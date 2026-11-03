@@ -430,6 +430,12 @@ export function ensureStyle() {
   if (!root) return;
   root.append(h('style', { id: '__zcodepro_style__' }, `
     @keyframes zcodepro-fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+    /* 会话 ID 显示为任务名链接（session-link.js）：观感贴近正文链接，主题变量缺失时回退字面量 */
+    .zcodepro-sess-link {
+      color: var(--color-link, var(--color-primary, #4a9eff));
+      cursor: pointer; text-decoration: underline; text-underline-offset: 2px;
+    }
+    .zcodepro-sess-link:hover { opacity: .8; }
     /* 提示条四态（成功/警告/失败/信息）：配色用主题变量加字面量兜底，
        不依赖宿主 Tailwind 生成配色工具类 */
     .zcodepro-toast {

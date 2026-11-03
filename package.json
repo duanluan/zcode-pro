@@ -8,7 +8,7 @@
   },
   "scripts": {
     "build": "esbuild src/inject/index.js --bundle --format=iife --target=chrome120 --outfile=dist/inject.js",
-    "test": "node scripts/test-usage-stats.mjs",
+    "test": "node scripts/test-usage-stats.mjs && node scripts/test-session-link.mjs",
     "prepack": "npm run build",
     "start": "./bin/zcode-pro"
   },

@@ -1,7 +1,15 @@
 (() => {
+  var __defProp = Object.defineProperty;
+  var __getOwnPropNames = Object.getOwnPropertyNames;
+  var __esm = (fn, res) => function __init() {
+    return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
+  };
+  var __export = (target, all) => {
+    for (var name in all)
+      __defProp(target, name, { get: all[name], enumerable: true });
+  };
+
   // src/inject/core.js
-  var BOOT = typeof window !== "undefined" ? window.__ZCODEPRO__ || {} : {};
-  var HELPER_URL = BOOT.helperUrl || "http://127.0.0.1:47889";
   function liveBoot() {
     return typeof window !== "undefined" && window.__ZCODEPRO__ || BOOT;
   }
@@ -16,8 +24,6 @@
       body: options.body ? JSON.stringify(options.body) : void 0
     }).then((r) => r.json()).catch((err) => ({ ok: false, error: String(err && err.message || err) }));
   }
-  var configCache = { value: null, at: 0 };
-  var configInflight = null;
   async function getConfig(force = false) {
     const now = Date.now();
     if (!force && configCache.value && now - configCache.at < 3e3) return configCache.value;
@@ -39,42 +45,6 @@
   function clearConfigCache() {
     configCache = { value: null, at: 0 };
   }
-  var DEFAULT_SHORTCUTS = {
-    switchLast: "z",
-    // 立即切到上次会话
-    switchPrev: "x",
-    // 弹窗中上移
-    switchNext: "c",
-    // 弹窗中下移
-    switchRecent: "e",
-    // 打开最近 10 条
-    switchAttention: "r"
-    // 打开运行中 / 未查看
-  };
-  var STATUS_SESSION_IDS = /* @__PURE__ */ new Set(["ctx", "sessionCost", "questions", "tokRate"]);
-  var STATUS_GLOBAL_IDS = /* @__PURE__ */ new Set(["todayTokens", "todayCost", "totalTokens", "totalCost", "tasks"]);
-  var DEFAULT_TURN_ITEMS = [
-    { id: "turnIn", on: true },
-    // 输入
-    { id: "turnOut", on: true },
-    // 输出
-    { id: "turnCache", on: true }
-    // 缓存命中率
-  ];
-  var DEFAULT_STATUS_ITEMS = [
-    { id: "tokRate", on: true },
-    // 最近输出 tokens/s（60 秒窗口，本会话）
-    { id: "ctx", on: true },
-    // 上下文占用
-    { id: "questions", on: true },
-    // 提问次数
-    { id: "todayTokens", on: true },
-    // 今日 token（今天的会话记录完整，数据准确）
-    { id: "totalTokens", on: true },
-    // 累计 token（官方使用统计，全历史）
-    { id: "tasks", on: true }
-    // 任务总数
-  ];
   function zcodeAppVersion() {
     const v = liveBoot().zcodeVersion;
     return typeof v === "string" && v ? v : "";
@@ -88,7 +58,6 @@
   function officialRenameSupported() {
     return zcodeVersionGte(zcodeAppVersion(), 3, 16, 1);
   }
-  var newSidebarCached = false;
   function isNewProjectSidebar() {
     if (newSidebarCached) return true;
     if (officialRenameSupported()) {
@@ -104,1160 +73,6 @@
     }
     return false;
   }
-  var zh = {
-    settingsTitle: "ZCode Pro",
-    tabFeatures: "\u529F\u80FD",
-    tabStyles: "\u5916\u89C2",
-    tabProxy: "\u4EE3\u7406",
-    tabBehavior: "\u884C\u4E3A",
-    tabAgents: "\u5168\u5C40\u63D0\u793A\u8BCD",
-    tabZcode: "ZCode CLI",
-    zcodeDesc: "ZCode \u81EA\u8EAB\u7684\u884C\u4E3A\u914D\u7F6E\uFF08\u5199\u5165 ~/.zcode/cli/config.json\uFF09\uFF0C\u4FDD\u5B58\u540E\u5BF9\u65B0\u4F1A\u8BDD\u751F\u6548\u3002",
-    zcodeStatsTitle: "\u6280\u80FD\u6E05\u5355\u68C0\u67E5",
-    zcodeStatsCounts: "\u6280\u80FD {total} \u4E2A\uFF08\u672C\u5730 {user} \xB7 \u63D2\u4EF6 {plugin}\uFF09",
-    zcodeStatsChars: "\u5B8C\u6574\u6E05\u5355\u7EA6 {n} \u5B57\u7B26",
-    zcodeBudgetDefaultTag: "\uFF08\u9ED8\u8BA4\u503C\uFF09",
-    zcodeStatsDegraded: "\u8D85\u51FA\u9884\u7B97\uFF1A\u5B8C\u6574\u6E05\u5355\u653E\u4E0D\u4E0B\uFF0C\u964D\u7EA7\u4E3A\u4EC5\u540D\u79F0\uFF0C\u6A21\u578B\u770B\u4E0D\u5230\u6280\u80FD\u63CF\u8FF0",
-    zcodeStatsOk: "\u9884\u7B97\u5145\u8DB3\uFF1A\u6E05\u5355\u5E26\u5B8C\u6574\u63CF\u8FF0\u6CE8\u5165\u65B0\u4F1A\u8BDD",
-    zcodeStatsSuggest: "\u5EFA\u8BAE\u9884\u7B97 {n} \u5B57\u7B26\uFF08\u7559 20% \u4F59\u91CF\uFF09",
-    zcodeBudgetApply: "\u7528\u5EFA\u8BAE\u503C",
-    zcodeBudgetApplied: "\u6E05\u5355\u9884\u7B97\u5DF2\u4FDD\u5B58",
-    zcodeStatsNote: "\u6309\u5F53\u524D\u78C1\u76D8\u72B6\u6001\u4F30\u7B97\uFF0C\u4E0D\u542B\u5404\u9879\u76EE\u5185\u7684\u6280\u80FD\u76EE\u5F55\u3002",
-    zcodeSkillEnabled: "\u6280\u80FD\u7CFB\u7EDF",
-    zcodeSkillEnabledDesc: "skills.enabled\uFF1A\u5173\u95ED\u540E ZCode \u4E0D\u518D\u53D1\u73B0\u4E0E\u6CE8\u5165\u4EFB\u4F55\u6280\u80FD",
-    zcodeSkillIncludeInstructions: "\u6280\u80FD\u8BF4\u660E\u6CE8\u5165",
-    zcodeSkillIncludeInstructionsDesc: "skills.includeInstructions\uFF1A\u6280\u80FD\u8BF4\u660E\u662F\u5426\u968F\u6E05\u5355\u4E00\u8D77\u6CE8\u5165",
-    zcodeSkillBudget: "\u6280\u80FD\u6E05\u5355\u9884\u7B97\uFF08\u5B57\u7B26\uFF09",
-    zcodeSkillBudgetDesc: "skills.metadataBudget\uFF1A\u5B8C\u6574\u6E05\u5355\u8D85\u8FC7\u8BE5\u957F\u5EA6\u5C31\u964D\u7EA7\u4E3A\u4EC5\u540D\u79F0\uFF0C\u9ED8\u8BA4 20000",
-    zcodeSkillRoots: "\u989D\u5916\u6280\u80FD\u76EE\u5F55",
-    zcodeSkillRootsDesc: "skills.roots\uFF1A\u6BCF\u884C\u4E00\u4E2A\u76EE\u5F55\uFF0C\u76EE\u5F55\u4E0B\u7684\u6280\u80FD\u4F1A\u88AB\u53D1\u73B0\uFF08~/.zcode/skills\u3001~/.agents/skills \u4E4B\u5916\u7684\u8865\u5145\uFF09",
-    zcodeSave: "\u4FDD\u5B58",
-    zcodeRootsSaved: "\u6280\u80FD\u76EE\u5F55\u5DF2\u4FDD\u5B58",
-    zcodeFeatCompact: "\u4F1A\u8BDD\u538B\u7F29",
-    zcodeFeatCompactDesc: "features.compact\uFF1A\u4E0A\u4E0B\u6587\u8FC7\u957F\u65F6\u538B\u7F29\u65E9\u671F\u4F1A\u8BDD\u5185\u5BB9",
-    zcodeFeatRewind: "\u4F1A\u8BDD\u56DE\u6EAF",
-    zcodeFeatRewindDesc: "features.rewind\uFF1A\u56DE\u9000\u5230\u8F83\u65E9\u8282\u70B9\u91CD\u65B0\u7EE7\u7EED",
-    zcodeFeatSubagent: "\u5B50\u4EE3\u7406",
-    zcodeFeatSubagentDesc: "features.subagent\uFF1A\u6D3E\u51FA\u5B50\u4EE3\u7406\u5904\u7406\u5B50\u4EFB\u52A1",
-    zcodeFeatSkill: "\u6280\u80FD\u5DE5\u5177",
-    zcodeFeatSkillDesc: "features.skill\uFF1ASkill \u5DE5\u5177\u53EF\u7528\uFF08\u8FD8\u9700\u5F00\u542F\u6280\u80FD\u7CFB\u7EDF\uFF09",
-    zcodeFeatMcp: "MCP \u5DE5\u5177",
-    zcodeFeatMcpDesc: "features.mcp\uFF1A\u4F7F\u7528 MCP \u670D\u52A1\u5668\u63D0\u4F9B\u7684\u5DE5\u5177",
-    zcodeMemoryHint: "\u8BB0\u5FC6\u4E0D\u5728\u6B64\u5904\uFF1A\u5DE5\u4F5C\u533A\u8BB0\u5FC6\u5728\u5B98\u65B9 \u8BBE\u7F6E \u2192 Agent \u80FD\u529B \u2192 \u8BB0\u5FC6 \u4E2D\u5F00\u5173\uFF08\u542B\u8BB0\u5FC6\u8BE6\u60C5\u67E5\u770B\uFF09\u3002",
-    agentsDesc: "\u5199\u5165 ~/.zcode/AGENTS.md\uFF0C\u4F5C\u4E3A\u9ED8\u8BA4\u6307\u4EE4\u7528\u4E8E\u6240\u6709\u9879\u76EE\u7684\u6BCF\u6B21\u4F1A\u8BDD\uFF1B\u4FDD\u5B58\u540E\u4ECE\u65B0\u4F1A\u8BDD\u8D77\u751F\u6548\uFF0C\u9879\u76EE\u5185\u7684 AGENTS.md \u53EF\u8865\u5145\u6216\u8986\u76D6\u3002\u5185\u5BB9\u8D85\u8FC7 100KB \u4F1A\u88AB\u5E94\u7528\u622A\u65AD\u3002",
-    agentsPlaceholder: "\u586B\u5199\u5E0C\u671B\u6240\u6709\u9879\u76EE\u9ED8\u8BA4\u9075\u5FAA\u7684\u6307\u4EE4\uFF1B\u6E05\u7A7A\u5E76\u4FDD\u5B58\u5373\u79FB\u9664\u5168\u5C40\u63D0\u793A\u8BCD",
-    agentsSave: "\u4FDD\u5B58",
-    agentsSaved: "\u5168\u5C40\u63D0\u793A\u8BCD\u5DF2\u4FDD\u5B58",
-    agentsLoadFailed: "\u8BFB\u53D6\u5168\u5C40\u63D0\u793A\u8BCD\u5931\u8D25",
-    proxyDesc: "\u4E3A ZCode Pro \u672C\u5730\u52A9\u624B\u53D1\u8D77\u7684\u7F51\u7EDC\u8BBF\u95EE\u8BBE\u7F6E HTTP \u4EE3\u7406\uFF1A\u63D2\u4EF6\u5E02\u573A\u7684\u66F4\u65B0\u4E0E\u5B89\u88C5\u3001\u63D2\u4EF6\u4F9D\u8D56\u8F6F\u4EF6\u7684\u5B89\u88C5\u4E0E\u5347\u7EA7\u3001WebDAV \u540C\u6B65\u90FD\u53EF\u8D70\u8BE5\u4EE3\u7406\uFF0C\u7528\u4E0B\u65B9\u5F00\u5173\u9009\u62E9\u751F\u6548\u8303\u56F4\u3002\u4E0D\u5F71\u54CD ZCode \u5E94\u7528\u672C\u8EAB\u4E0E\u6A21\u578B\u8BF7\u6C42\u3002",
-    proxyPlaceholder: "http://127.0.0.1:7890",
-    proxySave: "\u4FDD\u5B58",
-    proxySaved: "\u4EE3\u7406\u8BBE\u7F6E\u5DF2\u4FDD\u5B58",
-    proxyHint: "\u7559\u7A7A\u4FDD\u5B58\u5373\u6E05\u9664\u4EE3\u7406\u3002",
-    proxyTest: "\u68C0\u6D4B",
-    proxyTesting: "\u68C0\u6D4B\u4E2D\u2026",
-    proxyTestEmpty: "\u8BF7\u5148\u8F93\u5165\u4EE3\u7406\u5730\u5740",
-    proxyTestFailed: "\u68C0\u6D4B\u5931\u8D25",
-    proxyScopePlugins: "\u63D2\u4EF6\u5E02\u573A\u66F4\u65B0",
-    proxyScopePluginsDesc: "\u63D2\u4EF6\u5E02\u573A\u7684\u68C0\u67E5\u66F4\u65B0\u3001\u5B89\u88C5\u4E0E\u5378\u8F7D\uFF08zcode CLI \u7684 git \u64CD\u4F5C\uFF09\u8D70\u4EE3\u7406\u3002",
-    proxyScopeDeps: "\u63D2\u4EF6\u4F9D\u8D56\u8F6F\u4EF6",
-    proxyScopeDepsDesc: "headroom \u4E0E rtk \u7684\u5B89\u88C5\u3001\u68C0\u67E5\u66F4\u65B0\u4E0E\u5347\u7EA7\uFF08pip \u4E0E GitHub \u4E0B\u8F7D\uFF09\u8D70\u4EE3\u7406\u3002",
-    proxyScopeSync: "\u540C\u6B65",
-    proxyScopeSyncDesc: "WebDAV \u4E0A\u4F20\u4E0E\u4E0B\u8F7D\u8D70\u4EE3\u7406\u3002",
-    tabSync: "\u540C\u6B65",
-    tabDebug: "\u8C03\u8BD5",
-    testNoSessionHint: "\u9009\u62E9\u201C\u8DDF\u968F\u5F53\u524D\u4F1A\u8BDD[\u5F53\u524D\u6A21\u578B]\u201D\u65F6\uFF0C\u9009\u62E9\u4E0A\u6B21\u4F1A\u8BDD\u4E2D\u4F7F\u7528\u7684\u4F9B\u5E94\u5546[\u6A21\u578B]",
-    syncDesc: "\u624B\u52A8\u628A ZCode Pro \u8BBE\u7F6E\u4E0E\u6A21\u578B\u8BBE\u7F6E\u5907\u4EFD\u5230 WebDAV\uFF0C\u6216\u5728\u65B0\u7535\u8111\u4E0A\u6062\u590D\u3002\u4E24\u9879\u5404\u81EA\u72EC\u7ACB\u6210\u6587\u4EF6\uFF0C\u53EF\u53EA\u4E0A\u4F20\u6216\u53EA\u8986\u76D6\u5176\u4E2D\u4E00\u9879\uFF1B\u6BCF\u6B21\u4E0A\u4F20\u4F1A\u989D\u5916\u4FDD\u7559\u4E00\u4EFD\u5E26\u65F6\u95F4\u6233\u7684\u5386\u53F2\u7248\u672C\uFF08\u4FDD\u7559\u591A\u5C11\u4E2A\u89C1\u201C\u5386\u53F2\u7248\u672C\u201D\u4E00\u884C\uFF0C\u4E0A\u4F20\u540E\u81EA\u52A8\u5220\u9664\u8D85\u51FA\u7684\u6700\u65E7\u7248\u672C\uFF09\uFF0C\u4E0B\u8F7D\u65F6\u4EFB\u9009\u4E00\u4E2A\u7248\u672C\u6062\u590D\uFF1B\u4EC5\u5728\u70B9\u51FB\u6309\u94AE\u65F6\u4F20\u8F93\uFF0C\u4E0D\u505A\u81EA\u52A8\u540C\u6B65\u3002",
-    syncUrlPlaceholder: "https://dav.jianguoyun.com/dav/",
-    syncDir: "\u4E0A\u4F20\u76EE\u5F55",
-    syncDirPlaceholder: "zcode-pro",
-    syncLogin: "\u767B\u5F55",
-    syncPassword: "\u5BC6\u7801",
-    syncHistoryLimit: "\u5386\u53F2\u7248\u672C",
-    syncHistoryLimitUnit: "\u4E2A",
-    syncHistoryLimitHint: "\u4E91\u7AEF\u6700\u591A\u4FDD\u7559\u6700\u8FD1\u51E0\u6B21\u4E0A\u4F20\u7559\u4E0B\u7684\u5386\u53F2\u7248\u672C\uFF0C\u4E0A\u4F20\u6210\u529F\u540E\u81EA\u52A8\u5220\u9664\u66F4\u65E9\u7684\uFF1B\u56FA\u5B9A\u540D\u6700\u65B0\u7248\u4E0D\u53D7\u5F71\u54CD\uFF1B0 = \u4E0D\u4FDD\u7559\u5386\u53F2\u7248\u672C",
-    syncPruned: "\u5DF2\u6E05\u7406 {n} \u4E2A\u66F4\u65E9\u7684\u5386\u53F2\u7248\u672C",
-    syncSave: "\u4FDD\u5B58",
-    syncSaved: "\u540C\u6B65\u914D\u7F6E\u5DF2\u4FDD\u5B58",
-    syncFormHint: "\u540C\u6B65\u6587\u4EF6\u5B58\u5230\u201C\u4E0A\u4F20\u76EE\u5F55\u201D\uFF08\u9ED8\u8BA4 zcode-pro\uFF0C\u53EF\u591A\u7EA7\uFF0C\u81EA\u52A8\u521B\u5EFA\uFF09\uFF1Azcodepro.json \u4E0E model.json \u59CB\u7EC8\u662F\u6700\u65B0\u4E00\u7248\uFF0C\u65C1\u8FB9\u53E6\u4FDD\u7559\u5E26\u65F6\u95F4\u6233\u7684\u5386\u53F2\u7248\u672C\u3002",
-    syncRecLink: "\u575A\u679C\u4E91 WebDAV",
-    syncRecSuffix: "\uFF1A\u767B\u5F55\u4E0E\u5BC6\u7801\u586B\u201C\u5E94\u7528\u5BC6\u7801\u201D\uFF0C\u4E0D\u662F\u8D26\u53F7\u5BC6\u7801\u3002",
-    syncIncludeZcp: "ZCode Pro \u8BBE\u7F6E",
-    syncIncludeZcpDesc: "\u529F\u80FD\u5F00\u5173\u3001\u6837\u5F0F\u8C03\u6574\u4E0E\u4EE3\u7406\u8BBE\u7F6E\uFF1B\u540C\u6B65\u914D\u7F6E\u4E0E\u51ED\u636E\u672C\u8EAB\u4E0D\u53C2\u4E0E\u540C\u6B65\u3002\u9879\u76EE\u522B\u540D\u4E0D\u540C\u6B65\uFF08\u5B98\u65B9\u5DF2\u652F\u6301\u6539\u9879\u76EE\u540D\uFF09\u3002",
-    syncIncludeModel: "\u6A21\u578B\u8BBE\u7F6E",
-    syncIncludeModelDesc: "\u81EA\u5B9A\u4E49\u4F9B\u5E94\u5546\u4E0E\u6A21\u578B\u914D\u7F6E\uFF08config.json \u4E0E provider_config.json\uFF0C\u542B API Key\uFF09\u4E0E Headroom \u4F9B\u5E94\u5546\u6620\u5C04\uFF08headroom.json\uFF0Ckey \u4EC5\u4EE5 keyHash \u5B58\u50A8\u3001\u4E0D\u542B\u660E\u6587\uFF09\u3002\u8D26\u53F7\u767B\u5F55\u7684\u51ED\u636E\uFF08\u5982 BigModel \u8BA2\u9605\uFF09\u4E0D\u53C2\u4E0E\u540C\u6B65\uFF0C\u5404\u673A\u5668\u7528\u5404\u81EA\u8D26\u53F7\u767B\u5F55\u3002",
-    syncUpload: "\u4E0A\u4F20\u5230\u4E91\u7AEF",
-    syncDownload: "\u4ECE\u4E91\u7AEF\u4E0B\u8F7D",
-    syncUploading: "\u4E0A\u4F20\u4E2D\u2026",
-    syncUploaded: "\u5DF2\u4E0A\u4F20\u5230\u4E91\u7AEF",
-    syncDownloaded: "\u5DF2\u4ECE\u4E91\u7AEF\u6062\u590D",
-    syncLastPush: "\u4E0A\u6B21\u4E0A\u4F20",
-    syncLastPull: "\u4E0A\u6B21\u4E0B\u8F7D",
-    syncNever: "\u65E0",
-    syncConfirmTitle: "\u4ECE\u4E91\u7AEF\u4E0B\u8F7D",
-    syncConfirmDesc: "\u5C06\u7528\u6240\u9009\u6587\u4EF6\u8986\u76D6\u672C\u673A\u5BF9\u5E94\u7684\u4E00\u9879\uFF08\u8986\u76D6\u524D\u4F1A\u5728\u539F\u6587\u4EF6\u65C1\u7559\u4E0B .zcodepro-backup \u5907\u4EFD\uFF09\uFF1B\u672C\u673A\u7684\u540C\u6B65\u914D\u7F6E\u4E0E\u767B\u5F55\u51ED\u636E\u4E0D\u53D7\u5F71\u54CD\u3002\u6A21\u578B\u8BBE\u7F6E\u6062\u590D\u540E\u5EFA\u8BAE\u91CD\u542F ZCode \u751F\u6548\u3002\u786E\u8BA4\u5BFC\u5165\uFF1F",
-    syncConfirmGo: "\u786E\u8BA4\u5BFC\u5165",
-    syncPickDesc: "\u56FA\u5B9A\u540D\u6587\u4EF6\u59CB\u7EC8\u662F\u6700\u65B0\u4E00\u7248\uFF0C\u5E26\u65F6\u95F4\u6233\u7684\u662F\u6BCF\u6B21\u4E0A\u4F20\u7559\u4E0B\u7684\u5386\u53F2\u7248\u672C\uFF1B\u201C\u5BFC\u5165\u201D\u7528\u6240\u9009\u6587\u4EF6\u8986\u76D6\u672C\u673A\u5BF9\u5E94\u7684\u4E00\u9879\u3002",
-    syncVerDeleteLatestNote: "\u6CE8\u610F\uFF1A\u8FD9\u662F\u201C\u6700\u65B0\u201D\u6587\u4EF6\uFF0C\u65E7\u7248 zcode-pro \u7684\u201C\u4ECE\u4E91\u7AEF\u4E0B\u8F7D\u201D\u4F9D\u8D56\u5B83\uFF0C\u5220\u9664\u540E\u65E7\u7248\u673A\u5668\u5C06\u65E0\u6CD5\u4E0B\u8F7D\uFF1B\u5E26\u65F6\u95F4\u6233\u7684\u5386\u53F2\u7248\u672C\u4E0D\u53D7\u5F71\u54CD\u3002",
-    syncHint: "\u540C\u6B65\u767B\u5F55\u51ED\u636E\u4EC5\u4FDD\u5B58\u5728\u672C\u673A zcodepro.json\uFF1B\u6A21\u578B\u8BBE\u7F6E\u5305\u542B\u81EA\u5B9A\u4E49\u4F9B\u5E94\u5546\u7684 API Key\uFF0C\u53EA\u4F1A\u4E0A\u4F20\u5230\u4F60\u81EA\u5DF1\u7684 WebDAV\u3002",
-    syncTest: "\u6D4B\u8BD5",
-    syncTesting: "\u6D4B\u8BD5\u4E2D\u2026",
-    syncTestEmpty: "\u8BF7\u5148\u586B\u5199 URL",
-    syncTestFailed: "\u6D4B\u8BD5\u5931\u8D25",
-    syncTestStepConnect: "\u8FDE\u63A5",
-    syncTestStepDir: "\u76EE\u5F55",
-    syncTestStepList: "\u6587\u4EF6",
-    syncTestFilesFound: "\u4E91\u7AEF\u5DF2\u6709 {n} \u4E2A\u5907\u4EFD\u6587\u4EF6",
-    syncPickTitle: "\u8BF7\u9009\u62E9\u4E00\u4E2A\u6587\u4EF6",
-    syncPickLoading: "\u6B63\u5728\u8BFB\u53D6\u4E91\u7AEF\u6587\u4EF6\u5217\u8868\u2026",
-    syncPickEmpty: "\u4E91\u7AEF\u8FD8\u6CA1\u6709\u5907\u4EFD\u6587\u4EF6\uFF0C\u8BF7\u5148\u5728\u5176\u4ED6\u7535\u8111\u4E0A\u4F20",
-    syncVerImport: "\u5BFC\u5165",
-    syncVerImporting: "\u5BFC\u5165\u4E2D\u2026",
-    syncVerDelete: "\u5220\u9664",
-    syncVerSave: "\u4FDD\u5B58\u5230\u78C1\u76D8",
-    syncVerSaving: "\u4FDD\u5B58\u4E2D\u2026",
-    syncVerLatest: "\u6700\u65B0",
-    syncVerDeleteTitle: "\u5220\u9664\u4E91\u7AEF\u6587\u4EF6",
-    syncVerDeleteDesc: "\u5C06\u5220\u9664\u4E91\u7AEF\u7684\u8FD9\u4EFD\u5907\u4EFD\uFF0C\u4E0D\u53EF\u6062\u590D\uFF1A",
-    syncVerDeleted: "\u5DF2\u5220\u9664\u4E91\u7AEF\u5907\u4EFD",
-    syncVerSaved: "\u5DF2\u4FDD\u5B58\u5230",
-    devModeDesc: "\u5F00\u53D1\u8C03\u8BD5\u7528\uFF1A\u6539\u5B8C zcode-pro \u4EE3\u7801\u540E\u4E0D\u5FC5\u91CD\u542F ZCode\uFF0C\u70B9\u201C\u91CD\u8F7D ZCode Pro\u201D\u5373\u53EF\u52A0\u8F7D\u65B0\u4EE3\u7801\u3002\u6D41\u7A0B\u4E3A\u81EA\u52A8\u6784\u5EFA\uFF08\u9700\u5728\u6E90\u7801\u76EE\u5F55\u8FD0\u884C\uFF09\u2192 \u4EE5\u65B0\u8FDB\u7A0B\u91CD\u542F ZCode Pro\uFF08\u672C\u5730\u52A9\u624B\u4E0E\u6CE8\u5165\u811A\u672C\u90FD\u6362\u65B0\uFF09\u2192 \u6240\u6709 ZCode \u7A97\u53E3\u81EA\u52A8\u5237\u65B0\u5E76\u91CD\u65B0\u6CE8\u5165\uFF1BZCode \u672C\u4F53\u4E0E\u5DF2\u6253\u5F00\u7684\u4F1A\u8BDD\u4E0D\u53D7\u5F71\u54CD\u3002",
-    devReload: "\u91CD\u8F7D ZCode Pro",
-    devReloading: "\u91CD\u8F7D\u4E2D\u2026",
-    devReloadDesc: "\u70B9\u51FB\u540E\u7EA6 2-3 \u79D2\u5185\u6240\u6709 ZCode \u7A97\u53E3\u81EA\u52A8\u5237\u65B0\u4E00\u6B21\u5E76\u52A0\u8F7D\u65B0\u811A\u672C\u3002",
-    rowGapName: "\u6BB5\u843D\u95F4\u8DDD",
-    rowGapDesc: "\u4F1A\u8BDD\u4E2D\u6BB5\u843D\u7B49\u6587\u672C\u5757\u4E4B\u95F4\u7684\u5782\u76F4\u95F4\u8DDD\uFF08\u56DE\u5408\u4E4B\u95F4\u3001\u7B54\u6848\u5185\u90E8\uFF09\u3002",
-    listSpacingName: "\u5217\u8868\u4E0A\u4E0B\u8FB9\u8DDD",
-    listSpacingDesc: "\u7B54\u6848\u4E2D\u5217\u8868\u4E0A\u4E0B\u7684\u7559\u767D\u3002",
-    listItemSpacingName: "\u5217\u8868\u9879\u95F4\u8DDD",
-    listItemSpacingDesc: "\u5217\u8868\u4E2D\u76F8\u90BB\u5217\u8868\u9879\u4E4B\u95F4\u7684\u95F4\u8DDD\u3002",
-    quoteCodeSpacingName: "\u5F15\u7528\u5757\u4E0A\u4E0B\u8FB9\u8DDD",
-    quoteCodeSpacingDesc: "\u5F15\u7528\u5757\u4E0E\u4EE3\u7801\u5757\u4E0A\u4E0B\u7684\u7559\u767D\u3002",
-    codeLineHeightName: "\u4EE3\u7801\u5757\u884C\u9AD8",
-    codeLineHeightDesc: "\u4EE3\u7801\u5757\u5185\u4EE3\u7801\u884C\u7684\u884C\u9AD8\uFF08\u500D\u6570\uFF09\u3002",
-    tableSpacingName: "\u8868\u683C\u4E0A\u4E0B\u8FB9\u8DDD",
-    tableSpacingDesc: "\u8868\u683C\u4E0A\u4E0B\u7684\u7559\u767D\u3002",
-    tableCellPaddingName: "\u5355\u5143\u683C\u4E0A\u4E0B/\u5DE6\u53F3\u8FB9\u8DDD",
-    tableCellPaddingDesc: "\u8868\u683C\u5355\u5143\u683C\u5185\u7684\u7559\u767D\uFF1B\u5DE6\u8F93\u5165\u6846\u4E3A\u4E0A\u4E0B\u3001\u53F3\u4E3A\u5DE6\u53F3\u3002",
-    lineHeightName: "\u56DE\u7B54\u884C\u9AD8",
-    lineHeightDesc: "\u56DE\u7B54\u6B63\u6587\u7684\u884C\u9AD8\uFF08\u500D\u6570\uFF09\u3002",
-    thinkingLineHeightName: "\u601D\u8003\u884C\u9AD8",
-    thinkingLineHeightDesc: "\u201C\u5DF2\u5DE5\u4F5C/\u5DE5\u4F5C\u4E2D\u201D\u8FC7\u7A0B\u8BB0\u5F55\uFF08\u8BFB\u53D6/\u7F16\u8F91/\u67E5\u9605/\u7EC8\u7AEF\u6761\u76EE\u4E0E\u601D\u8003\u5185\u5BB9\uFF09\u7684\u884C\u9AD8\uFF08\u500D\u6570\uFF09\u3002",
-    userLineHeightName: "\u63D0\u95EE\u884C\u9AD8",
-    userLineHeightDesc: "\u63D0\u95EE\u5185\u5BB9\u7684\u884C\u9AD8\uFF08\u500D\u6570\uFF09\u3002",
-    contentWidthName: "\u5185\u5BB9\u5BBD\u5EA6",
-    contentWidthDesc: "\u4F1A\u8BDD\u5185\u5BB9\u7684\u6700\u5927\u5BBD\u5EA6\uFF0C\u53EF\u8F93\u5165 px \u6216 %\uFF08\u5982 900px\u300185%\uFF09\uFF1B\u9ED8\u8BA4\u663E\u793A\u5F53\u524D\u5B9E\u9645\u5BBD\u5EA6\uFF0C% \u76F8\u5BF9\u4F1A\u8BDD\u533A\u57DF\u3002",
-    defaultValue: "\u9ED8\u8BA4",
-    resetDefault: "\u6062\u590D\u9ED8\u8BA4",
-    featureProjectMenu: "\u9879\u76EE\u83DC\u5355\u589E\u5F3A",
-    featureProjectMenuDesc: "\u9879\u76EE\u66F4\u591A\u83DC\u5355\uFF1A\u6253\u5F00\u6587\u4EF6\u5939\u4E0E\u590D\u5236\u8DEF\u5F84\uFF08\u522B\u540D\u4E0E\u5207\u6362\u6587\u4EF6\u5939\u5DF2\u505C\u7528\uFF09\u3002",
-    featureTaskOrder: "\u4FA7\u8FB9\u680F\u4F1A\u8BDD\u62D6\u52A8\u6392\u5E8F",
-    featureTaskOrderDesc: "\u62D6\u52A8\u8C03\u6574\u7F6E\u9876\u3001\u9879\u76EE\u4E0E\u5206\u7EC4\u4E2D\u7684\u4F1A\u8BDD\u987A\u5E8F\uFF0C\u91CD\u542F\u540E\u4E0D\u53D8\u3002",
-    featureSessionSwitch: "\u4F1A\u8BDD\u5FEB\u6377\u5207\u6362",
-    featureSessionSwitchDesc: "{last} \u6765\u56DE\u4E0A\u6B21\u4F1A\u8BDD\uFF1Balt+\u65B9\u5411\u952E/\u5FEB\u6377\u952E\u9009\u6700\u8FD1\u4F1A\u8BDD\uFF1B\u952E\u4F4D\u53EF\u6539",
-    featureTitleLock: "\u91CD\u547D\u540D\u4F1A\u8BDD\u540D\u9501\u5B9A",
-    featureTitleLockDesc: "\u624B\u52A8\u91CD\u547D\u540D\u8FC7\u7684\u4F1A\u8BDD\u4E0D\u88AB\u81EA\u52A8\u6807\u9898\u8986\u76D6\uFF0C\u4FA7\u680F\u59CB\u7EC8\u663E\u793A\u91CD\u547D\u540D\u540E\u7684\u540D\u5B57\u3002",
-    tabTitleGen: "\u81EA\u52A8\u91CD\u547D\u540D",
-    titleGenShortDesc: "\u65B0\u4F1A\u8BDD\u5F00\u59CB\u4F5C\u7B54\u65F6\uFF0C\u6309\u6240\u9009\u4F9B\u5E94\u5546\u4E0E\u63D0\u793A\u8BCD\u751F\u6210\u4EFB\u52A1\u540D\u5E76\u6309\u624B\u52A8\u91CD\u547D\u540D\u4FDD\u5B58\uFF0C\u5B98\u65B9\u81EA\u52A8\u6807\u9898\u4E0D\u518D\u8986\u76D6\u3002",
-    titleGenEnabled: "\u542F\u7528",
-    titleGenProvider: "\u4F9B\u5E94\u5546",
-    titleGenProviderNone: "\u4E0D\u8DDF\u968F\uFF08\u81EA\u586B\u5730\u5740\uFF09",
-    titleGenProviderSession: "\u8DDF\u968F\u5F53\u524D\u4F1A\u8BDD",
-    titleGenProviderDeleted: "\uFF08\u5DF2\u5220\u9664\uFF09",
-    titleGenModel: "\u6A21\u578B",
-    titleGenModelHint: "\u4ECE\u5217\u8868\u9009\u62E9\uFF0C\u6216\u76F4\u63A5\u586B\u5199\u6A21\u578B id",
-    titleGenModelEmpty: "\uFF08\u672A\u9009\u62E9\uFF09",
-    titleGenModelSessionHint: "\u4ECE\u5217\u8868\u9009\u62E9\u6A21\u578B\uFF1B\u5217\u8868\u7B2C\u4E00\u9879\u4E3A\u8DDF\u968F\u4F1A\u8BDD\u5F53\u524D\u6A21\u578B",
-    titleGenModelFollowSession: "\u8DDF\u968F\u5F53\u524D\u4F1A\u8BDD\u5F53\u524D\u6A21\u578B",
-    titleGenModelManualHint: "\u8F93\u5165\u6A21\u578B id",
-    titleGenBaseUrl: "\u63A5\u53E3\u5730\u5740",
-    titleGenApiKey: "API Key",
-    titleGenFormat: "\u534F\u8BAE",
-    titleGenPrompt: "\u63D0\u793A\u8BCD",
-    titleGenPromptPlaceholder: "\u7559\u7A7A\u4F7F\u7528\u5185\u7F6E\u9ED8\u8BA4\u63D0\u793A\u8BCD\uFF08\u70B9\u51FB\u4E0B\u65B9\u6309\u94AE\u53EF\u67E5\u770B\uFF09",
-    titleGenPromptReset: "\u4F7F\u7528\u9ED8\u8BA4\u63D0\u793A\u8BCD",
-    titleGenSample: "\u6D4B\u8BD5\u6D88\u606F",
-    titleGenTest: "\u6D4B\u8BD5\u751F\u6210",
-    titleGenTesting: "\u751F\u6210\u4E2D\u2026",
-    titleGenTestOk: "\u751F\u6210\u7ED3\u679C\uFF1A",
-    titleGenTestFailed: "\u751F\u6210\u5931\u8D25",
-    // 手动“自动重命名”（任务行悬浮按钮 / 右键菜单入口）与其开关
-    titleGenManual: "\u624B\u52A8\u91CD\u547D\u540D",
-    titleGenHoverBtn: "\u4EFB\u52A1\u884C\u60AC\u6D6E\u6309\u94AE",
-    titleGenHoverBtnDesc: "\u9F20\u6807\u60AC\u505C\u4EFB\u52A1\u884C\u65F6\uFF0C\u5728\u5F52\u6863\u6309\u94AE\u65C1\u663E\u793A\u201C\u81EA\u52A8\u91CD\u547D\u540D\u201D\u6309\u94AE\u3002",
-    titleGenMenuEntry: "\u53F3\u952E\u83DC\u5355\u9879",
-    titleGenMenuEntryDesc: "\u4EFB\u52A1\u53F3\u952E\u83DC\u5355\u201C\u91CD\u547D\u540D\u4EFB\u52A1\u201D\u4E0B\u65B9\u663E\u793A\u201C\u81EA\u52A8\u91CD\u547D\u540D\u201D\u3002",
-    titleGenRecentQa: "\u6700\u8FD1\u95EE\u7B54\u6570",
-    titleGenRecentQaDesc: "\u624B\u52A8\u91CD\u547D\u540D\u53D6\u4F1A\u8BDD\u6700\u8FD1\u51E0\u8F6E\u95EE\u7B54\u4F5C\u4E3A\u8D77\u540D\u7D20\u6750\u3002",
-    autoRenameItem: "\u81EA\u52A8\u91CD\u547D\u540D",
-    autoRenameWorking: "\u6B63\u5728\u751F\u6210\u4EFB\u52A1\u540D\u2026",
-    autoRenameDone: "\u5DF2\u91CD\u547D\u540D\uFF1A",
-    featureWsRunning: "\u6298\u53E0\u65F6\u4EFB\u52A1\u8FD0\u884C\u4E2D\u63D0\u793A",
-    featureWsRunningDesc: "\u6709\u4F1A\u8BDD\u8FD0\u884C\u65F6\uFF0C\u6298\u53E0\u7684\u9879\u76EE\u4E0E\u4EFB\u52A1\u5206\u533A\u5934\u663E\u793A\u52A0\u8F7D\u56FE\u6807\uFF0C\u5168\u90E8\u7ED3\u675F\u6D88\u5931\u3002",
-    tabPerformance: "\u6027\u80FD",
-    perfDesc: "ZCode \u4E3A\u6BCF\u4E2A\u6253\u5F00\u8FC7\u7684\u9879\u76EE\u5E38\u9A7B\u4E00\u4E2A\u4F1A\u8BDD\u8FDB\u7A0B\uFF0C\u5E94\u7528\u81EA\u8EAB\u4E0D\u4F1A\u56DE\u6536\uFF0C\u9879\u76EE\u591A\u4E86\u5185\u5B58\u5360\u7528\u5C31\u9AD8\u3002\u5F00\u542F\u540E\uFF0C\u957F\u65F6\u95F4\u672A\u4F7F\u7528\u4E14\u6CA1\u6709\u4EFB\u52A1\u5728\u8DD1\u7684\u9879\u76EE\u4F1A\u88AB\u81EA\u52A8\u91CA\u653E\uFF1A\u4F1A\u8BDD\u8BB0\u5F55\u4E0D\u53D7\u5F71\u54CD\uFF0C\u518D\u6B21\u6253\u5F00\u65F6\u81EA\u52A8\u6062\u590D\uFF0C\u4EC5\u9996\u6B21\u56DE\u590D\u6709\u51E0\u79D2\u7B49\u5F85\u3002\u6B63\u5728\u4F7F\u7528\u7684\u9879\u76EE\u3001\u8FD0\u884C\u4E2D\u7684\u4F1A\u8BDD\u4E0E\u540E\u53F0\u547D\u4EE4\u3001\u5B9A\u65F6\u4EFB\u52A1\u90FD\u4E0D\u4F1A\u88AB\u56DE\u6536\u3002\u540E\u53F0\u547D\u4EE4\u68C0\u6D4B\u4F9D\u8D56\u7CFB\u7EDF\u8FDB\u7A0B\u4FE1\u606F\uFF08Linux / macOS / Windows \u5404\u8D70\u7CFB\u7EDF\u81EA\u5E26\u5DE5\u5177\uFF09\uFF0C\u68C0\u6D4B\u4E0D\u53EF\u7528\u65F6\u529F\u80FD\u81EA\u52A8\u505C\u7528\u3002",
-    featureIdleReclaim: "\u7A7A\u95F2\u9879\u76EE\u5185\u5B58\u56DE\u6536",
-    featureIdleReclaimDesc: "\u6EE1\u8DB3\u6761\u4EF6\u7684\u9879\u76EE\u81EA\u52A8\u91CA\u653E\u5185\u5B58\uFF0C\u4F1A\u8BDD\u4E0D\u53D7\u5F71\u54CD\uFF0C\u518D\u6B21\u6253\u5F00\u81EA\u52A8\u6062\u590D\u3002",
-    idleReclaimMinutesLabel: "\u7A7A\u95F2\u591A\u4E45\u540E\u56DE\u6536\uFF08\u5206\u949F\uFF09",
-    idleReclaimStartupLabel: "\u542F\u52A8\u540E\u591A\u4E45\u56DE\u6536\u4E00\u6B21\uFF08\u5206\u949F\uFF09",
-    idleReclaimStartupHint: "\u5E94\u7528\u542F\u52A8\u4F1A\u4E3A\u6BCF\u4E2A\u6062\u590D\u7684\u9879\u76EE\u9884\u70ED\u8FDB\u7A0B\uFF0C\u5230\u70B9\u628A\u672A\u4F7F\u7528\u7684\u9879\u76EE\u4E00\u6B21\u6536\u6389\uFF1B0 = \u542F\u52A8\u540E\u7ACB\u5373\u56DE\u6536\uFF0C\u8BE5\u6B21\u4E0D\u53D7\u4E0A\u4E00\u9879\u7A7A\u95F2\u65F6\u957F\u9650\u5236",
-    idleReclaimUnit: "\u5206\u949F",
-    featureToolbarIcons: "\u4FA7\u680F\u83DC\u5355\u5E76\u5165\u9876\u680F",
-    featureToolbarIconsDesc: "\u65B0\u5EFA\u4EFB\u52A1/\u641C\u7D22/\u81EA\u52A8\u5316/\u63D2\u4EF6\u5E02\u573A\u6536\u6210\u9876\u680F\u56FE\u6807\u6309\u94AE\u3002",
-    tbNewTask: "\u65B0\u5EFA\u4EFB\u52A1",
-    tbSearch: "\u641C\u7D22",
-    tbAutomations: "\u81EA\u52A8\u5316",
-    tbPluginStore: "\u63D2\u4EF6\u5E02\u573A",
-    featurePinnedCollapse: "\u5DF2\u7F6E\u9876\u5206\u533A\u53EF\u6298\u53E0",
-    featurePinnedCollapseDesc: "\u4FA7\u8FB9\u680F\u5DF2\u7F6E\u9876\u6807\u9898\u53EF\u70B9\u51FB\u6298\u53E0/\u5C55\u5F00\u5176\u4EFB\u52A1\u5217\u8868\u3002",
-    featureSandboxReclaim: "\u63D2\u4EF6\u754C\u9762\u6C99\u7BB1\u56DE\u6536",
-    featureSandboxReclaimDesc: "\u6C99\u7BB1\u6EE1 64 \u4E2A\u65F6\u81EA\u52A8\u91CA\u653E\u6700\u65E9\u7684\uFF0C\u65B0\u5361\u7247\u4E0D\u518D\u6253\u4E0D\u5F00\uFF1B\u65E7\u5361\u91CD\u65B0\u6253\u5F00\u6240\u5728\u4F1A\u8BDD\u5373\u53EF\u6062\u590D\u3002",
-    featurePluginCardRetry: "\u63D2\u4EF6\u5361\u7247\u81EA\u52A8\u91CD\u8BD5",
-    featurePluginCardRetryDesc: "\u56E0\u540D\u989D\u4E0A\u9650\u52A0\u8F7D\u5931\u8D25\u7684\u63D2\u4EF6\u5361\u7247\u81EA\u52A8\u70B9\u51FB\u91CD\u65B0\u52A0\u8F7D\uFF0C\u540D\u989D\u7A7A\u51FA\u540E\u81EA\u52A8\u6062\u590D\u3002",
-    visionCardUi: "\u601D\u8003\u8FC7\u7A0B\u663E\u793A Vision \u5361\u7247",
-    pinnedToggleAria: "\u6298\u53E0/\u5C55\u5F00\u5DF2\u7F6E\u9876",
-    sidebarProjectSpacingName: "\u9879\u76EE\u95F4\u8DDD",
-    sidebarProjectSpacingDesc: "\u4FA7\u8FB9\u680F\u4E2D\u76F8\u90BB\u9879\u76EE\u884C\u4E4B\u95F4\u7684\u89C6\u89C9\u95F4\u8DDD\uFF08\u542B\u884C\u5185\u7559\u767D\uFF09\uFF1B\u8BBE\u7F6E\u540E\u5404\u5206\u533A\uFF08\u5DF2\u7F6E\u9876/\u9879\u76EE/\u4EFB\u52A1\uFF09\u4E4B\u95F4\u7684\u95F4\u8DDD\u4E5F\u7EDF\u4E00\u4E3A\u8BE5\u503C\u3002",
-    sidebarTaskSpacingName: "\u4EFB\u52A1\u95F4\u8DDD",
-    sidebarTaskSpacingDesc: "\u4FA7\u8FB9\u680F\u4E2D\u76F8\u90BB\u4EFB\u52A1\u884C\u4E4B\u95F4\u7684\u5782\u76F4\u95F4\u8DDD\uFF08\u542B\u884C\u5185\u4E0A\u4E0B\u7559\u767D\uFF09\u3002",
-    uiFontName: "\u754C\u9762\u5B57\u4F53",
-    uiFontDesc: "\u9664\u7EC8\u7AEF\u5916\u6240\u6709\u754C\u9762\u6587\u5B57\u7684\u5B57\u4F53\uFF08\u7EC8\u7AEF\u5B57\u4F53\u5728\u5B98\u65B9\u8BBE\u7F6E\u4E2D\u8C03\u6574\uFF09\u3002",
-    userFontName: "\u63D0\u95EE\u5B57\u4F53",
-    userFontDesc: "\u4F1A\u8BDD\u4E2D\u63D0\u95EE\u5185\u5BB9\u7684\u5B57\u4F53\uFF1B\u9009\u201C\u9ED8\u8BA4\u201D\u65F6\u8DDF\u968F\u754C\u9762\u5B57\u4F53\u3002",
-    assistantFontName: "\u56DE\u7B54\u5B57\u4F53",
-    assistantFontDesc: "\u4F1A\u8BDD\u4E2D\u56DE\u7B54\u6B63\u6587\u7684\u5B57\u4F53\uFF08\u4EE3\u7801\u5757\u4ECD\u7528\u7B49\u5BBD\u5B57\u4F53\uFF09\uFF1B\u9009\u201C\u9ED8\u8BA4\u201D\u65F6\u8DDF\u968F\u754C\u9762\u5B57\u4F53\u3002",
-    switcherHint: "{prev} / {next} \u6216 \u2191 / \u2193 \u9009\u62E9\uFF0CEnter \u6216\u70B9\u51FB\u884C\u5207\u6362\uFF0CEsc \u53D6\u6D88",
-    switcherCurrent: "\u5F53\u524D",
-    switcherEmpty: "\u6682\u65E0\u4E0A\u6B21\u4F1A\u8BDD\uFF08\u5207\u6362\u8FC7\u4F1A\u8BDD\u540E\u53EF\u7528\uFF09",
-    switcherFailed: "\u672A\u80FD\u5207\u6362\u5230\u8BE5\u4F1A\u8BDD\uFF08\u53EF\u80FD\u5DF2\u5220\u9664\uFF09",
-    switcherMore: "\u8FD8\u6709 {n} \u6761 \xB7 \u6309 c \u52A0\u8F7D",
-    switcherRunning: "\u8FD0\u884C\u4E2D",
-    switcherUnseen: "\u672A\u67E5\u770B",
-    switcherAttentionHint: "\u8FD0\u884C\u4E2D / \u8FD0\u884C\u5B8C\u672A\u67E5\u770B\u7684\u4EFB\u52A1 \xB7 {prev} / {next} \u6216 \u2191 / \u2193 \u9009\u62E9\uFF0CEnter \u6216\u70B9\u51FB\u884C\u5207\u6362",
-    switcherAttentionEmpty: "\u6682\u65E0\u8FD0\u884C\u4E2D\u6216\u672A\u67E5\u770B\u7684\u4EFB\u52A1",
-    featureNewtabPanels: "\u65B0\u6807\u7B7E\u9875\u63D2\u4EF6\u9762\u677F\u5165\u53E3",
-    featureNewtabPanelsDesc: "\u65B0\u6807\u7B7E\u9875\u52A0\u5165\u7B2C\u4E09\u65B9\u63D2\u4EF6\uFF08headroom\u3001rtk \u7B49\uFF09\u7684\u9762\u677F\u5361\u7247\uFF0C\u70B9\u51FB\u5728\u4FA7\u8FB9\u9762\u677F\u6253\u5F00\u3002",
-    ntpDescSuffix: "\u63D2\u4EF6\u9762\u677F",
-    ntpNeedSession: "\u5148\u6253\u5F00\u4E00\u4E2A\u4EFB\u52A1\u4F1A\u8BDD\uFF0C\u518D\u4ECE\u65B0\u6807\u7B7E\u9875\u6253\u5F00\u63D2\u4EF6\u9762\u677F",
-    featureStatusBarDesc: "\u63D0\u95EE\u8F93\u5165\u6846\u53F3\u4E0B\u89D2\u548C\u6BCF\u8F6E\u56DE\u7B54\u6700\u540E\u663E\u793A\u7EDF\u8BA1\u9879\u3002",
-    tabStylesPane: "\u6837\u5F0F",
-    tabStatusPane: "\u72B6\u6001\u680F",
-    themeColorsPane: "\u4E3B\u9898",
-    themeBgRegions: "\u5206\u533A\u80CC\u666F",
-    themeBgRegionFollow: "\u65E0\u80CC\u666F",
-    themeBgRegionLeft: "\u5DE6\u4FA7\u8FB9\u680F",
-    themeBgRegionCenter: "\u4E2D\u95F4\u533A\u57DF",
-    themeBgRegionRight: "\u53F3\u4FA7\u8FB9\u680F",
-    themeBgPane: "\u58C1\u7EB8",
-    themeSkinTitle: "\u76AE\u80A4",
-    themeSkinDesc: "\u77E5\u540D\u7F16\u8F91\u5668\u4E3B\u9898\u914D\u8272\uFF0C\u81EA\u52A8\u5339\u914D ZCode \u7684\u6D45\u8272 / \u6DF1\u8272\u6A21\u5F0F\uFF1B\u9ED8\u8BA4\u4FDD\u6301 ZCode \u539F\u6837\uFF0C\u81EA\u5B9A\u4E49\u5728\u4E0B\u65B9\u81EA\u884C\u8C03\u8272\u3002",
-    themeSkinCustom: "\u81EA\u5B9A\u4E49",
-    themeCustomTitle: "\u81EA\u5B9A\u4E49\u4E3B\u9898",
-    themeCustomHint: "\u6539\u989C\u8272\u5373\u5B9E\u65F6\u751F\u6548\uFF08\u81EA\u52A8\u5207\u5230\u81EA\u5B9A\u4E49\u76AE\u80A4\uFF09\uFF1B\u6D45\u8272\u3001\u6DF1\u8272\u5404\u914D\u4E00\u6B21\uFF0C\u9009\u597D 5 \u4E2A\u989C\u8272\u5373\u53EF\u751F\u6210\u6574\u5957\u754C\u9762\u914D\u8272\u3002",
-    themeCustomLight: "\u6D45\u8272",
-    themeCustomDark: "\u6DF1\u8272",
-    themeCustomBg: "\u80CC\u666F",
-    themeCustomCard: "\u5361\u7247",
-    themeCustomFg: "\u6B63\u6587",
-    themeCustomMuted: "\u6B21\u7EA7\u6587\u5B57",
-    themeCustomAccent: "\u5F3A\u8C03\u8272",
-    themeBgDesc: "\u58C1\u7EB8\u652F\u6301\u56FE\u7247\u3001\u89C6\u9891\u3001\u7F51\u9875\u4E09\u7C7B\uFF0C\u94FA\u5728\u754C\u9762\u540E\u65B9\uFF1B\u6765\u6E90\u53EF\u9009\u672C\u5730\u56FE\u5E93\uFF08\u5355\u9009\u4E00\u5F20\uFF09\u3001\u6587\u4EF6\u5939\uFF08\u5B9A\u65F6\u8F6E\u6362\uFF09\u3001\u56FE\u7247\u7F51\u5740\uFF08\u5B9A\u65F6\u5237\u65B0\uFF09\u6216\u7F51\u9875\u5730\u5740\uFF1B\u5DE6\u680F / \u4E2D\u680F / \u53F3\u680F\u53EF\u5206\u533A\u72EC\u7ACB\u8BBE\u7F6E\uFF08\u4EC5\u9759\u6001\u56FE\uFF0C\u7F29\u653E\u4E0E\u906E\u7F69\u53EF\u5355\u72EC\u8C03\uFF09\u3002\u4FA7\u680F\u3001\u4F1A\u8BDD\u6D41\u3001\u8F93\u5165\u6846\u548C\u8BBE\u7F6E\u5F39\u7A97\u90FD\u53EF\u900F\u51FA\u753B\u9762\u2014\u2014\u8BBE\u7F6E\u5F39\u7A97\u662F\u78E8\u7802\u73BB\u7483\uFF0C\u78E8\u7802\u6548\u679C\u53EF\u5728\u672C\u9875\u5173\u6389\uFF1B\u53F3\u952E\u83DC\u5355\u4E0E\u5176\u4ED6\u5F39\u7A97\u4FDD\u6301\u4E0D\u900F\u660E\u4FDD\u53EF\u8BFB\u3002\u672C\u5730\u56FE\u5E93\u968F WebDAV \u540C\u6B65\u4E0A\u4F20\uFF08\u8986\u76D6\u5F0F\uFF0C\u4E0D\u7559\u5386\u53F2\u7248\u672C\uFF09\u3002",
-    themeBgModeNone: "\u65E0\u58C1\u7EB8",
-    themeBgModeLibrary: "\u672C\u5730\u56FE\u5E93",
-    themeBgModeFolder: "\u6587\u4EF6\u5939",
-    themeBgModeUrl: "\u56FE\u7247\u7F51\u5740",
-    themeBgModeWeb: "\u7F51\u9875",
-    themeBgLibrary: "\u6211\u7684\u56FE\u5E93",
-    themeBgUpload: "\u4E0A\u4F20\u56FE\u7247/\u89C6\u9891",
-    themeBgEmpty: "\u8FD8\u6CA1\u6709\u4E0A\u4F20\u6587\u4EF6\uFF1B\u56FE\u7247\u652F\u6301 png / jpg / webp / gif / bmp / avif\uFF0810MB \u4EE5\u5185\uFF09\uFF0C\u89C6\u9891\u652F\u6301 mp4 / webm / mov\uFF08200MB \u4EE5\u5185\uFF09",
-    themeBgDelete: "\u5220\u9664",
-    themeBgNoneHint: "\u9009\u62E9\u4E00\u79CD\u58C1\u7EB8\u6765\u6E90\uFF1B\u6587\u4EF6\u5939\u53EF\u5B9A\u65F6\u8F6E\u6362\uFF0C\u56FE\u7247\u7F51\u5740\u53EF\u914D\u5408\u968F\u673A\u56FE API \u5B9A\u65F6\u5237\u65B0\u3002",
-    themeBgFolderPick: "\u6D4F\u89C8",
-    themeBgFolderPickTitle: "\u9009\u62E9\u58C1\u7EB8\u6587\u4EF6\u5939",
-    themeBgFolderHint: "\u9009\u62E9\u4E00\u4E2A\u88C5\u58C1\u7EB8\u7684\u6587\u4EF6\u5939\uFF0C\u6587\u4EF6\u539F\u5730\u8BFB\u53D6\u4E0D\u590D\u5236\u3002",
-    themeBgFolderRandom: "\u968F\u673A\u987A\u5E8F",
-    themeBgIntervalHint: "\u8F6E\u6362\u95F4\u9694\uFF08\u5206\u949F\uFF09",
-    themeBgIntervalUnit: "\u5206\u949F\u540E\u8F6E\u6362\uFF0C\u8BBE\u4E3A 0 \u4E0D\u8F6E\u6362",
-    themeBgFolderCount: "\u6587\u4EF6\u5939\u91CC\u6709 {n} \u4E2A\u58C1\u7EB8\u6587\u4EF6\uFF0C\u5B9A\u65F6\u8F6E\u6362\u4E2D\u3002",
-    themeBgFolderMissing: "\u6587\u4EF6\u5939\u4E0D\u5B58\u5728\u6216\u91CC\u9762\u6CA1\u6709\u58C1\u7EB8\u6587\u4EF6\u3002",
-    themeBgUrlIntervalUnit: "\u5206\u949F\u540E\u5237\u65B0\uFF0C\u8BBE\u4E3A 0 \u4E0D\u5237\u65B0",
-    themeBgUrlInvalid: "\u7F51\u5740\u9700\u4EE5 http(s):// \u5F00\u5934",
-    themeBgWebHint: "\u7F51\u9875\u58C1\u7EB8\u7528\u6C99\u7BB1 iframe \u94FA\u5728\u754C\u9762\u540E\u65B9\uFF0C\u9875\u9762\u9700\u81EA\u884C\u64AD\u653E\u52A8\u753B\u6216\u89C6\u9891\uFF1B\u4EC5\u9875\u9762\u81EA\u8EAB\u900F\u660E\u5E95\u65F6\u80FD\u900F\u51FA\u58C1\u7EB8\uFF0C\u90E8\u5206\u4F9D\u8D56\u767B\u5F55\u6001\u7684\u9875\u9762\u65E0\u6CD5\u663E\u793A\u3002",
-    themeBgSource: "\u6765\u6E90",
-    themeBgImage: "\u753B\u9762",
-    themeBgFit: "\u7F29\u653E\u65B9\u5F0F",
-    themeBgFitCover: "\u586B\u6EE1",
-    themeBgFitContain: "\u9002\u5E94",
-    themeBgFitFill: "\u62C9\u4F38",
-    themeBgFitTile: "\u5E73\u94FA",
-    themeBgMask: "\u906E\u7F69\u4E0D\u900F\u660E\u5EA6",
-    themeBgBlur: "\u753B\u9762\u6A21\u7CCA",
-    themeBgPanel: "\u9762\u677F\u4E0D\u900F\u660E\u5EA6",
-    themeBgDialogFrost: "\u8BBE\u7F6E\u5F39\u7A97\u78E8\u7802",
-    themeBgMisc: "\u5176\u4ED6",
-    themeBgFollowGlobal: "\u8DDF\u968F\u5168\u5C40",
-    themeBgRegionsHint: '\u6BCF\u884C\u7684\u7F29\u653E\u3001\u906E\u7F69\u53EF\u5355\u72EC\u8BBE\u7F6E\uFF0C\u9009"\u8DDF\u968F\u5168\u5C40"\u5373\u8DDF\u968F"\u753B\u9762"\u7684\u503C\uFF1B\u6A21\u7CCA\u3001\u8F6C\u573A\u3001\u64AD\u653E\u4EC5\u4F5C\u7528\u4E8E\u5168\u5C40\u58C1\u7EB8\uFF08\u5206\u533A\u53EA\u80FD\u94FA\u56FE\uFF0C\u4E0D\u80FD\u64AD\u89C6\u9891\uFF09\u3002\u5206\u533A\u7528\u6587\u4EF6\u5939\u65F6\uFF0C\u8F6E\u6362\u95F4\u9694\u4E0E\u968F\u673A\u987A\u5E8F\u6CBF\u7528\u5168\u5C40\u8BBE\u7F6E\u3002',
-    themeBgPlayback: "\u64AD\u653E\uFF08\u89C6\u9891\u58C1\u7EB8\uFF09",
-    themeBgVolume: "\u97F3\u91CF",
-    themeBgVolumeHint: "\u89C6\u9891\u58C1\u7EB8\u7684\u97F3\u8F68\u97F3\u91CF\uFF0C0 = \u9759\u97F3\uFF08\u9ED8\u8BA4\uFF09",
-    themeBgRate: "\u500D\u901F",
-    themeBgFps: "\u5E27\u7387\u4E0A\u9650",
-    themeBgFpsOff: "\u539F\u59CB\u5E27\u7387",
-    themeBgFpsHint: "\u5BF9\u89C6\u9891\u58C1\u7EB8\u91CD\u7F16\u7801\u62BD\u5E27\u4EE5\u7701\u8D44\u6E90\uFF0C\u9700\u8981 ffmpeg\uFF1B\u672A\u5B89\u88C5\u65F6\u4FDD\u6301\u539F\u59CB\u5E27\u7387\u3002",
-    themeBgTransition: "\u5207\u6362\u8F6C\u573A",
-    themeBgTransitionCut: "\u76F4\u63A5\u5207\u6362",
-    themeBgTransitionFade: "\u6DE1\u5165\u6DE1\u51FA",
-    themeBgPause: "\u6682\u505C\u6761\u4EF6",
-    themeBgPauseHidden: "\u7A97\u53E3\u6700\u5C0F\u5316\u65F6",
-    themeBgPauseBlur: "\u7A97\u53E3\u5931\u7126\u65F6",
-    themeBgPauseBattery: "\u7535\u6C60\u4F9B\u7535\u65F6",
-    themeBgDeletedActive: "\u5F53\u524D\u58C1\u7EB8\u5DF2\u5220\u9664\uFF0C\u5DF2\u81EA\u52A8\u505C\u7528\u58C1\u7EB8",
-    tableCopyBtn: "\u590D\u5236\u8868\u683C",
-    tableCopied: "\u8868\u683C\u5DF2\u590D\u5236",
-    sbItemCtx: "\u4E0A\u4E0B\u6587\u5360\u7528",
-    sbItemTokRate: "\u6700\u8FD1\u8F93\u51FA tokens/s",
-    sbItemQuestions: "\u63D0\u95EE\u6B21\u6570",
-    sbMaster: "\u542F\u7528\u7EDF\u8BA1",
-    sbMasterDesc: "\u603B\u5F00\u5173\uFF1A\u5173\u95ED\u540E\u8F93\u5165\u6846\u53F3\u4E0B\u89D2\u7684\u7EDF\u8BA1\u884C\u4E0E\u6BCF\u8F6E\u56DE\u7B54\u7684\u7528\u91CF\u6807\u6CE8\u4E00\u8D77\u505C\u7528\u3002",
-    sbGroupSession: "\u4F1A\u8BDD\u7EDF\u8BA1\uFF08\u8DDF\u968F\u5F53\u524D\u4F1A\u8BDD\uFF09",
-    sbGroupGlobal: "\u603B\u7EDF\u8BA1",
-    sbGroupTurn: "\u6BCF\u8F6E\u7EDF\u8BA1\uFF08\u56DE\u7B54\u672B\u5C3E\uFF09",
-    sbLabelIn: "\u8F93\u5165",
-    sbLabelOut: "\u8F93\u51FA",
-    sbLabelCache: "\u7F13\u5B58",
-    turnUsageTitle: "\u672C\u8F6E token",
-    sbLabelQuestions: "\u63D0\u95EE",
-    sbItemTodayTokens: "\u4ECA\u65E5 token",
-    sbItemTasks: "\u4EFB\u52A1\u603B\u6570",
-    sbLabelCtx: "\u4E0A\u4E0B\u6587",
-    sbLabelTurns: "\u8C03\u7528",
-    sbLabelToday: "\u4ECA\u65E5",
-    sbLabelTasks: "\u4EFB\u52A1",
-    sbItemTotalTokens: "\u7D2F\u8BA1 token",
-    sbLabelTotal: "\u7D2F\u8BA1",
-    sbMoveUp: "\u4E0A\u79FB",
-    sbMoveDown: "\u4E0B\u79FB",
-    sbVisible: "\u663E\u793A",
-    sbHidden: "\u9690\u85CF",
-    tabShortcuts: "\u5FEB\u6377\u952E",
-    hkTitle: "\u4F1A\u8BDD\u5FEB\u6377\u5207\u6362",
-    hkAltZ: "\u5728\u5F53\u524D\u4E0E\u4E0A\u6B21\u4F7F\u7528\u7684\u4F1A\u8BDD\u95F4\u6765\u56DE\u5207\u6362",
-    hkAltX: "\u5F39\u7A97\u4E2D\u4E0A\u79FB\u9AD8\u4EAE\uFF08\u66F4\u65E9\u7684\u4F1A\u8BDD\uFF09",
-    hkAltC: "\u5F39\u7A97\u4E2D\u4E0B\u79FB\u9AD8\u4EAE\uFF08\u66F4\u65B0\u7684\u4F1A\u8BDD\uFF09\uFF1B\u5230\u5E95\u4E14\u8FD8\u6709\u66F4\u591A\u65F6\u52A0\u8F7D 5 \u6761\u5E76\u9009\u4E2D\u65B0\u52A0\u8F7D\u7684\u7B2C\u4E00\u6761",
-    hkAltE: "\u6253\u5F00\u6700\u8FD1 10 \u6761\u4EFB\u52A1\u5217\u8868",
-    hkAltR: "\u6253\u5F00\u6B63\u5728\u8FD0\u884C\u4E0E\u8FD0\u884C\u5B8C\u672A\u67E5\u770B\u7684\u4EFB\u52A1\u5217\u8868",
-    hkArrow: "\u5F39\u7A97\u6253\u5F00\u65F6\u79FB\u52A8\u9AD8\u4EAE\uFF08\u4E0E alt + {prev} / alt + {next} \u540C\u89C4\u5219\uFF09",
-    hkEnter: "\u786E\u8BA4\u5207\u6362\u5230\u9AD8\u4EAE\u7684\u4F1A\u8BDD",
-    hkEsc: "\u53D6\u6D88\u5E76\u5173\u95ED\u5F39\u7A97",
-    hkModify: "\u4FEE\u6539",
-    hkRecording: "\u6309\u4E0B\u65B0\u952E\u2026",
-    hkInvalid: "\u5FEB\u6377\u952E\u53EA\u652F\u6301\u5355\u4E2A\u5B57\u6BCD\u6216\u6570\u5B57",
-    hkConflict: "alt+{k} \u5DF2\u7528\u4E8E\u201C{name}\u201D",
-    hkSaved: "\u5FEB\u6377\u952E\u5DF2\u66F4\u65B0",
-    hkNameLast: "\u5207\u6362\u4E0A\u6B21\u4F1A\u8BDD",
-    hkNamePrev: "\u4E0A\u79FB\u9AD8\u4EAE",
-    hkNameNext: "\u4E0B\u79FB\u9AD8\u4EAE",
-    hkNameRecent: "\u6700\u8FD1 10 \u6761",
-    hkNameAttention: "\u8FD0\u884C\u4E2D / \u672A\u67E5\u770B",
-    hkEditHint: "\u70B9\u51FB\u201C\u4FEE\u6539\u201D\u540E\u6309\u4E0B\u65B0\u6309\u952E\uFF08\u5B57\u6BCD\u6216\u6570\u5B57\uFF09\uFF0CEsc \u53D6\u6D88",
-    hkReset: "\u91CD\u7F6E\u4E3A\u9ED8\u8BA4",
-    hkResetDone: "\u5DF2\u6062\u590D\u9ED8\u8BA4\u952E\u4F4D",
-    featureFileActions: "\u6587\u4EF6\u83DC\u5355\u589E\u5F3A",
-    featureFileActionsDesc: "\u5728\u4F1A\u8BDD\u4E2D\u6587\u4EF6\u94FE\u63A5\u7684\u53F3\u952E\u83DC\u5355\u91CC\u65B0\u589E\u201C\u9ED8\u8BA4\u5E94\u7528\u6253\u5F00\u201D\u4E0E\u201C\u6253\u5F00\u6240\u5728\u76EE\u5F55\u201D\u3002",
-    featureImageCopy: "\u56FE\u7247\u53F3\u952E\u590D\u5236",
-    featureTableCopy: "\u590D\u5236\u8868\u683C",
-    featureComposerProvider: "\u6A21\u578B\u540D\u663E\u793A\u4F9B\u5E94\u5546",
-    featureImageCopyDesc: "\u53F3\u952E\u4F1A\u8BDD\u4E2D\u7684\u56FE\u7247\u6216\u70B9\u51FB\u653E\u5927\u7684\u9884\u89C8\u56FE\uFF0C\u53EF\u5C06\u56FE\u7247\u590D\u5236\u5230\u526A\u8D34\u677F\u3002",
-    featureTableCopyDesc: "\u8868\u683C\u5DE5\u5177\u6761\u65B0\u589E\u590D\u5236\u8868\u683C\uFF0C\u7C98\u8D34\u8FDB Excel / \u5BCC\u6587\u672C\u7F16\u8F91\u5668\u5373\u4E3A\u5E72\u51C0\u8868\u683C\u3002",
-    featureComposerProviderDesc: "\u6A21\u578B\u540D\u524D\u663E\u793A\u4F9B\u5E94\u5546\u540D\uFF08\u5982 BigModel-Max1 / glm-5.3\uFF09\uFF0C\u533A\u5206\u540C\u540D\u6A21\u578B\u3002",
-    imageCopy: "\u590D\u5236\u56FE\u7247",
-    imageCopied: "\u56FE\u7247\u5DF2\u590D\u5236\u5230\u526A\u8D34\u677F",
-    imageCopyFailed: "\u590D\u5236\u56FE\u7247\u5931\u8D25",
-    openFolderItem: "\u6253\u5F00\u6587\u4EF6\u5939",
-    openFolderPrimary: "\u4E3B\u76EE\u5F55",
-    copyPathItem: "\u590D\u5236\u8DEF\u5F84",
-    pathCopied: "\u8DEF\u5F84\u5DF2\u590D\u5236\u5230\u526A\u8D34\u677F",
-    pathCopyFailed: "\u590D\u5236\u8DEF\u5F84\u5931\u8D25",
-    fileOpenDefault: "\u9ED8\u8BA4\u5E94\u7528\u6253\u5F00",
-    fileReveal: "\u6253\u5F00\u6240\u5728\u76EE\u5F55",
-    featureAutoUpdatePlugins: "\u81EA\u52A8\u66F4\u65B0",
-    featureAutoUpdatePluginsRepo: "duanluan/zcode-plugins",
-    featureAutoUpdatePluginsDesc: "",
-    pluginsCheckNow: "\u68C0\u67E5\u66F4\u65B0",
-    pluginsUpdating: "\u6B63\u5728\u66F4\u65B0\u63D2\u4EF6\u2026",
-    pluginsUpToDate: "\u63D2\u4EF6\u5DF2\u662F\u6700\u65B0",
-    pluginsUpdatesFound: "{n} \u4E2A\u63D2\u4EF6\u53EF\u66F4\u65B0",
-    pluginsUpdatedDone: "\u5DF2\u66F4\u65B0 {n} \u4E2A\u63D2\u4EF6",
-    pluginsUpdateFailed: "\u63D2\u4EF6\u66F4\u65B0\u5931\u8D25",
-    pluginsUpdatesAvailable: "zcode-plugins \u6709 {n} \u4E2A\u63D2\u4EF6\u53EF\u66F4\u65B0\uFF08ZCode Pro \u8BBE\u7F6E \u2192 \u529F\u80FD\uFF09",
-    pluginsAutoUpdated: "zcode-plugins \u63D2\u4EF6\u5DF2\u66F4\u65B0",
-    tabVision: "Vision",
-    visionDesc: "\u4E3B\u6A21\u578B\u4E0D\u652F\u6301\u56FE\u7247\u8F93\u5165\u65F6\uFF08\u5982 glm-5.3\uFF09\uFF0C\u81EA\u52A8\u628A\u6D88\u606F\u91CC\u7684\u56FE\u7247\u4EA4\u7ED9\u4E0B\u9762\u7684\u89C6\u89C9\u6A21\u578B\u8BC6\u522B\uFF0C\u628A\u63CF\u8FF0\u5E26\u7ED9\u4E3B\u6A21\u578B\uFF08zcode-vision \u63D2\u4EF6\uFF1B/vision-* \u547D\u4EE4\u7F16\u8F91\u540C\u4E00\u914D\u7F6E\uFF09\u3002",
-    visionEnabled: "\u542F\u7528",
-    visionForceIntercept: "\u4E3B\u6A21\u578B",
-    visionForceInterceptAuto: "\u4E0D\u80FD\u8BC6\u56FE\u5C31\u4F7F\u7528\u63D2\u4EF6",
-    visionForceInterceptTrue: "\u59CB\u7EC8\u4F7F\u7528\u63D2\u4EF6",
-    visionForceInterceptFalse: "\u4E0D\u4F7F\u7528\u63D2\u4EF6",
-    visionForceInterceptHint: "\u4E0D\u80FD\u8BC6\u56FE\u5C31\u4F7F\u7528\u63D2\u4EF6 = \u8DDF\u968F ZCode\u300C\u6A21\u578B\u8BBE\u7F6E\u300D\u91CC\u8BE5\u6A21\u578B\u7684\u56FE\u7247\u5F00\u5173\uFF1A\u5F00 = \u6A21\u578B\u81EA\u770B\u4E0D\u91CD\u590D\u8BC6\u522B\uFF0C\u5173 = \u8D70\u8BC6\u522B\u4EE3\u7406\uFF08tool \u6A21\u5F0F\u51FA\u8BC6\u522B\u5361\u7247\uFF09\uFF1B\u59CB\u7EC8\u4F7F\u7528\u63D2\u4EF6 = \u80FD\u770B\u56FE\u4E5F\u5F3A\u5236\u8D70\u8BC6\u522B\u4EE3\u7406\uFF08\u53CC\u91CD\u8BC6\u522B\u6362\u5361\u7247\uFF09\uFF1B\u4E0D\u4F7F\u7528\u63D2\u4EF6 = \u80FD\u770B\u56FE\u5C31\u653E\u884C\uFF08\u4E0D\u80FD\u8BC6\u56FE\u7684\u6A21\u578B\u4ECD\u8D70\u8BC6\u522B\u4EE3\u7406\uFF09",
-    visionMode: "\u94FE\u6A21\u5F0F",
-    visionModeFallback: "\u4F9D\u6B21\u5C1D\u8BD5",
-    visionModeFallbackDesc: "\u524D\u4E00\u4E2A\u5931\u8D25\u624D\u8BD5\u4E0B\u4E00\u4E2A\uFF0C\u4EFB\u4E00\u6210\u529F\u5373\u6B62\uFF08\u4E3B\u529B + \u5907\u7528\uFF09\u3002",
-    visionModePipeline: "\u9010\u7EA7\u52A0\u5DE5",
-    visionModePipelineDesc: "\u6BCF\u6B65\u90FD\u6267\u884C\uFF0C\u540E\u4E00\u6B65\u52A0\u5DE5\u524D\u4E00\u6B65\u7ED3\u679C\uFF08\u63CF\u8FF0 \u2192 \u6821\u5BF9/\u63D0\u70BC\uFF09\u3002",
-    visionAddProxy: "\u6DFB\u52A0\u4EE3\u7406",
-    visionRemove: "\u5220\u9664",
-    visionMoveUp: "\u4E0A\u79FB",
-    visionMoveDown: "\u4E0B\u79FB",
-    visionName: "\u540D\u79F0",
-    visionUseProvider: "\u4F9B\u5E94\u5546",
-    visionSkipAfterFailures: "\u8FDE\u7EED\u5931\u8D25\u6B21\u6570",
-    visionSkipAfterFailuresHint: "\u67D0\u4EE3\u7406\u8FDE\u7EED\u5931\u8D25\u6EE1\u6B21\u6570\u540E\u6682\u65F6\u8DF3\u8FC7\u5B83\uFF0C\u76F4\u63A5\u8BD5\u4E0B\u4E00\u4E2A\uFF1B0 = \u4E0D\u8DF3\u8FC7",
-    visionSkipMinutes: "\u8DF3\u8FC7\u5206\u949F\u6570",
-    visionSkipMinutesHint: "\u8DF3\u8FC7\u591A\u4E45\u540E\u81EA\u52A8\u6062\u590D\u5C1D\u8BD5\uFF1B\u671F\u95F4\u4EFB\u4E00\u6B21\u6210\u529F\u5373\u6E05\u96F6\u8BA1\u6570",
-    visionResetChain: "\u6062\u590D\u9ED8\u8BA4\u94FE",
-    visionResetChainConfirm: "\u5C06\u94FE\u6A21\u5F0F\u4E0E\u4EE3\u7406\u5217\u8868\u6062\u590D\u4E3A\u9ED8\u8BA4\u5355\u7EA7\uFF08session\uFF1A\u8DDF\u968F\u4F1A\u8BDD\u4E0E\u5176\u5F53\u524D\u6A21\u578B\uFF09\uFF0C\u5F53\u524D\u5BF9\u4EE3\u7406\u7684\u4FEE\u6539\u4F1A\u4E22\u5931\u3002\u7EE7\u7EED\uFF1F",
-    visionBaseUrl: "\u63A5\u53E3\u5730\u5740",
-    visionModel: "\u6A21\u578B",
-    visionApiKey: "API Key",
-    visionPrompt: "\u8BC6\u522B\u63D0\u793A\u8BCD\uFF08pipeline \u540E\u7EED\u6B65\u53EF\u7528 {prev} \u5F15\u7528\u4E0A\u4E00\u6B65\uFF09",
-    visionTest: "\u6D4B\u8BD5",
-    visionTesting: "\u6D4B\u8BD5\u4E2D\u2026",
-    visionTestFailed: "\u89C6\u89C9\u4EE3\u7406\u6D4B\u8BD5\u5931\u8D25",
-    visionCompressKB: "\u538B\u7F29\u9608\u503C KB",
-    visionCompressKBHint: "\u8D85\u8FC7\u8BE5\u5927\u5C0F\u7684\u56FE\u5148\u538B\u7F29\u518D\u8BC6\u522B\uFF08\u6700\u957F\u8FB9 2000\u3001JPEG\uFF09\uFF1B0 = \u4E0D\u538B\u7F29",
-    visionLoadFailed: "\u8BFB\u53D6\u89C6\u89C9\u4EE3\u7406\u914D\u7F6E\u5931\u8D25",
-    tabRtk: "rtk",
-    rtkDesc: "rtk \u63D2\u4EF6\uFF1A\u628A\u5E38\u89C1\u5F00\u53D1\u547D\u4EE4\u7684\u8F93\u51FA\u538B\u7F29 60-90% \u518D\u8FDB\u5165\u4E0A\u4E0B\u6587\uFF08/rtk-* \u547D\u4EE4\u7F16\u8F91\u540C\u4E00\u914D\u7F6E\uFF09\u3002",
-    rtkEnabled: "\u542F\u7528",
-    rtkNotInstalled: "\u672A\u5B89\u88C5 rtk \u672C\u4F53\uFF1B\u5B89\u88C5\u540E\u4EE5\u4E0B\u8BBE\u7F6E\u751F\u6548\uFF08\u4F1A\u8BDD\u91CC\u6267\u884C /rtk-setup \u4E5F\u53EF\u4EE5\uFF09",
-    rtkInstallBin: "\u5B89\u88C5 rtk \u672C\u4F53",
-    rtkBinInstalled: "rtk \u672C\u4F53\u5DF2\u5B89\u88C5\uFF1BPATH \u9700\u6CE8\u9500\u91CD\u767B\u540E\u5BF9\u4F1A\u8BDD\u751F\u6548\uFF0C\u63D2\u4EF6\u94A9\u5B50\u5373\u65F6\u751F\u6548",
-    rtkWhitelistTitle: "\u767D\u540D\u5355\uFF08\u4E0D\u538B\u7F29\u76F4\u63A5\u653E\u884C\uFF09",
-    rtkBuiltinLabel: "\u5185\u7F6E\u653E\u884C\uFF08\u53EA\u8BFB\uFF0C\u968F\u63D2\u4EF6\u66F4\u65B0\uFF09\uFF1A",
-    rtkWhitelistDesc: "\u6BCF\u6761 name\uFF08\u5982 docker\uFF09\u6216 git:name\uFF08\u5982 git:clone\uFF09\uFF0C\u52A0\u5165\u540E\u4E0D\u518D\u538B\u7F29\uFF1B\u5185\u7F6E\u7684 git add/commit/push\u3001mkdir/cp \u7B49\u4E0D\u53EF\u79FB\u9664\u3002",
-    rtkWhitelistPlaceholder: "name \u6216 git:name\uFF0C\u56DE\u8F66\u6DFB\u52A0",
-    rtkWhitelistAdd: "\u6DFB\u52A0",
-    rtkWhitelistClear: "\u6E05\u7A7A",
-    rtkWhitelistCleared: "\u767D\u540D\u5355\u5DF2\u6E05\u7A7A",
-    rtkWhitelistInvalid: "\u6761\u76EE\u683C\u5F0F\u5E94\u4E3A name \u6216 git:name",
-    rtkLoadFailed: "\u8BFB\u53D6 rtk \u914D\u7F6E\u5931\u8D25",
-    tabHeadroom: "Headroom",
-    headroomDesc: "Headroom \u63D2\u4EF6\uFF1A\u672C\u5730\u538B\u7F29\u4EE3\u7406\u9A7B\u7559 127.0.0.1\uFF08\u9ED8\u8BA4 8787 \u7AEF\u53E3\uFF09\uFF0C\u538B\u7F29\u53D1\u5F80\u6A21\u578B\u7684\u4E0A\u4E0B\u6587\u4EE5\u7701 token\uFF08/hr-* \u547D\u4EE4\u7F16\u8F91\u540C\u4E00\u914D\u7F6E\uFF09\u3002\u5207\u6362\u8BBE\u5907\u4F1A\u91CD\u542F\u4EE3\u7406\uFF0C\u6B63\u5728\u5904\u7406\u7684\u8BF7\u6C42\u53EF\u80FD\u4E2D\u65AD\u4E00\u6B21\u3002",
-    headroomBinMissing: "\u672A\u627E\u5230 headroom \u7A0B\u5E8F\uFF0C\u4EE3\u7406\u65E0\u6CD5\u542F\u52A8\uFF1B\u5B89\u88C5 headroom \u540E\u4EE5\u4E0B\u8BBE\u7F6E\u81EA\u52A8\u751F\u6548",
-    hrInstallBin: "\u5B89\u88C5 headroom \u672C\u4F53",
-    hrBinInstalled: "headroom \u672C\u4F53\u5DF2\u5B89\u88C5\uFF1B\u91CD\u65B0\u6253\u5F00\u5E94\u7528\u6216\u4F1A\u8BDD\u540E\u4EE3\u7406\u53EF\u7528\uFF08SessionStart \u94A9\u5B50\u81EA\u52A8\u62C9\u8D77\uFF09",
-    headroomInstallTitle: "\u672A\u5B89\u88C5 headroom \u63D2\u4EF6",
-    headroomInstallDesc: "\u4ECE zcode-plugins \u5E02\u573A\u5B89\u88C5\u540E\u5373\u53EF\u5728\u6B64\u7BA1\u7406\u538B\u7F29\u4EE3\u7406\uFF1B\u91CD\u542F\u4F1A\u8BDD\u540E\u751F\u6548\u3002",
-    headroomInstall: "\u5B89\u88C5",
-    headroomInstalling: "\u5B89\u88C5\u4E2D\u2026",
-    headroomInstalled: "\u5DF2\u5B89\u88C5 headroom \u63D2\u4EF6",
-    headroomInstallRetry: "\u5B89\u88C5\u672A\u751F\u6548\uFF0C\u8BF7\u91CD\u8BD5\u6216\u624B\u52A8\u5728\u63D2\u4EF6\u5E02\u573A\u5B89\u88C5",
-    pluginInstallCardTitle: "\u672A\u5B89\u88C5 {name} \u63D2\u4EF6",
-    pluginInstallCardDesc: "\u4ECE zcode-plugins \u5E02\u573A\u5B89\u88C5\u540E\u5373\u53EF\u5728\u6B64\u7BA1\u7406\uFF1B\u91CD\u542F\u4F1A\u8BDD\u540E\u751F\u6548\u3002",
-    pluginInstallDone: "\u5DF2\u5B89\u88C5 {name} \u63D2\u4EF6",
-    pluginEnable: "\u542F\u7528",
-    hrStarting: "\u6B63\u5728\u542F\u52A8\u538B\u7F29\u4EE3\u7406\u2026",
-    hrStarted: "\u538B\u7F29\u4EE3\u7406\u5DF2\u542F\u52A8",
-    hrStartTimeout: "\u4EE3\u7406\u542F\u52A8\u8D85\u65F6\uFF0890 \u79D2\uFF09\uFF0C\u8BF7\u68C0\u67E5 ~/.zcode-headroom-proxy.log",
-    hrStopping: "\u6B63\u5728\u505C\u6B62\u538B\u7F29\u4EE3\u7406\u2026",
-    hrRestarting: "\u6B63\u5728\u91CD\u542F\u538B\u7F29\u4EE3\u7406\u2026",
-    hrStopped: "\u538B\u7F29\u4EE3\u7406\u5DF2\u505C\u6B62",
-    hrUsageNone: "\u5F53\u524D\u6CA1\u6709\u8D70 headroom \u7684\u4F9B\u5E94\u5546\uFF0C\u672A\u5207\u6362",
-    headroomLoadFailed: "\u8BFB\u53D6 Headroom \u914D\u7F6E\u5931\u8D25",
-    headroomStatusTitle: "\u8FD0\u884C\u72B6\u6001",
-    hrInstRunning: "\u8FD0\u884C\u4E2D",
-    hrInstStopped: "\u672A\u8FD0\u884C",
-    headroomStatusLoadFailed: "\u8BFB\u53D6\u8FD0\u884C\u72B6\u6001\u5931\u8D25",
-    headroomProxyUp: "\u4EE3\u7406\u8FD0\u884C\u4E2D",
-    headroomProxyDown: "\u4EE3\u7406\u672A\u8FD0\u884C",
-    headroomCurrentBackend: "\u5F53\u524D\u8BBE\u5907",
-    headroomDesiredBackend: "\u76EE\u6807\u8BBE\u5907",
-    hrValAuto: "\u81EA\u52A8",
-    hrPmAc: "\u4EA4\u6D41\u7535",
-    hrPmBattery: "\u7535\u6C60",
-    hrPmSaver: "\u7701\u7535\u6A21\u5F0F",
-    hrPmSaverBat: "\u7701\u7535\u6A21\u5F0F+\u7535\u6C60",
-    hrDetectOk: "\u6B63\u5E38",
-    hrDetectMissing: "\u672A\u5B89\u88C5",
-    hrDetectBroken: "\u4E0D\u53EF\u7528",
-    headroomPowerState: "\u7535\u6E90",
-    headroomWatcher: "\u76D1\u89C6\u5668",
-    headroomWatcherOn: "\u8FD0\u884C\u4E2D",
-    headroomWatcherOff: "\u5DF2\u505C\u6B62",
-    headroomSaverDetect: "\u7701\u7535\u6A21\u5F0F\u68C0\u6D4B",
-    headroomRefresh: "\u5237\u65B0",
-    headroomStart: "\u542F\u52A8",
-    headroomRestart: "\u91CD\u542F",
-    headroomStopAction: "\u505C\u6B62",
-    headroomStopTitle: "\u505C\u6B62 Headroom \u4EE3\u7406",
-    headroomStopDesc: "\u505C\u6B62\u540E\uFF0CZCode \u53CA\u5176\u4ED6\u7A0B\u5E8F\u4E2D\u6307\u5411\u8BE5\u4EE3\u7406\uFF08127.0.0.1\uFF09\u7684\u8BF7\u6C42\u90FD\u4F1A\u5931\u8D25\uFF0C\u76F4\u81F3\u91CD\u65B0\u542F\u52A8\u4EE3\u7406\u3002headroom \u662F\u5171\u4EAB\u7684\uFF0C\u5176\u4ED6\u5DE5\u5177\u53EF\u80FD\u6B63\u5728\u4F7F\u7528\u3002\u786E\u8BA4\u505C\u6B62\uFF1F",
-    headroomStoppedWarn: "\u4EE3\u7406\u5DF2\u505C\u6B62\uFF1B\u6307\u5411 127.0.0.1 \u7684\u4F9B\u5E94\u5546\u5C06\u65E0\u6CD5\u8FDE\u63A5",
-    headroomBackend: "\u538B\u7F29\u8BBE\u5907",
-    headroomBackendAuto: "\u81EA\u52A8 \xB7 \u663E\u5361\u4F18\u5148",
-    headroomBackendCpu: "\u7701\u7535 \xB7 CPU \u4F18\u5148",
-    headroomBackendNative: "\uFF08\u539F\u751F\u503C\uFF09",
-    headroomBackendDesc: "\u81EA\u52A8\uFF1Aheadroom \u9009\u6700\u5FEB\u8BBE\u5907\uFF08CUDA/MPS \u663E\u5361\u4F18\u5148\uFF09\uFF1BCPU\uFF1A\u5F3A\u5236 CPU \u538B\u7F29\uFF0C\u7701\u7535\u4E14\u4E0D\u5360\u663E\u5B58\u3002\u4E5F\u652F\u6301 headroom \u539F\u751F\u503C\uFF08onnx\u3001pytorch_mps \u7B49\uFF09\u3002",
-    headroomPower: "\u7701\u7535\u81EA\u52A8\u5207\u6362",
-    headroomPowerOff: "\u5173\u95ED",
-    headroomPowerOffDesc: "\u4E0D\u81EA\u52A8\u5207\u6362\uFF0C\u59CB\u7EC8\u6309\u201C\u538B\u7F29\u8BBE\u5907\u201D\u8FD0\u884C\u3002",
-    headroomPowerBattery: "\u7528\u7535\u6C60\u65F6",
-    headroomPowerBatteryDesc: "\u62D4\u7535\uFF08\u7535\u6C60\u653E\u7535\uFF09\u2192 CPU \u538B\u7F29\uFF0C\u63D2\u7535\u81EA\u52A8\u5207\u56DE\u3002",
-    headroomPowerSaver: "\u7701\u7535\u6A21\u5F0F\u65F6",
-    headroomPowerSaverDesc: "\u4EC5\u7CFB\u7EDF\u8FDB\u5165\u7701\u7535\u6A21\u5F0F \u2192 CPU \u538B\u7F29\uFF0C\u9000\u51FA\u5207\u56DE\u3002",
-    hrCpuPinnedHint: "\u538B\u7F29\u8BBE\u5907\u5DF2\u56FA\u5B9A\u4E3A CPU\uFF0C\u7701\u7535\u81EA\u52A8\u5207\u6362\u4E0D\u4F1A\u518D\u6539\u53D8\u5B83\u3002",
-    headroomInterval: "\u76D1\u89C6\u95F4\u9694",
-    headroomIntervalDesc: "\u7701\u7535\u76D1\u89C6\u5668\u8F6E\u8BE2\u7535\u6E90\u72B6\u6001\u7684\u95F4\u9694\uFF0810\u20133600 \u79D2\uFF0C\u9ED8\u8BA4 60\uFF09\uFF1B\u4FDD\u5B58\u540E\u4ECE\u4E0B\u4E00\u8F6E\u5DE1\u68C0\u8D77\u751F\u6548\u3002",
-    headroomSecUnit: "\u79D2",
-    upgradeCheck: "\u68C0\u67E5\u66F4\u65B0",
-    upgradeChecking: "\u68C0\u67E5\u4E2D\u2026",
-    upgradeUpToDate: "\u5DF2\u662F\u6700\u65B0\uFF08{v}\uFF09",
-    upgradeFound: "\u53EF\u5347\u7EA7\u5230 {v}",
-    upgradeNow: "\u5347\u7EA7",
-    upgradeRunning: "\u5347\u7EA7\u4E2D\u2026",
-    upgradeStop: "\u505C\u6B62\u5347\u7EA7",
-    upgradeStopped: "\u5DF2\u505C\u6B62\u5347\u7EA7",
-    upgradeDone: "\u5DF2\u66F4\u65B0\u5230 {v}",
-    upgradeFinished: "\u5347\u7EA7\u5B8C\u6210",
-    upgradeCheckFailed: "\u68C0\u67E5\u66F4\u65B0\u5931\u8D25",
-    close: "\u5173\u95ED",
-    cancel: "\u53D6\u6D88",
-    pathLabel: "\u8DEF\u5F84",
-    aliasItem: "\u81EA\u5B9A\u4E49\u522B\u540D",
-    aliasTitle: "\u81EA\u5B9A\u4E49\u9879\u76EE\u522B\u540D",
-    aliasDesc: "\u4EC5\u5728 ZCode \u754C\u9762\u4E2D\u663E\u793A\u8BE5\u522B\u540D\uFF0C\u4E0D\u4FEE\u6539\u78C1\u76D8\u76EE\u5F55\u4E0E\u4EFB\u4F55\u6570\u636E\uFF0C\u968F\u65F6\u53EF\u6E05\u9664\u6062\u590D\u3002",
-    aliasLabel: "\u522B\u540D",
-    aliasPlaceholder: "\u7559\u7A7A\u5E76\u4FDD\u5B58 = \u6062\u590D\u771F\u5B9E\u540D\u79F0",
-    aliasConfirm: "\u4FDD\u5B58",
-    aliasClear: "\u6062\u590D\u771F\u5B9E\u540D\u79F0",
-    aliasSaved: "\u522B\u540D\u5DF2\u66F4\u65B0",
-    aliasCleared: "\u5DF2\u6062\u590D\u771F\u5B9E\u540D\u79F0",
-    aliasHint: "\u78C1\u76D8\u76EE\u5F55\u540D\u4E0D\u53D8\uFF1A\u7EC8\u7AEF\u3001\u6587\u4EF6\u7BA1\u7406\u5668\u4E0E\u5176\u4ED6\u5F15\u7528\u771F\u5B9E\u8DEF\u5F84\u7684\u754C\u9762\u4ECD\u663E\u793A\u539F\u540D\u3002",
-    featureProjectMenuDescNew: "\u9879\u76EE\u201C\u66F4\u591A\u201D\u83DC\u5355\u4E2D\u7684\u6253\u5F00\u6587\u4EF6\u5939\u4E0E\u590D\u5236\u8DEF\u5F84\u3002\u5B98\u65B9\u5DF2\u652F\u6301\u4FEE\u6539\u9879\u76EE\u540D\u79F0\uFF08\u7F16\u8F91\u9879\u76EE\uFF09\uFF0C\u81EA\u5B9A\u4E49\u522B\u540D\u5DF2\u505C\u7528\u3002",
-    aliasMigrateTitle: "\u8FC1\u79FB\u9879\u76EE\u522B\u540D",
-    aliasMigrateDesc: "\u5F53\u524D ZCode \u5DF2\u652F\u6301\u4FEE\u6539\u9879\u76EE\u540D\u79F0\uFF08\u9879\u76EE\u201C\u66F4\u591A\u201D\u83DC\u5355 \u2192 \u7F16\u8F91\u9879\u76EE\uFF09\uFF0C\u81EA\u5B9A\u4E49\u522B\u540D\u529F\u80FD\u5DF2\u505C\u7528\u3002\u53EF\u628A\u5DF2\u4FDD\u5B58\u7684\u522B\u540D\u5199\u5165\u5B98\u65B9\u9879\u76EE\u540D\u79F0\uFF0C\u52FE\u9009\u8981\u8FC1\u79FB\u7684\u9879\u76EE\uFF1B\u8FC1\u79FB\u53EA\u6539\u9879\u76EE\u540D\u79F0\uFF0C\u78C1\u76D8\u76EE\u5F55\u4E0D\u53D7\u5F71\u54CD\u3002",
-    aliasMigrateItemHint: "\u8FC1\u79FB\u540E\u5C06\u4F5C\u4E3A\u9879\u76EE\u540D\u79F0\u4FDD\u5B58\uFF08\u53EF\u968F\u65F6\u5728\u201C\u7F16\u8F91\u9879\u76EE\u201D\u4E2D\u518D\u6539\uFF09\u3002\u4EC5\u65E0\u6807\u8BB0\u7684\u6761\u76EE\u53EF\u52FE\u9009\uFF1B\u5DF2\u8FC1\u79FB\u3001\u5DF2\u5E76\u5165\u3001\u9879\u76EE\u5DF2\u5220\u9664\u3001\u672C\u673A\u4E0D\u5B58\u5728\uFF08\u65E7\u673A\u5668\u8DEF\u5F84\uFF09\u4EE5\u53CA\u9879\u76EE\u5DF2\u91CD\u547D\u540D\u7684\u90FD\u4E0D\u53EF\u52FE\u9009\u2014\u2014\u8981\u6539\u8FD9\u4E9B\u9879\u76EE\u7684\u540D\u5B57\uFF0C\u76F4\u63A5\u7528\u9879\u76EE\u201C\u66F4\u591A\u201D\u83DC\u5355\u91CC\u7684\u201C\u7F16\u8F91\u9879\u76EE\u201D\u3002",
-    aliasMigrateStateDone: "\u5DF2\u8FC1\u79FB",
-    aliasMigrateStateMerged: "\u5DF2\u5E76\u5165\u201C{name}\u201D",
-    aliasMigrateStateDeleted: "\u9879\u76EE\u5DF2\u5220\u9664",
-    aliasMigrateStateMissing: "\u672C\u673A\u4E0D\u5B58\u5728",
-    aliasMigrateStateRenamed: "\u9879\u76EE\u5DF2\u91CD\u547D\u540D",
-    aliasMigrateDeadSummary: "\u5DF2\u5931\u6548 {n} \u6761\uFF08\u672C\u673A\u4E0D\u5B58\u5728 / \u9879\u76EE\u5DF2\u5220\u9664\uFF0C\u591A\u4E3A\u8BBE\u7F6E\u540C\u6B65\u5E26\u6765\u7684\u65E7\u673A\u5668\u8DEF\u5F84\uFF09",
-    aliasMigrateClearDead: "\u6E05\u9664\u5931\u6548\u6761\u76EE",
-    aliasMigrateDeadCleared: "\u5DF2\u6E05\u9664 {n} \u6761\u5931\u6548\u522B\u540D",
-    aliasMigrateDeadClearFailed: "\u90E8\u5206\u5931\u6548\u522B\u540D\u672A\u80FD\u6E05\u9664\uFF0C\u8BF7\u91CD\u8BD5",
-    aliasMigrateGo: "\u8FC1\u79FB\u6240\u9009",
-    aliasMigrateRunning: "\u8FC1\u79FB\u4E2D\u2026",
-    aliasMigrateProgress: "\u6B63\u5728\u8FC1\u79FB {i}/{n}\uFF1A{name}",
-    aliasMigrateStateFailed: "\u5931\u8D25",
-    aliasMigrateSkip: "\u6682\u4E0D\u8FC1\u79FB",
-    aliasMigrateDone: "\u5DF2\u8FC1\u79FB {n} \u4E2A\u522B\u540D",
-    aliasMigratePartial: "{n} \u4E2A\u5DF2\u8FC1\u79FB\uFF0C{m} \u4E2A\u672A\u6210\u529F\uFF1B\u672A\u6210\u529F\u7684\u53EF\u7A0D\u540E\u5728 ZCode Pro \u8BBE\u7F6E\u4E2D\u91CD\u8BD5",
-    aliasMigrateAllFailed: "\u522B\u540D\u8FC1\u79FB\u672A\u6210\u529F\uFF0C\u53EF\u7A0D\u540E\u5728 ZCode Pro \u8BBE\u7F6E\u4E2D\u91CD\u8BD5",
-    aliasMigrateCardName: "\u522B\u540D\u8FC1\u79FB",
-    aliasMigrateCardDesc: "\u5B98\u65B9\u5DF2\u652F\u6301\u4FEE\u6539\u9879\u76EE\u540D\u79F0\uFF0C\u8FD8\u6709 {n} \u4E2A\u81EA\u5B9A\u4E49\u522B\u540D\u672A\u8FC1\u79FB\u3002",
-    aliasMigrateRun: "\u8FC1\u79FB",
-    taskOrderSaved: "\u987A\u5E8F\u5DF2\u66F4\u65B0",
-    qqGroupTitle: "QQ \u7FA4\uFF1A428403354",
-    qqGroupDesc: "\u95EE\u9898\u53CD\u9988\u4E0E\u4EA4\u6D41",
-    wechatGroupTitle: "\u5FAE\u4FE1\u7FA4",
-    wechatGroupDesc: "\u6DFB\u52A0\u5FAE\u4FE1 {id} \u9080\u8BF7\u8FDB\u7FA4",
-    wechatIdCopied: "\u5FAE\u4FE1\u53F7\u5DF2\u590D\u5236",
-    browse: "\u6D4F\u89C8",
-    relocateItem: "\u5207\u6362\u6587\u4EF6\u5939",
-    relocateTitle: "\u5207\u6362\u6587\u4EF6\u5939",
-    relocateDesc: "\u5C06\u8BE5\u9879\u76EE\u6307\u5411\u53E6\u4E00\u4E2A\u6587\u4EF6\u5939\uFF1A\u4FA7\u8FB9\u680F\u3001\u5DF2\u6253\u5F00\u6807\u7B7E\u9875\u4E0E\u672C\u5730\u4EFB\u52A1\u5386\u53F2\u4E00\u5E76\u8FC1\u79FB\uFF0C\u76EE\u5F55\u672C\u8EAB\u4E0D\u4F1A\u88AB\u79FB\u52A8\uFF0C\u4F1A\u8BDD\u8BB0\u5F55\u4E0D\u4F1A\u4E22\u5931\u3002",
-    relocateNewPathLabel: "\u65B0\u6587\u4EF6\u5939",
-    relocateConfirm: "\u79FB\u52A8",
-    relocateHint: "\u76EE\u6807\u6587\u4EF6\u5939\u9700\u5DF2\u5B58\u5728\uFF0C\u53EF\u8F93\u5165\u8DEF\u5F84\u6216\u70B9\u51FB\u201C\u6D4F\u89C8\u201D\u9009\u62E9\uFF1B\u5B8C\u6210\u540E\u754C\u9762\u5C06\u81EA\u52A8\u5237\u65B0\u3002",
-    relocateSuccess: "\u5DF2\u5207\u6362\u6587\u4EF6\u5939\uFF0C\u6B63\u5728\u5237\u65B0\u754C\u9762\u2026",
-    relocateIndexSkipped: "\u5DF2\u5207\u6362\u6587\u4EF6\u5939\uFF1B\u4EFB\u52A1\u5386\u53F2\u672A\u80FD\u540C\u6B65\uFF08\u672C\u673A\u7F3A\u5C11 SQLite \u652F\u6301\uFF09\uFF0C\u65E7\u4EFB\u52A1\u6761\u76EE\u53EF\u80FD\u4ECD\u6307\u5411\u65E7\u8DEF\u5F84\u3002",
-    relocateSame: "\u65B0\u6587\u4EF6\u5939\u4E0E\u5F53\u524D\u6587\u4EF6\u5939\u76F8\u540C",
-    relocateNotFound: "\u76EE\u6807\u6587\u4EF6\u5939\u4E0D\u5B58\u5728",
-    relocateProtected: "\u62D2\u7EDD\u6307\u5411 ZCode \u6570\u636E\u76EE\u5F55\u5185\u90E8\u8DEF\u5F84",
-    relocateIndexBusy: "\u4EFB\u52A1\u7D22\u5F15\u6B63\u88AB ZCode \u5360\u7528\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5\u3002",
-    relocateConfirmTitle: "\u786E\u8BA4\u5207\u6362\u6587\u4EF6\u5939",
-    relocateConfirmDesc: "\u5207\u6362\u540E\u5C06\u81EA\u52A8\u5237\u65B0\u9875\u9762\uFF0C\u804A\u5929\u8F93\u5165\u6846\u4E2D\u672A\u53D1\u9001\u7684\u5185\u5BB9\u4F1A\u4E22\u5931\uFF1B\u4F1A\u8BDD\u8BB0\u5F55\u4E0E\u9879\u76EE\u6587\u4EF6\u4E0D\u53D7\u5F71\u54CD\u3002",
-    relocateConfirmGo: "\u786E\u8BA4\u5207\u6362",
-    failed: "\u64CD\u4F5C\u5931\u8D25",
-    retryHint: "\u8BF7\u91CD\u8BD5"
-  };
-  var en = {
-    settingsTitle: "ZCode Pro",
-    tabFeatures: "Features",
-    tabStyles: "Appearance",
-    tabProxy: "Proxy",
-    tabBehavior: "Behavior",
-    tabAgents: "Global Prompt",
-    tabZcode: "ZCode CLI",
-    zcodeDesc: "ZCode behavior settings (written to ~/.zcode/cli/config.json); takes effect for new sessions.",
-    zcodeStatsTitle: "Skill listing check",
-    zcodeStatsCounts: "{total} skills ({user} local \xB7 {plugin} plugin)",
-    zcodeStatsChars: "Full listing \u2248 {n} characters",
-    zcodeBudgetDefaultTag: " (default)",
-    zcodeStatsDegraded: "Over budget: the listing degrades to names only, so the model cannot see skill descriptions",
-    zcodeStatsOk: "Within budget: the full listing with descriptions is injected into new sessions",
-    zcodeStatsSuggest: "Suggested budget {n} characters (with 20% margin)",
-    zcodeBudgetApply: "Use suggested",
-    zcodeBudgetApplied: "Listing budget saved.",
-    zcodeStatsNote: "Estimated from the current disk state; per-project skill directories are not counted.",
-    zcodeSkillEnabled: "Skill system",
-    zcodeSkillEnabledDesc: "skills.enabled: when off, ZCode discovers and injects no skills",
-    zcodeSkillIncludeInstructions: "Skill instructions injection",
-    zcodeSkillIncludeInstructionsDesc: "skills.includeInstructions: whether skill instructions are injected along with the listing",
-    zcodeSkillBudget: "Skill listing budget (characters)",
-    zcodeSkillBudgetDesc: "skills.metadataBudget: the listing degrades to names only beyond this length; default 20000",
-    zcodeSkillRoots: "Extra skill directories",
-    zcodeSkillRootsDesc: "skills.roots: one directory per line; skills under them are discovered (beyond ~/.zcode/skills and ~/.agents/skills)",
-    zcodeSave: "Save",
-    zcodeRootsSaved: "Skill directories saved.",
-    zcodeFeatCompact: "Compaction",
-    zcodeFeatCompactDesc: "features.compact: compact earlier conversation when the context grows too long",
-    zcodeFeatRewind: "Rewind",
-    zcodeFeatRewindDesc: "features.rewind: roll back to an earlier point and continue from there",
-    zcodeFeatSubagent: "Subagents",
-    zcodeFeatSubagentDesc: "features.subagent: dispatch subagents for subtasks",
-    zcodeFeatSkill: "Skill tool",
-    zcodeFeatSkillDesc: "features.skill: the Skill tool is available (the skill system must also be on)",
-    zcodeFeatMcp: "MCP tools",
-    zcodeFeatMcpDesc: "features.mcp: use tools provided by MCP servers",
-    zcodeMemoryHint: "Memory is not here: workspace memory is toggled in the official settings under Settings \u2192 Agent capabilities \u2192 Memory (with the memory viewer).",
-    agentsDesc: "Written to ~/.zcode/AGENTS.md and used as default instructions in every session across all projects. Takes effect for new sessions; per-project AGENTS.md can extend or override it. Content over 100 KB is truncated by the app.",
-    agentsPlaceholder: "Instructions followed by all projects by default; save empty to remove the global prompt",
-    agentsSave: "Save",
-    agentsSaved: "Global prompt saved.",
-    agentsLoadFailed: "Failed to load the global prompt",
-    proxyDesc: "Set an HTTP proxy for network access made by the local helper: plugin marketplace updates and installs, plugin dependency installs and upgrades, and WebDAV sync can all use it \u2014 pick the scopes with the toggles below. Does not affect the ZCode app itself or model requests.",
-    proxyPlaceholder: "http://127.0.0.1:7890",
-    proxySave: "Save",
-    proxySaved: "Proxy settings saved.",
-    proxyHint: "Save empty to clear the proxy.",
-    proxyTest: "Test",
-    proxyTesting: "Testing\u2026",
-    proxyTestEmpty: "Enter a proxy address first",
-    proxyTestFailed: "Test failed",
-    proxyScopePlugins: "Plugin marketplace",
-    proxyScopePluginsDesc: "Marketplace checks, installs and uninstalls (zcode CLI git operations) go through the proxy.",
-    proxyScopeDeps: "Plugin dependencies",
-    proxyScopeDepsDesc: "headroom and rtk installs, update checks and upgrades (pip and GitHub downloads) go through the proxy.",
-    proxyScopeSync: "Sync",
-    proxyScopeSyncDesc: "WebDAV upload and download go through the proxy.",
-    tabSync: "Sync",
-    tabDebug: "Debug",
-    testNoSessionHint: "With \u201Cfollow current session [current model]\u201D selected, the provider [model] of the last session is used.",
-    syncDesc: 'Manually back up ZCode Pro settings and model settings to WebDAV, or restore them on a new computer. The two items are stored as separate files, so you can upload or overwrite either one alone; every upload also keeps a timestamped history version (how many to keep is set in the "History" row; older ones are removed automatically after upload) and download lets you pick any of them. Data moves only when you click, never automatically.',
-    syncUrlPlaceholder: "https://dav.example.com/dav/",
-    syncDir: "Folder",
-    syncDirPlaceholder: "zcode-pro",
-    syncLogin: "Login",
-    syncPassword: "Password",
-    syncHistoryLimit: "History",
-    syncHistoryLimitUnit: "versions",
-    syncHistoryLimitHint: "How many recent uploads keep their history versions on the server; older ones are removed automatically after a successful upload. The fixed-name latest file is never removed. 0 = keep no history versions.",
-    syncPruned: "removed {n} older history versions",
-    syncSave: "Save",
-    syncSaved: "Sync settings saved.",
-    syncFormHint: "Sync files go inside the folder (default zcode-pro, multi-level allowed, created automatically): zcodepro.json and model.json are always the latest version; timestamped history versions are kept alongside.",
-    syncRecLink: "Jianguoyun WebDAV",
-    syncRecSuffix: " \u2014 use the app password, not your account password.",
-    syncIncludeZcp: "ZCode Pro settings",
-    syncIncludeZcpDesc: "Feature toggles, style adjustments and the proxy setting; the sync config and credentials themselves are never synced. Project aliases are not synced (renaming is built in now).",
-    syncIncludeModel: "Model settings",
-    syncIncludeModelDesc: "Custom providers and model config (config.json and provider_config.json, API keys included) and the Headroom provider map (headroom.json; keys are stored as keyHashes, never in plaintext). Account sign-in credentials (e.g. the BigModel subscription) are not synced; each computer signs in with its own account.",
-    syncUpload: "Upload",
-    syncDownload: "Download",
-    syncUploading: "Uploading\u2026",
-    syncUploaded: "Uploaded to the server.",
-    syncDownloaded: "Restored from the server.",
-    syncLastPush: "Last upload",
-    syncLastPull: "Last download",
-    syncNever: "never",
-    syncConfirmTitle: "Download from the server",
-    syncConfirmDesc: "The selected file will overwrite the matching local section (a .zcodepro-backup copy is kept next to each file); your local sync config and credentials stay untouched. Restarting ZCode is recommended after restoring model settings. Import now?",
-    syncConfirmGo: "Import",
-    syncPickDesc: "Fixed names are always the latest version; timestamped files are the history each upload leaves behind. Import overwrites the matching local section.",
-    syncVerDeleteLatestNote: 'Note: this is the "latest" file that older zcode-pro installs download from; deleting it breaks their download. Timestamped history versions are not affected.',
-    syncHint: "Sync credentials are stored locally in zcodepro.json only; model settings contain the API keys of custom providers and go to your own WebDAV only.",
-    syncTest: "Test",
-    syncTesting: "Testing\u2026",
-    syncTestEmpty: "Enter the WebDAV URL first",
-    syncTestFailed: "Test failed",
-    syncTestStepConnect: "Connect",
-    syncTestStepDir: "Folder",
-    syncTestStepList: "Files",
-    syncTestFilesFound: "{n} backup file(s) on the server",
-    syncPickTitle: "Select a file",
-    syncPickLoading: "Loading files from the server\u2026",
-    syncPickEmpty: "No backups on the server yet. Upload from a computer first.",
-    syncVerImport: "Import",
-    syncVerImporting: "Importing\u2026",
-    syncVerDelete: "Delete",
-    syncVerSave: "Save to disk",
-    syncVerSaving: "Saving\u2026",
-    syncVerLatest: "Latest",
-    syncVerDeleteTitle: "Delete server file",
-    syncVerDeleteDesc: "This backup will be deleted from the server and cannot be recovered: ",
-    syncVerDeleted: "Backup deleted from the server.",
-    syncVerSaved: "Saved to",
-    devModeDesc: 'For development: after changing zcode-pro code, click "Reload ZCode Pro" instead of restarting ZCode. It builds automatically (when running from the source repo), restarts the ZCode Pro launcher process (fresh helper and injected script), and every ZCode window refreshes and re-injects. The ZCode app itself and all sessions stay untouched.',
-    devReload: "Reload ZCode Pro",
-    devReloading: "Reloading\u2026",
-    devReloadDesc: "Every ZCode window refreshes automatically within 2-3 seconds to load the new script.",
-    rowGapName: "Paragraph spacing",
-    rowGapDesc: "Vertical spacing between text blocks (turns, paragraphs inside answers).",
-    listSpacingName: "List spacing",
-    listSpacingDesc: "Space above and below lists.",
-    listItemSpacingName: "List item spacing",
-    listItemSpacingDesc: "Spacing between adjacent list items.",
-    quoteCodeSpacingName: "Quote block spacing",
-    quoteCodeSpacingDesc: "Space above and below quotes and code blocks.",
-    codeLineHeightName: "Code line height",
-    codeLineHeightDesc: "Line height of lines inside code blocks (multiplier).",
-    tableSpacingName: "Table spacing",
-    tableSpacingDesc: "Space above and below tables.",
-    tableCellPaddingName: "Cell padding (V/H)",
-    tableCellPaddingDesc: "Padding inside table cells; left input is vertical, right is horizontal.",
-    lineHeightName: "Answer line height",
-    lineHeightDesc: "Line height of answer text (multiplier).",
-    thinkingLineHeightName: "Work-log line height",
-    thinkingLineHeightDesc: "Line height of the \u201Cworked for\u2026\u201D history panel (tool entries and reasoning, multiplier).",
-    userLineHeightName: "Question line height",
-    userLineHeightDesc: "Line height of question text (multiplier).",
-    contentWidthName: "Content width",
-    contentWidthDesc: "Max width of conversation content; accepts px or % (e.g. 900px, 85%).",
-    defaultValue: "default",
-    resetDefault: "Reset to default",
-    featureProjectMenu: "Project menu actions",
-    featureProjectMenuDesc: "Open folder and copy path in the project More menu (alias and folder switch retired).",
-    featureTaskOrder: "Sidebar session drag ordering",
-    featureTaskOrderDesc: "Drag to reorder sessions in Pinned, Projects and Groups; survives restarts.",
-    featureSessionSwitch: "Session quick switch",
-    featureSessionSwitchDesc: "{last} toggles to the last session; alt + arrows pick recent sessions; keys remappable",
-    featureTitleLock: "Keep renamed session titles",
-    featureTitleLockDesc: "Sessions you renamed keep their custom title in the sidebar.",
-    tabTitleGen: "Auto rename",
-    titleGenShortDesc: "When a new session starts answering, generates the task name with the chosen provider and prompt and saves it as a manual rename the built-in title never overrides.",
-    titleGenEnabled: "Enable",
-    titleGenProvider: "Provider",
-    titleGenProviderNone: "Custom endpoint (no provider)",
-    titleGenProviderSession: "Follow current session",
-    titleGenProviderDeleted: " (deleted)",
-    titleGenModel: "Model",
-    titleGenModelHint: "Pick from the list, or type a model id",
-    titleGenModelEmpty: "(not set)",
-    titleGenModelSessionHint: "Pick from the list; the first entry follows the session model",
-    titleGenModelFollowSession: "Follow the session model",
-    titleGenModelManualHint: "Type a model id",
-    titleGenBaseUrl: "Base URL",
-    titleGenApiKey: "API Key",
-    titleGenFormat: "Protocol",
-    titleGenPrompt: "Prompt",
-    titleGenPromptPlaceholder: "Leave empty for the built-in default prompt (button below shows it)",
-    titleGenPromptReset: "Use default prompt",
-    titleGenSample: "Test message",
-    titleGenTest: "Test",
-    titleGenTesting: "Generating\u2026",
-    titleGenTestOk: "Result: ",
-    titleGenTestFailed: "Generation failed",
-    titleGenManual: "Manual rename",
-    titleGenHoverBtn: "Task row hover button",
-    titleGenHoverBtnDesc: "Show an \u201CAuto rename\u201D button next to the archive button when hovering a task row.",
-    titleGenMenuEntry: "Context menu item",
-    titleGenMenuEntryDesc: "Show \u201CAuto rename\u201D below \u201CRename task\u201D in the task context menu.",
-    titleGenRecentQa: "Recent Q&A rounds",
-    titleGenRecentQaDesc: "Manual rename takes this many recent Q&A rounds as material.",
-    autoRenameItem: "Auto rename",
-    autoRenameWorking: "Generating title\u2026",
-    autoRenameDone: "Renamed: ",
-    featureWsRunning: "Running indicator when collapsed",
-    featureWsRunningDesc: "Collapsed project and task headers show a loader while sessions run.",
-    tabPerformance: "Performance",
-    perfDesc: "ZCode keeps a session process resident for every project you have opened and never reclaims it, so memory grows with projects. When enabled, projects unused for a while with nothing running release their memory automatically: sessions are untouched and reload when reopened, with a few seconds wait on the first reply. The project in use, running sessions, background commands and scheduled tasks are never reclaimed. Background-command detection reads system process info via built-in tools (Linux / macOS / Windows); when unavailable, the feature disables itself.",
-    featureIdleReclaim: "Idle project memory reclaim",
-    featureIdleReclaimDesc: "Qualifying projects release their memory; sessions are untouched and reload when reopened.",
-    idleReclaimMinutesLabel: "Idle minutes before reclaim",
-    idleReclaimStartupLabel: "Minutes after startup for a one-shot reclaim",
-    idleReclaimStartupHint: "Startup pre-spawns a process per restored project; this pass collects the unused ones once. 0 = reclaim right after startup, ignoring the idle minutes above",
-    idleReclaimUnit: "min",
-    featureToolbarIcons: "Sidebar menu in the top bar",
-    featureToolbarIconsDesc: "New task / search / automations / plugin store become top-bar icon buttons.",
-    tbNewTask: "New task",
-    tbSearch: "Search",
-    tbAutomations: "Automations",
-    tbPluginStore: "Plugin store",
-    featurePinnedCollapse: "Collapsible Pinned section",
-    featurePinnedCollapseDesc: "The Pinned header collapses/expands its task list.",
-    featureSandboxReclaim: "Plugin card sandbox reclaim",
-    featureSandboxReclaimDesc: "Reclaims the oldest sandboxes at the 64 cap so new cards keep opening; released cards come back when their session is reopened.",
-    featurePluginCardRetry: "Plugin card auto-retry",
-    featurePluginCardRetryDesc: 'Auto-clicks "Reload" on cards that failed the slot cap; they recover as soon as a slot frees up.',
-    visionCardUi: "Vision cards",
-    pinnedToggleAria: "Collapse/expand Pinned",
-    sidebarProjectSpacingName: "Project spacing",
-    sidebarProjectSpacingDesc: "Visual spacing between adjacent project rows in the sidebar (row padding included); when set, section gaps (Pinned/Projects/Tasks) follow the same value.",
-    sidebarTaskSpacingName: "Task spacing",
-    sidebarTaskSpacingDesc: "Vertical spacing between adjacent task rows in the sidebar (row padding included).",
-    uiFontName: "UI font",
-    uiFontDesc: "Font for all interface text except the terminal (its font is set in the official settings).",
-    userFontName: "Question font",
-    userFontDesc: 'Font of question text in conversations; "default" follows the UI font.',
-    assistantFontName: "Answer font",
-    assistantFontDesc: 'Font of answer text in conversations (code blocks stay monospaced); "default" follows the UI font.',
-    switcherHint: "{prev} / {next} or \u2191 / \u2193 to choose, Enter or click a row to switch, Esc to cancel",
-    switcherCurrent: "current",
-    switcherEmpty: "No previous session yet (available after you switch sessions)",
-    switcherFailed: "Failed to switch to that session (it may have been deleted)",
-    switcherMore: "{n} more \xB7 press c to load",
-    switcherRunning: "running",
-    switcherUnseen: "unseen",
-    switcherAttentionHint: "Running / finished but unseen tasks \xB7 {prev} / {next} or \u2191 / \u2193 to choose, Enter or click a row to switch",
-    switcherAttentionEmpty: "No running or unseen tasks",
-    featureNewtabPanels: "Plugin panels on the new tab page",
-    featureNewtabPanelsDesc: "Adds third-party plugin panels (headroom, rtk, ...) to the new tab page; click to open in the side pane.",
-    ntpDescSuffix: "plugin panel",
-    ntpNeedSession: "Open a task session first, then open plugin panels from the new tab page",
-    featureStatusBarDesc: "Shows statistics at the bottom-right of the input box and at the end of each answer.",
-    tabStylesPane: "Styles",
-    tabStatusPane: "Status bar",
-    themeColorsPane: "Theme",
-    themeBgRegions: "Regional backgrounds",
-    themeBgRegionFollow: "None",
-    themeBgRegionLeft: "Left sidebar",
-    themeBgRegionCenter: "Center area",
-    themeBgRegionRight: "Right sidebar",
-    themeBgPane: "Wallpaper",
-    themeSkinTitle: "Skins",
-    themeSkinDesc: 'Famous editor theme palettes, auto-matching ZCode\u2019s light / dark mode; "Default" keeps ZCode as-is, "Custom" is tuned below.',
-    themeSkinCustom: "Custom",
-    themeCustomTitle: "Custom theme",
-    themeCustomHint: "Color changes apply live (auto-switches to the custom skin); set light and dark separately \u2014 pick 5 colors and the whole palette is derived.",
-    themeCustomLight: "Light",
-    themeCustomDark: "Dark",
-    themeCustomBg: "Background",
-    themeCustomCard: "Card",
-    themeCustomFg: "Text",
-    themeCustomMuted: "Muted text",
-    themeCustomAccent: "Accent",
-    themeBgDesc: "Wallpapers can be images, videos or web pages, rendered behind the UI. Sources: local library (pick one image), folder (rotate on a timer), image URL (refresh on a timer) or a web page; left / center / right regions can each have their own (static images only, with their own fit and mask). Sidebar, chat, composer and the settings dialog reveal the wallpaper \u2014 the settings dialog is frosted; the frosting can be turned off here; context menus and other dialogs stay opaque for readability. The library uploads over WebDAV with the zcode-pro sync group (overwrite, no history versions).",
-    themeBgModeNone: "None",
-    themeBgModeLibrary: "Library",
-    themeBgModeFolder: "Folder",
-    themeBgModeUrl: "Image URL",
-    themeBgModeWeb: "Web page",
-    themeBgLibrary: "My library",
-    themeBgUpload: "Upload images/videos",
-    themeBgEmpty: "Nothing uploaded yet. Images: png / jpg / webp / gif / bmp / avif (up to 10MB); videos: mp4 / webm / mov (up to 200MB)",
-    themeBgDelete: "Delete",
-    themeBgNoneHint: "Pick a wallpaper source; folders rotate on a timer, image URLs refresh on a timer for random-image APIs.",
-    themeBgFolderPick: "Browse",
-    themeBgFolderPickTitle: "Choose a wallpaper folder",
-    themeBgFolderHint: "Pick a folder of wallpapers; files are read in place, not copied.",
-    themeBgFolderRandom: "Random order",
-    themeBgIntervalHint: "Rotation interval (minutes)",
-    themeBgIntervalUnit: "minutes before rotation; 0 = no rotation",
-    themeBgFolderCount: "{n} wallpaper files in the folder, rotating on the timer.",
-    themeBgFolderMissing: "Folder missing or contains no wallpaper files.",
-    themeBgUrlIntervalUnit: "minutes before refresh; 0 = no refresh",
-    themeBgUrlInvalid: "URL must start with http(s)://",
-    themeBgWebHint: "Web wallpapers render behind the UI in a sandboxed iframe; the page plays its own animation or video. Only pages with their own transparent background reveal the wallpaper; pages that need a login session may not show.",
-    themeBgSource: "Source",
-    themeBgImage: "Display",
-    themeBgFit: "Fit",
-    themeBgFitCover: "Fill",
-    themeBgFitContain: "Fit",
-    themeBgFitFill: "Stretch",
-    themeBgFitTile: "Tile",
-    themeBgMask: "Mask opacity",
-    themeBgBlur: "Wallpaper blur",
-    themeBgPanel: "Panel opacity",
-    themeBgDialogFrost: "Frosted settings dialog",
-    themeBgMisc: "Other",
-    themeBgFollowGlobal: "Follow global",
-    themeBgRegionsHint: 'Fit and mask can be set per row; "Follow global" uses the Display values. Blur, transition and playback apply only to the global wallpaper (regions are static images, no video). Region folders reuse the global rotation interval and order settings.',
-    themeBgPlayback: "Playback (video)",
-    themeBgVolume: "Volume",
-    themeBgVolumeHint: "Audio track volume of video wallpapers, 0 = muted (default)",
-    themeBgRate: "Speed",
-    themeBgFps: "FPS cap",
-    themeBgFpsOff: "Native",
-    themeBgFpsHint: "Re-encodes video wallpapers to a lower frame rate to save resources; needs ffmpeg, otherwise the native rate is kept.",
-    themeBgTransition: "Transition",
-    themeBgTransitionCut: "Instant",
-    themeBgTransitionFade: "Fade",
-    themeBgPause: "Pause when",
-    themeBgPauseHidden: "Window minimized",
-    themeBgPauseBlur: "Window unfocused",
-    themeBgPauseBattery: "On battery",
-    themeBgDeletedActive: "Active wallpaper was deleted; wallpaper disabled",
-    tableCopyBtn: "Copy table",
-    tableCopied: "Table copied",
-    sbItemCtx: "Context usage",
-    sbItemTokRate: "Recent output tokens/s",
-    sbItemQuestions: "Questions asked",
-    sbMaster: "Enable statistics",
-    sbMasterDesc: "Master switch: turning this off disables both the input-box statistics and per-turn labels.",
-    sbGroupSession: "Session statistics (follows current session)",
-    sbGroupGlobal: "Global statistics",
-    sbGroupTurn: "Per-turn statistics (answer rows)",
-    sbLabelIn: "in",
-    sbLabelOut: "out",
-    sbLabelCache: "cache",
-    turnUsageTitle: "Turn tokens",
-    sbLabelQuestions: "asks",
-    sbItemTodayTokens: "Today tokens",
-    sbItemTasks: "Tasks",
-    sbLabelCtx: "ctx",
-    sbLabelTurns: "calls",
-    sbLabelToday: "today",
-    sbLabelTasks: "tasks",
-    sbItemTotalTokens: "Total tokens",
-    sbLabelTotal: "total",
-    sbMoveUp: "Up",
-    sbMoveDown: "Down",
-    sbVisible: "shown",
-    sbHidden: "hidden",
-    tabShortcuts: "Shortcuts",
-    hkTitle: "Session quick switch",
-    hkAltZ: "Toggle between the current and the last-used session",
-    hkAltX: "Move the highlight up (earlier sessions) in the popup",
-    hkAltC: "Move the highlight down (recent sessions); at the bottom it loads 5 more and highlights the first newly loaded entry",
-    hkAltE: "Open the last 10 tasks",
-    hkAltR: "Open running / finished-but-unseen tasks",
-    hkArrow: "Move the highlight while the popup is open (same rules as alt + {prev} / alt + {next})",
-    hkEnter: "Switch to the highlighted session",
-    hkEsc: "Cancel and close the popup",
-    hkModify: "Change",
-    hkRecording: "press a key\u2026",
-    hkInvalid: "Shortcuts accept a single letter or digit only",
-    hkConflict: 'alt+{k} is already used by "{name}"',
-    hkSaved: "Shortcut updated",
-    hkNameLast: "last session",
-    hkNamePrev: "move up",
-    hkNameNext: "move down",
-    hkNameRecent: "last 10 tasks",
-    hkNameAttention: "running / unseen",
-    hkEditHint: 'Click "Change", press a new key (letter or digit); Esc cancels',
-    hkReset: "Reset to defaults",
-    hkResetDone: "Shortcuts reset to defaults",
-    featureFileActions: "File menu actions",
-    featureFileActionsDesc: 'Adds "Open with default app" and "Reveal in file manager" to the right-click menu of file links in chat.',
-    featureImageCopy: "Image right-click copy",
-    featureTableCopy: "Copy table",
-    featureComposerProvider: "Provider in model name",
-    featureImageCopyDesc: "Right-click an image in chat or the enlarged preview to copy it to the clipboard.",
-    featureTableCopyDesc: "Copy-table button on the table toolbar; pastes into Excel / editors as a clean table.",
-    featureComposerProviderDesc: "Shows the provider before the model name (e.g. BigModel-Max1 / glm-5.3).",
-    imageCopy: "Copy image",
-    imageCopied: "Image copied to the clipboard.",
-    imageCopyFailed: "Failed to copy the image.",
-    openFolderItem: "Open folder",
-    openFolderPrimary: "primary",
-    copyPathItem: "Copy path",
-    pathCopied: "Path copied to the clipboard.",
-    pathCopyFailed: "Failed to copy the path.",
-    fileOpenDefault: "Open with default app",
-    fileReveal: "Reveal in file manager",
-    featureAutoUpdatePlugins: "Auto-update",
-    featureAutoUpdatePluginsRepo: "duanluan/zcode-plugins",
-    featureAutoUpdatePluginsDesc: "",
-    pluginsCheckNow: "Check for updates",
-    pluginsUpdating: "Updating plugins\u2026",
-    pluginsUpToDate: "Plugins are up to date",
-    pluginsUpdatesFound: "{n} plugin(s) can be updated",
-    pluginsUpdatedDone: "Updated {n} plugin(s)",
-    pluginsUpdateFailed: "Plugin update failed",
-    pluginsUpdatesAvailable: "{n} zcode-plugins update(s) available (ZCode Pro settings \u2192 Features)",
-    pluginsAutoUpdated: "zcode-plugins updated",
-    tabVision: "Vision",
-    visionDesc: "When the main model cannot see images (e.g. glm-5.3), images in messages are recognized by the vision models below and passed to the main model as text (zcode-vision plugin; /vision-* commands edit the same file).",
-    visionEnabled: "Enable",
-    visionForceIntercept: "Main model",
-    visionForceInterceptAuto: "Use plugin only if model can't see images",
-    visionForceInterceptTrue: "Always use plugin",
-    visionForceInterceptFalse: "Never use plugin",
-    visionForceInterceptHint: "Use plugin only if model can't see images = follow the image toggle in ZCode model settings: on = the model sees images itself (no duplicate recognition), off = route through the vision proxy (tool mode shows the result card); Always use plugin = forced double recognition for the card; Never use plugin = let capable models see images (models that can't still go through the plugin)",
-    visionMode: "Chain mode",
-    visionModeFallback: "Fallback",
-    visionModeFallbackDesc: "Try in order until one succeeds (primary + backup).",
-    visionModePipeline: "Pipeline",
-    visionModePipelineDesc: "Every step runs; later steps refine earlier results (describe \u2192 refine).",
-    visionAddProxy: "Add proxy",
-    visionRemove: "Remove",
-    visionMoveUp: "Up",
-    visionMoveDown: "Down",
-    visionName: "Name",
-    visionUseProvider: "Provider",
-    visionSkipAfterFailures: "Skip after failures",
-    visionSkipAfterFailuresHint: "After this many consecutive failures a proxy is skipped and the next one is tried; 0 = never skip",
-    visionSkipMinutes: "Skip minutes",
-    visionSkipMinutesHint: "How long a skipped proxy rests before being retried; any success resets the counter",
-    visionResetChain: "Reset default chain",
-    visionResetChainConfirm: "Reset chain mode and the proxy list to the default single-level chain (session: follow session and its current model)? Current proxy edits will be lost. Continue?",
-    visionBaseUrl: "API URL",
-    visionModel: "Model",
-    visionApiKey: "API Key",
-    visionPrompt: "Recognition prompt ({prev} = previous step in pipeline)",
-    visionTest: "Test",
-    visionTesting: "Testing\u2026",
-    visionTestFailed: "Vision proxy test failed",
-    visionCompressKB: "Compress threshold KB",
-    visionCompressKBHint: "Images above this size are compressed first (max edge 2000, JPEG); 0 = never",
-    visionLoadFailed: "Failed to load the vision config",
-    tabRtk: "rtk",
-    rtkDesc: "rtk plugin: compresses common dev command output by 60-90% before it reaches the context (/rtk-* commands edit the same files).",
-    rtkEnabled: "Enable",
-    rtkNotInstalled: "rtk is not installed. The settings below take effect after installation (/rtk-setup in a session).",
-    rtkInstallBin: "Install rtk binary",
-    rtkBinInstalled: "rtk installed; PATH takes effect for sessions after signing out and back in \u2014 the plugin hook works immediately",
-    rtkWhitelistTitle: "Whitelist (pass through without compression)",
-    rtkBuiltinLabel: "Built-in exemptions (read-only, follow plugin updates):",
-    rtkWhitelistDesc: "Each entry is name (e.g. docker) or git:name (e.g. git:clone); added commands skip compression. Built-ins (git add/commit/push, mkdir/cp, \u2026) cannot be removed.",
-    rtkWhitelistPlaceholder: "name or git:name, press Enter to add",
-    rtkWhitelistAdd: "Add",
-    rtkWhitelistClear: "Clear",
-    rtkWhitelistCleared: "Whitelist cleared",
-    rtkWhitelistInvalid: "Entry must be name or git:name",
-    rtkLoadFailed: "Failed to load the rtk config",
-    tabHeadroom: "Headroom",
-    headroomDesc: "Headroom plugin: a local compression proxy on 127.0.0.1 (port 8787 by default) that compresses context sent to the model to save tokens (/hr-* commands edit the same file). Switching the device restarts the proxy, so requests in progress may be interrupted once.",
-    headroomBinMissing: "The headroom program was not found, so the proxy cannot start. The settings below take effect once it is installed.",
-    hrInstallBin: "Install headroom binary",
-    hrBinInstalled: "headroom installed; reopen the app or a session and the proxy will start automatically",
-    headroomInstallTitle: "headroom plugin not installed",
-    headroomInstallDesc: "Install it from the zcode-plugins marketplace to manage the compression proxy here; takes effect after a session restart.",
-    headroomInstall: "Install",
-    headroomInstalling: "Installing\u2026",
-    headroomInstalled: "headroom plugin installed",
-    headroomInstallRetry: "Installation did not take effect; retry or install it from the marketplace manually",
-    pluginInstallCardTitle: "{name} plugin not installed",
-    pluginInstallCardDesc: "Install it from the zcode-plugins marketplace to manage it here; takes effect after a session restart.",
-    pluginInstallDone: "{name} plugin installed",
-    pluginEnable: "Enable",
-    hrStarting: "Starting compression proxy\u2026",
-    hrStarted: "Compression proxy started",
-    hrStartTimeout: "Proxy start timed out (90s); check ~/.zcode-headroom-proxy.log",
-    hrStopping: "Stopping compression proxy\u2026",
-    hrRestarting: "Restarting compression proxy\u2026",
-    hrStopped: "Compression proxy stopped",
-    hrUsageNone: "No providers route through headroom; nothing changed",
-    headroomLoadFailed: "Failed to load the Headroom config",
-    headroomStatusTitle: "Status",
-    hrInstRunning: "running",
-    hrInstStopped: "down",
-    headroomStatusLoadFailed: "Failed to load the status",
-    headroomProxyUp: "Proxy running",
-    headroomProxyDown: "Proxy down",
-    headroomCurrentBackend: "Current device",
-    headroomDesiredBackend: "Target device",
-    hrValAuto: "Auto",
-    hrPmAc: "AC",
-    hrPmBattery: "Battery",
-    hrPmSaver: "Power saver",
-    hrPmSaverBat: "Saver + battery",
-    hrDetectOk: "OK",
-    hrDetectMissing: "missing",
-    hrDetectBroken: "unavailable",
-    headroomPowerState: "Power",
-    headroomWatcher: "Watcher",
-    headroomWatcherOn: "Running",
-    headroomWatcherOff: "Stopped",
-    headroomSaverDetect: "Power-saver detection",
-    headroomRefresh: "Refresh",
-    headroomStart: "Start",
-    headroomRestart: "Restart",
-    headroomStopAction: "Stop",
-    headroomStopTitle: "Stop the Headroom proxy",
-    headroomStopDesc: "Requests from ZCode and other apps pointing at this proxy (127.0.0.1) will fail until it is started again. headroom is shared \u2014 other tools may be using it. Stop it?",
-    headroomStoppedWarn: "Proxy stopped; providers pointing at 127.0.0.1 cannot connect.",
-    headroomBackend: "Compression device",
-    headroomBackendAuto: "Auto \xB7 GPU first",
-    headroomBackendCpu: "Power saving \xB7 CPU first",
-    headroomBackendNative: " (native)",
-    headroomBackendDesc: "Auto lets headroom pick the fastest device (CUDA/MPS); CPU forces CPU compression (power saving, no VRAM). Native headroom values (onnx, pytorch_mps, \u2026) also work. Switching restarts the proxy to apply.",
-    headroomPower: "Power-save auto switch",
-    headroomPowerOff: "Off",
-    headroomPowerOffDesc: "No auto switching; always follow the compression device.",
-    headroomPowerBattery: "On battery",
-    headroomPowerBatteryDesc: "On battery (discharging) \u2192 CPU; switches back when plugged in.",
-    headroomPowerSaver: "Power-saver",
-    headroomPowerSaverDesc: "Only the system power-saver mode \u2192 CPU; back when it exits.",
-    hrCpuPinnedHint: "The compression device is pinned to CPU, so power-save switching no longer changes anything.",
-    headroomInterval: "Watch interval",
-    headroomIntervalDesc: "Seconds between power checks (10\u20133600, default 60); applies from the next round.",
-    headroomSecUnit: "s",
-    upgradeCheck: "Check update",
-    upgradeChecking: "Checking\u2026",
-    upgradeUpToDate: "Up to date ({v})",
-    upgradeFound: "{v} available",
-    upgradeNow: "Update",
-    upgradeRunning: "Updating\u2026",
-    upgradeStop: "Stop",
-    upgradeStopped: "Upgrade stopped",
-    upgradeDone: "Updated to {v}",
-    upgradeFinished: "Update finished",
-    upgradeCheckFailed: "Update check failed",
-    close: "Close",
-    cancel: "Cancel",
-    pathLabel: "Path",
-    aliasItem: "Custom alias",
-    aliasTitle: "Custom alias",
-    aliasDesc: "Shown in the ZCode UI only. The directory on disk and all data stay untouched; revert anytime.",
-    aliasLabel: "Alias",
-    aliasPlaceholder: "Leave empty and save to restore the real name",
-    aliasConfirm: "Save",
-    aliasClear: "Restore real name",
-    aliasSaved: "Alias updated.",
-    aliasCleared: "Real name restored.",
-    aliasHint: "The directory name on disk is unchanged: terminals, file managers and other path-based UI still show the real name.",
-    featureProjectMenuDescNew: 'Open folder and copy path in the project "More" menu. Renaming is built in since ZCode 3.16.1 ("Edit project"), so the custom alias is retired.',
-    aliasMigrateTitle: "Migrate project aliases",
-    aliasMigrateDesc: 'This ZCode supports renaming projects (project "More" menu \u2192 Edit project), so the custom alias feature is retired. Write your saved aliases into the official project names by picking the projects below; only the project name changes, folders on disk are untouched.',
-    aliasMigrateItemHint: 'The alias becomes the project name (re-editable anytime via "Edit project"). Only unmarked entries can be checked; migrated, merged, deleted, not-on-this-machine and manually-renamed ones cannot \u2014 to rename those projects, use "Edit project" in the project "More" menu directly.',
-    aliasMigrateStateDone: "Migrated",
-    aliasMigrateStateMerged: 'Merged into "{name}"',
-    aliasMigrateStateDeleted: "Project deleted",
-    aliasMigrateStateMissing: "Not on this machine",
-    aliasMigrateStateRenamed: "Project renamed",
-    aliasMigrateDeadSummary: "{n} stale entries (not on this machine / project deleted \u2014 usually old-machine paths from settings sync)",
-    aliasMigrateClearDead: "Clear stale entries",
-    aliasMigrateDeadCleared: "Removed {n} stale alias(es)",
-    aliasMigrateDeadClearFailed: "Some stale aliases could not be removed; please retry",
-    aliasMigrateGo: "Migrate selected",
-    aliasMigrateRunning: "Migrating\u2026",
-    aliasMigrateProgress: "Migrating {i}/{n}: {name}",
-    aliasMigrateStateFailed: "Failed",
-    aliasMigrateSkip: "Not now",
-    aliasMigrateDone: "Migrated {n} alias(es)",
-    aliasMigratePartial: "{n} migrated, {m} failed; retry the rest later in ZCode Pro settings",
-    aliasMigrateAllFailed: "Alias migration failed; retry later in ZCode Pro settings",
-    aliasMigrateCardName: "Alias migration",
-    aliasMigrateCardDesc: "Project renaming is built in now; {n} custom alias(es) are not migrated yet.",
-    aliasMigrateRun: "Migrate",
-    taskOrderSaved: "Order updated.",
-    qqGroupTitle: "QQ group: 428403354",
-    qqGroupDesc: "Feedback & discussion",
-    wechatGroupTitle: "WeChat group",
-    wechatGroupDesc: "Add WeChat {id} for a group invite",
-    wechatIdCopied: "WeChat ID copied.",
-    browse: "Browse",
-    relocateItem: "Switch folder",
-    relocateTitle: "Switch folder",
-    relocateDesc: "Points this project at another folder: the sidebar, open tabs and local task history move along. The directory itself is not moved and no sessions are lost.",
-    relocateNewPathLabel: "New folder",
-    relocateConfirm: "Move",
-    relocateHint: "The target folder must already exist. Enter a path or use Browse; the UI refreshes automatically afterwards.",
-    relocateSuccess: "Folder switched. Refreshing\u2026",
-    relocateIndexSkipped: "Folder switched, but the task history was not synced (SQLite support missing); old entries may still point to the old path.",
-    relocateSame: "The new folder is the same as the current one.",
-    relocateNotFound: "The target folder does not exist.",
-    relocateProtected: "Refusing to point inside the ZCode data directory.",
-    relocateIndexBusy: "The task index is busy (ZCode may be writing). Please retry shortly.",
-    relocateConfirmTitle: "Confirm folder switch",
-    relocateConfirmDesc: "The page will refresh after switching, and unsent text in the chat input will be lost. Sessions and project files are not affected.",
-    relocateConfirmGo: "Confirm switch",
-    failed: "Operation failed",
-    retryHint: "Please retry"
-  };
-  var cachedSystemLocale = null;
   function startLocaleResolver() {
     if (cachedSystemLocale !== null) return;
     const get = typeof window !== "undefined" ? window.zcode?.getSystemLocale : null;
@@ -1282,52 +97,6 @@
   function t() {
     return isZhLocale() ? zh : en;
   }
-  var errEn = {
-    "invalid-path": "Invalid project path",
-    "not-found": "The folder does not exist",
-    "invalid-request": "Invalid request",
-    "invalid-content": "content must be a string",
-    "agents-read": "Failed to read AGENTS.md",
-    "agents-write": "Failed to write AGENTS.md",
-    "config-save": "Failed to save config",
-    "settings-write": "Failed to update setting.json",
-    "workspace-empty": "Workspace not found or has no sessions",
-    "order-write": "Failed to persist ordering",
-    "group-not-found": "No group contains these sessions",
-    "group-ambiguous": "Cannot determine the group uniquely",
-    "name-too-long": "Alias too long (max 100 characters)",
-    "name-invalid-chars": "Alias must not contain newlines or control characters",
-    "index-remap-failed": "Failed to update the task index (config changes rolled back)",
-    "index-error": "Task index error",
-    "index-busy": "The task index is busy. Please retry shortly.",
-    "vision-invalid": "Invalid vision config",
-    "vision-read": "Failed to read zcode-vision.json",
-    "vision-write": "Failed to write zcode-vision.json",
-    "vision-test": "Vision test failed",
-    "proxy-invalid": "Proxy must look like http://127.0.0.1:7890, or be empty",
-    "proxy-not-set": "Set the proxy address first",
-    "rtk-invalid": "Invalid rtk config",
-    "rtk-update": "Failed to check rtk updates (GitHub Releases unreachable? Set a proxy in the Proxy tab)",
-    "rtk-write": "Failed to write the rtk config",
-    "headroom-read": "Failed to read headroom.json",
-    "headroom-write": "Failed to write headroom.json",
-    "headroom-invalid": "Invalid headroom setting",
-    "headroom-plugin": "headroom plugin not found (install it from the marketplace)",
-    "headroom-sh": "sh not found; cannot run the headroom plugin script",
-    "headroom-action": "The headroom action failed",
-    "headroom-status": "Failed to read the headroom status",
-    "headroom-upgrade": "headroom upgrade failed",
-    "plugins-status": "Failed to read the plugin list",
-    "plugins-update": "Failed to update plugins",
-    "sync-invalid": "Invalid sync settings",
-    "sync-not-configured": "Set the sync type to WebDAV and save the config first",
-    "sync-remote-missing": "No synced data on the server yet; upload from another computer first",
-    "sync-remote-invalid": "The URL already holds a different file; use another file path",
-    "sync-request": "The WebDAV request failed",
-    "sync-run": "Sync failed",
-    "sync-file-invalid": "Invalid backup file name",
-    "sync-export": "Failed to save the backup to disk"
-  };
   function errText(res) {
     if (!res) return "";
     if (!isZhLocale()) {
@@ -1392,15 +161,1258 @@
   function itemText(item) {
     return (item.textContent || "").trim();
   }
+  var BOOT, HELPER_URL, configCache, configInflight, DEFAULT_SHORTCUTS, STATUS_SESSION_IDS, STATUS_GLOBAL_IDS, DEFAULT_TURN_ITEMS, DEFAULT_STATUS_ITEMS, newSidebarCached, zh, en, cachedSystemLocale, errEn;
+  var init_core = __esm({
+    "src/inject/core.js"() {
+      BOOT = typeof window !== "undefined" ? window.__ZCODEPRO__ || {} : {};
+      HELPER_URL = BOOT.helperUrl || "http://127.0.0.1:47889";
+      configCache = { value: null, at: 0 };
+      configInflight = null;
+      DEFAULT_SHORTCUTS = {
+        switchLast: "z",
+        // 立即切到上次会话
+        switchPrev: "x",
+        // 弹窗中上移
+        switchNext: "c",
+        // 弹窗中下移
+        switchRecent: "e",
+        // 打开最近 10 条
+        switchAttention: "r"
+        // 打开运行中 / 未查看
+      };
+      STATUS_SESSION_IDS = /* @__PURE__ */ new Set(["ctx", "sessionCost", "questions", "tokRate"]);
+      STATUS_GLOBAL_IDS = /* @__PURE__ */ new Set(["todayTokens", "todayCost", "totalTokens", "totalCost", "tasks"]);
+      DEFAULT_TURN_ITEMS = [
+        { id: "turnIn", on: true },
+        // 输入
+        { id: "turnOut", on: true },
+        // 输出
+        { id: "turnCache", on: true }
+        // 缓存命中率
+      ];
+      DEFAULT_STATUS_ITEMS = [
+        { id: "tokRate", on: true },
+        // 最近输出 tokens/s（60 秒窗口，本会话）
+        { id: "ctx", on: true },
+        // 上下文占用
+        { id: "questions", on: true },
+        // 提问次数
+        { id: "todayTokens", on: true },
+        // 今日 token（今天的会话记录完整，数据准确）
+        { id: "totalTokens", on: true },
+        // 累计 token（官方使用统计，全历史）
+        { id: "tasks", on: true }
+        // 任务总数
+      ];
+      newSidebarCached = false;
+      zh = {
+        settingsTitle: "ZCode Pro",
+        tabFeatures: "\u529F\u80FD",
+        tabStyles: "\u5916\u89C2",
+        tabProxy: "\u4EE3\u7406",
+        tabBehavior: "\u884C\u4E3A",
+        tabAgents: "\u5168\u5C40\u63D0\u793A\u8BCD",
+        tabZcode: "ZCode CLI",
+        zcodeDesc: "ZCode \u81EA\u8EAB\u7684\u884C\u4E3A\u914D\u7F6E\uFF08\u5199\u5165 ~/.zcode/cli/config.json\uFF09\uFF0C\u4FDD\u5B58\u540E\u5BF9\u65B0\u4F1A\u8BDD\u751F\u6548\u3002",
+        zcodeStatsTitle: "\u6280\u80FD\u6E05\u5355\u68C0\u67E5",
+        zcodeStatsCounts: "\u6280\u80FD {total} \u4E2A\uFF08\u672C\u5730 {user} \xB7 \u63D2\u4EF6 {plugin}\uFF09",
+        zcodeStatsChars: "\u5B8C\u6574\u6E05\u5355\u7EA6 {n} \u5B57\u7B26",
+        zcodeBudgetDefaultTag: "\uFF08\u9ED8\u8BA4\u503C\uFF09",
+        zcodeStatsDegraded: "\u8D85\u51FA\u9884\u7B97\uFF1A\u5B8C\u6574\u6E05\u5355\u653E\u4E0D\u4E0B\uFF0C\u964D\u7EA7\u4E3A\u4EC5\u540D\u79F0\uFF0C\u6A21\u578B\u770B\u4E0D\u5230\u6280\u80FD\u63CF\u8FF0",
+        zcodeStatsOk: "\u9884\u7B97\u5145\u8DB3\uFF1A\u6E05\u5355\u5E26\u5B8C\u6574\u63CF\u8FF0\u6CE8\u5165\u65B0\u4F1A\u8BDD",
+        zcodeStatsSuggest: "\u5EFA\u8BAE\u9884\u7B97 {n} \u5B57\u7B26\uFF08\u7559 20% \u4F59\u91CF\uFF09",
+        zcodeBudgetApply: "\u7528\u5EFA\u8BAE\u503C",
+        zcodeBudgetApplied: "\u6E05\u5355\u9884\u7B97\u5DF2\u4FDD\u5B58",
+        zcodeStatsNote: "\u6309\u5F53\u524D\u78C1\u76D8\u72B6\u6001\u4F30\u7B97\uFF0C\u4E0D\u542B\u5404\u9879\u76EE\u5185\u7684\u6280\u80FD\u76EE\u5F55\u3002",
+        zcodeSkillEnabled: "\u6280\u80FD\u7CFB\u7EDF",
+        zcodeSkillEnabledDesc: "skills.enabled\uFF1A\u5173\u95ED\u540E ZCode \u4E0D\u518D\u53D1\u73B0\u4E0E\u6CE8\u5165\u4EFB\u4F55\u6280\u80FD",
+        zcodeSkillIncludeInstructions: "\u6280\u80FD\u8BF4\u660E\u6CE8\u5165",
+        zcodeSkillIncludeInstructionsDesc: "skills.includeInstructions\uFF1A\u6280\u80FD\u8BF4\u660E\u662F\u5426\u968F\u6E05\u5355\u4E00\u8D77\u6CE8\u5165",
+        zcodeSkillBudget: "\u6280\u80FD\u6E05\u5355\u9884\u7B97\uFF08\u5B57\u7B26\uFF09",
+        zcodeSkillBudgetDesc: "skills.metadataBudget\uFF1A\u5B8C\u6574\u6E05\u5355\u8D85\u8FC7\u8BE5\u957F\u5EA6\u5C31\u964D\u7EA7\u4E3A\u4EC5\u540D\u79F0\uFF0C\u9ED8\u8BA4 20000",
+        zcodeSkillRoots: "\u989D\u5916\u6280\u80FD\u76EE\u5F55",
+        zcodeSkillRootsDesc: "skills.roots\uFF1A\u6BCF\u884C\u4E00\u4E2A\u76EE\u5F55\uFF0C\u76EE\u5F55\u4E0B\u7684\u6280\u80FD\u4F1A\u88AB\u53D1\u73B0\uFF08~/.zcode/skills\u3001~/.agents/skills \u4E4B\u5916\u7684\u8865\u5145\uFF09",
+        zcodeSave: "\u4FDD\u5B58",
+        zcodeRootsSaved: "\u6280\u80FD\u76EE\u5F55\u5DF2\u4FDD\u5B58",
+        zcodeFeatCompact: "\u4F1A\u8BDD\u538B\u7F29",
+        zcodeFeatCompactDesc: "features.compact\uFF1A\u4E0A\u4E0B\u6587\u8FC7\u957F\u65F6\u538B\u7F29\u65E9\u671F\u4F1A\u8BDD\u5185\u5BB9",
+        zcodeFeatRewind: "\u4F1A\u8BDD\u56DE\u6EAF",
+        zcodeFeatRewindDesc: "features.rewind\uFF1A\u56DE\u9000\u5230\u8F83\u65E9\u8282\u70B9\u91CD\u65B0\u7EE7\u7EED",
+        zcodeFeatSubagent: "\u5B50\u4EE3\u7406",
+        zcodeFeatSubagentDesc: "features.subagent\uFF1A\u6D3E\u51FA\u5B50\u4EE3\u7406\u5904\u7406\u5B50\u4EFB\u52A1",
+        zcodeFeatSkill: "\u6280\u80FD\u5DE5\u5177",
+        zcodeFeatSkillDesc: "features.skill\uFF1ASkill \u5DE5\u5177\u53EF\u7528\uFF08\u8FD8\u9700\u5F00\u542F\u6280\u80FD\u7CFB\u7EDF\uFF09",
+        zcodeFeatMcp: "MCP \u5DE5\u5177",
+        zcodeFeatMcpDesc: "features.mcp\uFF1A\u4F7F\u7528 MCP \u670D\u52A1\u5668\u63D0\u4F9B\u7684\u5DE5\u5177",
+        zcodeMemoryHint: "\u8BB0\u5FC6\u4E0D\u5728\u6B64\u5904\uFF1A\u5DE5\u4F5C\u533A\u8BB0\u5FC6\u5728\u5B98\u65B9 \u8BBE\u7F6E \u2192 Agent \u80FD\u529B \u2192 \u8BB0\u5FC6 \u4E2D\u5F00\u5173\uFF08\u542B\u8BB0\u5FC6\u8BE6\u60C5\u67E5\u770B\uFF09\u3002",
+        agentsDesc: "\u5199\u5165 ~/.zcode/AGENTS.md\uFF0C\u4F5C\u4E3A\u9ED8\u8BA4\u6307\u4EE4\u7528\u4E8E\u6240\u6709\u9879\u76EE\u7684\u6BCF\u6B21\u4F1A\u8BDD\uFF1B\u4FDD\u5B58\u540E\u4ECE\u65B0\u4F1A\u8BDD\u8D77\u751F\u6548\uFF0C\u9879\u76EE\u5185\u7684 AGENTS.md \u53EF\u8865\u5145\u6216\u8986\u76D6\u3002\u5185\u5BB9\u8D85\u8FC7 100KB \u4F1A\u88AB\u5E94\u7528\u622A\u65AD\u3002",
+        agentsPlaceholder: "\u586B\u5199\u5E0C\u671B\u6240\u6709\u9879\u76EE\u9ED8\u8BA4\u9075\u5FAA\u7684\u6307\u4EE4\uFF1B\u6E05\u7A7A\u5E76\u4FDD\u5B58\u5373\u79FB\u9664\u5168\u5C40\u63D0\u793A\u8BCD",
+        agentsSave: "\u4FDD\u5B58",
+        agentsSaved: "\u5168\u5C40\u63D0\u793A\u8BCD\u5DF2\u4FDD\u5B58",
+        agentsLoadFailed: "\u8BFB\u53D6\u5168\u5C40\u63D0\u793A\u8BCD\u5931\u8D25",
+        proxyDesc: "\u4E3A ZCode Pro \u672C\u5730\u52A9\u624B\u53D1\u8D77\u7684\u7F51\u7EDC\u8BBF\u95EE\u8BBE\u7F6E HTTP \u4EE3\u7406\uFF1A\u63D2\u4EF6\u5E02\u573A\u7684\u66F4\u65B0\u4E0E\u5B89\u88C5\u3001\u63D2\u4EF6\u4F9D\u8D56\u8F6F\u4EF6\u7684\u5B89\u88C5\u4E0E\u5347\u7EA7\u3001WebDAV \u540C\u6B65\u90FD\u53EF\u8D70\u8BE5\u4EE3\u7406\uFF0C\u7528\u4E0B\u65B9\u5F00\u5173\u9009\u62E9\u751F\u6548\u8303\u56F4\u3002\u4E0D\u5F71\u54CD ZCode \u5E94\u7528\u672C\u8EAB\u4E0E\u6A21\u578B\u8BF7\u6C42\u3002",
+        proxyPlaceholder: "http://127.0.0.1:7890",
+        proxySave: "\u4FDD\u5B58",
+        proxySaved: "\u4EE3\u7406\u8BBE\u7F6E\u5DF2\u4FDD\u5B58",
+        proxyHint: "\u7559\u7A7A\u4FDD\u5B58\u5373\u6E05\u9664\u4EE3\u7406\u3002",
+        proxyTest: "\u68C0\u6D4B",
+        proxyTesting: "\u68C0\u6D4B\u4E2D\u2026",
+        proxyTestEmpty: "\u8BF7\u5148\u8F93\u5165\u4EE3\u7406\u5730\u5740",
+        proxyTestFailed: "\u68C0\u6D4B\u5931\u8D25",
+        proxyScopePlugins: "\u63D2\u4EF6\u5E02\u573A\u66F4\u65B0",
+        proxyScopePluginsDesc: "\u63D2\u4EF6\u5E02\u573A\u7684\u68C0\u67E5\u66F4\u65B0\u3001\u5B89\u88C5\u4E0E\u5378\u8F7D\uFF08zcode CLI \u7684 git \u64CD\u4F5C\uFF09\u8D70\u4EE3\u7406\u3002",
+        proxyScopeDeps: "\u63D2\u4EF6\u4F9D\u8D56\u8F6F\u4EF6",
+        proxyScopeDepsDesc: "headroom \u4E0E rtk \u7684\u5B89\u88C5\u3001\u68C0\u67E5\u66F4\u65B0\u4E0E\u5347\u7EA7\uFF08pip \u4E0E GitHub \u4E0B\u8F7D\uFF09\u8D70\u4EE3\u7406\u3002",
+        proxyScopeSync: "\u540C\u6B65",
+        proxyScopeSyncDesc: "WebDAV \u4E0A\u4F20\u4E0E\u4E0B\u8F7D\u8D70\u4EE3\u7406\u3002",
+        tabSync: "\u540C\u6B65",
+        tabDebug: "\u8C03\u8BD5",
+        testNoSessionHint: "\u9009\u62E9\u201C\u8DDF\u968F\u5F53\u524D\u4F1A\u8BDD[\u5F53\u524D\u6A21\u578B]\u201D\u65F6\uFF0C\u9009\u62E9\u4E0A\u6B21\u4F1A\u8BDD\u4E2D\u4F7F\u7528\u7684\u4F9B\u5E94\u5546[\u6A21\u578B]",
+        syncDesc: "\u624B\u52A8\u628A ZCode Pro \u8BBE\u7F6E\u4E0E\u6A21\u578B\u8BBE\u7F6E\u5907\u4EFD\u5230 WebDAV\uFF0C\u6216\u5728\u65B0\u7535\u8111\u4E0A\u6062\u590D\u3002\u4E24\u9879\u5404\u81EA\u72EC\u7ACB\u6210\u6587\u4EF6\uFF0C\u53EF\u53EA\u4E0A\u4F20\u6216\u53EA\u8986\u76D6\u5176\u4E2D\u4E00\u9879\uFF1B\u6BCF\u6B21\u4E0A\u4F20\u4F1A\u989D\u5916\u4FDD\u7559\u4E00\u4EFD\u5E26\u65F6\u95F4\u6233\u7684\u5386\u53F2\u7248\u672C\uFF08\u4FDD\u7559\u591A\u5C11\u4E2A\u89C1\u201C\u5386\u53F2\u7248\u672C\u201D\u4E00\u884C\uFF0C\u4E0A\u4F20\u540E\u81EA\u52A8\u5220\u9664\u8D85\u51FA\u7684\u6700\u65E7\u7248\u672C\uFF09\uFF0C\u4E0B\u8F7D\u65F6\u4EFB\u9009\u4E00\u4E2A\u7248\u672C\u6062\u590D\uFF1B\u4EC5\u5728\u70B9\u51FB\u6309\u94AE\u65F6\u4F20\u8F93\uFF0C\u4E0D\u505A\u81EA\u52A8\u540C\u6B65\u3002",
+        syncUrlPlaceholder: "https://dav.jianguoyun.com/dav/",
+        syncDir: "\u4E0A\u4F20\u76EE\u5F55",
+        syncDirPlaceholder: "zcode-pro",
+        syncLogin: "\u767B\u5F55",
+        syncPassword: "\u5BC6\u7801",
+        syncHistoryLimit: "\u5386\u53F2\u7248\u672C",
+        syncHistoryLimitUnit: "\u4E2A",
+        syncHistoryLimitHint: "\u4E91\u7AEF\u6700\u591A\u4FDD\u7559\u6700\u8FD1\u51E0\u6B21\u4E0A\u4F20\u7559\u4E0B\u7684\u5386\u53F2\u7248\u672C\uFF0C\u4E0A\u4F20\u6210\u529F\u540E\u81EA\u52A8\u5220\u9664\u66F4\u65E9\u7684\uFF1B\u56FA\u5B9A\u540D\u6700\u65B0\u7248\u4E0D\u53D7\u5F71\u54CD\uFF1B0 = \u4E0D\u4FDD\u7559\u5386\u53F2\u7248\u672C",
+        syncPruned: "\u5DF2\u6E05\u7406 {n} \u4E2A\u66F4\u65E9\u7684\u5386\u53F2\u7248\u672C",
+        syncSave: "\u4FDD\u5B58",
+        syncSaved: "\u540C\u6B65\u914D\u7F6E\u5DF2\u4FDD\u5B58",
+        syncFormHint: "\u540C\u6B65\u6587\u4EF6\u5B58\u5230\u201C\u4E0A\u4F20\u76EE\u5F55\u201D\uFF08\u9ED8\u8BA4 zcode-pro\uFF0C\u53EF\u591A\u7EA7\uFF0C\u81EA\u52A8\u521B\u5EFA\uFF09\uFF1Azcodepro.json \u4E0E model.json \u59CB\u7EC8\u662F\u6700\u65B0\u4E00\u7248\uFF0C\u65C1\u8FB9\u53E6\u4FDD\u7559\u5E26\u65F6\u95F4\u6233\u7684\u5386\u53F2\u7248\u672C\u3002",
+        syncRecLink: "\u575A\u679C\u4E91 WebDAV",
+        syncRecSuffix: "\uFF1A\u767B\u5F55\u4E0E\u5BC6\u7801\u586B\u201C\u5E94\u7528\u5BC6\u7801\u201D\uFF0C\u4E0D\u662F\u8D26\u53F7\u5BC6\u7801\u3002",
+        syncIncludeZcp: "ZCode Pro \u8BBE\u7F6E",
+        syncIncludeZcpDesc: "\u529F\u80FD\u5F00\u5173\u3001\u6837\u5F0F\u8C03\u6574\u4E0E\u4EE3\u7406\u8BBE\u7F6E\uFF1B\u540C\u6B65\u914D\u7F6E\u4E0E\u51ED\u636E\u672C\u8EAB\u4E0D\u53C2\u4E0E\u540C\u6B65\u3002\u9879\u76EE\u522B\u540D\u4E0D\u540C\u6B65\uFF08\u5B98\u65B9\u5DF2\u652F\u6301\u6539\u9879\u76EE\u540D\uFF09\u3002",
+        syncIncludeModel: "\u6A21\u578B\u8BBE\u7F6E",
+        syncIncludeModelDesc: "\u81EA\u5B9A\u4E49\u4F9B\u5E94\u5546\u4E0E\u6A21\u578B\u914D\u7F6E\uFF08config.json \u4E0E provider_config.json\uFF0C\u542B API Key\uFF09\u4E0E Headroom \u4F9B\u5E94\u5546\u6620\u5C04\uFF08headroom.json\uFF0Ckey \u4EC5\u4EE5 keyHash \u5B58\u50A8\u3001\u4E0D\u542B\u660E\u6587\uFF09\u3002\u8D26\u53F7\u767B\u5F55\u7684\u51ED\u636E\uFF08\u5982 BigModel \u8BA2\u9605\uFF09\u4E0D\u53C2\u4E0E\u540C\u6B65\uFF0C\u5404\u673A\u5668\u7528\u5404\u81EA\u8D26\u53F7\u767B\u5F55\u3002",
+        syncUpload: "\u4E0A\u4F20\u5230\u4E91\u7AEF",
+        syncDownload: "\u4ECE\u4E91\u7AEF\u4E0B\u8F7D",
+        syncUploading: "\u4E0A\u4F20\u4E2D\u2026",
+        syncUploaded: "\u5DF2\u4E0A\u4F20\u5230\u4E91\u7AEF",
+        syncDownloaded: "\u5DF2\u4ECE\u4E91\u7AEF\u6062\u590D",
+        syncLastPush: "\u4E0A\u6B21\u4E0A\u4F20",
+        syncLastPull: "\u4E0A\u6B21\u4E0B\u8F7D",
+        syncNever: "\u65E0",
+        syncConfirmTitle: "\u4ECE\u4E91\u7AEF\u4E0B\u8F7D",
+        syncConfirmDesc: "\u5C06\u7528\u6240\u9009\u6587\u4EF6\u8986\u76D6\u672C\u673A\u5BF9\u5E94\u7684\u4E00\u9879\uFF08\u8986\u76D6\u524D\u4F1A\u5728\u539F\u6587\u4EF6\u65C1\u7559\u4E0B .zcodepro-backup \u5907\u4EFD\uFF09\uFF1B\u672C\u673A\u7684\u540C\u6B65\u914D\u7F6E\u4E0E\u767B\u5F55\u51ED\u636E\u4E0D\u53D7\u5F71\u54CD\u3002\u6A21\u578B\u8BBE\u7F6E\u6062\u590D\u540E\u5EFA\u8BAE\u91CD\u542F ZCode \u751F\u6548\u3002\u786E\u8BA4\u5BFC\u5165\uFF1F",
+        syncConfirmGo: "\u786E\u8BA4\u5BFC\u5165",
+        syncPickDesc: "\u56FA\u5B9A\u540D\u6587\u4EF6\u59CB\u7EC8\u662F\u6700\u65B0\u4E00\u7248\uFF0C\u5E26\u65F6\u95F4\u6233\u7684\u662F\u6BCF\u6B21\u4E0A\u4F20\u7559\u4E0B\u7684\u5386\u53F2\u7248\u672C\uFF1B\u201C\u5BFC\u5165\u201D\u7528\u6240\u9009\u6587\u4EF6\u8986\u76D6\u672C\u673A\u5BF9\u5E94\u7684\u4E00\u9879\u3002",
+        syncVerDeleteLatestNote: "\u6CE8\u610F\uFF1A\u8FD9\u662F\u201C\u6700\u65B0\u201D\u6587\u4EF6\uFF0C\u65E7\u7248 zcode-pro \u7684\u201C\u4ECE\u4E91\u7AEF\u4E0B\u8F7D\u201D\u4F9D\u8D56\u5B83\uFF0C\u5220\u9664\u540E\u65E7\u7248\u673A\u5668\u5C06\u65E0\u6CD5\u4E0B\u8F7D\uFF1B\u5E26\u65F6\u95F4\u6233\u7684\u5386\u53F2\u7248\u672C\u4E0D\u53D7\u5F71\u54CD\u3002",
+        syncHint: "\u540C\u6B65\u767B\u5F55\u51ED\u636E\u4EC5\u4FDD\u5B58\u5728\u672C\u673A zcodepro.json\uFF1B\u6A21\u578B\u8BBE\u7F6E\u5305\u542B\u81EA\u5B9A\u4E49\u4F9B\u5E94\u5546\u7684 API Key\uFF0C\u53EA\u4F1A\u4E0A\u4F20\u5230\u4F60\u81EA\u5DF1\u7684 WebDAV\u3002",
+        syncTest: "\u6D4B\u8BD5",
+        syncTesting: "\u6D4B\u8BD5\u4E2D\u2026",
+        syncTestEmpty: "\u8BF7\u5148\u586B\u5199 URL",
+        syncTestFailed: "\u6D4B\u8BD5\u5931\u8D25",
+        syncTestStepConnect: "\u8FDE\u63A5",
+        syncTestStepDir: "\u76EE\u5F55",
+        syncTestStepList: "\u6587\u4EF6",
+        syncTestFilesFound: "\u4E91\u7AEF\u5DF2\u6709 {n} \u4E2A\u5907\u4EFD\u6587\u4EF6",
+        syncPickTitle: "\u8BF7\u9009\u62E9\u4E00\u4E2A\u6587\u4EF6",
+        syncPickLoading: "\u6B63\u5728\u8BFB\u53D6\u4E91\u7AEF\u6587\u4EF6\u5217\u8868\u2026",
+        syncPickEmpty: "\u4E91\u7AEF\u8FD8\u6CA1\u6709\u5907\u4EFD\u6587\u4EF6\uFF0C\u8BF7\u5148\u5728\u5176\u4ED6\u7535\u8111\u4E0A\u4F20",
+        syncVerImport: "\u5BFC\u5165",
+        syncVerImporting: "\u5BFC\u5165\u4E2D\u2026",
+        syncVerDelete: "\u5220\u9664",
+        syncVerSave: "\u4FDD\u5B58\u5230\u78C1\u76D8",
+        syncVerSaving: "\u4FDD\u5B58\u4E2D\u2026",
+        syncVerLatest: "\u6700\u65B0",
+        syncVerDeleteTitle: "\u5220\u9664\u4E91\u7AEF\u6587\u4EF6",
+        syncVerDeleteDesc: "\u5C06\u5220\u9664\u4E91\u7AEF\u7684\u8FD9\u4EFD\u5907\u4EFD\uFF0C\u4E0D\u53EF\u6062\u590D\uFF1A",
+        syncVerDeleted: "\u5DF2\u5220\u9664\u4E91\u7AEF\u5907\u4EFD",
+        syncVerSaved: "\u5DF2\u4FDD\u5B58\u5230",
+        devModeDesc: "\u5F00\u53D1\u8C03\u8BD5\u7528\uFF1A\u6539\u5B8C zcode-pro \u4EE3\u7801\u540E\u4E0D\u5FC5\u91CD\u542F ZCode\uFF0C\u70B9\u201C\u91CD\u8F7D ZCode Pro\u201D\u5373\u53EF\u52A0\u8F7D\u65B0\u4EE3\u7801\u3002\u6D41\u7A0B\u4E3A\u81EA\u52A8\u6784\u5EFA\uFF08\u9700\u5728\u6E90\u7801\u76EE\u5F55\u8FD0\u884C\uFF09\u2192 \u4EE5\u65B0\u8FDB\u7A0B\u91CD\u542F ZCode Pro\uFF08\u672C\u5730\u52A9\u624B\u4E0E\u6CE8\u5165\u811A\u672C\u90FD\u6362\u65B0\uFF09\u2192 \u6240\u6709 ZCode \u7A97\u53E3\u81EA\u52A8\u5237\u65B0\u5E76\u91CD\u65B0\u6CE8\u5165\uFF1BZCode \u672C\u4F53\u4E0E\u5DF2\u6253\u5F00\u7684\u4F1A\u8BDD\u4E0D\u53D7\u5F71\u54CD\u3002",
+        devReload: "\u91CD\u8F7D ZCode Pro",
+        devReloading: "\u91CD\u8F7D\u4E2D\u2026",
+        devReloadDesc: "\u70B9\u51FB\u540E\u7EA6 2-3 \u79D2\u5185\u6240\u6709 ZCode \u7A97\u53E3\u81EA\u52A8\u5237\u65B0\u4E00\u6B21\u5E76\u52A0\u8F7D\u65B0\u811A\u672C\u3002",
+        rowGapName: "\u6BB5\u843D\u95F4\u8DDD",
+        rowGapDesc: "\u4F1A\u8BDD\u4E2D\u6BB5\u843D\u7B49\u6587\u672C\u5757\u4E4B\u95F4\u7684\u5782\u76F4\u95F4\u8DDD\uFF08\u56DE\u5408\u4E4B\u95F4\u3001\u7B54\u6848\u5185\u90E8\uFF09\u3002",
+        listSpacingName: "\u5217\u8868\u4E0A\u4E0B\u8FB9\u8DDD",
+        listSpacingDesc: "\u7B54\u6848\u4E2D\u5217\u8868\u4E0A\u4E0B\u7684\u7559\u767D\u3002",
+        listItemSpacingName: "\u5217\u8868\u9879\u95F4\u8DDD",
+        listItemSpacingDesc: "\u5217\u8868\u4E2D\u76F8\u90BB\u5217\u8868\u9879\u4E4B\u95F4\u7684\u95F4\u8DDD\u3002",
+        quoteCodeSpacingName: "\u5F15\u7528\u5757\u4E0A\u4E0B\u8FB9\u8DDD",
+        quoteCodeSpacingDesc: "\u5F15\u7528\u5757\u4E0E\u4EE3\u7801\u5757\u4E0A\u4E0B\u7684\u7559\u767D\u3002",
+        codeLineHeightName: "\u4EE3\u7801\u5757\u884C\u9AD8",
+        codeLineHeightDesc: "\u4EE3\u7801\u5757\u5185\u4EE3\u7801\u884C\u7684\u884C\u9AD8\uFF08\u500D\u6570\uFF09\u3002",
+        tableSpacingName: "\u8868\u683C\u4E0A\u4E0B\u8FB9\u8DDD",
+        tableSpacingDesc: "\u8868\u683C\u4E0A\u4E0B\u7684\u7559\u767D\u3002",
+        tableCellPaddingName: "\u5355\u5143\u683C\u4E0A\u4E0B/\u5DE6\u53F3\u8FB9\u8DDD",
+        tableCellPaddingDesc: "\u8868\u683C\u5355\u5143\u683C\u5185\u7684\u7559\u767D\uFF1B\u5DE6\u8F93\u5165\u6846\u4E3A\u4E0A\u4E0B\u3001\u53F3\u4E3A\u5DE6\u53F3\u3002",
+        lineHeightName: "\u56DE\u7B54\u884C\u9AD8",
+        lineHeightDesc: "\u56DE\u7B54\u6B63\u6587\u7684\u884C\u9AD8\uFF08\u500D\u6570\uFF09\u3002",
+        thinkingLineHeightName: "\u601D\u8003\u884C\u9AD8",
+        thinkingLineHeightDesc: "\u201C\u5DF2\u5DE5\u4F5C/\u5DE5\u4F5C\u4E2D\u201D\u8FC7\u7A0B\u8BB0\u5F55\uFF08\u8BFB\u53D6/\u7F16\u8F91/\u67E5\u9605/\u7EC8\u7AEF\u6761\u76EE\u4E0E\u601D\u8003\u5185\u5BB9\uFF09\u7684\u884C\u9AD8\uFF08\u500D\u6570\uFF09\u3002",
+        userLineHeightName: "\u63D0\u95EE\u884C\u9AD8",
+        userLineHeightDesc: "\u63D0\u95EE\u5185\u5BB9\u7684\u884C\u9AD8\uFF08\u500D\u6570\uFF09\u3002",
+        contentWidthName: "\u5185\u5BB9\u5BBD\u5EA6",
+        contentWidthDesc: "\u4F1A\u8BDD\u5185\u5BB9\u7684\u6700\u5927\u5BBD\u5EA6\uFF0C\u53EF\u8F93\u5165 px \u6216 %\uFF08\u5982 900px\u300185%\uFF09\uFF1B\u9ED8\u8BA4\u663E\u793A\u5F53\u524D\u5B9E\u9645\u5BBD\u5EA6\uFF0C% \u76F8\u5BF9\u4F1A\u8BDD\u533A\u57DF\u3002",
+        defaultValue: "\u9ED8\u8BA4",
+        resetDefault: "\u6062\u590D\u9ED8\u8BA4",
+        featureProjectMenu: "\u9879\u76EE\u83DC\u5355\u589E\u5F3A",
+        featureProjectMenuDesc: "\u9879\u76EE\u66F4\u591A\u83DC\u5355\uFF1A\u6253\u5F00\u6587\u4EF6\u5939\u4E0E\u590D\u5236\u8DEF\u5F84\uFF08\u522B\u540D\u4E0E\u5207\u6362\u6587\u4EF6\u5939\u5DF2\u505C\u7528\uFF09\u3002",
+        featureTaskOrder: "\u4FA7\u8FB9\u680F\u4F1A\u8BDD\u62D6\u52A8\u6392\u5E8F",
+        featureTaskOrderDesc: "\u62D6\u52A8\u8C03\u6574\u7F6E\u9876\u3001\u9879\u76EE\u4E0E\u5206\u7EC4\u4E2D\u7684\u4F1A\u8BDD\u987A\u5E8F\uFF0C\u91CD\u542F\u540E\u4E0D\u53D8\u3002",
+        featureSessionSwitch: "\u4F1A\u8BDD\u5FEB\u6377\u5207\u6362",
+        featureSessionSwitchDesc: "{last} \u6765\u56DE\u4E0A\u6B21\u4F1A\u8BDD\uFF1Balt+\u65B9\u5411\u952E/\u5FEB\u6377\u952E\u9009\u6700\u8FD1\u4F1A\u8BDD\uFF1B\u952E\u4F4D\u53EF\u6539",
+        featureTitleLock: "\u91CD\u547D\u540D\u4F1A\u8BDD\u540D\u9501\u5B9A",
+        featureTitleLockDesc: "\u624B\u52A8\u91CD\u547D\u540D\u8FC7\u7684\u4F1A\u8BDD\u4E0D\u88AB\u81EA\u52A8\u6807\u9898\u8986\u76D6\uFF0C\u4FA7\u680F\u59CB\u7EC8\u663E\u793A\u91CD\u547D\u540D\u540E\u7684\u540D\u5B57\u3002",
+        tabTitleGen: "\u81EA\u52A8\u91CD\u547D\u540D",
+        titleGenShortDesc: "\u65B0\u4F1A\u8BDD\u5F00\u59CB\u4F5C\u7B54\u65F6\uFF0C\u6309\u6240\u9009\u4F9B\u5E94\u5546\u4E0E\u63D0\u793A\u8BCD\u751F\u6210\u4EFB\u52A1\u540D\u5E76\u6309\u624B\u52A8\u91CD\u547D\u540D\u4FDD\u5B58\uFF0C\u5B98\u65B9\u81EA\u52A8\u6807\u9898\u4E0D\u518D\u8986\u76D6\u3002",
+        titleGenEnabled: "\u542F\u7528",
+        titleGenProvider: "\u4F9B\u5E94\u5546",
+        titleGenProviderNone: "\u4E0D\u8DDF\u968F\uFF08\u81EA\u586B\u5730\u5740\uFF09",
+        titleGenProviderSession: "\u8DDF\u968F\u5F53\u524D\u4F1A\u8BDD",
+        titleGenProviderDeleted: "\uFF08\u5DF2\u5220\u9664\uFF09",
+        titleGenModel: "\u6A21\u578B",
+        titleGenModelHint: "\u4ECE\u5217\u8868\u9009\u62E9\uFF0C\u6216\u76F4\u63A5\u586B\u5199\u6A21\u578B id",
+        titleGenModelEmpty: "\uFF08\u672A\u9009\u62E9\uFF09",
+        titleGenModelSessionHint: "\u4ECE\u5217\u8868\u9009\u62E9\u6A21\u578B\uFF1B\u5217\u8868\u7B2C\u4E00\u9879\u4E3A\u8DDF\u968F\u4F1A\u8BDD\u5F53\u524D\u6A21\u578B",
+        titleGenModelFollowSession: "\u8DDF\u968F\u5F53\u524D\u4F1A\u8BDD\u5F53\u524D\u6A21\u578B",
+        titleGenModelManualHint: "\u8F93\u5165\u6A21\u578B id",
+        titleGenBaseUrl: "\u63A5\u53E3\u5730\u5740",
+        titleGenApiKey: "API Key",
+        titleGenFormat: "\u534F\u8BAE",
+        titleGenPrompt: "\u63D0\u793A\u8BCD",
+        titleGenPromptPlaceholder: "\u7559\u7A7A\u4F7F\u7528\u5185\u7F6E\u9ED8\u8BA4\u63D0\u793A\u8BCD\uFF08\u70B9\u51FB\u4E0B\u65B9\u6309\u94AE\u53EF\u67E5\u770B\uFF09",
+        titleGenPromptReset: "\u4F7F\u7528\u9ED8\u8BA4\u63D0\u793A\u8BCD",
+        titleGenSample: "\u6D4B\u8BD5\u6D88\u606F",
+        titleGenTest: "\u6D4B\u8BD5\u751F\u6210",
+        titleGenTesting: "\u751F\u6210\u4E2D\u2026",
+        titleGenTestOk: "\u751F\u6210\u7ED3\u679C\uFF1A",
+        titleGenTestFailed: "\u751F\u6210\u5931\u8D25",
+        // 手动“自动重命名”（任务行悬浮按钮 / 右键菜单入口）与其开关
+        titleGenManual: "\u624B\u52A8\u91CD\u547D\u540D",
+        titleGenHoverBtn: "\u4EFB\u52A1\u884C\u60AC\u6D6E\u6309\u94AE",
+        titleGenHoverBtnDesc: "\u9F20\u6807\u60AC\u505C\u4EFB\u52A1\u884C\u65F6\uFF0C\u5728\u5F52\u6863\u6309\u94AE\u65C1\u663E\u793A\u201C\u81EA\u52A8\u91CD\u547D\u540D\u201D\u6309\u94AE\u3002",
+        titleGenMenuEntry: "\u53F3\u952E\u83DC\u5355\u9879",
+        titleGenMenuEntryDesc: "\u4EFB\u52A1\u53F3\u952E\u83DC\u5355\u201C\u91CD\u547D\u540D\u4EFB\u52A1\u201D\u4E0B\u65B9\u663E\u793A\u201C\u81EA\u52A8\u91CD\u547D\u540D\u201D\u3002",
+        titleGenRecentQa: "\u6700\u8FD1\u95EE\u7B54\u6570",
+        titleGenRecentQaDesc: "\u624B\u52A8\u91CD\u547D\u540D\u53D6\u4F1A\u8BDD\u6700\u8FD1\u51E0\u8F6E\u95EE\u7B54\u4F5C\u4E3A\u8D77\u540D\u7D20\u6750\u3002",
+        autoRenameItem: "\u81EA\u52A8\u91CD\u547D\u540D",
+        autoRenameWorking: "\u6B63\u5728\u751F\u6210\u4EFB\u52A1\u540D\u2026",
+        autoRenameDone: "\u5DF2\u91CD\u547D\u540D\uFF1A",
+        featureWsRunning: "\u6298\u53E0\u65F6\u4EFB\u52A1\u8FD0\u884C\u4E2D\u63D0\u793A",
+        featureWsRunningDesc: "\u6709\u4F1A\u8BDD\u8FD0\u884C\u65F6\uFF0C\u6298\u53E0\u7684\u9879\u76EE\u4E0E\u4EFB\u52A1\u5206\u533A\u5934\u663E\u793A\u52A0\u8F7D\u56FE\u6807\uFF0C\u5168\u90E8\u7ED3\u675F\u6D88\u5931\u3002",
+        tabPerformance: "\u6027\u80FD",
+        perfDesc: "ZCode \u4E3A\u6BCF\u4E2A\u6253\u5F00\u8FC7\u7684\u9879\u76EE\u5E38\u9A7B\u4E00\u4E2A\u4F1A\u8BDD\u8FDB\u7A0B\uFF0C\u5E94\u7528\u81EA\u8EAB\u4E0D\u4F1A\u56DE\u6536\uFF0C\u9879\u76EE\u591A\u4E86\u5185\u5B58\u5360\u7528\u5C31\u9AD8\u3002\u5F00\u542F\u540E\uFF0C\u957F\u65F6\u95F4\u672A\u4F7F\u7528\u4E14\u6CA1\u6709\u4EFB\u52A1\u5728\u8DD1\u7684\u9879\u76EE\u4F1A\u88AB\u81EA\u52A8\u91CA\u653E\uFF1A\u4F1A\u8BDD\u8BB0\u5F55\u4E0D\u53D7\u5F71\u54CD\uFF0C\u518D\u6B21\u6253\u5F00\u65F6\u81EA\u52A8\u6062\u590D\uFF0C\u4EC5\u9996\u6B21\u56DE\u590D\u6709\u51E0\u79D2\u7B49\u5F85\u3002\u6B63\u5728\u4F7F\u7528\u7684\u9879\u76EE\u3001\u8FD0\u884C\u4E2D\u7684\u4F1A\u8BDD\u4E0E\u540E\u53F0\u547D\u4EE4\u3001\u5B9A\u65F6\u4EFB\u52A1\u90FD\u4E0D\u4F1A\u88AB\u56DE\u6536\u3002\u540E\u53F0\u547D\u4EE4\u68C0\u6D4B\u4F9D\u8D56\u7CFB\u7EDF\u8FDB\u7A0B\u4FE1\u606F\uFF08Linux / macOS / Windows \u5404\u8D70\u7CFB\u7EDF\u81EA\u5E26\u5DE5\u5177\uFF09\uFF0C\u68C0\u6D4B\u4E0D\u53EF\u7528\u65F6\u529F\u80FD\u81EA\u52A8\u505C\u7528\u3002",
+        featureIdleReclaim: "\u7A7A\u95F2\u9879\u76EE\u5185\u5B58\u56DE\u6536",
+        featureIdleReclaimDesc: "\u6EE1\u8DB3\u6761\u4EF6\u7684\u9879\u76EE\u81EA\u52A8\u91CA\u653E\u5185\u5B58\uFF0C\u4F1A\u8BDD\u4E0D\u53D7\u5F71\u54CD\uFF0C\u518D\u6B21\u6253\u5F00\u81EA\u52A8\u6062\u590D\u3002",
+        idleReclaimMinutesLabel: "\u7A7A\u95F2\u591A\u4E45\u540E\u56DE\u6536\uFF08\u5206\u949F\uFF09",
+        idleReclaimStartupLabel: "\u542F\u52A8\u540E\u591A\u4E45\u56DE\u6536\u4E00\u6B21\uFF08\u5206\u949F\uFF09",
+        idleReclaimStartupHint: "\u5E94\u7528\u542F\u52A8\u4F1A\u4E3A\u6BCF\u4E2A\u6062\u590D\u7684\u9879\u76EE\u9884\u70ED\u8FDB\u7A0B\uFF0C\u5230\u70B9\u628A\u672A\u4F7F\u7528\u7684\u9879\u76EE\u4E00\u6B21\u6536\u6389\uFF1B0 = \u542F\u52A8\u540E\u7ACB\u5373\u56DE\u6536\uFF0C\u8BE5\u6B21\u4E0D\u53D7\u4E0A\u4E00\u9879\u7A7A\u95F2\u65F6\u957F\u9650\u5236",
+        idleReclaimUnit: "\u5206\u949F",
+        featureToolbarIcons: "\u4FA7\u680F\u83DC\u5355\u5E76\u5165\u9876\u680F",
+        featureToolbarIconsDesc: "\u65B0\u5EFA\u4EFB\u52A1/\u641C\u7D22/\u81EA\u52A8\u5316/\u63D2\u4EF6\u5E02\u573A\u6536\u6210\u9876\u680F\u56FE\u6807\u6309\u94AE\u3002",
+        tbNewTask: "\u65B0\u5EFA\u4EFB\u52A1",
+        tbSearch: "\u641C\u7D22",
+        tbAutomations: "\u81EA\u52A8\u5316",
+        tbPluginStore: "\u63D2\u4EF6\u5E02\u573A",
+        featurePinnedCollapse: "\u5DF2\u7F6E\u9876\u5206\u533A\u53EF\u6298\u53E0",
+        featurePinnedCollapseDesc: "\u4FA7\u8FB9\u680F\u5DF2\u7F6E\u9876\u6807\u9898\u53EF\u70B9\u51FB\u6298\u53E0/\u5C55\u5F00\u5176\u4EFB\u52A1\u5217\u8868\u3002",
+        featureSandboxReclaim: "\u63D2\u4EF6\u754C\u9762\u6C99\u7BB1\u56DE\u6536",
+        featureSandboxReclaimDesc: "\u6C99\u7BB1\u6EE1 64 \u4E2A\u65F6\u81EA\u52A8\u91CA\u653E\u6700\u65E9\u7684\uFF0C\u65B0\u5361\u7247\u4E0D\u518D\u6253\u4E0D\u5F00\uFF1B\u65E7\u5361\u91CD\u65B0\u6253\u5F00\u6240\u5728\u4F1A\u8BDD\u5373\u53EF\u6062\u590D\u3002",
+        featurePluginCardRetry: "\u63D2\u4EF6\u5361\u7247\u81EA\u52A8\u91CD\u8BD5",
+        featurePluginCardRetryDesc: "\u56E0\u540D\u989D\u4E0A\u9650\u52A0\u8F7D\u5931\u8D25\u7684\u63D2\u4EF6\u5361\u7247\u81EA\u52A8\u70B9\u51FB\u91CD\u65B0\u52A0\u8F7D\uFF0C\u540D\u989D\u7A7A\u51FA\u540E\u81EA\u52A8\u6062\u590D\u3002",
+        visionCardUi: "\u601D\u8003\u8FC7\u7A0B\u663E\u793A Vision \u5361\u7247",
+        pinnedToggleAria: "\u6298\u53E0/\u5C55\u5F00\u5DF2\u7F6E\u9876",
+        sidebarProjectSpacingName: "\u9879\u76EE\u95F4\u8DDD",
+        sidebarProjectSpacingDesc: "\u4FA7\u8FB9\u680F\u4E2D\u76F8\u90BB\u9879\u76EE\u884C\u4E4B\u95F4\u7684\u89C6\u89C9\u95F4\u8DDD\uFF08\u542B\u884C\u5185\u7559\u767D\uFF09\uFF1B\u8BBE\u7F6E\u540E\u5404\u5206\u533A\uFF08\u5DF2\u7F6E\u9876/\u9879\u76EE/\u4EFB\u52A1\uFF09\u4E4B\u95F4\u7684\u95F4\u8DDD\u4E5F\u7EDF\u4E00\u4E3A\u8BE5\u503C\u3002",
+        sidebarTaskSpacingName: "\u4EFB\u52A1\u95F4\u8DDD",
+        sidebarTaskSpacingDesc: "\u4FA7\u8FB9\u680F\u4E2D\u76F8\u90BB\u4EFB\u52A1\u884C\u4E4B\u95F4\u7684\u5782\u76F4\u95F4\u8DDD\uFF08\u542B\u884C\u5185\u4E0A\u4E0B\u7559\u767D\uFF09\u3002",
+        uiFontName: "\u754C\u9762\u5B57\u4F53",
+        uiFontDesc: "\u9664\u7EC8\u7AEF\u5916\u6240\u6709\u754C\u9762\u6587\u5B57\u7684\u5B57\u4F53\uFF08\u7EC8\u7AEF\u5B57\u4F53\u5728\u5B98\u65B9\u8BBE\u7F6E\u4E2D\u8C03\u6574\uFF09\u3002",
+        userFontName: "\u63D0\u95EE\u5B57\u4F53",
+        userFontDesc: "\u4F1A\u8BDD\u4E2D\u63D0\u95EE\u5185\u5BB9\u7684\u5B57\u4F53\uFF1B\u9009\u201C\u9ED8\u8BA4\u201D\u65F6\u8DDF\u968F\u754C\u9762\u5B57\u4F53\u3002",
+        assistantFontName: "\u56DE\u7B54\u5B57\u4F53",
+        assistantFontDesc: "\u4F1A\u8BDD\u4E2D\u56DE\u7B54\u6B63\u6587\u7684\u5B57\u4F53\uFF08\u4EE3\u7801\u5757\u4ECD\u7528\u7B49\u5BBD\u5B57\u4F53\uFF09\uFF1B\u9009\u201C\u9ED8\u8BA4\u201D\u65F6\u8DDF\u968F\u754C\u9762\u5B57\u4F53\u3002",
+        switcherHint: "{prev} / {next} \u6216 \u2191 / \u2193 \u9009\u62E9\uFF0CEnter \u6216\u70B9\u51FB\u884C\u5207\u6362\uFF0CEsc \u53D6\u6D88",
+        switcherCurrent: "\u5F53\u524D",
+        switcherEmpty: "\u6682\u65E0\u4E0A\u6B21\u4F1A\u8BDD\uFF08\u5207\u6362\u8FC7\u4F1A\u8BDD\u540E\u53EF\u7528\uFF09",
+        switcherFailed: "\u672A\u80FD\u5207\u6362\u5230\u8BE5\u4F1A\u8BDD\uFF08\u53EF\u80FD\u5DF2\u5220\u9664\uFF09",
+        switcherMore: "\u8FD8\u6709 {n} \u6761 \xB7 \u6309 c \u52A0\u8F7D",
+        switcherRunning: "\u8FD0\u884C\u4E2D",
+        switcherUnseen: "\u672A\u67E5\u770B",
+        switcherAttentionHint: "\u8FD0\u884C\u4E2D / \u8FD0\u884C\u5B8C\u672A\u67E5\u770B\u7684\u4EFB\u52A1 \xB7 {prev} / {next} \u6216 \u2191 / \u2193 \u9009\u62E9\uFF0CEnter \u6216\u70B9\u51FB\u884C\u5207\u6362",
+        switcherAttentionEmpty: "\u6682\u65E0\u8FD0\u884C\u4E2D\u6216\u672A\u67E5\u770B\u7684\u4EFB\u52A1",
+        featureNewtabPanels: "\u65B0\u6807\u7B7E\u9875\u63D2\u4EF6\u9762\u677F\u5165\u53E3",
+        featureNewtabPanelsDesc: "\u65B0\u6807\u7B7E\u9875\u52A0\u5165\u7B2C\u4E09\u65B9\u63D2\u4EF6\uFF08headroom\u3001rtk \u7B49\uFF09\u7684\u9762\u677F\u5361\u7247\uFF0C\u70B9\u51FB\u5728\u4FA7\u8FB9\u9762\u677F\u6253\u5F00\u3002",
+        ntpDescSuffix: "\u63D2\u4EF6\u9762\u677F",
+        ntpNeedSession: "\u5148\u6253\u5F00\u4E00\u4E2A\u4EFB\u52A1\u4F1A\u8BDD\uFF0C\u518D\u4ECE\u65B0\u6807\u7B7E\u9875\u6253\u5F00\u63D2\u4EF6\u9762\u677F",
+        featureStatusBarDesc: "\u63D0\u95EE\u8F93\u5165\u6846\u53F3\u4E0B\u89D2\u548C\u6BCF\u8F6E\u56DE\u7B54\u6700\u540E\u663E\u793A\u7EDF\u8BA1\u9879\u3002",
+        tabStylesPane: "\u6837\u5F0F",
+        tabStatusPane: "\u72B6\u6001\u680F",
+        themeColorsPane: "\u4E3B\u9898",
+        themeBgRegions: "\u5206\u533A\u80CC\u666F",
+        themeBgRegionFollow: "\u65E0\u80CC\u666F",
+        themeBgRegionLeft: "\u5DE6\u4FA7\u8FB9\u680F",
+        themeBgRegionCenter: "\u4E2D\u95F4\u533A\u57DF",
+        themeBgRegionRight: "\u53F3\u4FA7\u8FB9\u680F",
+        themeBgPane: "\u58C1\u7EB8",
+        themeSkinTitle: "\u76AE\u80A4",
+        themeSkinDesc: "\u77E5\u540D\u7F16\u8F91\u5668\u4E3B\u9898\u914D\u8272\uFF0C\u81EA\u52A8\u5339\u914D ZCode \u7684\u6D45\u8272 / \u6DF1\u8272\u6A21\u5F0F\uFF1B\u9ED8\u8BA4\u4FDD\u6301 ZCode \u539F\u6837\uFF0C\u81EA\u5B9A\u4E49\u5728\u4E0B\u65B9\u81EA\u884C\u8C03\u8272\u3002",
+        themeSkinCustom: "\u81EA\u5B9A\u4E49",
+        themeCustomTitle: "\u81EA\u5B9A\u4E49\u4E3B\u9898",
+        themeCustomHint: "\u6539\u989C\u8272\u5373\u5B9E\u65F6\u751F\u6548\uFF08\u81EA\u52A8\u5207\u5230\u81EA\u5B9A\u4E49\u76AE\u80A4\uFF09\uFF1B\u6D45\u8272\u3001\u6DF1\u8272\u5404\u914D\u4E00\u6B21\uFF0C\u9009\u597D 5 \u4E2A\u989C\u8272\u5373\u53EF\u751F\u6210\u6574\u5957\u754C\u9762\u914D\u8272\u3002",
+        themeCustomLight: "\u6D45\u8272",
+        themeCustomDark: "\u6DF1\u8272",
+        themeCustomBg: "\u80CC\u666F",
+        themeCustomCard: "\u5361\u7247",
+        themeCustomFg: "\u6B63\u6587",
+        themeCustomMuted: "\u6B21\u7EA7\u6587\u5B57",
+        themeCustomAccent: "\u5F3A\u8C03\u8272",
+        themeBgDesc: "\u58C1\u7EB8\u652F\u6301\u56FE\u7247\u3001\u89C6\u9891\u3001\u7F51\u9875\u4E09\u7C7B\uFF0C\u94FA\u5728\u754C\u9762\u540E\u65B9\uFF1B\u6765\u6E90\u53EF\u9009\u672C\u5730\u56FE\u5E93\uFF08\u5355\u9009\u4E00\u5F20\uFF09\u3001\u6587\u4EF6\u5939\uFF08\u5B9A\u65F6\u8F6E\u6362\uFF09\u3001\u56FE\u7247\u7F51\u5740\uFF08\u5B9A\u65F6\u5237\u65B0\uFF09\u6216\u7F51\u9875\u5730\u5740\uFF1B\u5DE6\u680F / \u4E2D\u680F / \u53F3\u680F\u53EF\u5206\u533A\u72EC\u7ACB\u8BBE\u7F6E\uFF08\u4EC5\u9759\u6001\u56FE\uFF0C\u7F29\u653E\u4E0E\u906E\u7F69\u53EF\u5355\u72EC\u8C03\uFF09\u3002\u4FA7\u680F\u3001\u4F1A\u8BDD\u6D41\u3001\u8F93\u5165\u6846\u548C\u8BBE\u7F6E\u5F39\u7A97\u90FD\u53EF\u900F\u51FA\u753B\u9762\u2014\u2014\u8BBE\u7F6E\u5F39\u7A97\u662F\u78E8\u7802\u73BB\u7483\uFF0C\u78E8\u7802\u6548\u679C\u53EF\u5728\u672C\u9875\u5173\u6389\uFF1B\u53F3\u952E\u83DC\u5355\u4E0E\u5176\u4ED6\u5F39\u7A97\u4FDD\u6301\u4E0D\u900F\u660E\u4FDD\u53EF\u8BFB\u3002\u672C\u5730\u56FE\u5E93\u968F WebDAV \u540C\u6B65\u4E0A\u4F20\uFF08\u8986\u76D6\u5F0F\uFF0C\u4E0D\u7559\u5386\u53F2\u7248\u672C\uFF09\u3002",
+        themeBgModeNone: "\u65E0\u58C1\u7EB8",
+        themeBgModeLibrary: "\u672C\u5730\u56FE\u5E93",
+        themeBgModeFolder: "\u6587\u4EF6\u5939",
+        themeBgModeUrl: "\u56FE\u7247\u7F51\u5740",
+        themeBgModeWeb: "\u7F51\u9875",
+        themeBgLibrary: "\u6211\u7684\u56FE\u5E93",
+        themeBgUpload: "\u4E0A\u4F20\u56FE\u7247/\u89C6\u9891",
+        themeBgEmpty: "\u8FD8\u6CA1\u6709\u4E0A\u4F20\u6587\u4EF6\uFF1B\u56FE\u7247\u652F\u6301 png / jpg / webp / gif / bmp / avif\uFF0810MB \u4EE5\u5185\uFF09\uFF0C\u89C6\u9891\u652F\u6301 mp4 / webm / mov\uFF08200MB \u4EE5\u5185\uFF09",
+        themeBgDelete: "\u5220\u9664",
+        themeBgNoneHint: "\u9009\u62E9\u4E00\u79CD\u58C1\u7EB8\u6765\u6E90\uFF1B\u6587\u4EF6\u5939\u53EF\u5B9A\u65F6\u8F6E\u6362\uFF0C\u56FE\u7247\u7F51\u5740\u53EF\u914D\u5408\u968F\u673A\u56FE API \u5B9A\u65F6\u5237\u65B0\u3002",
+        themeBgFolderPick: "\u6D4F\u89C8",
+        themeBgFolderPickTitle: "\u9009\u62E9\u58C1\u7EB8\u6587\u4EF6\u5939",
+        themeBgFolderHint: "\u9009\u62E9\u4E00\u4E2A\u88C5\u58C1\u7EB8\u7684\u6587\u4EF6\u5939\uFF0C\u6587\u4EF6\u539F\u5730\u8BFB\u53D6\u4E0D\u590D\u5236\u3002",
+        themeBgFolderRandom: "\u968F\u673A\u987A\u5E8F",
+        themeBgIntervalHint: "\u8F6E\u6362\u95F4\u9694\uFF08\u5206\u949F\uFF09",
+        themeBgIntervalUnit: "\u5206\u949F\u540E\u8F6E\u6362\uFF0C\u8BBE\u4E3A 0 \u4E0D\u8F6E\u6362",
+        themeBgFolderCount: "\u6587\u4EF6\u5939\u91CC\u6709 {n} \u4E2A\u58C1\u7EB8\u6587\u4EF6\uFF0C\u5B9A\u65F6\u8F6E\u6362\u4E2D\u3002",
+        themeBgFolderMissing: "\u6587\u4EF6\u5939\u4E0D\u5B58\u5728\u6216\u91CC\u9762\u6CA1\u6709\u58C1\u7EB8\u6587\u4EF6\u3002",
+        themeBgUrlIntervalUnit: "\u5206\u949F\u540E\u5237\u65B0\uFF0C\u8BBE\u4E3A 0 \u4E0D\u5237\u65B0",
+        themeBgUrlInvalid: "\u7F51\u5740\u9700\u4EE5 http(s):// \u5F00\u5934",
+        themeBgWebHint: "\u7F51\u9875\u58C1\u7EB8\u7528\u6C99\u7BB1 iframe \u94FA\u5728\u754C\u9762\u540E\u65B9\uFF0C\u9875\u9762\u9700\u81EA\u884C\u64AD\u653E\u52A8\u753B\u6216\u89C6\u9891\uFF1B\u4EC5\u9875\u9762\u81EA\u8EAB\u900F\u660E\u5E95\u65F6\u80FD\u900F\u51FA\u58C1\u7EB8\uFF0C\u90E8\u5206\u4F9D\u8D56\u767B\u5F55\u6001\u7684\u9875\u9762\u65E0\u6CD5\u663E\u793A\u3002",
+        themeBgSource: "\u6765\u6E90",
+        themeBgImage: "\u753B\u9762",
+        themeBgFit: "\u7F29\u653E\u65B9\u5F0F",
+        themeBgFitCover: "\u586B\u6EE1",
+        themeBgFitContain: "\u9002\u5E94",
+        themeBgFitFill: "\u62C9\u4F38",
+        themeBgFitTile: "\u5E73\u94FA",
+        themeBgMask: "\u906E\u7F69\u4E0D\u900F\u660E\u5EA6",
+        themeBgBlur: "\u753B\u9762\u6A21\u7CCA",
+        themeBgPanel: "\u9762\u677F\u4E0D\u900F\u660E\u5EA6",
+        themeBgDialogFrost: "\u8BBE\u7F6E\u5F39\u7A97\u78E8\u7802",
+        themeBgMisc: "\u5176\u4ED6",
+        themeBgFollowGlobal: "\u8DDF\u968F\u5168\u5C40",
+        themeBgRegionsHint: '\u6BCF\u884C\u7684\u7F29\u653E\u3001\u906E\u7F69\u53EF\u5355\u72EC\u8BBE\u7F6E\uFF0C\u9009"\u8DDF\u968F\u5168\u5C40"\u5373\u8DDF\u968F"\u753B\u9762"\u7684\u503C\uFF1B\u6A21\u7CCA\u3001\u8F6C\u573A\u3001\u64AD\u653E\u4EC5\u4F5C\u7528\u4E8E\u5168\u5C40\u58C1\u7EB8\uFF08\u5206\u533A\u53EA\u80FD\u94FA\u56FE\uFF0C\u4E0D\u80FD\u64AD\u89C6\u9891\uFF09\u3002\u5206\u533A\u7528\u6587\u4EF6\u5939\u65F6\uFF0C\u8F6E\u6362\u95F4\u9694\u4E0E\u968F\u673A\u987A\u5E8F\u6CBF\u7528\u5168\u5C40\u8BBE\u7F6E\u3002',
+        themeBgPlayback: "\u64AD\u653E\uFF08\u89C6\u9891\u58C1\u7EB8\uFF09",
+        themeBgVolume: "\u97F3\u91CF",
+        themeBgVolumeHint: "\u89C6\u9891\u58C1\u7EB8\u7684\u97F3\u8F68\u97F3\u91CF\uFF0C0 = \u9759\u97F3\uFF08\u9ED8\u8BA4\uFF09",
+        themeBgRate: "\u500D\u901F",
+        themeBgFps: "\u5E27\u7387\u4E0A\u9650",
+        themeBgFpsOff: "\u539F\u59CB\u5E27\u7387",
+        themeBgFpsHint: "\u5BF9\u89C6\u9891\u58C1\u7EB8\u91CD\u7F16\u7801\u62BD\u5E27\u4EE5\u7701\u8D44\u6E90\uFF0C\u9700\u8981 ffmpeg\uFF1B\u672A\u5B89\u88C5\u65F6\u4FDD\u6301\u539F\u59CB\u5E27\u7387\u3002",
+        themeBgTransition: "\u5207\u6362\u8F6C\u573A",
+        themeBgTransitionCut: "\u76F4\u63A5\u5207\u6362",
+        themeBgTransitionFade: "\u6DE1\u5165\u6DE1\u51FA",
+        themeBgPause: "\u6682\u505C\u6761\u4EF6",
+        themeBgPauseHidden: "\u7A97\u53E3\u6700\u5C0F\u5316\u65F6",
+        themeBgPauseBlur: "\u7A97\u53E3\u5931\u7126\u65F6",
+        themeBgPauseBattery: "\u7535\u6C60\u4F9B\u7535\u65F6",
+        themeBgDeletedActive: "\u5F53\u524D\u58C1\u7EB8\u5DF2\u5220\u9664\uFF0C\u5DF2\u81EA\u52A8\u505C\u7528\u58C1\u7EB8",
+        tableCopyBtn: "\u590D\u5236\u8868\u683C",
+        tableCopied: "\u8868\u683C\u5DF2\u590D\u5236",
+        sbItemCtx: "\u4E0A\u4E0B\u6587\u5360\u7528",
+        sbItemTokRate: "\u6700\u8FD1\u8F93\u51FA tokens/s",
+        sbItemQuestions: "\u63D0\u95EE\u6B21\u6570",
+        sbMaster: "\u542F\u7528\u7EDF\u8BA1",
+        sbMasterDesc: "\u603B\u5F00\u5173\uFF1A\u5173\u95ED\u540E\u8F93\u5165\u6846\u53F3\u4E0B\u89D2\u7684\u7EDF\u8BA1\u884C\u4E0E\u6BCF\u8F6E\u56DE\u7B54\u7684\u7528\u91CF\u6807\u6CE8\u4E00\u8D77\u505C\u7528\u3002",
+        sbGroupSession: "\u4F1A\u8BDD\u7EDF\u8BA1\uFF08\u8DDF\u968F\u5F53\u524D\u4F1A\u8BDD\uFF09",
+        sbGroupGlobal: "\u603B\u7EDF\u8BA1",
+        sbGroupTurn: "\u6BCF\u8F6E\u7EDF\u8BA1\uFF08\u56DE\u7B54\u672B\u5C3E\uFF09",
+        sbLabelIn: "\u8F93\u5165",
+        sbLabelOut: "\u8F93\u51FA",
+        sbLabelCache: "\u7F13\u5B58",
+        turnUsageTitle: "\u672C\u8F6E token",
+        sbLabelQuestions: "\u63D0\u95EE",
+        sbItemTodayTokens: "\u4ECA\u65E5 token",
+        sbItemTasks: "\u4EFB\u52A1\u603B\u6570",
+        sbLabelCtx: "\u4E0A\u4E0B\u6587",
+        sbLabelTurns: "\u8C03\u7528",
+        sbLabelToday: "\u4ECA\u65E5",
+        sbLabelTasks: "\u4EFB\u52A1",
+        sbItemTotalTokens: "\u7D2F\u8BA1 token",
+        sbLabelTotal: "\u7D2F\u8BA1",
+        sbMoveUp: "\u4E0A\u79FB",
+        sbMoveDown: "\u4E0B\u79FB",
+        sbVisible: "\u663E\u793A",
+        sbHidden: "\u9690\u85CF",
+        tabShortcuts: "\u5FEB\u6377\u952E",
+        hkTitle: "\u4F1A\u8BDD\u5FEB\u6377\u5207\u6362",
+        hkAltZ: "\u5728\u5F53\u524D\u4E0E\u4E0A\u6B21\u4F7F\u7528\u7684\u4F1A\u8BDD\u95F4\u6765\u56DE\u5207\u6362",
+        hkAltX: "\u5F39\u7A97\u4E2D\u4E0A\u79FB\u9AD8\u4EAE\uFF08\u66F4\u65E9\u7684\u4F1A\u8BDD\uFF09",
+        hkAltC: "\u5F39\u7A97\u4E2D\u4E0B\u79FB\u9AD8\u4EAE\uFF08\u66F4\u65B0\u7684\u4F1A\u8BDD\uFF09\uFF1B\u5230\u5E95\u4E14\u8FD8\u6709\u66F4\u591A\u65F6\u52A0\u8F7D 5 \u6761\u5E76\u9009\u4E2D\u65B0\u52A0\u8F7D\u7684\u7B2C\u4E00\u6761",
+        hkAltE: "\u6253\u5F00\u6700\u8FD1 10 \u6761\u4EFB\u52A1\u5217\u8868",
+        hkAltR: "\u6253\u5F00\u6B63\u5728\u8FD0\u884C\u4E0E\u8FD0\u884C\u5B8C\u672A\u67E5\u770B\u7684\u4EFB\u52A1\u5217\u8868",
+        hkArrow: "\u5F39\u7A97\u6253\u5F00\u65F6\u79FB\u52A8\u9AD8\u4EAE\uFF08\u4E0E alt + {prev} / alt + {next} \u540C\u89C4\u5219\uFF09",
+        hkEnter: "\u786E\u8BA4\u5207\u6362\u5230\u9AD8\u4EAE\u7684\u4F1A\u8BDD",
+        hkEsc: "\u53D6\u6D88\u5E76\u5173\u95ED\u5F39\u7A97",
+        hkModify: "\u4FEE\u6539",
+        hkRecording: "\u6309\u4E0B\u65B0\u952E\u2026",
+        hkInvalid: "\u5FEB\u6377\u952E\u53EA\u652F\u6301\u5355\u4E2A\u5B57\u6BCD\u6216\u6570\u5B57",
+        hkConflict: "alt+{k} \u5DF2\u7528\u4E8E\u201C{name}\u201D",
+        hkSaved: "\u5FEB\u6377\u952E\u5DF2\u66F4\u65B0",
+        hkNameLast: "\u5207\u6362\u4E0A\u6B21\u4F1A\u8BDD",
+        hkNamePrev: "\u4E0A\u79FB\u9AD8\u4EAE",
+        hkNameNext: "\u4E0B\u79FB\u9AD8\u4EAE",
+        hkNameRecent: "\u6700\u8FD1 10 \u6761",
+        hkNameAttention: "\u8FD0\u884C\u4E2D / \u672A\u67E5\u770B",
+        hkEditHint: "\u70B9\u51FB\u201C\u4FEE\u6539\u201D\u540E\u6309\u4E0B\u65B0\u6309\u952E\uFF08\u5B57\u6BCD\u6216\u6570\u5B57\uFF09\uFF0CEsc \u53D6\u6D88",
+        hkReset: "\u91CD\u7F6E\u4E3A\u9ED8\u8BA4",
+        hkResetDone: "\u5DF2\u6062\u590D\u9ED8\u8BA4\u952E\u4F4D",
+        featureFileActions: "\u6587\u4EF6\u83DC\u5355\u589E\u5F3A",
+        featureFileActionsDesc: "\u5728\u4F1A\u8BDD\u4E2D\u6587\u4EF6\u94FE\u63A5\u7684\u53F3\u952E\u83DC\u5355\u91CC\u65B0\u589E\u201C\u9ED8\u8BA4\u5E94\u7528\u6253\u5F00\u201D\u4E0E\u201C\u6253\u5F00\u6240\u5728\u76EE\u5F55\u201D\u3002",
+        featureImageCopy: "\u56FE\u7247\u53F3\u952E\u590D\u5236",
+        featureTableCopy: "\u590D\u5236\u8868\u683C",
+        featureComposerProvider: "\u6A21\u578B\u540D\u663E\u793A\u4F9B\u5E94\u5546",
+        featureImageCopyDesc: "\u53F3\u952E\u4F1A\u8BDD\u4E2D\u7684\u56FE\u7247\u6216\u70B9\u51FB\u653E\u5927\u7684\u9884\u89C8\u56FE\uFF0C\u53EF\u5C06\u56FE\u7247\u590D\u5236\u5230\u526A\u8D34\u677F\u3002",
+        featureTableCopyDesc: "\u8868\u683C\u5DE5\u5177\u6761\u65B0\u589E\u590D\u5236\u8868\u683C\uFF0C\u7C98\u8D34\u8FDB Excel / \u5BCC\u6587\u672C\u7F16\u8F91\u5668\u5373\u4E3A\u5E72\u51C0\u8868\u683C\u3002",
+        featureSessionLink: "\u4F1A\u8BDD ID \u663E\u793A\u4E3A\u4EFB\u52A1\u540D\u94FE\u63A5",
+        featureSessionLinkDesc: "\u63D0\u95EE\u4E0E\u56DE\u7B54\u91CC\u7684\u4F1A\u8BDD ID\uFF08sess_ / session_ \u5F00\u5934\uFF09\u663E\u793A\u4E3A\u4EFB\u52A1\u540D\uFF0C\u70B9\u51FB\u5207\u6362\u5230\u8BE5\u4F1A\u8BDD\uFF0C\u60AC\u505C\u53EF\u770B\u539F\u59CB ID\u3002",
+        featureComposerProviderDesc: "\u6A21\u578B\u540D\u524D\u663E\u793A\u4F9B\u5E94\u5546\u540D\uFF08\u5982 BigModel-Max1 / glm-5.3\uFF09\uFF0C\u533A\u5206\u540C\u540D\u6A21\u578B\u3002",
+        imageCopy: "\u590D\u5236\u56FE\u7247",
+        imageCopied: "\u56FE\u7247\u5DF2\u590D\u5236\u5230\u526A\u8D34\u677F",
+        imageCopyFailed: "\u590D\u5236\u56FE\u7247\u5931\u8D25",
+        openFolderItem: "\u6253\u5F00\u6587\u4EF6\u5939",
+        openFolderPrimary: "\u4E3B\u76EE\u5F55",
+        copyPathItem: "\u590D\u5236\u8DEF\u5F84",
+        pathCopied: "\u8DEF\u5F84\u5DF2\u590D\u5236\u5230\u526A\u8D34\u677F",
+        pathCopyFailed: "\u590D\u5236\u8DEF\u5F84\u5931\u8D25",
+        fileOpenDefault: "\u9ED8\u8BA4\u5E94\u7528\u6253\u5F00",
+        fileReveal: "\u6253\u5F00\u6240\u5728\u76EE\u5F55",
+        featureAutoUpdatePlugins: "\u81EA\u52A8\u66F4\u65B0",
+        featureAutoUpdatePluginsRepo: "duanluan/zcode-plugins",
+        featureAutoUpdatePluginsDesc: "",
+        pluginsCheckNow: "\u68C0\u67E5\u66F4\u65B0",
+        pluginsUpdating: "\u6B63\u5728\u66F4\u65B0\u63D2\u4EF6\u2026",
+        pluginsUpToDate: "\u63D2\u4EF6\u5DF2\u662F\u6700\u65B0",
+        pluginsUpdatesFound: "{n} \u4E2A\u63D2\u4EF6\u53EF\u66F4\u65B0",
+        pluginsUpdatedDone: "\u5DF2\u66F4\u65B0 {n} \u4E2A\u63D2\u4EF6",
+        pluginsUpdateFailed: "\u63D2\u4EF6\u66F4\u65B0\u5931\u8D25",
+        pluginsUpdatesAvailable: "zcode-plugins \u6709 {n} \u4E2A\u63D2\u4EF6\u53EF\u66F4\u65B0\uFF08ZCode Pro \u8BBE\u7F6E \u2192 \u529F\u80FD\uFF09",
+        pluginsAutoUpdated: "zcode-plugins \u63D2\u4EF6\u5DF2\u66F4\u65B0",
+        tabVision: "Vision",
+        visionDesc: "\u4E3B\u6A21\u578B\u4E0D\u652F\u6301\u56FE\u7247\u8F93\u5165\u65F6\uFF08\u5982 glm-5.3\uFF09\uFF0C\u81EA\u52A8\u628A\u6D88\u606F\u91CC\u7684\u56FE\u7247\u4EA4\u7ED9\u4E0B\u9762\u7684\u89C6\u89C9\u6A21\u578B\u8BC6\u522B\uFF0C\u628A\u63CF\u8FF0\u5E26\u7ED9\u4E3B\u6A21\u578B\uFF08zcode-vision \u63D2\u4EF6\uFF1B/vision-* \u547D\u4EE4\u7F16\u8F91\u540C\u4E00\u914D\u7F6E\uFF09\u3002",
+        visionEnabled: "\u542F\u7528",
+        visionForceIntercept: "\u4E3B\u6A21\u578B",
+        visionForceInterceptAuto: "\u4E0D\u80FD\u8BC6\u56FE\u5C31\u4F7F\u7528\u63D2\u4EF6",
+        visionForceInterceptTrue: "\u59CB\u7EC8\u4F7F\u7528\u63D2\u4EF6",
+        visionForceInterceptFalse: "\u4E0D\u4F7F\u7528\u63D2\u4EF6",
+        visionForceInterceptHint: "\u4E0D\u80FD\u8BC6\u56FE\u5C31\u4F7F\u7528\u63D2\u4EF6 = \u8DDF\u968F ZCode\u300C\u6A21\u578B\u8BBE\u7F6E\u300D\u91CC\u8BE5\u6A21\u578B\u7684\u56FE\u7247\u5F00\u5173\uFF1A\u5F00 = \u6A21\u578B\u81EA\u770B\u4E0D\u91CD\u590D\u8BC6\u522B\uFF0C\u5173 = \u8D70\u8BC6\u522B\u4EE3\u7406\uFF08tool \u6A21\u5F0F\u51FA\u8BC6\u522B\u5361\u7247\uFF09\uFF1B\u59CB\u7EC8\u4F7F\u7528\u63D2\u4EF6 = \u80FD\u770B\u56FE\u4E5F\u5F3A\u5236\u8D70\u8BC6\u522B\u4EE3\u7406\uFF08\u53CC\u91CD\u8BC6\u522B\u6362\u5361\u7247\uFF09\uFF1B\u4E0D\u4F7F\u7528\u63D2\u4EF6 = \u80FD\u770B\u56FE\u5C31\u653E\u884C\uFF08\u4E0D\u80FD\u8BC6\u56FE\u7684\u6A21\u578B\u4ECD\u8D70\u8BC6\u522B\u4EE3\u7406\uFF09",
+        visionMode: "\u94FE\u6A21\u5F0F",
+        visionModeFallback: "\u4F9D\u6B21\u5C1D\u8BD5",
+        visionModeFallbackDesc: "\u524D\u4E00\u4E2A\u5931\u8D25\u624D\u8BD5\u4E0B\u4E00\u4E2A\uFF0C\u4EFB\u4E00\u6210\u529F\u5373\u6B62\uFF08\u4E3B\u529B + \u5907\u7528\uFF09\u3002",
+        visionModePipeline: "\u9010\u7EA7\u52A0\u5DE5",
+        visionModePipelineDesc: "\u6BCF\u6B65\u90FD\u6267\u884C\uFF0C\u540E\u4E00\u6B65\u52A0\u5DE5\u524D\u4E00\u6B65\u7ED3\u679C\uFF08\u63CF\u8FF0 \u2192 \u6821\u5BF9/\u63D0\u70BC\uFF09\u3002",
+        visionAddProxy: "\u6DFB\u52A0\u4EE3\u7406",
+        visionRemove: "\u5220\u9664",
+        visionMoveUp: "\u4E0A\u79FB",
+        visionMoveDown: "\u4E0B\u79FB",
+        visionName: "\u540D\u79F0",
+        visionUseProvider: "\u4F9B\u5E94\u5546",
+        visionSkipAfterFailures: "\u8FDE\u7EED\u5931\u8D25\u6B21\u6570",
+        visionSkipAfterFailuresHint: "\u67D0\u4EE3\u7406\u8FDE\u7EED\u5931\u8D25\u6EE1\u6B21\u6570\u540E\u6682\u65F6\u8DF3\u8FC7\u5B83\uFF0C\u76F4\u63A5\u8BD5\u4E0B\u4E00\u4E2A\uFF1B0 = \u4E0D\u8DF3\u8FC7",
+        visionSkipMinutes: "\u8DF3\u8FC7\u5206\u949F\u6570",
+        visionSkipMinutesHint: "\u8DF3\u8FC7\u591A\u4E45\u540E\u81EA\u52A8\u6062\u590D\u5C1D\u8BD5\uFF1B\u671F\u95F4\u4EFB\u4E00\u6B21\u6210\u529F\u5373\u6E05\u96F6\u8BA1\u6570",
+        visionResetChain: "\u6062\u590D\u9ED8\u8BA4\u94FE",
+        visionResetChainConfirm: "\u5C06\u94FE\u6A21\u5F0F\u4E0E\u4EE3\u7406\u5217\u8868\u6062\u590D\u4E3A\u9ED8\u8BA4\u5355\u7EA7\uFF08session\uFF1A\u8DDF\u968F\u4F1A\u8BDD\u4E0E\u5176\u5F53\u524D\u6A21\u578B\uFF09\uFF0C\u5F53\u524D\u5BF9\u4EE3\u7406\u7684\u4FEE\u6539\u4F1A\u4E22\u5931\u3002\u7EE7\u7EED\uFF1F",
+        visionBaseUrl: "\u63A5\u53E3\u5730\u5740",
+        visionModel: "\u6A21\u578B",
+        visionApiKey: "API Key",
+        visionPrompt: "\u8BC6\u522B\u63D0\u793A\u8BCD\uFF08pipeline \u540E\u7EED\u6B65\u53EF\u7528 {prev} \u5F15\u7528\u4E0A\u4E00\u6B65\uFF09",
+        visionTest: "\u6D4B\u8BD5",
+        visionTesting: "\u6D4B\u8BD5\u4E2D\u2026",
+        visionTestFailed: "\u89C6\u89C9\u4EE3\u7406\u6D4B\u8BD5\u5931\u8D25",
+        visionCompressKB: "\u538B\u7F29\u9608\u503C KB",
+        visionCompressKBHint: "\u8D85\u8FC7\u8BE5\u5927\u5C0F\u7684\u56FE\u5148\u538B\u7F29\u518D\u8BC6\u522B\uFF08\u6700\u957F\u8FB9 2000\u3001JPEG\uFF09\uFF1B0 = \u4E0D\u538B\u7F29",
+        visionLoadFailed: "\u8BFB\u53D6\u89C6\u89C9\u4EE3\u7406\u914D\u7F6E\u5931\u8D25",
+        tabRtk: "rtk",
+        rtkDesc: "rtk \u63D2\u4EF6\uFF1A\u628A\u5E38\u89C1\u5F00\u53D1\u547D\u4EE4\u7684\u8F93\u51FA\u538B\u7F29 60-90% \u518D\u8FDB\u5165\u4E0A\u4E0B\u6587\uFF08/rtk-* \u547D\u4EE4\u7F16\u8F91\u540C\u4E00\u914D\u7F6E\uFF09\u3002",
+        rtkEnabled: "\u542F\u7528",
+        rtkNotInstalled: "\u672A\u5B89\u88C5 rtk \u672C\u4F53\uFF1B\u5B89\u88C5\u540E\u4EE5\u4E0B\u8BBE\u7F6E\u751F\u6548\uFF08\u4F1A\u8BDD\u91CC\u6267\u884C /rtk-setup \u4E5F\u53EF\u4EE5\uFF09",
+        rtkInstallBin: "\u5B89\u88C5 rtk \u672C\u4F53",
+        rtkBinInstalled: "rtk \u672C\u4F53\u5DF2\u5B89\u88C5\uFF1BPATH \u9700\u6CE8\u9500\u91CD\u767B\u540E\u5BF9\u4F1A\u8BDD\u751F\u6548\uFF0C\u63D2\u4EF6\u94A9\u5B50\u5373\u65F6\u751F\u6548",
+        rtkWhitelistTitle: "\u767D\u540D\u5355\uFF08\u4E0D\u538B\u7F29\u76F4\u63A5\u653E\u884C\uFF09",
+        rtkBuiltinLabel: "\u5185\u7F6E\u653E\u884C\uFF08\u53EA\u8BFB\uFF0C\u968F\u63D2\u4EF6\u66F4\u65B0\uFF09\uFF1A",
+        rtkWhitelistDesc: "\u6BCF\u6761 name\uFF08\u5982 docker\uFF09\u6216 git:name\uFF08\u5982 git:clone\uFF09\uFF0C\u52A0\u5165\u540E\u4E0D\u518D\u538B\u7F29\uFF1B\u5185\u7F6E\u7684 git add/commit/push\u3001mkdir/cp \u7B49\u4E0D\u53EF\u79FB\u9664\u3002",
+        rtkWhitelistPlaceholder: "name \u6216 git:name\uFF0C\u56DE\u8F66\u6DFB\u52A0",
+        rtkWhitelistAdd: "\u6DFB\u52A0",
+        rtkWhitelistClear: "\u6E05\u7A7A",
+        rtkWhitelistCleared: "\u767D\u540D\u5355\u5DF2\u6E05\u7A7A",
+        rtkWhitelistInvalid: "\u6761\u76EE\u683C\u5F0F\u5E94\u4E3A name \u6216 git:name",
+        rtkLoadFailed: "\u8BFB\u53D6 rtk \u914D\u7F6E\u5931\u8D25",
+        tabHeadroom: "Headroom",
+        headroomDesc: "Headroom \u63D2\u4EF6\uFF1A\u672C\u5730\u538B\u7F29\u4EE3\u7406\u9A7B\u7559 127.0.0.1\uFF08\u9ED8\u8BA4 8787 \u7AEF\u53E3\uFF09\uFF0C\u538B\u7F29\u53D1\u5F80\u6A21\u578B\u7684\u4E0A\u4E0B\u6587\u4EE5\u7701 token\uFF08/hr-* \u547D\u4EE4\u7F16\u8F91\u540C\u4E00\u914D\u7F6E\uFF09\u3002\u5207\u6362\u8BBE\u5907\u4F1A\u91CD\u542F\u4EE3\u7406\uFF0C\u6B63\u5728\u5904\u7406\u7684\u8BF7\u6C42\u53EF\u80FD\u4E2D\u65AD\u4E00\u6B21\u3002",
+        headroomBinMissing: "\u672A\u627E\u5230 headroom \u7A0B\u5E8F\uFF0C\u4EE3\u7406\u65E0\u6CD5\u542F\u52A8\uFF1B\u5B89\u88C5 headroom \u540E\u4EE5\u4E0B\u8BBE\u7F6E\u81EA\u52A8\u751F\u6548",
+        hrInstallBin: "\u5B89\u88C5 headroom \u672C\u4F53",
+        hrBinInstalled: "headroom \u672C\u4F53\u5DF2\u5B89\u88C5\uFF1B\u91CD\u65B0\u6253\u5F00\u5E94\u7528\u6216\u4F1A\u8BDD\u540E\u4EE3\u7406\u53EF\u7528\uFF08SessionStart \u94A9\u5B50\u81EA\u52A8\u62C9\u8D77\uFF09",
+        headroomInstallTitle: "\u672A\u5B89\u88C5 headroom \u63D2\u4EF6",
+        headroomInstallDesc: "\u4ECE zcode-plugins \u5E02\u573A\u5B89\u88C5\u540E\u5373\u53EF\u5728\u6B64\u7BA1\u7406\u538B\u7F29\u4EE3\u7406\uFF1B\u91CD\u542F\u4F1A\u8BDD\u540E\u751F\u6548\u3002",
+        headroomInstall: "\u5B89\u88C5",
+        headroomInstalling: "\u5B89\u88C5\u4E2D\u2026",
+        headroomInstalled: "\u5DF2\u5B89\u88C5 headroom \u63D2\u4EF6",
+        headroomInstallRetry: "\u5B89\u88C5\u672A\u751F\u6548\uFF0C\u8BF7\u91CD\u8BD5\u6216\u624B\u52A8\u5728\u63D2\u4EF6\u5E02\u573A\u5B89\u88C5",
+        pluginInstallCardTitle: "\u672A\u5B89\u88C5 {name} \u63D2\u4EF6",
+        pluginInstallCardDesc: "\u4ECE zcode-plugins \u5E02\u573A\u5B89\u88C5\u540E\u5373\u53EF\u5728\u6B64\u7BA1\u7406\uFF1B\u91CD\u542F\u4F1A\u8BDD\u540E\u751F\u6548\u3002",
+        pluginInstallDone: "\u5DF2\u5B89\u88C5 {name} \u63D2\u4EF6",
+        pluginEnable: "\u542F\u7528",
+        hrStarting: "\u6B63\u5728\u542F\u52A8\u538B\u7F29\u4EE3\u7406\u2026",
+        hrStarted: "\u538B\u7F29\u4EE3\u7406\u5DF2\u542F\u52A8",
+        hrStartTimeout: "\u4EE3\u7406\u542F\u52A8\u8D85\u65F6\uFF0890 \u79D2\uFF09\uFF0C\u8BF7\u68C0\u67E5 ~/.zcode-headroom-proxy.log",
+        hrStopping: "\u6B63\u5728\u505C\u6B62\u538B\u7F29\u4EE3\u7406\u2026",
+        hrRestarting: "\u6B63\u5728\u91CD\u542F\u538B\u7F29\u4EE3\u7406\u2026",
+        hrStopped: "\u538B\u7F29\u4EE3\u7406\u5DF2\u505C\u6B62",
+        hrUsageNone: "\u5F53\u524D\u6CA1\u6709\u8D70 headroom \u7684\u4F9B\u5E94\u5546\uFF0C\u672A\u5207\u6362",
+        headroomLoadFailed: "\u8BFB\u53D6 Headroom \u914D\u7F6E\u5931\u8D25",
+        headroomStatusTitle: "\u8FD0\u884C\u72B6\u6001",
+        hrInstRunning: "\u8FD0\u884C\u4E2D",
+        hrInstStopped: "\u672A\u8FD0\u884C",
+        headroomStatusLoadFailed: "\u8BFB\u53D6\u8FD0\u884C\u72B6\u6001\u5931\u8D25",
+        headroomProxyUp: "\u4EE3\u7406\u8FD0\u884C\u4E2D",
+        headroomProxyDown: "\u4EE3\u7406\u672A\u8FD0\u884C",
+        headroomCurrentBackend: "\u5F53\u524D\u8BBE\u5907",
+        headroomDesiredBackend: "\u76EE\u6807\u8BBE\u5907",
+        hrValAuto: "\u81EA\u52A8",
+        hrPmAc: "\u4EA4\u6D41\u7535",
+        hrPmBattery: "\u7535\u6C60",
+        hrPmSaver: "\u7701\u7535\u6A21\u5F0F",
+        hrPmSaverBat: "\u7701\u7535\u6A21\u5F0F+\u7535\u6C60",
+        hrDetectOk: "\u6B63\u5E38",
+        hrDetectMissing: "\u672A\u5B89\u88C5",
+        hrDetectBroken: "\u4E0D\u53EF\u7528",
+        headroomPowerState: "\u7535\u6E90",
+        headroomWatcher: "\u76D1\u89C6\u5668",
+        headroomWatcherOn: "\u8FD0\u884C\u4E2D",
+        headroomWatcherOff: "\u5DF2\u505C\u6B62",
+        headroomSaverDetect: "\u7701\u7535\u6A21\u5F0F\u68C0\u6D4B",
+        headroomRefresh: "\u5237\u65B0",
+        headroomStart: "\u542F\u52A8",
+        headroomRestart: "\u91CD\u542F",
+        headroomStopAction: "\u505C\u6B62",
+        headroomStopTitle: "\u505C\u6B62 Headroom \u4EE3\u7406",
+        headroomStopDesc: "\u505C\u6B62\u540E\uFF0CZCode \u53CA\u5176\u4ED6\u7A0B\u5E8F\u4E2D\u6307\u5411\u8BE5\u4EE3\u7406\uFF08127.0.0.1\uFF09\u7684\u8BF7\u6C42\u90FD\u4F1A\u5931\u8D25\uFF0C\u76F4\u81F3\u91CD\u65B0\u542F\u52A8\u4EE3\u7406\u3002headroom \u662F\u5171\u4EAB\u7684\uFF0C\u5176\u4ED6\u5DE5\u5177\u53EF\u80FD\u6B63\u5728\u4F7F\u7528\u3002\u786E\u8BA4\u505C\u6B62\uFF1F",
+        headroomStoppedWarn: "\u4EE3\u7406\u5DF2\u505C\u6B62\uFF1B\u6307\u5411 127.0.0.1 \u7684\u4F9B\u5E94\u5546\u5C06\u65E0\u6CD5\u8FDE\u63A5",
+        headroomBackend: "\u538B\u7F29\u8BBE\u5907",
+        headroomBackendAuto: "\u81EA\u52A8 \xB7 \u663E\u5361\u4F18\u5148",
+        headroomBackendCpu: "\u7701\u7535 \xB7 CPU \u4F18\u5148",
+        headroomBackendNative: "\uFF08\u539F\u751F\u503C\uFF09",
+        headroomBackendDesc: "\u81EA\u52A8\uFF1Aheadroom \u9009\u6700\u5FEB\u8BBE\u5907\uFF08CUDA/MPS \u663E\u5361\u4F18\u5148\uFF09\uFF1BCPU\uFF1A\u5F3A\u5236 CPU \u538B\u7F29\uFF0C\u7701\u7535\u4E14\u4E0D\u5360\u663E\u5B58\u3002\u4E5F\u652F\u6301 headroom \u539F\u751F\u503C\uFF08onnx\u3001pytorch_mps \u7B49\uFF09\u3002",
+        headroomPower: "\u7701\u7535\u81EA\u52A8\u5207\u6362",
+        headroomPowerOff: "\u5173\u95ED",
+        headroomPowerOffDesc: "\u4E0D\u81EA\u52A8\u5207\u6362\uFF0C\u59CB\u7EC8\u6309\u201C\u538B\u7F29\u8BBE\u5907\u201D\u8FD0\u884C\u3002",
+        headroomPowerBattery: "\u7528\u7535\u6C60\u65F6",
+        headroomPowerBatteryDesc: "\u62D4\u7535\uFF08\u7535\u6C60\u653E\u7535\uFF09\u2192 CPU \u538B\u7F29\uFF0C\u63D2\u7535\u81EA\u52A8\u5207\u56DE\u3002",
+        headroomPowerSaver: "\u7701\u7535\u6A21\u5F0F\u65F6",
+        headroomPowerSaverDesc: "\u4EC5\u7CFB\u7EDF\u8FDB\u5165\u7701\u7535\u6A21\u5F0F \u2192 CPU \u538B\u7F29\uFF0C\u9000\u51FA\u5207\u56DE\u3002",
+        hrCpuPinnedHint: "\u538B\u7F29\u8BBE\u5907\u5DF2\u56FA\u5B9A\u4E3A CPU\uFF0C\u7701\u7535\u81EA\u52A8\u5207\u6362\u4E0D\u4F1A\u518D\u6539\u53D8\u5B83\u3002",
+        headroomInterval: "\u76D1\u89C6\u95F4\u9694",
+        headroomIntervalDesc: "\u7701\u7535\u76D1\u89C6\u5668\u8F6E\u8BE2\u7535\u6E90\u72B6\u6001\u7684\u95F4\u9694\uFF0810\u20133600 \u79D2\uFF0C\u9ED8\u8BA4 60\uFF09\uFF1B\u4FDD\u5B58\u540E\u4ECE\u4E0B\u4E00\u8F6E\u5DE1\u68C0\u8D77\u751F\u6548\u3002",
+        headroomSecUnit: "\u79D2",
+        upgradeCheck: "\u68C0\u67E5\u66F4\u65B0",
+        upgradeChecking: "\u68C0\u67E5\u4E2D\u2026",
+        upgradeUpToDate: "\u5DF2\u662F\u6700\u65B0\uFF08{v}\uFF09",
+        upgradeFound: "\u53EF\u5347\u7EA7\u5230 {v}",
+        upgradeNow: "\u5347\u7EA7",
+        upgradeRunning: "\u5347\u7EA7\u4E2D\u2026",
+        upgradeStop: "\u505C\u6B62\u5347\u7EA7",
+        upgradeStopped: "\u5DF2\u505C\u6B62\u5347\u7EA7",
+        upgradeDone: "\u5DF2\u66F4\u65B0\u5230 {v}",
+        upgradeFinished: "\u5347\u7EA7\u5B8C\u6210",
+        upgradeCheckFailed: "\u68C0\u67E5\u66F4\u65B0\u5931\u8D25",
+        close: "\u5173\u95ED",
+        cancel: "\u53D6\u6D88",
+        pathLabel: "\u8DEF\u5F84",
+        aliasItem: "\u81EA\u5B9A\u4E49\u522B\u540D",
+        aliasTitle: "\u81EA\u5B9A\u4E49\u9879\u76EE\u522B\u540D",
+        aliasDesc: "\u4EC5\u5728 ZCode \u754C\u9762\u4E2D\u663E\u793A\u8BE5\u522B\u540D\uFF0C\u4E0D\u4FEE\u6539\u78C1\u76D8\u76EE\u5F55\u4E0E\u4EFB\u4F55\u6570\u636E\uFF0C\u968F\u65F6\u53EF\u6E05\u9664\u6062\u590D\u3002",
+        aliasLabel: "\u522B\u540D",
+        aliasPlaceholder: "\u7559\u7A7A\u5E76\u4FDD\u5B58 = \u6062\u590D\u771F\u5B9E\u540D\u79F0",
+        aliasConfirm: "\u4FDD\u5B58",
+        aliasClear: "\u6062\u590D\u771F\u5B9E\u540D\u79F0",
+        aliasSaved: "\u522B\u540D\u5DF2\u66F4\u65B0",
+        aliasCleared: "\u5DF2\u6062\u590D\u771F\u5B9E\u540D\u79F0",
+        aliasHint: "\u78C1\u76D8\u76EE\u5F55\u540D\u4E0D\u53D8\uFF1A\u7EC8\u7AEF\u3001\u6587\u4EF6\u7BA1\u7406\u5668\u4E0E\u5176\u4ED6\u5F15\u7528\u771F\u5B9E\u8DEF\u5F84\u7684\u754C\u9762\u4ECD\u663E\u793A\u539F\u540D\u3002",
+        featureProjectMenuDescNew: "\u9879\u76EE\u201C\u66F4\u591A\u201D\u83DC\u5355\u4E2D\u7684\u6253\u5F00\u6587\u4EF6\u5939\u4E0E\u590D\u5236\u8DEF\u5F84\u3002\u5B98\u65B9\u5DF2\u652F\u6301\u4FEE\u6539\u9879\u76EE\u540D\u79F0\uFF08\u7F16\u8F91\u9879\u76EE\uFF09\uFF0C\u81EA\u5B9A\u4E49\u522B\u540D\u5DF2\u505C\u7528\u3002",
+        aliasMigrateTitle: "\u8FC1\u79FB\u9879\u76EE\u522B\u540D",
+        aliasMigrateDesc: "\u5F53\u524D ZCode \u5DF2\u652F\u6301\u4FEE\u6539\u9879\u76EE\u540D\u79F0\uFF08\u9879\u76EE\u201C\u66F4\u591A\u201D\u83DC\u5355 \u2192 \u7F16\u8F91\u9879\u76EE\uFF09\uFF0C\u81EA\u5B9A\u4E49\u522B\u540D\u529F\u80FD\u5DF2\u505C\u7528\u3002\u53EF\u628A\u5DF2\u4FDD\u5B58\u7684\u522B\u540D\u5199\u5165\u5B98\u65B9\u9879\u76EE\u540D\u79F0\uFF0C\u52FE\u9009\u8981\u8FC1\u79FB\u7684\u9879\u76EE\uFF1B\u8FC1\u79FB\u53EA\u6539\u9879\u76EE\u540D\u79F0\uFF0C\u78C1\u76D8\u76EE\u5F55\u4E0D\u53D7\u5F71\u54CD\u3002",
+        aliasMigrateItemHint: "\u8FC1\u79FB\u540E\u5C06\u4F5C\u4E3A\u9879\u76EE\u540D\u79F0\u4FDD\u5B58\uFF08\u53EF\u968F\u65F6\u5728\u201C\u7F16\u8F91\u9879\u76EE\u201D\u4E2D\u518D\u6539\uFF09\u3002\u4EC5\u65E0\u6807\u8BB0\u7684\u6761\u76EE\u53EF\u52FE\u9009\uFF1B\u5DF2\u8FC1\u79FB\u3001\u5DF2\u5E76\u5165\u3001\u9879\u76EE\u5DF2\u5220\u9664\u3001\u672C\u673A\u4E0D\u5B58\u5728\uFF08\u65E7\u673A\u5668\u8DEF\u5F84\uFF09\u4EE5\u53CA\u9879\u76EE\u5DF2\u91CD\u547D\u540D\u7684\u90FD\u4E0D\u53EF\u52FE\u9009\u2014\u2014\u8981\u6539\u8FD9\u4E9B\u9879\u76EE\u7684\u540D\u5B57\uFF0C\u76F4\u63A5\u7528\u9879\u76EE\u201C\u66F4\u591A\u201D\u83DC\u5355\u91CC\u7684\u201C\u7F16\u8F91\u9879\u76EE\u201D\u3002",
+        aliasMigrateStateDone: "\u5DF2\u8FC1\u79FB",
+        aliasMigrateStateMerged: "\u5DF2\u5E76\u5165\u201C{name}\u201D",
+        aliasMigrateStateDeleted: "\u9879\u76EE\u5DF2\u5220\u9664",
+        aliasMigrateStateMissing: "\u672C\u673A\u4E0D\u5B58\u5728",
+        aliasMigrateStateRenamed: "\u9879\u76EE\u5DF2\u91CD\u547D\u540D",
+        aliasMigrateDeadSummary: "\u5DF2\u5931\u6548 {n} \u6761\uFF08\u672C\u673A\u4E0D\u5B58\u5728 / \u9879\u76EE\u5DF2\u5220\u9664\uFF0C\u591A\u4E3A\u8BBE\u7F6E\u540C\u6B65\u5E26\u6765\u7684\u65E7\u673A\u5668\u8DEF\u5F84\uFF09",
+        aliasMigrateClearDead: "\u6E05\u9664\u5931\u6548\u6761\u76EE",
+        aliasMigrateDeadCleared: "\u5DF2\u6E05\u9664 {n} \u6761\u5931\u6548\u522B\u540D",
+        aliasMigrateDeadClearFailed: "\u90E8\u5206\u5931\u6548\u522B\u540D\u672A\u80FD\u6E05\u9664\uFF0C\u8BF7\u91CD\u8BD5",
+        aliasMigrateGo: "\u8FC1\u79FB\u6240\u9009",
+        aliasMigrateRunning: "\u8FC1\u79FB\u4E2D\u2026",
+        aliasMigrateProgress: "\u6B63\u5728\u8FC1\u79FB {i}/{n}\uFF1A{name}",
+        aliasMigrateStateFailed: "\u5931\u8D25",
+        aliasMigrateSkip: "\u6682\u4E0D\u8FC1\u79FB",
+        aliasMigrateDone: "\u5DF2\u8FC1\u79FB {n} \u4E2A\u522B\u540D",
+        aliasMigratePartial: "{n} \u4E2A\u5DF2\u8FC1\u79FB\uFF0C{m} \u4E2A\u672A\u6210\u529F\uFF1B\u672A\u6210\u529F\u7684\u53EF\u7A0D\u540E\u5728 ZCode Pro \u8BBE\u7F6E\u4E2D\u91CD\u8BD5",
+        aliasMigrateAllFailed: "\u522B\u540D\u8FC1\u79FB\u672A\u6210\u529F\uFF0C\u53EF\u7A0D\u540E\u5728 ZCode Pro \u8BBE\u7F6E\u4E2D\u91CD\u8BD5",
+        aliasMigrateCardName: "\u522B\u540D\u8FC1\u79FB",
+        aliasMigrateCardDesc: "\u5B98\u65B9\u5DF2\u652F\u6301\u4FEE\u6539\u9879\u76EE\u540D\u79F0\uFF0C\u8FD8\u6709 {n} \u4E2A\u81EA\u5B9A\u4E49\u522B\u540D\u672A\u8FC1\u79FB\u3002",
+        aliasMigrateRun: "\u8FC1\u79FB",
+        taskOrderSaved: "\u987A\u5E8F\u5DF2\u66F4\u65B0",
+        qqGroupTitle: "QQ \u7FA4\uFF1A428403354",
+        qqGroupDesc: "\u95EE\u9898\u53CD\u9988\u4E0E\u4EA4\u6D41",
+        wechatGroupTitle: "\u5FAE\u4FE1\u7FA4",
+        wechatGroupDesc: "\u6DFB\u52A0\u5FAE\u4FE1 {id} \u9080\u8BF7\u8FDB\u7FA4",
+        wechatIdCopied: "\u5FAE\u4FE1\u53F7\u5DF2\u590D\u5236",
+        browse: "\u6D4F\u89C8",
+        relocateItem: "\u5207\u6362\u6587\u4EF6\u5939",
+        relocateTitle: "\u5207\u6362\u6587\u4EF6\u5939",
+        relocateDesc: "\u5C06\u8BE5\u9879\u76EE\u6307\u5411\u53E6\u4E00\u4E2A\u6587\u4EF6\u5939\uFF1A\u4FA7\u8FB9\u680F\u3001\u5DF2\u6253\u5F00\u6807\u7B7E\u9875\u4E0E\u672C\u5730\u4EFB\u52A1\u5386\u53F2\u4E00\u5E76\u8FC1\u79FB\uFF0C\u76EE\u5F55\u672C\u8EAB\u4E0D\u4F1A\u88AB\u79FB\u52A8\uFF0C\u4F1A\u8BDD\u8BB0\u5F55\u4E0D\u4F1A\u4E22\u5931\u3002",
+        relocateNewPathLabel: "\u65B0\u6587\u4EF6\u5939",
+        relocateConfirm: "\u79FB\u52A8",
+        relocateHint: "\u76EE\u6807\u6587\u4EF6\u5939\u9700\u5DF2\u5B58\u5728\uFF0C\u53EF\u8F93\u5165\u8DEF\u5F84\u6216\u70B9\u51FB\u201C\u6D4F\u89C8\u201D\u9009\u62E9\uFF1B\u5B8C\u6210\u540E\u754C\u9762\u5C06\u81EA\u52A8\u5237\u65B0\u3002",
+        relocateSuccess: "\u5DF2\u5207\u6362\u6587\u4EF6\u5939\uFF0C\u6B63\u5728\u5237\u65B0\u754C\u9762\u2026",
+        relocateIndexSkipped: "\u5DF2\u5207\u6362\u6587\u4EF6\u5939\uFF1B\u4EFB\u52A1\u5386\u53F2\u672A\u80FD\u540C\u6B65\uFF08\u672C\u673A\u7F3A\u5C11 SQLite \u652F\u6301\uFF09\uFF0C\u65E7\u4EFB\u52A1\u6761\u76EE\u53EF\u80FD\u4ECD\u6307\u5411\u65E7\u8DEF\u5F84\u3002",
+        relocateSame: "\u65B0\u6587\u4EF6\u5939\u4E0E\u5F53\u524D\u6587\u4EF6\u5939\u76F8\u540C",
+        relocateNotFound: "\u76EE\u6807\u6587\u4EF6\u5939\u4E0D\u5B58\u5728",
+        relocateProtected: "\u62D2\u7EDD\u6307\u5411 ZCode \u6570\u636E\u76EE\u5F55\u5185\u90E8\u8DEF\u5F84",
+        relocateIndexBusy: "\u4EFB\u52A1\u7D22\u5F15\u6B63\u88AB ZCode \u5360\u7528\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5\u3002",
+        relocateConfirmTitle: "\u786E\u8BA4\u5207\u6362\u6587\u4EF6\u5939",
+        relocateConfirmDesc: "\u5207\u6362\u540E\u5C06\u81EA\u52A8\u5237\u65B0\u9875\u9762\uFF0C\u804A\u5929\u8F93\u5165\u6846\u4E2D\u672A\u53D1\u9001\u7684\u5185\u5BB9\u4F1A\u4E22\u5931\uFF1B\u4F1A\u8BDD\u8BB0\u5F55\u4E0E\u9879\u76EE\u6587\u4EF6\u4E0D\u53D7\u5F71\u54CD\u3002",
+        relocateConfirmGo: "\u786E\u8BA4\u5207\u6362",
+        failed: "\u64CD\u4F5C\u5931\u8D25",
+        retryHint: "\u8BF7\u91CD\u8BD5"
+      };
+      en = {
+        settingsTitle: "ZCode Pro",
+        tabFeatures: "Features",
+        tabStyles: "Appearance",
+        tabProxy: "Proxy",
+        tabBehavior: "Behavior",
+        tabAgents: "Global Prompt",
+        tabZcode: "ZCode CLI",
+        zcodeDesc: "ZCode behavior settings (written to ~/.zcode/cli/config.json); takes effect for new sessions.",
+        zcodeStatsTitle: "Skill listing check",
+        zcodeStatsCounts: "{total} skills ({user} local \xB7 {plugin} plugin)",
+        zcodeStatsChars: "Full listing \u2248 {n} characters",
+        zcodeBudgetDefaultTag: " (default)",
+        zcodeStatsDegraded: "Over budget: the listing degrades to names only, so the model cannot see skill descriptions",
+        zcodeStatsOk: "Within budget: the full listing with descriptions is injected into new sessions",
+        zcodeStatsSuggest: "Suggested budget {n} characters (with 20% margin)",
+        zcodeBudgetApply: "Use suggested",
+        zcodeBudgetApplied: "Listing budget saved.",
+        zcodeStatsNote: "Estimated from the current disk state; per-project skill directories are not counted.",
+        zcodeSkillEnabled: "Skill system",
+        zcodeSkillEnabledDesc: "skills.enabled: when off, ZCode discovers and injects no skills",
+        zcodeSkillIncludeInstructions: "Skill instructions injection",
+        zcodeSkillIncludeInstructionsDesc: "skills.includeInstructions: whether skill instructions are injected along with the listing",
+        zcodeSkillBudget: "Skill listing budget (characters)",
+        zcodeSkillBudgetDesc: "skills.metadataBudget: the listing degrades to names only beyond this length; default 20000",
+        zcodeSkillRoots: "Extra skill directories",
+        zcodeSkillRootsDesc: "skills.roots: one directory per line; skills under them are discovered (beyond ~/.zcode/skills and ~/.agents/skills)",
+        zcodeSave: "Save",
+        zcodeRootsSaved: "Skill directories saved.",
+        zcodeFeatCompact: "Compaction",
+        zcodeFeatCompactDesc: "features.compact: compact earlier conversation when the context grows too long",
+        zcodeFeatRewind: "Rewind",
+        zcodeFeatRewindDesc: "features.rewind: roll back to an earlier point and continue from there",
+        zcodeFeatSubagent: "Subagents",
+        zcodeFeatSubagentDesc: "features.subagent: dispatch subagents for subtasks",
+        zcodeFeatSkill: "Skill tool",
+        zcodeFeatSkillDesc: "features.skill: the Skill tool is available (the skill system must also be on)",
+        zcodeFeatMcp: "MCP tools",
+        zcodeFeatMcpDesc: "features.mcp: use tools provided by MCP servers",
+        zcodeMemoryHint: "Memory is not here: workspace memory is toggled in the official settings under Settings \u2192 Agent capabilities \u2192 Memory (with the memory viewer).",
+        agentsDesc: "Written to ~/.zcode/AGENTS.md and used as default instructions in every session across all projects. Takes effect for new sessions; per-project AGENTS.md can extend or override it. Content over 100 KB is truncated by the app.",
+        agentsPlaceholder: "Instructions followed by all projects by default; save empty to remove the global prompt",
+        agentsSave: "Save",
+        agentsSaved: "Global prompt saved.",
+        agentsLoadFailed: "Failed to load the global prompt",
+        proxyDesc: "Set an HTTP proxy for network access made by the local helper: plugin marketplace updates and installs, plugin dependency installs and upgrades, and WebDAV sync can all use it \u2014 pick the scopes with the toggles below. Does not affect the ZCode app itself or model requests.",
+        proxyPlaceholder: "http://127.0.0.1:7890",
+        proxySave: "Save",
+        proxySaved: "Proxy settings saved.",
+        proxyHint: "Save empty to clear the proxy.",
+        proxyTest: "Test",
+        proxyTesting: "Testing\u2026",
+        proxyTestEmpty: "Enter a proxy address first",
+        proxyTestFailed: "Test failed",
+        proxyScopePlugins: "Plugin marketplace",
+        proxyScopePluginsDesc: "Marketplace checks, installs and uninstalls (zcode CLI git operations) go through the proxy.",
+        proxyScopeDeps: "Plugin dependencies",
+        proxyScopeDepsDesc: "headroom and rtk installs, update checks and upgrades (pip and GitHub downloads) go through the proxy.",
+        proxyScopeSync: "Sync",
+        proxyScopeSyncDesc: "WebDAV upload and download go through the proxy.",
+        tabSync: "Sync",
+        tabDebug: "Debug",
+        testNoSessionHint: "With \u201Cfollow current session [current model]\u201D selected, the provider [model] of the last session is used.",
+        syncDesc: 'Manually back up ZCode Pro settings and model settings to WebDAV, or restore them on a new computer. The two items are stored as separate files, so you can upload or overwrite either one alone; every upload also keeps a timestamped history version (how many to keep is set in the "History" row; older ones are removed automatically after upload) and download lets you pick any of them. Data moves only when you click, never automatically.',
+        syncUrlPlaceholder: "https://dav.example.com/dav/",
+        syncDir: "Folder",
+        syncDirPlaceholder: "zcode-pro",
+        syncLogin: "Login",
+        syncPassword: "Password",
+        syncHistoryLimit: "History",
+        syncHistoryLimitUnit: "versions",
+        syncHistoryLimitHint: "How many recent uploads keep their history versions on the server; older ones are removed automatically after a successful upload. The fixed-name latest file is never removed. 0 = keep no history versions.",
+        syncPruned: "removed {n} older history versions",
+        syncSave: "Save",
+        syncSaved: "Sync settings saved.",
+        syncFormHint: "Sync files go inside the folder (default zcode-pro, multi-level allowed, created automatically): zcodepro.json and model.json are always the latest version; timestamped history versions are kept alongside.",
+        syncRecLink: "Jianguoyun WebDAV",
+        syncRecSuffix: " \u2014 use the app password, not your account password.",
+        syncIncludeZcp: "ZCode Pro settings",
+        syncIncludeZcpDesc: "Feature toggles, style adjustments and the proxy setting; the sync config and credentials themselves are never synced. Project aliases are not synced (renaming is built in now).",
+        syncIncludeModel: "Model settings",
+        syncIncludeModelDesc: "Custom providers and model config (config.json and provider_config.json, API keys included) and the Headroom provider map (headroom.json; keys are stored as keyHashes, never in plaintext). Account sign-in credentials (e.g. the BigModel subscription) are not synced; each computer signs in with its own account.",
+        syncUpload: "Upload",
+        syncDownload: "Download",
+        syncUploading: "Uploading\u2026",
+        syncUploaded: "Uploaded to the server.",
+        syncDownloaded: "Restored from the server.",
+        syncLastPush: "Last upload",
+        syncLastPull: "Last download",
+        syncNever: "never",
+        syncConfirmTitle: "Download from the server",
+        syncConfirmDesc: "The selected file will overwrite the matching local section (a .zcodepro-backup copy is kept next to each file); your local sync config and credentials stay untouched. Restarting ZCode is recommended after restoring model settings. Import now?",
+        syncConfirmGo: "Import",
+        syncPickDesc: "Fixed names are always the latest version; timestamped files are the history each upload leaves behind. Import overwrites the matching local section.",
+        syncVerDeleteLatestNote: 'Note: this is the "latest" file that older zcode-pro installs download from; deleting it breaks their download. Timestamped history versions are not affected.',
+        syncHint: "Sync credentials are stored locally in zcodepro.json only; model settings contain the API keys of custom providers and go to your own WebDAV only.",
+        syncTest: "Test",
+        syncTesting: "Testing\u2026",
+        syncTestEmpty: "Enter the WebDAV URL first",
+        syncTestFailed: "Test failed",
+        syncTestStepConnect: "Connect",
+        syncTestStepDir: "Folder",
+        syncTestStepList: "Files",
+        syncTestFilesFound: "{n} backup file(s) on the server",
+        syncPickTitle: "Select a file",
+        syncPickLoading: "Loading files from the server\u2026",
+        syncPickEmpty: "No backups on the server yet. Upload from a computer first.",
+        syncVerImport: "Import",
+        syncVerImporting: "Importing\u2026",
+        syncVerDelete: "Delete",
+        syncVerSave: "Save to disk",
+        syncVerSaving: "Saving\u2026",
+        syncVerLatest: "Latest",
+        syncVerDeleteTitle: "Delete server file",
+        syncVerDeleteDesc: "This backup will be deleted from the server and cannot be recovered: ",
+        syncVerDeleted: "Backup deleted from the server.",
+        syncVerSaved: "Saved to",
+        devModeDesc: 'For development: after changing zcode-pro code, click "Reload ZCode Pro" instead of restarting ZCode. It builds automatically (when running from the source repo), restarts the ZCode Pro launcher process (fresh helper and injected script), and every ZCode window refreshes and re-injects. The ZCode app itself and all sessions stay untouched.',
+        devReload: "Reload ZCode Pro",
+        devReloading: "Reloading\u2026",
+        devReloadDesc: "Every ZCode window refreshes automatically within 2-3 seconds to load the new script.",
+        rowGapName: "Paragraph spacing",
+        rowGapDesc: "Vertical spacing between text blocks (turns, paragraphs inside answers).",
+        listSpacingName: "List spacing",
+        listSpacingDesc: "Space above and below lists.",
+        listItemSpacingName: "List item spacing",
+        listItemSpacingDesc: "Spacing between adjacent list items.",
+        quoteCodeSpacingName: "Quote block spacing",
+        quoteCodeSpacingDesc: "Space above and below quotes and code blocks.",
+        codeLineHeightName: "Code line height",
+        codeLineHeightDesc: "Line height of lines inside code blocks (multiplier).",
+        tableSpacingName: "Table spacing",
+        tableSpacingDesc: "Space above and below tables.",
+        tableCellPaddingName: "Cell padding (V/H)",
+        tableCellPaddingDesc: "Padding inside table cells; left input is vertical, right is horizontal.",
+        lineHeightName: "Answer line height",
+        lineHeightDesc: "Line height of answer text (multiplier).",
+        thinkingLineHeightName: "Work-log line height",
+        thinkingLineHeightDesc: "Line height of the \u201Cworked for\u2026\u201D history panel (tool entries and reasoning, multiplier).",
+        userLineHeightName: "Question line height",
+        userLineHeightDesc: "Line height of question text (multiplier).",
+        contentWidthName: "Content width",
+        contentWidthDesc: "Max width of conversation content; accepts px or % (e.g. 900px, 85%).",
+        defaultValue: "default",
+        resetDefault: "Reset to default",
+        featureProjectMenu: "Project menu actions",
+        featureProjectMenuDesc: "Open folder and copy path in the project More menu (alias and folder switch retired).",
+        featureTaskOrder: "Sidebar session drag ordering",
+        featureTaskOrderDesc: "Drag to reorder sessions in Pinned, Projects and Groups; survives restarts.",
+        featureSessionSwitch: "Session quick switch",
+        featureSessionSwitchDesc: "{last} toggles to the last session; alt + arrows pick recent sessions; keys remappable",
+        featureTitleLock: "Keep renamed session titles",
+        featureTitleLockDesc: "Sessions you renamed keep their custom title in the sidebar.",
+        tabTitleGen: "Auto rename",
+        titleGenShortDesc: "When a new session starts answering, generates the task name with the chosen provider and prompt and saves it as a manual rename the built-in title never overrides.",
+        titleGenEnabled: "Enable",
+        titleGenProvider: "Provider",
+        titleGenProviderNone: "Custom endpoint (no provider)",
+        titleGenProviderSession: "Follow current session",
+        titleGenProviderDeleted: " (deleted)",
+        titleGenModel: "Model",
+        titleGenModelHint: "Pick from the list, or type a model id",
+        titleGenModelEmpty: "(not set)",
+        titleGenModelSessionHint: "Pick from the list; the first entry follows the session model",
+        titleGenModelFollowSession: "Follow the session model",
+        titleGenModelManualHint: "Type a model id",
+        titleGenBaseUrl: "Base URL",
+        titleGenApiKey: "API Key",
+        titleGenFormat: "Protocol",
+        titleGenPrompt: "Prompt",
+        titleGenPromptPlaceholder: "Leave empty for the built-in default prompt (button below shows it)",
+        titleGenPromptReset: "Use default prompt",
+        titleGenSample: "Test message",
+        titleGenTest: "Test",
+        titleGenTesting: "Generating\u2026",
+        titleGenTestOk: "Result: ",
+        titleGenTestFailed: "Generation failed",
+        titleGenManual: "Manual rename",
+        titleGenHoverBtn: "Task row hover button",
+        titleGenHoverBtnDesc: "Show an \u201CAuto rename\u201D button next to the archive button when hovering a task row.",
+        titleGenMenuEntry: "Context menu item",
+        titleGenMenuEntryDesc: "Show \u201CAuto rename\u201D below \u201CRename task\u201D in the task context menu.",
+        titleGenRecentQa: "Recent Q&A rounds",
+        titleGenRecentQaDesc: "Manual rename takes this many recent Q&A rounds as material.",
+        autoRenameItem: "Auto rename",
+        autoRenameWorking: "Generating title\u2026",
+        autoRenameDone: "Renamed: ",
+        featureWsRunning: "Running indicator when collapsed",
+        featureWsRunningDesc: "Collapsed project and task headers show a loader while sessions run.",
+        tabPerformance: "Performance",
+        perfDesc: "ZCode keeps a session process resident for every project you have opened and never reclaims it, so memory grows with projects. When enabled, projects unused for a while with nothing running release their memory automatically: sessions are untouched and reload when reopened, with a few seconds wait on the first reply. The project in use, running sessions, background commands and scheduled tasks are never reclaimed. Background-command detection reads system process info via built-in tools (Linux / macOS / Windows); when unavailable, the feature disables itself.",
+        featureIdleReclaim: "Idle project memory reclaim",
+        featureIdleReclaimDesc: "Qualifying projects release their memory; sessions are untouched and reload when reopened.",
+        idleReclaimMinutesLabel: "Idle minutes before reclaim",
+        idleReclaimStartupLabel: "Minutes after startup for a one-shot reclaim",
+        idleReclaimStartupHint: "Startup pre-spawns a process per restored project; this pass collects the unused ones once. 0 = reclaim right after startup, ignoring the idle minutes above",
+        idleReclaimUnit: "min",
+        featureToolbarIcons: "Sidebar menu in the top bar",
+        featureToolbarIconsDesc: "New task / search / automations / plugin store become top-bar icon buttons.",
+        tbNewTask: "New task",
+        tbSearch: "Search",
+        tbAutomations: "Automations",
+        tbPluginStore: "Plugin store",
+        featurePinnedCollapse: "Collapsible Pinned section",
+        featurePinnedCollapseDesc: "The Pinned header collapses/expands its task list.",
+        featureSandboxReclaim: "Plugin card sandbox reclaim",
+        featureSandboxReclaimDesc: "Reclaims the oldest sandboxes at the 64 cap so new cards keep opening; released cards come back when their session is reopened.",
+        featurePluginCardRetry: "Plugin card auto-retry",
+        featurePluginCardRetryDesc: 'Auto-clicks "Reload" on cards that failed the slot cap; they recover as soon as a slot frees up.',
+        visionCardUi: "Vision cards",
+        pinnedToggleAria: "Collapse/expand Pinned",
+        sidebarProjectSpacingName: "Project spacing",
+        sidebarProjectSpacingDesc: "Visual spacing between adjacent project rows in the sidebar (row padding included); when set, section gaps (Pinned/Projects/Tasks) follow the same value.",
+        sidebarTaskSpacingName: "Task spacing",
+        sidebarTaskSpacingDesc: "Vertical spacing between adjacent task rows in the sidebar (row padding included).",
+        uiFontName: "UI font",
+        uiFontDesc: "Font for all interface text except the terminal (its font is set in the official settings).",
+        userFontName: "Question font",
+        userFontDesc: 'Font of question text in conversations; "default" follows the UI font.',
+        assistantFontName: "Answer font",
+        assistantFontDesc: 'Font of answer text in conversations (code blocks stay monospaced); "default" follows the UI font.',
+        switcherHint: "{prev} / {next} or \u2191 / \u2193 to choose, Enter or click a row to switch, Esc to cancel",
+        switcherCurrent: "current",
+        switcherEmpty: "No previous session yet (available after you switch sessions)",
+        switcherFailed: "Failed to switch to that session (it may have been deleted)",
+        switcherMore: "{n} more \xB7 press c to load",
+        switcherRunning: "running",
+        switcherUnseen: "unseen",
+        switcherAttentionHint: "Running / finished but unseen tasks \xB7 {prev} / {next} or \u2191 / \u2193 to choose, Enter or click a row to switch",
+        switcherAttentionEmpty: "No running or unseen tasks",
+        featureNewtabPanels: "Plugin panels on the new tab page",
+        featureNewtabPanelsDesc: "Adds third-party plugin panels (headroom, rtk, ...) to the new tab page; click to open in the side pane.",
+        ntpDescSuffix: "plugin panel",
+        ntpNeedSession: "Open a task session first, then open plugin panels from the new tab page",
+        featureStatusBarDesc: "Shows statistics at the bottom-right of the input box and at the end of each answer.",
+        tabStylesPane: "Styles",
+        tabStatusPane: "Status bar",
+        themeColorsPane: "Theme",
+        themeBgRegions: "Regional backgrounds",
+        themeBgRegionFollow: "None",
+        themeBgRegionLeft: "Left sidebar",
+        themeBgRegionCenter: "Center area",
+        themeBgRegionRight: "Right sidebar",
+        themeBgPane: "Wallpaper",
+        themeSkinTitle: "Skins",
+        themeSkinDesc: 'Famous editor theme palettes, auto-matching ZCode\u2019s light / dark mode; "Default" keeps ZCode as-is, "Custom" is tuned below.',
+        themeSkinCustom: "Custom",
+        themeCustomTitle: "Custom theme",
+        themeCustomHint: "Color changes apply live (auto-switches to the custom skin); set light and dark separately \u2014 pick 5 colors and the whole palette is derived.",
+        themeCustomLight: "Light",
+        themeCustomDark: "Dark",
+        themeCustomBg: "Background",
+        themeCustomCard: "Card",
+        themeCustomFg: "Text",
+        themeCustomMuted: "Muted text",
+        themeCustomAccent: "Accent",
+        themeBgDesc: "Wallpapers can be images, videos or web pages, rendered behind the UI. Sources: local library (pick one image), folder (rotate on a timer), image URL (refresh on a timer) or a web page; left / center / right regions can each have their own (static images only, with their own fit and mask). Sidebar, chat, composer and the settings dialog reveal the wallpaper \u2014 the settings dialog is frosted; the frosting can be turned off here; context menus and other dialogs stay opaque for readability. The library uploads over WebDAV with the zcode-pro sync group (overwrite, no history versions).",
+        themeBgModeNone: "None",
+        themeBgModeLibrary: "Library",
+        themeBgModeFolder: "Folder",
+        themeBgModeUrl: "Image URL",
+        themeBgModeWeb: "Web page",
+        themeBgLibrary: "My library",
+        themeBgUpload: "Upload images/videos",
+        themeBgEmpty: "Nothing uploaded yet. Images: png / jpg / webp / gif / bmp / avif (up to 10MB); videos: mp4 / webm / mov (up to 200MB)",
+        themeBgDelete: "Delete",
+        themeBgNoneHint: "Pick a wallpaper source; folders rotate on a timer, image URLs refresh on a timer for random-image APIs.",
+        themeBgFolderPick: "Browse",
+        themeBgFolderPickTitle: "Choose a wallpaper folder",
+        themeBgFolderHint: "Pick a folder of wallpapers; files are read in place, not copied.",
+        themeBgFolderRandom: "Random order",
+        themeBgIntervalHint: "Rotation interval (minutes)",
+        themeBgIntervalUnit: "minutes before rotation; 0 = no rotation",
+        themeBgFolderCount: "{n} wallpaper files in the folder, rotating on the timer.",
+        themeBgFolderMissing: "Folder missing or contains no wallpaper files.",
+        themeBgUrlIntervalUnit: "minutes before refresh; 0 = no refresh",
+        themeBgUrlInvalid: "URL must start with http(s)://",
+        themeBgWebHint: "Web wallpapers render behind the UI in a sandboxed iframe; the page plays its own animation or video. Only pages with their own transparent background reveal the wallpaper; pages that need a login session may not show.",
+        themeBgSource: "Source",
+        themeBgImage: "Display",
+        themeBgFit: "Fit",
+        themeBgFitCover: "Fill",
+        themeBgFitContain: "Fit",
+        themeBgFitFill: "Stretch",
+        themeBgFitTile: "Tile",
+        themeBgMask: "Mask opacity",
+        themeBgBlur: "Wallpaper blur",
+        themeBgPanel: "Panel opacity",
+        themeBgDialogFrost: "Frosted settings dialog",
+        themeBgMisc: "Other",
+        themeBgFollowGlobal: "Follow global",
+        themeBgRegionsHint: 'Fit and mask can be set per row; "Follow global" uses the Display values. Blur, transition and playback apply only to the global wallpaper (regions are static images, no video). Region folders reuse the global rotation interval and order settings.',
+        themeBgPlayback: "Playback (video)",
+        themeBgVolume: "Volume",
+        themeBgVolumeHint: "Audio track volume of video wallpapers, 0 = muted (default)",
+        themeBgRate: "Speed",
+        themeBgFps: "FPS cap",
+        themeBgFpsOff: "Native",
+        themeBgFpsHint: "Re-encodes video wallpapers to a lower frame rate to save resources; needs ffmpeg, otherwise the native rate is kept.",
+        themeBgTransition: "Transition",
+        themeBgTransitionCut: "Instant",
+        themeBgTransitionFade: "Fade",
+        themeBgPause: "Pause when",
+        themeBgPauseHidden: "Window minimized",
+        themeBgPauseBlur: "Window unfocused",
+        themeBgPauseBattery: "On battery",
+        themeBgDeletedActive: "Active wallpaper was deleted; wallpaper disabled",
+        tableCopyBtn: "Copy table",
+        tableCopied: "Table copied",
+        sbItemCtx: "Context usage",
+        sbItemTokRate: "Recent output tokens/s",
+        sbItemQuestions: "Questions asked",
+        sbMaster: "Enable statistics",
+        sbMasterDesc: "Master switch: turning this off disables both the input-box statistics and per-turn labels.",
+        sbGroupSession: "Session statistics (follows current session)",
+        sbGroupGlobal: "Global statistics",
+        sbGroupTurn: "Per-turn statistics (answer rows)",
+        sbLabelIn: "in",
+        sbLabelOut: "out",
+        sbLabelCache: "cache",
+        turnUsageTitle: "Turn tokens",
+        sbLabelQuestions: "asks",
+        sbItemTodayTokens: "Today tokens",
+        sbItemTasks: "Tasks",
+        sbLabelCtx: "ctx",
+        sbLabelTurns: "calls",
+        sbLabelToday: "today",
+        sbLabelTasks: "tasks",
+        sbItemTotalTokens: "Total tokens",
+        sbLabelTotal: "total",
+        sbMoveUp: "Up",
+        sbMoveDown: "Down",
+        sbVisible: "shown",
+        sbHidden: "hidden",
+        tabShortcuts: "Shortcuts",
+        hkTitle: "Session quick switch",
+        hkAltZ: "Toggle between the current and the last-used session",
+        hkAltX: "Move the highlight up (earlier sessions) in the popup",
+        hkAltC: "Move the highlight down (recent sessions); at the bottom it loads 5 more and highlights the first newly loaded entry",
+        hkAltE: "Open the last 10 tasks",
+        hkAltR: "Open running / finished-but-unseen tasks",
+        hkArrow: "Move the highlight while the popup is open (same rules as alt + {prev} / alt + {next})",
+        hkEnter: "Switch to the highlighted session",
+        hkEsc: "Cancel and close the popup",
+        hkModify: "Change",
+        hkRecording: "press a key\u2026",
+        hkInvalid: "Shortcuts accept a single letter or digit only",
+        hkConflict: 'alt+{k} is already used by "{name}"',
+        hkSaved: "Shortcut updated",
+        hkNameLast: "last session",
+        hkNamePrev: "move up",
+        hkNameNext: "move down",
+        hkNameRecent: "last 10 tasks",
+        hkNameAttention: "running / unseen",
+        hkEditHint: 'Click "Change", press a new key (letter or digit); Esc cancels',
+        hkReset: "Reset to defaults",
+        hkResetDone: "Shortcuts reset to defaults",
+        featureFileActions: "File menu actions",
+        featureFileActionsDesc: 'Adds "Open with default app" and "Reveal in file manager" to the right-click menu of file links in chat.',
+        featureImageCopy: "Image right-click copy",
+        featureTableCopy: "Copy table",
+        featureComposerProvider: "Provider in model name",
+        featureImageCopyDesc: "Right-click an image in chat or the enlarged preview to copy it to the clipboard.",
+        featureTableCopyDesc: "Copy-table button on the table toolbar; pastes into Excel / editors as a clean table.",
+        featureSessionLink: "Session ID links",
+        featureSessionLinkDesc: "Shows session IDs (sess_ / session_) in chat as task names; click to switch to that session, hover for the raw ID.",
+        featureComposerProviderDesc: "Shows the provider before the model name (e.g. BigModel-Max1 / glm-5.3).",
+        imageCopy: "Copy image",
+        imageCopied: "Image copied to the clipboard.",
+        imageCopyFailed: "Failed to copy the image.",
+        openFolderItem: "Open folder",
+        openFolderPrimary: "primary",
+        copyPathItem: "Copy path",
+        pathCopied: "Path copied to the clipboard.",
+        pathCopyFailed: "Failed to copy the path.",
+        fileOpenDefault: "Open with default app",
+        fileReveal: "Reveal in file manager",
+        featureAutoUpdatePlugins: "Auto-update",
+        featureAutoUpdatePluginsRepo: "duanluan/zcode-plugins",
+        featureAutoUpdatePluginsDesc: "",
+        pluginsCheckNow: "Check for updates",
+        pluginsUpdating: "Updating plugins\u2026",
+        pluginsUpToDate: "Plugins are up to date",
+        pluginsUpdatesFound: "{n} plugin(s) can be updated",
+        pluginsUpdatedDone: "Updated {n} plugin(s)",
+        pluginsUpdateFailed: "Plugin update failed",
+        pluginsUpdatesAvailable: "{n} zcode-plugins update(s) available (ZCode Pro settings \u2192 Features)",
+        pluginsAutoUpdated: "zcode-plugins updated",
+        tabVision: "Vision",
+        visionDesc: "When the main model cannot see images (e.g. glm-5.3), images in messages are recognized by the vision models below and passed to the main model as text (zcode-vision plugin; /vision-* commands edit the same file).",
+        visionEnabled: "Enable",
+        visionForceIntercept: "Main model",
+        visionForceInterceptAuto: "Use plugin only if model can't see images",
+        visionForceInterceptTrue: "Always use plugin",
+        visionForceInterceptFalse: "Never use plugin",
+        visionForceInterceptHint: "Use plugin only if model can't see images = follow the image toggle in ZCode model settings: on = the model sees images itself (no duplicate recognition), off = route through the vision proxy (tool mode shows the result card); Always use plugin = forced double recognition for the card; Never use plugin = let capable models see images (models that can't still go through the plugin)",
+        visionMode: "Chain mode",
+        visionModeFallback: "Fallback",
+        visionModeFallbackDesc: "Try in order until one succeeds (primary + backup).",
+        visionModePipeline: "Pipeline",
+        visionModePipelineDesc: "Every step runs; later steps refine earlier results (describe \u2192 refine).",
+        visionAddProxy: "Add proxy",
+        visionRemove: "Remove",
+        visionMoveUp: "Up",
+        visionMoveDown: "Down",
+        visionName: "Name",
+        visionUseProvider: "Provider",
+        visionSkipAfterFailures: "Skip after failures",
+        visionSkipAfterFailuresHint: "After this many consecutive failures a proxy is skipped and the next one is tried; 0 = never skip",
+        visionSkipMinutes: "Skip minutes",
+        visionSkipMinutesHint: "How long a skipped proxy rests before being retried; any success resets the counter",
+        visionResetChain: "Reset default chain",
+        visionResetChainConfirm: "Reset chain mode and the proxy list to the default single-level chain (session: follow session and its current model)? Current proxy edits will be lost. Continue?",
+        visionBaseUrl: "API URL",
+        visionModel: "Model",
+        visionApiKey: "API Key",
+        visionPrompt: "Recognition prompt ({prev} = previous step in pipeline)",
+        visionTest: "Test",
+        visionTesting: "Testing\u2026",
+        visionTestFailed: "Vision proxy test failed",
+        visionCompressKB: "Compress threshold KB",
+        visionCompressKBHint: "Images above this size are compressed first (max edge 2000, JPEG); 0 = never",
+        visionLoadFailed: "Failed to load the vision config",
+        tabRtk: "rtk",
+        rtkDesc: "rtk plugin: compresses common dev command output by 60-90% before it reaches the context (/rtk-* commands edit the same files).",
+        rtkEnabled: "Enable",
+        rtkNotInstalled: "rtk is not installed. The settings below take effect after installation (/rtk-setup in a session).",
+        rtkInstallBin: "Install rtk binary",
+        rtkBinInstalled: "rtk installed; PATH takes effect for sessions after signing out and back in \u2014 the plugin hook works immediately",
+        rtkWhitelistTitle: "Whitelist (pass through without compression)",
+        rtkBuiltinLabel: "Built-in exemptions (read-only, follow plugin updates):",
+        rtkWhitelistDesc: "Each entry is name (e.g. docker) or git:name (e.g. git:clone); added commands skip compression. Built-ins (git add/commit/push, mkdir/cp, \u2026) cannot be removed.",
+        rtkWhitelistPlaceholder: "name or git:name, press Enter to add",
+        rtkWhitelistAdd: "Add",
+        rtkWhitelistClear: "Clear",
+        rtkWhitelistCleared: "Whitelist cleared",
+        rtkWhitelistInvalid: "Entry must be name or git:name",
+        rtkLoadFailed: "Failed to load the rtk config",
+        tabHeadroom: "Headroom",
+        headroomDesc: "Headroom plugin: a local compression proxy on 127.0.0.1 (port 8787 by default) that compresses context sent to the model to save tokens (/hr-* commands edit the same file). Switching the device restarts the proxy, so requests in progress may be interrupted once.",
+        headroomBinMissing: "The headroom program was not found, so the proxy cannot start. The settings below take effect once it is installed.",
+        hrInstallBin: "Install headroom binary",
+        hrBinInstalled: "headroom installed; reopen the app or a session and the proxy will start automatically",
+        headroomInstallTitle: "headroom plugin not installed",
+        headroomInstallDesc: "Install it from the zcode-plugins marketplace to manage the compression proxy here; takes effect after a session restart.",
+        headroomInstall: "Install",
+        headroomInstalling: "Installing\u2026",
+        headroomInstalled: "headroom plugin installed",
+        headroomInstallRetry: "Installation did not take effect; retry or install it from the marketplace manually",
+        pluginInstallCardTitle: "{name} plugin not installed",
+        pluginInstallCardDesc: "Install it from the zcode-plugins marketplace to manage it here; takes effect after a session restart.",
+        pluginInstallDone: "{name} plugin installed",
+        pluginEnable: "Enable",
+        hrStarting: "Starting compression proxy\u2026",
+        hrStarted: "Compression proxy started",
+        hrStartTimeout: "Proxy start timed out (90s); check ~/.zcode-headroom-proxy.log",
+        hrStopping: "Stopping compression proxy\u2026",
+        hrRestarting: "Restarting compression proxy\u2026",
+        hrStopped: "Compression proxy stopped",
+        hrUsageNone: "No providers route through headroom; nothing changed",
+        headroomLoadFailed: "Failed to load the Headroom config",
+        headroomStatusTitle: "Status",
+        hrInstRunning: "running",
+        hrInstStopped: "down",
+        headroomStatusLoadFailed: "Failed to load the status",
+        headroomProxyUp: "Proxy running",
+        headroomProxyDown: "Proxy down",
+        headroomCurrentBackend: "Current device",
+        headroomDesiredBackend: "Target device",
+        hrValAuto: "Auto",
+        hrPmAc: "AC",
+        hrPmBattery: "Battery",
+        hrPmSaver: "Power saver",
+        hrPmSaverBat: "Saver + battery",
+        hrDetectOk: "OK",
+        hrDetectMissing: "missing",
+        hrDetectBroken: "unavailable",
+        headroomPowerState: "Power",
+        headroomWatcher: "Watcher",
+        headroomWatcherOn: "Running",
+        headroomWatcherOff: "Stopped",
+        headroomSaverDetect: "Power-saver detection",
+        headroomRefresh: "Refresh",
+        headroomStart: "Start",
+        headroomRestart: "Restart",
+        headroomStopAction: "Stop",
+        headroomStopTitle: "Stop the Headroom proxy",
+        headroomStopDesc: "Requests from ZCode and other apps pointing at this proxy (127.0.0.1) will fail until it is started again. headroom is shared \u2014 other tools may be using it. Stop it?",
+        headroomStoppedWarn: "Proxy stopped; providers pointing at 127.0.0.1 cannot connect.",
+        headroomBackend: "Compression device",
+        headroomBackendAuto: "Auto \xB7 GPU first",
+        headroomBackendCpu: "Power saving \xB7 CPU first",
+        headroomBackendNative: " (native)",
+        headroomBackendDesc: "Auto lets headroom pick the fastest device (CUDA/MPS); CPU forces CPU compression (power saving, no VRAM). Native headroom values (onnx, pytorch_mps, \u2026) also work. Switching restarts the proxy to apply.",
+        headroomPower: "Power-save auto switch",
+        headroomPowerOff: "Off",
+        headroomPowerOffDesc: "No auto switching; always follow the compression device.",
+        headroomPowerBattery: "On battery",
+        headroomPowerBatteryDesc: "On battery (discharging) \u2192 CPU; switches back when plugged in.",
+        headroomPowerSaver: "Power-saver",
+        headroomPowerSaverDesc: "Only the system power-saver mode \u2192 CPU; back when it exits.",
+        hrCpuPinnedHint: "The compression device is pinned to CPU, so power-save switching no longer changes anything.",
+        headroomInterval: "Watch interval",
+        headroomIntervalDesc: "Seconds between power checks (10\u20133600, default 60); applies from the next round.",
+        headroomSecUnit: "s",
+        upgradeCheck: "Check update",
+        upgradeChecking: "Checking\u2026",
+        upgradeUpToDate: "Up to date ({v})",
+        upgradeFound: "{v} available",
+        upgradeNow: "Update",
+        upgradeRunning: "Updating\u2026",
+        upgradeStop: "Stop",
+        upgradeStopped: "Upgrade stopped",
+        upgradeDone: "Updated to {v}",
+        upgradeFinished: "Update finished",
+        upgradeCheckFailed: "Update check failed",
+        close: "Close",
+        cancel: "Cancel",
+        pathLabel: "Path",
+        aliasItem: "Custom alias",
+        aliasTitle: "Custom alias",
+        aliasDesc: "Shown in the ZCode UI only. The directory on disk and all data stay untouched; revert anytime.",
+        aliasLabel: "Alias",
+        aliasPlaceholder: "Leave empty and save to restore the real name",
+        aliasConfirm: "Save",
+        aliasClear: "Restore real name",
+        aliasSaved: "Alias updated.",
+        aliasCleared: "Real name restored.",
+        aliasHint: "The directory name on disk is unchanged: terminals, file managers and other path-based UI still show the real name.",
+        featureProjectMenuDescNew: 'Open folder and copy path in the project "More" menu. Renaming is built in since ZCode 3.16.1 ("Edit project"), so the custom alias is retired.',
+        aliasMigrateTitle: "Migrate project aliases",
+        aliasMigrateDesc: 'This ZCode supports renaming projects (project "More" menu \u2192 Edit project), so the custom alias feature is retired. Write your saved aliases into the official project names by picking the projects below; only the project name changes, folders on disk are untouched.',
+        aliasMigrateItemHint: 'The alias becomes the project name (re-editable anytime via "Edit project"). Only unmarked entries can be checked; migrated, merged, deleted, not-on-this-machine and manually-renamed ones cannot \u2014 to rename those projects, use "Edit project" in the project "More" menu directly.',
+        aliasMigrateStateDone: "Migrated",
+        aliasMigrateStateMerged: 'Merged into "{name}"',
+        aliasMigrateStateDeleted: "Project deleted",
+        aliasMigrateStateMissing: "Not on this machine",
+        aliasMigrateStateRenamed: "Project renamed",
+        aliasMigrateDeadSummary: "{n} stale entries (not on this machine / project deleted \u2014 usually old-machine paths from settings sync)",
+        aliasMigrateClearDead: "Clear stale entries",
+        aliasMigrateDeadCleared: "Removed {n} stale alias(es)",
+        aliasMigrateDeadClearFailed: "Some stale aliases could not be removed; please retry",
+        aliasMigrateGo: "Migrate selected",
+        aliasMigrateRunning: "Migrating\u2026",
+        aliasMigrateProgress: "Migrating {i}/{n}: {name}",
+        aliasMigrateStateFailed: "Failed",
+        aliasMigrateSkip: "Not now",
+        aliasMigrateDone: "Migrated {n} alias(es)",
+        aliasMigratePartial: "{n} migrated, {m} failed; retry the rest later in ZCode Pro settings",
+        aliasMigrateAllFailed: "Alias migration failed; retry later in ZCode Pro settings",
+        aliasMigrateCardName: "Alias migration",
+        aliasMigrateCardDesc: "Project renaming is built in now; {n} custom alias(es) are not migrated yet.",
+        aliasMigrateRun: "Migrate",
+        taskOrderSaved: "Order updated.",
+        qqGroupTitle: "QQ group: 428403354",
+        qqGroupDesc: "Feedback & discussion",
+        wechatGroupTitle: "WeChat group",
+        wechatGroupDesc: "Add WeChat {id} for a group invite",
+        wechatIdCopied: "WeChat ID copied.",
+        browse: "Browse",
+        relocateItem: "Switch folder",
+        relocateTitle: "Switch folder",
+        relocateDesc: "Points this project at another folder: the sidebar, open tabs and local task history move along. The directory itself is not moved and no sessions are lost.",
+        relocateNewPathLabel: "New folder",
+        relocateConfirm: "Move",
+        relocateHint: "The target folder must already exist. Enter a path or use Browse; the UI refreshes automatically afterwards.",
+        relocateSuccess: "Folder switched. Refreshing\u2026",
+        relocateIndexSkipped: "Folder switched, but the task history was not synced (SQLite support missing); old entries may still point to the old path.",
+        relocateSame: "The new folder is the same as the current one.",
+        relocateNotFound: "The target folder does not exist.",
+        relocateProtected: "Refusing to point inside the ZCode data directory.",
+        relocateIndexBusy: "The task index is busy (ZCode may be writing). Please retry shortly.",
+        relocateConfirmTitle: "Confirm folder switch",
+        relocateConfirmDesc: "The page will refresh after switching, and unsent text in the chat input will be lost. Sessions and project files are not affected.",
+        relocateConfirmGo: "Confirm switch",
+        failed: "Operation failed",
+        retryHint: "Please retry"
+      };
+      cachedSystemLocale = null;
+      errEn = {
+        "invalid-path": "Invalid project path",
+        "not-found": "The folder does not exist",
+        "invalid-request": "Invalid request",
+        "invalid-content": "content must be a string",
+        "agents-read": "Failed to read AGENTS.md",
+        "agents-write": "Failed to write AGENTS.md",
+        "config-save": "Failed to save config",
+        "settings-write": "Failed to update setting.json",
+        "workspace-empty": "Workspace not found or has no sessions",
+        "order-write": "Failed to persist ordering",
+        "group-not-found": "No group contains these sessions",
+        "group-ambiguous": "Cannot determine the group uniquely",
+        "name-too-long": "Alias too long (max 100 characters)",
+        "name-invalid-chars": "Alias must not contain newlines or control characters",
+        "index-remap-failed": "Failed to update the task index (config changes rolled back)",
+        "index-error": "Task index error",
+        "index-busy": "The task index is busy. Please retry shortly.",
+        "vision-invalid": "Invalid vision config",
+        "vision-read": "Failed to read zcode-vision.json",
+        "vision-write": "Failed to write zcode-vision.json",
+        "vision-test": "Vision test failed",
+        "proxy-invalid": "Proxy must look like http://127.0.0.1:7890, or be empty",
+        "proxy-not-set": "Set the proxy address first",
+        "rtk-invalid": "Invalid rtk config",
+        "rtk-update": "Failed to check rtk updates (GitHub Releases unreachable? Set a proxy in the Proxy tab)",
+        "rtk-write": "Failed to write the rtk config",
+        "headroom-read": "Failed to read headroom.json",
+        "headroom-write": "Failed to write headroom.json",
+        "headroom-invalid": "Invalid headroom setting",
+        "headroom-plugin": "headroom plugin not found (install it from the marketplace)",
+        "headroom-sh": "sh not found; cannot run the headroom plugin script",
+        "headroom-action": "The headroom action failed",
+        "headroom-status": "Failed to read the headroom status",
+        "headroom-upgrade": "headroom upgrade failed",
+        "plugins-status": "Failed to read the plugin list",
+        "plugins-update": "Failed to update plugins",
+        "sync-invalid": "Invalid sync settings",
+        "sync-not-configured": "Set the sync type to WebDAV and save the config first",
+        "sync-remote-missing": "No synced data on the server yet; upload from another computer first",
+        "sync-remote-invalid": "The URL already holds a different file; use another file path",
+        "sync-request": "The WebDAV request failed",
+        "sync-run": "Sync failed",
+        "sync-file-invalid": "Invalid backup file name",
+        "sync-export": "Failed to save the backup to disk"
+      };
+    }
+  });
 
   // src/inject/ui.js
-  var toastTimer = null;
-  var TOAST_KINDS = {
-    success: { name: "success", glyph: "\u2713", ms: 2600 },
-    warning: { name: "warning", glyph: "\uFF01", ms: 3600 },
-    error: { name: "error", glyph: "\u2715", ms: 5e3 },
-    info: { name: "info", glyph: "\u24D8", ms: 2600 }
-  };
   function showToast(text, kind = "info") {
     document.getElementById("__zcodepro_toast__")?.remove();
     clearTimeout(toastTimer);
@@ -1426,10 +1438,6 @@
     document.body.append(wrap);
     toastTimer = setTimeout(() => wrap.remove(), v.ms);
   }
-  var overlayClass = "fixed inset-0 isolate z-50 flex items-start justify-center bg-black/60 supports-backdrop-filter:backdrop-blur-xs duration-100 p-4 platform-linux-desktop:top-12";
-  var overlayClassBare = "fixed inset-0 isolate z-50 flex items-start justify-center duration-100 p-4 platform-linux-desktop:top-12";
-  var contentClass = "w-full sm:max-w-md rounded-2xl border-none bg-popover/98 p-5 text-ui-base/relaxed text-foreground ring-border shadow-2xl";
-  var dialogStack = [];
   function openDialog({ title, description, onMount, onClose, width = "sm:max-w-md", overlay = "dim", draggable = false, posKey = "", dismissOnOutside = true, bodyClass = "", closable = false }) {
     const L = t();
     const prevActive = document.activeElement;
@@ -1825,6 +1833,12 @@
     if (!root) return;
     root.append(h("style", { id: "__zcodepro_style__" }, `
     @keyframes zcodepro-fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+    /* \u4F1A\u8BDD ID \u663E\u793A\u4E3A\u4EFB\u52A1\u540D\u94FE\u63A5\uFF08session-link.js\uFF09\uFF1A\u89C2\u611F\u8D34\u8FD1\u6B63\u6587\u94FE\u63A5\uFF0C\u4E3B\u9898\u53D8\u91CF\u7F3A\u5931\u65F6\u56DE\u9000\u5B57\u9762\u91CF */
+    .zcodepro-sess-link {
+      color: var(--color-link, var(--color-primary, #4a9eff));
+      cursor: pointer; text-decoration: underline; text-underline-offset: 2px;
+    }
+    .zcodepro-sess-link:hover { opacity: .8; }
     /* \u63D0\u793A\u6761\u56DB\u6001\uFF08\u6210\u529F/\u8B66\u544A/\u5931\u8D25/\u4FE1\u606F\uFF09\uFF1A\u914D\u8272\u7528\u4E3B\u9898\u53D8\u91CF\u52A0\u5B57\u9762\u91CF\u515C\u5E95\uFF0C
        \u4E0D\u4F9D\u8D56\u5BBF\u4E3B Tailwind \u751F\u6210\u914D\u8272\u5DE5\u5177\u7C7B */
     .zcodepro-toast {
@@ -2326,8 +2340,1213 @@
     .zcodepro-pin-collapsed .zcodepro-pin-head { padding-bottom: 0; }
   `));
   }
+  var toastTimer, TOAST_KINDS, overlayClass, overlayClassBare, contentClass, dialogStack;
+  var init_ui = __esm({
+    "src/inject/ui.js"() {
+      init_core();
+      toastTimer = null;
+      TOAST_KINDS = {
+        success: { name: "success", glyph: "\u2713", ms: 2600 },
+        warning: { name: "warning", glyph: "\uFF01", ms: 3600 },
+        error: { name: "error", glyph: "\u2715", ms: 5e3 },
+        info: { name: "info", glyph: "\u24D8", ms: 2600 }
+      };
+      overlayClass = "fixed inset-0 isolate z-50 flex items-start justify-center bg-black/60 supports-backdrop-filter:backdrop-blur-xs duration-100 p-4 platform-linux-desktop:top-12";
+      overlayClassBare = "fixed inset-0 isolate z-50 flex items-start justify-center duration-100 p-4 platform-linux-desktop:top-12";
+      contentClass = "w-full sm:max-w-md rounded-2xl border-none bg-popover/98 p-5 text-ui-base/relaxed text-foreground ring-border shadow-2xl";
+      dialogStack = [];
+    }
+  });
+
+  // src/inject/features/ws-rows.js
+  function projectRowSelector() {
+    return isNewProjectSidebar() ? NEW_ROW_SEL : OLD_ROW_SEL;
+  }
+  function projectRows(root = document) {
+    return [...root.querySelectorAll(projectRowSelector())];
+  }
+  function rowPath(row) {
+    if (!row) return null;
+    if (row.hasAttribute && row.hasAttribute("data-project-id")) {
+      const host = row.getAttribute("data-project-host");
+      if (host !== null && host !== "local") return null;
+      const id = row.getAttribute("data-project-id");
+      let found = null;
+      for (const el of row.querySelectorAll("[data-task-item-key]")) {
+        const key = el.getAttribute("data-task-item-key") || "";
+        const cut = key.lastIndexOf(":");
+        if (cut > 1) {
+          found = key.slice(0, cut);
+          break;
+        }
+      }
+      if (found) pathByProjectId.set(id, found);
+      return found || pathByProjectId.get(id) || null;
+    }
+    const testid = row.getAttribute && row.getAttribute("data-testid");
+    if (!testid || !testid.startsWith("workspace-item-")) return null;
+    return norm2(testid.slice("workspace-item-".length)) || null;
+  }
+  function findProjectRow(path) {
+    const want = norm2(path);
+    if (!want) return null;
+    for (const row of projectRows()) {
+      const p = rowPath(row);
+      if (p && norm2(p) === want) return row;
+    }
+    return null;
+  }
+  var norm2, NEW_ROW_SEL, OLD_ROW_SEL, pathByProjectId;
+  var init_ws_rows = __esm({
+    "src/inject/features/ws-rows.js"() {
+      init_core();
+      norm2 = (p) => String(p || "").replace(/[\\/]+$/, "");
+      NEW_ROW_SEL = "section[data-project-id]";
+      OLD_ROW_SEL = '[data-testid^="workspace-item-"]';
+      pathByProjectId = /* @__PURE__ */ new Map();
+    }
+  });
+
+  // src/inject/features/ws-running.js
+  function findWsRow(ws) {
+    return findProjectRow(ws);
+  }
+  function makeLoaderSvg(baseClass) {
+    const ns = "http://www.w3.org/2000/svg";
+    const proto = document.querySelector("svg.lucide-loader");
+    if (proto) {
+      const clone = proto.cloneNode(true);
+      const origClass = proto.getAttribute("class") || "";
+      const keep = origClass.split(/\s+/).filter((c) => /^(size-|text-)/.test(c)).join(" ");
+      clone.setAttribute("class", ((keep || baseClass) + " animate-spin zcodepro-ws-loader").trim());
+      return clone;
+    }
+    const svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor");
+    svg.setAttribute("stroke-width", "2");
+    svg.setAttribute("stroke-linecap", "round");
+    svg.setAttribute("stroke-linejoin", "round");
+    svg.setAttribute("class", (baseClass + " animate-spin zcodepro-ws-loader").trim());
+    for (const d of LOADER_FALLBACK_PATHS) {
+      const path = document.createElementNS(ns, "path");
+      path.setAttribute("d", d);
+      svg.append(path);
+    }
+    return svg;
+  }
+  function setRunningIcon(holder, on) {
+    if (!holder) return;
+    if (on) {
+      if (holder.querySelector(":scope > svg.zcodepro-ws-loader")) return;
+      const orig0 = holder.querySelector(":scope > svg:not(.zcodepro-ws-loader)");
+      const base = (orig0 ? orig0.getAttribute("class") || "" : "size-4").replace(/lucide-[a-z-]*/g, "").trim() || "size-4";
+      holder.append(makeLoaderSvg(base));
+    } else {
+      holder.querySelectorAll(":scope > svg.zcodepro-ws-loader").forEach((el) => el.remove());
+    }
+  }
+  function iconHolderOf(row) {
+    if (row.hasAttribute && row.hasAttribute("data-project-id")) {
+      const toggle2 = row.querySelector('[data-testid="virtual-project-toggle"]');
+      return toggle2 ? toggle2.querySelector(":scope > span") : null;
+    }
+    return row.firstElementChild && row.firstElementChild.querySelector(":scope > span");
+  }
+  function isRunningRow(el) {
+    const scope = el.firstElementChild;
+    if (!scope) return false;
+    const svg = scope.querySelector('svg[class*="lucide-loader"]');
+    return !!svg;
+  }
+  function findServices() {
+    if (servicesRef) return servicesRef;
+    try {
+      const rootEl = document.getElementById("root");
+      const containerKey = rootEl && Object.keys(rootEl).find((k) => k.startsWith("__reactContainer$"));
+      if (!containerKey) return null;
+      const seen2 = /* @__PURE__ */ new Set();
+      let found = null;
+      const scanObj = (o) => {
+        if (!o || typeof o !== "object" || seen2.has(o) || found) return;
+        seen2.add(o);
+        const ts = o.zcodeTaskService;
+        if (ts && typeof ts === "object" && typeof ts.releaseWorkspacePreparation === "function") found = o;
+      };
+      let visited = 0;
+      const visit = (f) => {
+        if (!f || found || visited > 6e4) return;
+        visited++;
+        for (const holder of [f.memoizedProps, f.memoizedState]) {
+          if (!holder || typeof holder !== "object") continue;
+          scanObj(holder);
+          for (const v of Object.values(holder)) {
+            if (v && typeof v === "object") scanObj(v);
+          }
+        }
+        visit(f.child);
+        visit(f.sibling);
+      };
+      visit(rootEl[containerKey]);
+      if (found) servicesRef = found;
+      return found;
+    } catch {
+      return null;
+    }
+  }
+  async function authoritativeIdle(ws) {
+    const services = findServices();
+    const ts = services && services.zcodeTaskService;
+    if (!ts || typeof ts.listActiveTaskIds !== "function") return null;
+    try {
+      const base = String(ws).replace(/[\\/]+$/, "");
+      const a = await ts.listActiveTaskIds({ workspacePath: base });
+      const b = await ts.listActiveTaskIds({ workspacePath: base + "/" });
+      const ids = [...Array.isArray(a) ? a : [], ...Array.isArray(b) ? b : []].map(String);
+      if (!Array.isArray(a) || !Array.isArray(b)) return null;
+      if (!ids.length) return true;
+      const st = await rpc("/task-statuses?ids=" + encodeURIComponent(ids.join(","))).catch(() => null);
+      const TERMINAL = /* @__PURE__ */ new Set(["completed", "error", "interrupted"]);
+      const live = (id) => {
+        const rec = st && st.ok && st.available ? st.statuses[id] : void 0;
+        if (rec === void 0) return true;
+        if (!TERMINAL.has(rec.status)) return true;
+        return Date.now() - rec.updatedAt < 3e5;
+      };
+      return !ids.some(live);
+    } catch {
+      return null;
+    }
+  }
+  function workspaceOf(key) {
+    const i = key.lastIndexOf(":");
+    return i > 0 ? key.slice(0, i) : key;
+  }
+  function wsHead(row) {
+    return row.matches("[aria-expanded]") ? row : row.querySelector("[aria-expanded]");
+  }
+  function domRowsOf(ws) {
+    return [...document.querySelectorAll(TASK_SEL)].filter((e) => workspaceOf(e.getAttribute("data-task-item-key") || "") === ws);
+  }
+  function currentTaskRow() {
+    for (const el of document.querySelectorAll(TASK_SEL)) {
+      if ((el.className + "").includes("bg-selected")) return el;
+    }
+    return null;
+  }
+  function toggleNavSafe(head) {
+    const cur = currentTaskRow();
+    const backKey = cur ? cur.getAttribute("data-task-item-key") : "";
+    synthClick(head);
+    if (!backKey) return;
+    const back = cur && cur.isConnected ? cur : document.querySelector(`${TASK_SEL}[data-task-item-key="${CSS.escape(backKey)}"]`);
+    if (back) synthClick(back);
+  }
+  function scan() {
+    wsWithRows = /* @__PURE__ */ new Set();
+    for (const el of document.querySelectorAll(TASK_SEL)) {
+      const key = el.getAttribute("data-task-item-key") || "";
+      const ws = workspaceOf(key);
+      if (!ws) continue;
+      wsWithRows.add(ws);
+      const run = isRunningRow(el);
+      let set = runningByWs.get(ws);
+      if (run) {
+        if (!set) {
+          set = /* @__PURE__ */ new Set();
+          runningByWs.set(ws, set);
+        }
+        set.add(key);
+      } else if (set) {
+        set.delete(key);
+      }
+    }
+    syncPeeks();
+    apply();
+  }
+  function handleRemovals(muts) {
+    const removed = [];
+    for (const m of muts) {
+      if (m.type !== "childList") continue;
+      for (const n of m.removedNodes) {
+        if (!(n instanceof Element)) continue;
+        if (n.matches(TASK_SEL)) removed.push(n);
+        else for (const r of n.querySelectorAll(TASK_SEL)) removed.push(r);
+      }
+    }
+    if (!removed.length) return;
+    const infos = removed.map((el) => {
+      const key = el.getAttribute("data-task-item-key") || "";
+      const ws = workspaceOf(key);
+      return key && ws ? { key, ws, run: isRunningRow(el) } : null;
+    }).filter(Boolean);
+    if (!infos.length) return;
+    setTimeout(() => {
+      for (const info of infos) {
+        const row = findWsRow(info.ws);
+        const head = row && wsHead(row);
+        const collapsed = !row || !head || head.getAttribute("aria-expanded") === "false";
+        let set = runningByWs.get(info.ws);
+        if (collapsed && info.run) {
+          if (!set) {
+            set = /* @__PURE__ */ new Set();
+            runningByWs.set(info.ws, set);
+          }
+          set.add(info.key);
+        } else if (set) {
+          set.delete(info.key);
+        }
+      }
+      syncPeeks();
+      apply();
+    }, 0);
+  }
+  function apply() {
+    const seen2 = /* @__PURE__ */ new Set();
+    for (const row of document.querySelectorAll(WS_SEL())) {
+      const path = rowPath(row);
+      if (!path) continue;
+      seen2.add(path);
+      const head = wsHead(row);
+      const collapsed = !head || head.getAttribute("aria-expanded") === "false";
+      const domRunning = !!(runningByWs.get(path) && runningByWs.get(path).size);
+      const normP = (v) => String(v || "").replace(/[\\/]+$/, "");
+      const running = enabled2 && collapsed && (activeProjectPaths.size ? [...activeProjectPaths].some((p2) => normP(p2) === normP(path)) : domRunning);
+      const icon2 = iconHolderOf(row);
+      icon2?.classList.toggle("zcodepro-ws-running", running);
+      setRunningIcon(icon2, running);
+    }
+    applySectionSpin();
+    for (const ws of [...runningByWs.keys()]) if (!seen2.has(ws)) runningByWs.delete(ws);
+  }
+  function kindFromHeadText(head) {
+    const text = (head.textContent || "").trim().toLowerCase();
+    if (PROJECT_HEAD_TEXTS.has(text)) return "project";
+    if (TASK_HEAD_TEXTS.has(text)) return "task";
+    return null;
+  }
+  function sectionHeads() {
+    const heads = [];
+    for (const sv of document.querySelectorAll("svg[data-purpose-section-chevron]")) {
+      const btn = sv.closest("button");
+      if (btn) heads.push(btn);
+    }
+    for (const h3 of document.querySelectorAll("h3")) heads.push(h3);
+    return heads.map((head) => {
+      const cached = headInfoCache.get(head);
+      if (cached) return { head, cont: cached.cont, kind: cached.kind };
+      const textKind = head.tagName === "BUTTON" ? kindFromHeadText(head) : "task";
+      let cont = head.parentElement;
+      while (cont && !cont.querySelector("li[data-task-item-key]") && cont !== document.body) cont = cont.parentElement;
+      const contOk = cont && cont !== document.body;
+      const kind = textKind || (contOk ? cont.querySelector("section[data-project-id]") ? "project" : "task" : null);
+      headInfoCache.set(head, { cont: contOk ? cont : null, kind });
+      return { head, cont: contOk ? cont : null, kind };
+    }).filter((x) => x.head);
+  }
+  function globalAnyActive() {
+    if (anyActiveCache.value !== null && Date.now() - anyActiveCache.at < 1e4) return anyActiveCache.value;
+    if (anyActiveCache.busy) return anyActiveCache.value === true;
+    anyActiveCache.busy = true;
+    sectionActive.task = false;
+    sectionActive.project = false;
+    sectionActive.pinned = false;
+    activeProjectPaths = /* @__PURE__ */ new Set();
+    authActiveByWs = /* @__PURE__ */ new Map();
+    void (async () => {
+      let hit = null;
+      try {
+        const res = await rpc("/projects-v2").catch(() => null);
+        const services = findServices();
+        const ts = services && services.zcodeTaskService;
+        if (res && res.ok && res.available && ts && typeof ts.listActiveTaskIds === "function") {
+          hit = false;
+          const projPaths = /* @__PURE__ */ new Set();
+          for (const proj of res.projects || []) {
+            for (const r of proj.roots || []) {
+              const b = String(r.path || "").replace(/[\\/]+$/, "");
+              if (b) projPaths.add(b);
+            }
+          }
+          const taskSidePaths = /* @__PURE__ */ new Set();
+          for (const el of document.querySelectorAll("[data-task-item-key]")) {
+            const sec = el.closest("section[data-project-id]");
+            if (sec) continue;
+            const k = el.getAttribute("data-task-item-key") || "";
+            const cut = k.lastIndexOf(":");
+            if (cut > 1) taskSidePaths.add(k.slice(0, cut).replace(/[\\/]+$/, ""));
+          }
+          const scanPaths = /* @__PURE__ */ new Set([...projPaths, ...taskSidePaths]);
+          const byKind = { task: /* @__PURE__ */ new Set(), project: /* @__PURE__ */ new Set() };
+          const byKindByPath = /* @__PURE__ */ new Map();
+          const rootToProject = /* @__PURE__ */ new Map();
+          const projectPaths = /* @__PURE__ */ new Map();
+          for (const proj of res.projects || []) {
+            const names = [];
+            for (const r of proj.roots || []) {
+              const b = String(r.path || "").replace(/[\\/]+$/, "");
+              if (b) {
+                rootToProject.set(b, proj.name);
+                names.push(b);
+              }
+            }
+            projectPaths.set(proj.name, names);
+          }
+          for (const base of scanPaths) {
+            const a = await ts.listActiveTaskIds({ workspacePath: base });
+            const b = await ts.listActiveTaskIds({ workspacePath: base + "/" });
+            const ids = [...Array.isArray(a) ? a : [], ...Array.isArray(b) ? b : []].map(String);
+            if (!ids.length) continue;
+            byKindByPath.set(base, ids);
+            const kind = projPaths.has(base) ? "project" : "task";
+            for (const id of ids) byKind[kind].add(id);
+          }
+          const allIds = [...byKind.task, ...byKind.project];
+          const st = allIds.length ? await rpc("/task-statuses?ids=" + encodeURIComponent(allIds.join(","))).catch(() => null) : null;
+          const TERMINAL = /* @__PURE__ */ new Set(["completed", "error", "interrupted"]);
+          const recOf = (id) => st && st.ok && st.available ? st.statuses[id] : void 0;
+          const live = (id) => {
+            const rec = recOf(id);
+            if (rec === void 0) return true;
+            if (!TERMINAL.has(rec.status)) return true;
+            return Date.now() - rec.updatedAt < 3e5;
+          };
+          const liveSession = (id) => {
+            const rec = recOf(id);
+            if (rec === void 0) return !!domRowKeyOf(id);
+            if (!TERMINAL.has(rec.status)) return true;
+            return Date.now() - rec.updatedAt < 3e5;
+          };
+          authActiveByWs = /* @__PURE__ */ new Map();
+          for (const [base, ids] of byKindByPath) {
+            const liveIds = ids.filter(liveSession);
+            if (liveIds.length) authActiveByWs.set(base, liveIds);
+          }
+          activeProjectPaths = /* @__PURE__ */ new Set();
+          for (const [base, ids] of byKindByPath) {
+            if (!projPaths.has(base)) continue;
+            if (ids.some(live)) {
+              const projName = rootToProject.get(base);
+              if (projName) for (const p2 of projectPaths.get(projName) || []) activeProjectPaths.add(p2);
+            }
+          }
+          const taskDomRunning = !!document.querySelector('[data-task-item-key]:not(section[data-project-id] *) svg[class*="lucide-loader"]');
+          const taskLive = [...byKind.task].some(live);
+          const projLive = [...byKind.project].some(live);
+          if (taskLive) sectionActive.task = true;
+          if (projLive) sectionActive.project = true;
+          if (!taskDomRunning && taskLive && document.querySelector("[data-task-item-key]:not(section[data-project-id] *)")) {
+            sectionActive.task = false;
+          }
+          for (const h3 of document.querySelectorAll("h3")) {
+            const list = h3.nextElementSibling;
+            if (!list) continue;
+            for (const el of list.querySelectorAll("[data-task-item-key]")) {
+              if (el.closest("section[data-project-id]")) continue;
+              const k = el.getAttribute("data-task-item-key") || "";
+              const id = k.slice(k.lastIndexOf(":") + 1);
+              const base = k.slice(0, k.lastIndexOf(":")).replace(/[\/]+$/, "");
+              const ids = byKindByPath.get(base) || [];
+              if (ids.map(String).includes(id) && ids.some(live)) {
+                sectionActive.pinned = true;
+                break;
+              }
+            }
+            if (sectionActive.pinned) break;
+          }
+          hit = sectionActive.task || sectionActive.project;
+        }
+      } catch {
+      }
+      if (hit !== null) anyActiveCache = { at: Date.now(), value: hit, busy: false };
+      else anyActiveCache.busy = false;
+      apply();
+    })();
+    return anyActiveCache.value === true;
+  }
+  function applySectionSpin() {
+    if (!enabled2) {
+      document.querySelectorAll("." + SEC_SPIN_CLASS).forEach((el) => el.remove());
+      return;
+    }
+    for (const { head, cont, kind } of sectionHeads()) {
+      const running = !!(cont && cont.querySelector('li[data-task-item-key] svg[class*="lucide-loader"]'));
+      let expanded = true;
+      if (head.tagName === "BUTTON") expanded = head.getAttribute("aria-expanded") !== "false";
+      else {
+        const list = head.nextElementSibling;
+        expanded = !list || list.offsetHeight > 0;
+      }
+      if (!kind) return;
+      const scoped = head.tagName === "H3" ? sectionActive.pinned : kind === "project" ? sectionActive.project : sectionActive.task;
+      const want = !expanded && scoped;
+      const existing = head.querySelector(":scope > ." + SEC_SPIN_CLASS);
+      if (want && !existing) {
+        const span = document.createElement("span");
+        span.className = "flex size-4 shrink-0 items-center justify-center " + SEC_SPIN_CLASS;
+        span.append(makeLoaderSvg("size-4"));
+        head.prepend(span);
+      } else if (!want && existing) {
+        existing.remove();
+      }
+    }
+  }
+  function schedulePeek(ws, delay) {
+    clearTimeout(peekTimers.get(ws));
+    peekTimers.set(ws, setTimeout(() => {
+      peekTimers.delete(ws);
+      void peek(ws);
+    }, delay));
+  }
+  function clearPeek(ws) {
+    const t2 = peekTimers.get(ws);
+    if (t2) {
+      clearTimeout(t2);
+      peekTimers.delete(ws);
+    }
+  }
+  function syncPeeks() {
+    for (const [ws, set] of runningByWs) {
+      if (!enabled2 || !set.size) {
+        clearPeek(ws);
+        continue;
+      }
+      const row = findWsRow(ws);
+      const head = row && wsHead(row);
+      if (!row || !head || head.getAttribute("aria-expanded") !== "false" || wsWithRows.has(ws)) {
+        clearPeek(ws);
+        continue;
+      }
+      if (!peekTimers.has(ws) && !activePeeks.has(ws)) schedulePeek(ws, peekedWs.has(ws) ? PEEK_REPEAT_MS : PEEK_FIRST_MS);
+    }
+  }
+  async function peek(ws, opts) {
+    if (!opts?.manual) {
+      const auth = await authoritativeIdle(ws);
+      if (auth !== null) {
+        if (auth) {
+          runningByWs.delete(ws);
+        } else {
+          let set = runningByWs.get(ws);
+          if (!set) {
+            set = /* @__PURE__ */ new Set();
+            runningByWs.set(ws, set);
+          }
+          set.add(ws + ":active");
+          schedulePeek(ws, PEEK_REPEAT_MS);
+        }
+        apply();
+        return true;
+      }
+    }
+    const run = () => peekInner(ws, opts);
+    const p = peekChain.then(run, run);
+    peekChain = p.catch(() => {
+    });
+    return p;
+  }
+  async function peekInner(ws, opts) {
+    if (!opts?.manual && !enabled2 || document.hidden || activePeeks.has(ws)) return false;
+    const row = findWsRow(ws);
+    const head = row && wsHead(row);
+    if (!row || !head || head.getAttribute("aria-expanded") !== "false") return false;
+    if (!currentTaskRow()) {
+      schedulePeek(ws, PEEK_REPEAT_MS);
+      return false;
+    }
+    activePeeks.add(ws);
+    peekedWs.add(ws);
+    const rect = row.getBoundingClientRect();
+    const frozen = row.cloneNode(true);
+    frozen.classList.add("zcodepro-ws-frozen");
+    frozen.style.left = rect.left + "px";
+    frozen.style.top = rect.top + "px";
+    frozen.style.width = rect.width + "px";
+    frozen.style.height = rect.height + "px";
+    document.body.append(frozen);
+    row.style.visibility = "hidden";
+    const hider = installPeekHider(ws);
+    let readOk = false;
+    try {
+      toggleNavSafe(head);
+      readOk = await settleAndRead(ws);
+      const rowNow = findWsRow(ws) || row;
+      const headNow = wsHead(rowNow);
+      if (headNow && headNow.getAttribute("aria-expanded") === "true" && !userTouched(rowNow)) {
+        toggleNavSafe(headNow);
+        await waitForRowsGone(ws);
+      }
+    } finally {
+      removePeekHider(hider);
+      row.style.visibility = "";
+      frozen.remove();
+      activePeeks.delete(ws);
+    }
+    apply();
+    const set = runningByWs.get(ws);
+    if (set && set.size && enabled2) schedulePeek(ws, PEEK_REPEAT_MS);
+    return readOk;
+  }
+  function wsRunningSnapshot() {
+    const curKey = currentTaskRow()?.getAttribute("data-task-item-key") || "";
+    return {
+      running: [...runningByWs.entries()].filter(([, set]) => set.size > 0).map(([ws]) => ws),
+      current: curKey ? workspaceOf(curKey) || null : null
+    };
+  }
+  function domRowKeyOf(id) {
+    if (!id) return "";
+    try {
+      const el = document.querySelector(`[data-task-item-key$=":${CSS.escape(id)}"]`);
+      return el && el.getAttribute("data-task-item-key") || "";
+    } catch {
+      return "";
+    }
+  }
+  function wsRunningKeys() {
+    const keys = /* @__PURE__ */ new Set();
+    for (const set of runningByWs.values()) {
+      for (const k of set) if (!k.endsWith(":active")) keys.add(k);
+    }
+    for (const [base, ids] of authActiveByWs) {
+      for (const id of ids) keys.add(domRowKeyOf(id) || `${base}:${id}`);
+    }
+    return keys;
+  }
+  async function verifyWorkspaceNotRunning(ws) {
+    if (!ws || document.hidden) return false;
+    const row = findWsRow(ws);
+    const head = row && wsHead(row);
+    if (!row || !head) return false;
+    if (head.getAttribute("aria-expanded") !== "false") {
+      let run = false;
+      for (const el of domRowsOf(ws)) if (isRunningRow(el)) run = true;
+      return !run;
+    }
+    let verified = false;
+    try {
+      verified = await peek(ws, { manual: true }) === true;
+    } catch {
+    }
+    if (!verified) return false;
+    const set = runningByWs.get(ws);
+    return !(set && set.size);
+  }
+  function settleAndRead(ws) {
+    return new Promise((resolve) => {
+      const t0 = Date.now();
+      let lastCount = -1;
+      let stableAt = 0;
+      let zeroRows = false;
+      const timer = setInterval(() => {
+        const rows = domRowsOf(ws);
+        const elapsed = Date.now() - t0;
+        if (rows.length !== lastCount) {
+          lastCount = rows.length;
+          stableAt = Date.now();
+        }
+        const settled = rows.length > 0 && rows.length === lastCount && Date.now() - stableAt >= PEEK_SETTLE_MS;
+        if (!settled && elapsed < PEEK_MAX_MS) return;
+        clearInterval(timer);
+        if (lastCount === 0) {
+          zeroRows = true;
+        } else {
+          let set = runningByWs.get(ws);
+          if (!set) {
+            set = /* @__PURE__ */ new Set();
+            runningByWs.set(ws, set);
+          }
+          for (const el of rows) {
+            const key = el.getAttribute("data-task-item-key") || "";
+            if (isRunningRow(el)) set.add(key);
+            else set.delete(key);
+          }
+        }
+        resolve(!zeroRows);
+      }, 80);
+    });
+  }
+  function installPeekHider(ws) {
+    const rowSel3 = `${TASK_SEL}[data-task-item-key^="${cssAttr(ws + ":")}"]`;
+    for (const r of document.querySelectorAll(rowSel3)) r.classList.add(PEEK_EXEMPT_CLASS);
+    const style = document.createElement("style");
+    style.textContent = `${rowSel3}:not(.${PEEK_EXEMPT_CLASS}){display:none!important}`;
+    document.head.append(style);
+    return { style, sel: rowSel3 };
+  }
+  function removePeekHider(hider) {
+    hider.style.remove();
+    for (const r of document.querySelectorAll("." + PEEK_EXEMPT_CLASS)) r.classList.remove(PEEK_EXEMPT_CLASS);
+  }
+  function waitForRowsGone(ws) {
+    const sel = `${TASK_SEL}[data-task-item-key^="${cssAttr(ws + ":")}"]:not(.${PEEK_EXEMPT_CLASS})`;
+    return new Promise((resolve) => {
+      const t0 = Date.now();
+      const timer = setInterval(() => {
+        if (!document.querySelector(sel) || Date.now() - t0 >= PEEK_UNMOUNT_WAIT_MS) {
+          clearInterval(timer);
+          resolve();
+        }
+      }, 40);
+    });
+  }
+  function userTouched(row) {
+    const at = wsTouchAt.get(row);
+    return !!at && Date.now() - at < TOUCH_WINDOW_MS;
+  }
+  function inSel(node, sel) {
+    return !!(node instanceof Element && node.closest && node.closest(sel));
+  }
+  function relevant(muts) {
+    for (const m of muts) {
+      if (inSel(m.target, TASK_SEL) || inSel(m.target, WS_SEL())) return true;
+      for (const n of m.addedNodes) {
+        if (n instanceof Element && (n.matches(TASK_SEL) || n.matches(WS_SEL()) || n.querySelector(TASK_SEL) || n.querySelector(WS_SEL()))) return true;
+      }
+      for (const n of m.removedNodes) {
+        if (n instanceof Element && (n.matches(TASK_SEL) || n.matches(WS_SEL()) || n.querySelector(TASK_SEL))) return true;
+      }
+    }
+    return false;
+  }
+  async function refreshConfig() {
+    try {
+      const res = await rpc("/config");
+      if (res && res.ok && res.config && res.config.features) {
+        const next = res.config.features.wsRunningSpin !== false;
+        if (next !== enabled2) {
+          enabled2 = next;
+          if (!next) {
+            for (const ws of [...peekTimers.keys()]) clearPeek(ws);
+            apply();
+          }
+          return true;
+        }
+      }
+    } catch {
+    }
+    return false;
+  }
+  function pollConfig() {
+    setTimeout(async () => {
+      if (document.hidden) pollMs = CONFIG_POLL_MAX_MS;
+      else pollMs = await refreshConfig() ? CONFIG_POLL_MIN_MS : Math.min(Math.round(pollMs * 1.5), CONFIG_POLL_MAX_MS);
+      pollConfig();
+    }, pollMs);
+  }
+  function startWsRunningSpin() {
+    if (installed2 || typeof document === "undefined") return;
+    installed2 = true;
+    const st = document.createElement("style");
+    st.id = "__zcodepro_ws_style__";
+    st.textContent = ".zcodepro-ws-loader{color:color-mix(in srgb, currentColor 85%, black) !important}";
+    document.head.append(st);
+    void refreshConfig();
+    pollConfig();
+    const observer2 = new MutationObserver((muts) => {
+      if (!relevant(muts)) return;
+      handleRemovals(muts);
+      if (!scanDebounce) {
+        scanDebounce = setTimeout(() => {
+          scanDebounce = 0;
+          scan();
+        }, SCAN_DEBOUNCE_MS);
+      }
+    });
+    observer2.observe(document.body, { childList: true, subtree: true });
+    scan();
+    setInterval(() => {
+      if (!document.hidden && enabled2) scan();
+    }, SCAN_FALLBACK_MS);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) scan();
+    });
+    document.addEventListener("click", (e) => {
+      if (!e.isTrusted) return;
+      const row = e.target instanceof Element && e.target.closest(WS_SEL());
+      if (row) wsTouchAt.set(row, Date.now());
+    }, true);
+  }
+  var installed2, enabled2, SCAN_DEBOUNCE_MS, SCAN_FALLBACK_MS, PEEK_FIRST_MS, PEEK_REPEAT_MS, PEEK_SETTLE_MS, PEEK_MAX_MS, PEEK_UNMOUNT_WAIT_MS, CONFIG_POLL_MIN_MS, CONFIG_POLL_MAX_MS, TASK_SEL, WS_SEL, LOADER_FALLBACK_PATHS, runningByWs, peekTimers, activePeeks, peekedWs, wsWithRows, servicesRef, synthClick, headInfoCache, PROJECT_HEAD_TEXTS, TASK_HEAD_TEXTS, SEC_SPIN_CLASS, anyActiveCache, sectionActive, activeProjectPaths, authActiveByWs, peekChain, PEEK_EXEMPT_CLASS, cssAttr, TOUCH_WINDOW_MS, wsTouchAt, pollMs, scanDebounce;
+  var init_ws_running = __esm({
+    "src/inject/features/ws-running.js"() {
+      init_core();
+      init_ws_rows();
+      installed2 = false;
+      enabled2 = true;
+      SCAN_DEBOUNCE_MS = 150;
+      SCAN_FALLBACK_MS = 5e3;
+      PEEK_FIRST_MS = 2e4;
+      PEEK_REPEAT_MS = 6e4;
+      PEEK_SETTLE_MS = 160;
+      PEEK_MAX_MS = 1500;
+      PEEK_UNMOUNT_WAIT_MS = 800;
+      CONFIG_POLL_MIN_MS = 5e3;
+      CONFIG_POLL_MAX_MS = 6e4;
+      TASK_SEL = "[data-task-item-key]";
+      WS_SEL = () => projectRowSelector();
+      LOADER_FALLBACK_PATHS = [
+        "M12 2v4",
+        "m16.2 7.8 2.9-2.9",
+        "M18 12h4",
+        "m19.8 16.2-2.9 2.9",
+        "M12 18v4",
+        "m7.8 19.8-2.9-2.9",
+        "M6 12H2",
+        "m4.2 7.8 2.9-2.9"
+      ];
+      runningByWs = /* @__PURE__ */ new Map();
+      peekTimers = /* @__PURE__ */ new Map();
+      activePeeks = /* @__PURE__ */ new Set();
+      peekedWs = /* @__PURE__ */ new Set();
+      wsWithRows = /* @__PURE__ */ new Set();
+      servicesRef = null;
+      synthClick = (el) => {
+        try {
+          el.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+        } catch {
+        }
+      };
+      headInfoCache = /* @__PURE__ */ new WeakMap();
+      PROJECT_HEAD_TEXTS = /* @__PURE__ */ new Set(["\u9879\u76EE", "projects"]);
+      TASK_HEAD_TEXTS = /* @__PURE__ */ new Set(["\u4EFB\u52A1", "tasks"]);
+      SEC_SPIN_CLASS = "zcodepro-ws-sec-spin";
+      anyActiveCache = { at: 0, value: null, busy: false };
+      sectionActive = { task: false, project: false, pinned: false };
+      activeProjectPaths = /* @__PURE__ */ new Set();
+      authActiveByWs = /* @__PURE__ */ new Map();
+      setInterval(() => {
+        if (!anyActiveCache.busy && Date.now() - anyActiveCache.at >= 1e4) globalAnyActive();
+      }, 1e4);
+      peekChain = Promise.resolve();
+      PEEK_EXEMPT_CLASS = "zcodepro-peek-exempt";
+      cssAttr = (v) => String(v).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+      TOUCH_WINDOW_MS = 800;
+      wsTouchAt = /* @__PURE__ */ new WeakMap();
+      pollMs = CONFIG_POLL_MIN_MS;
+      scanDebounce = 0;
+    }
+  });
+
+  // src/inject/features/session-switch.js
+  var session_switch_exports = {};
+  __export(session_switch_exports, {
+    startSessionSwitch: () => startSessionSwitch,
+    switchTo: () => switchTo
+  });
+  function loadHotkeys() {
+    return getConfig(true).then((cfg) => {
+      const sc = cfg && cfg.shortcuts;
+      if (sc && typeof sc === "object") {
+        for (const k of Object.keys(DEFAULT_SHORTCUTS)) {
+          if (typeof sc[k] === "string" && /^[a-z0-9]$/.test(sc[k])) hotkeys[k] = sc[k];
+        }
+      }
+    }).catch(() => {
+    });
+  }
+  function firstLineOf(item) {
+    const tEl = item.querySelector('[class*="truncate"]');
+    return (tEl ? tEl.textContent : (item.innerText || "").split("\n")[0])?.trim() || "";
+  }
+  function workspaceOf2(key) {
+    const i = key.lastIndexOf(":");
+    return i > 0 ? key.slice(0, i) : key;
+  }
+  function findCurrent() {
+    for (const el of document.querySelectorAll("[data-task-item-key]")) {
+      if ((el.className + "").includes("bg-selected")) return el;
+    }
+    return null;
+  }
+  function record(key) {
+    if (key) unseen.delete(key);
+    if (key && key !== current) {
+      current = key;
+      mru = mru.filter((k) => k !== key);
+      mru.unshift(key);
+      if (mru.length > MRU_LIMIT) mru.length = MRU_LIMIT;
+    }
+  }
+  function scan2() {
+    const cur = findCurrent();
+    if (cur) record(cur.getAttribute("data-task-item-key"));
+    for (const el of document.querySelectorAll("[data-task-item-key]")) {
+      titles.set(el.getAttribute("data-task-item-key"), firstLineOf(el));
+    }
+  }
+  function taskRowMutations(muts) {
+    for (const m of muts) {
+      if (m.type === "attributes") {
+        if (inTaskRow(m.target)) return true;
+      } else if (m.type === "characterData") {
+        if (m.target.parentElement && inTaskRow(m.target.parentElement)) return true;
+      } else if (inTaskRow(m.target)) {
+        return true;
+      } else {
+        for (const n of m.addedNodes) {
+          if (n instanceof Element && (n.matches(rowSel2) || !!n.querySelector(rowSel2))) return true;
+        }
+      }
+    }
+    return false;
+  }
+  function scheduleScan() {
+    if (scanDebounce2) return;
+    scanDebounce2 = setTimeout(() => {
+      scanDebounce2 = 0;
+      scan2();
+    }, SCAN_DEBOUNCE_MS2);
+  }
+  async function switchTo(key) {
+    const id = key.slice(key.lastIndexOf(":") + 1);
+    const find = () => document.querySelector(`[data-task-item-key="${CSS.escape(key)}"]`) || (id ? document.querySelector(`[data-task-item-key$=":${CSS.escape(id)}"]`) : null);
+    let item = find();
+    if (!item) {
+      const ws = workspaceOf2(key);
+      const header = findProjectRow(ws);
+      const expander = header && header.querySelector("[aria-expanded]");
+      if (expander && expander.getAttribute("aria-expanded") === "false") {
+        expander.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+        for (let i = 0; i < 20 && !(item = find()); i++) await new Promise((r) => setTimeout(r, 100));
+      }
+    }
+    if (!item) return false;
+    item.scrollIntoView({ block: "nearest" });
+    item.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+    return true;
+  }
+  function attentionList() {
+    const run = wsRunningKeys();
+    const idOf = (k) => k.slice(k.lastIndexOf(":") + 1);
+    const runKeyById = new Map([...run].map((k) => [idOf(k), k]));
+    const listed = /* @__PURE__ */ new Set();
+    const head = [];
+    for (const k of mru) {
+      const id = idOf(k);
+      if (listed.has(id)) continue;
+      const runForm = runKeyById.get(id);
+      if (run.has(k) || unseen.has(k) || runForm) {
+        head.push(runForm || k);
+        listed.add(id);
+      }
+    }
+    const tail = [];
+    const push = (k) => {
+      const id = idOf(k);
+      if (listed.has(id)) return;
+      listed.add(id);
+      tail.push(k);
+    };
+    for (const k of run) push(k);
+    for (const k of unseen) push(k);
+    return [...head, ...tail];
+  }
+  function activeList() {
+    return popupMode === "attention" ? attentionList() : mru;
+  }
+  function closePopup(commit) {
+    if (!popupEl) return;
+    const idx = highlight;
+    const list = activeList();
+    popupEl.remove();
+    popupEl = null;
+    if (commit && list[idx] && list[idx] !== current) {
+      void switchTo(list[idx]).then((ok) => {
+        if (!ok) showToast(t().switcherFailed, "error");
+      });
+    }
+  }
+  function findTitle(key) {
+    const item = document.querySelector(`[data-task-item-key="${CSS.escape(key)}"]`);
+    if (item) titles.set(key, firstLineOf(item));
+    const id = key.slice(key.lastIndexOf(":") + 1);
+    return titles.get(key) || `sess ${id.slice(0, 8)}`;
+  }
+  async function fetchMissingTitles(keys) {
+    const sessIdOf4 = (k) => k.slice(k.lastIndexOf(":") + 1);
+    const missing = keys.filter((k) => {
+      const id = sessIdOf4(k);
+      return id && !titles.get(k) && !document.querySelector(`[data-task-item-key$=":${CSS.escape(id)}"]`);
+    });
+    if (!missing.length) return;
+    const st = await rpc("/task-statuses?ids=" + encodeURIComponent(missing.map(sessIdOf4).join(","))).catch(() => null);
+    if (!st || !st.ok || !st.available || !st.statuses) return;
+    for (const k of missing) {
+      const rec = st.statuses[sessIdOf4(k)];
+      if (rec && rec.title) titles.set(k, String(rec.title));
+    }
+  }
+  function projLabelOf(key, aliases2) {
+    const ws = workspaceOf2(key);
+    if (!ws) return "";
+    return aliases2[ws] || ws.replace(/[\\/]+$/, "").split(/[\\/]/).pop();
+  }
+  function renderPopup() {
+    if (!popupEl) return;
+    const L = t();
+    const list = popupEl.querySelector("[data-zcodepro-switcher-list]");
+    const full = activeList();
+    const shown = full.slice(0, visibleCount);
+    const run = popupMode === "attention" ? wsRunningKeys() : null;
+    list.replaceChildren(...shown.map((key) => {
+      const proj = projLabelOf(key, aliasesCache);
+      return h(
+        "div",
+        {
+          class: "zcodepro-switcher-row",
+          "data-active": full[highlight] === key ? "" : void 0,
+          onClick: () => {
+            highlight = full.indexOf(key);
+            closePopup(true);
+          }
+        },
+        // 标题文本包 span：截断省略作用在文本节点上（flex 容器自身 ellipsis 无效）
+        h(
+          "div",
+          { class: "zcodepro-switcher-title" },
+          key === current ? h("span", { class: "zcodepro-switcher-tag" }, L.switcherCurrent) : null,
+          run && run.has(key) ? h("span", { class: "zcodepro-switcher-tag zcodepro-switcher-tag-run" }, L.switcherRunning) : null,
+          run && !run.has(key) ? h("span", { class: "zcodepro-switcher-tag zcodepro-switcher-tag-new" }, L.switcherUnseen) : null,
+          h("span", null, findTitle(key))
+        ),
+        // 无项目归属（如置顶）时不渲染空行
+        proj ? h("div", { class: "zcodepro-switcher-ws" }, proj) : null
+      );
+    }));
+    if (full.length > shown.length) {
+      list.append(h(
+        "div",
+        { class: "zcodepro-switcher-more" },
+        L.switcherMore.replaceAll("{n}", String(full.length - shown.length))
+      ));
+    }
+  }
+  function openPopup(mode = "mru") {
+    if (popupEl) return;
+    if (openPopupInflight) return openPopupInflight;
+    openPopupInflight = openPopupInner(mode).finally(() => {
+      openPopupInflight = null;
+    });
+    return openPopupInflight;
+  }
+  async function openPopupInner(mode) {
+    popupMode = mode;
+    visibleCount = INITIAL_COUNT;
+    highlight = 0;
+    const cfg = await getConfig().catch(() => null);
+    aliasesCache = cfg && cfg.aliases && typeof cfg.aliases === "object" ? cfg.aliases : {};
+    if (mode === "attention") await fetchMissingTitles(attentionList()).catch(() => {
+    });
+    ensureStyle();
+    const L = t();
+    popupEl = h(
+      "div",
+      {
+        class: "zcodepro-switcher-overlay",
+        // 点弹窗外 = 取消（不切）
+        onMousedown: (e) => {
+          if (e.target === popupEl) closePopup(false);
+        }
+      },
+      h(
+        "div",
+        { class: "zcodepro-switcher" },
+        // 提示行键位跟随当前配置（改键后新开的弹窗即用新键位）
+        h(
+          "div",
+          { class: "zcodepro-switcher-hint" },
+          (mode === "attention" ? L.switcherAttentionHint : L.switcherHint).replaceAll("{prev}", hotkeys.switchPrev).replaceAll("{next}", hotkeys.switchNext)
+        ),
+        h("div", { "data-zcodepro-switcher-list": "1", class: "zcodepro-switcher-list" })
+      )
+    );
+    document.body.append(popupEl);
+    renderPopup();
+  }
+  function scrollHighlight() {
+    const row = popupEl && popupEl.querySelector("[data-active]");
+    if (row) row.scrollIntoView({ block: "nearest" });
+  }
+  function moveUp() {
+    const len = Math.min(activeList().length, visibleCount);
+    if (len < 2) return;
+    highlight = highlight > 0 ? highlight - 1 : len - 1;
+    renderPopup();
+    scrollHighlight();
+  }
+  function moveDown() {
+    const full = activeList();
+    const len = Math.min(full.length, visibleCount);
+    if (len < 2) return;
+    if (highlight < len - 1) {
+      highlight += 1;
+    } else if (visibleCount < full.length) {
+      visibleCount = Math.min(visibleCount + PAGE_SIZE, full.length);
+      highlight = len;
+    } else {
+      highlight = 0;
+    }
+    renderPopup();
+    scrollHighlight();
+  }
+  function startSessionSwitch() {
+    scan2();
+    void loadHotkeys();
+    window.addEventListener("zcodepro:config-changed", () => {
+      void loadHotkeys();
+    });
+    new MutationObserver((muts) => {
+      if (taskRowMutations(muts)) scheduleScan();
+    }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
+    setInterval(() => {
+      if (!document.hidden) scan2();
+    }, SCAN_FALLBACK_MS2);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) scan2();
+    });
+    setInterval(() => {
+      if (document.hidden) return;
+      const now = wsRunningKeys();
+      if (lastRunKeys) {
+        const idOf = (k) => k.slice(k.lastIndexOf(":") + 1);
+        const nowIds = new Set([...now].map(idOf));
+        for (const k of lastRunKeys) {
+          if (!nowIds.has(idOf(k)) && k !== current) unseen.add(k);
+        }
+      }
+      lastRunKeys = now;
+      if (unseen.size > UNSEEN_LIMIT) unseen = new Set([...unseen].slice(-UNSEEN_LIMIT));
+    }, 1e4);
+    document.addEventListener("click", (e) => {
+      const item = e.target instanceof Element && e.target.closest("[data-task-item-key]");
+      if (item) record(item.getAttribute("data-task-item-key"));
+    }, true);
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && popupEl) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        closePopup(false);
+        return;
+      }
+      const bareK = e.key.toLowerCase();
+      if (popupEl && !e.altKey && !e.ctrlKey && !e.metaKey && !e.isComposing && (bareK === hotkeys.switchPrev || bareK === hotkeys.switchNext)) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        if (bareK === hotkeys.switchPrev) moveUp();
+        else moveDown();
+        return;
+      }
+      if (popupEl && (e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === "Enter")) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        if (e.key === "ArrowUp") moveUp();
+        else if (e.key === "ArrowDown") moveDown();
+        else if (!e.repeat) closePopup(true);
+        return;
+      }
+      if (!e.altKey || e.ctrlKey || e.metaKey || e.isComposing) return;
+      if (document.querySelector(".zcodepro-overlay")) return;
+      const k = e.key.toLowerCase();
+      const isHot = k === hotkeys.switchLast || k === hotkeys.switchPrev || k === hotkeys.switchNext || k === hotkeys.switchRecent || k === hotkeys.switchAttention;
+      if (!isHot) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      void (async () => {
+        const cfg = await getConfig();
+        if (cfg.features && cfg.features.sessionSwitch === false) return;
+        if (k === hotkeys.switchLast) {
+          if (e.repeat) return;
+          closePopup(false);
+          const live = findCurrent();
+          if (live) record(live.getAttribute("data-task-item-key"));
+          const target = live ? mru[0] === current ? mru[1] : mru.find((mk) => mk !== current) : mru[0];
+          if (!target) {
+            showToast(t().switcherEmpty, "warning");
+            return;
+          }
+          void switchTo(target).then((ok) => {
+            if (!ok) showToast(t().switcherFailed, "error");
+          });
+          return;
+        }
+        if (k === hotkeys.switchAttention) {
+          if (e.repeat) return;
+          closePopup(false);
+          if (!attentionList().length) {
+            showToast(t().switcherAttentionEmpty, "warning");
+            return;
+          }
+          await openPopup("attention");
+          return;
+        }
+        if (k === hotkeys.switchRecent) {
+          if (!e.repeat && !popupEl && !openPopupInflight) {
+            if (!mru.length) {
+              showToast(t().switcherEmpty, "warning");
+              return;
+            }
+            await openPopup("mru");
+          }
+          return;
+        }
+        if (openPopupInflight) {
+          await openPopupInflight;
+        } else if (!popupEl) {
+          if (!mru.length) {
+            showToast(t().switcherEmpty, "warning");
+            return;
+          }
+          await openPopup("mru");
+        }
+        if (k === hotkeys.switchPrev) moveUp();
+        else moveDown();
+      })();
+    }, true);
+    window.addEventListener("blur", () => closePopup(false));
+  }
+  var MRU_LIMIT, SCAN_DEBOUNCE_MS2, SCAN_FALLBACK_MS2, INITIAL_COUNT, PAGE_SIZE, UNSEEN_LIMIT, mru, current, titles, popupEl, aliasesCache, highlight, scanDebounce2, popupMode, visibleCount, unseen, lastRunKeys, hotkeys, rowSel2, inTaskRow, openPopupInflight;
+  var init_session_switch = __esm({
+    "src/inject/features/session-switch.js"() {
+      init_core();
+      init_ui();
+      init_ws_rows();
+      init_ws_running();
+      MRU_LIMIT = 50;
+      SCAN_DEBOUNCE_MS2 = 150;
+      SCAN_FALLBACK_MS2 = 5e3;
+      INITIAL_COUNT = 10;
+      PAGE_SIZE = 5;
+      UNSEEN_LIMIT = 50;
+      mru = [];
+      current = null;
+      titles = /* @__PURE__ */ new Map();
+      popupEl = null;
+      aliasesCache = {};
+      highlight = 0;
+      scanDebounce2 = 0;
+      popupMode = "mru";
+      visibleCount = INITIAL_COUNT;
+      unseen = /* @__PURE__ */ new Set();
+      lastRunKeys = null;
+      hotkeys = { ...DEFAULT_SHORTCUTS };
+      rowSel2 = "[data-task-item-key]";
+      inTaskRow = (node) => node instanceof Element && !!node.closest && !!node.closest(rowSel2);
+      openPopupInflight = null;
+    }
+  });
+
+  // src/inject/index.js
+  init_core();
+
+  // src/inject/features/project-menu.js
+  init_core();
+  init_ui();
 
   // src/inject/features/copy-path.js
+  init_core();
+  init_ui();
   async function appendCopyPathItem(menu, anchorItem, project) {
     if (menu.querySelector('[data-zcodepro-item="copy-path"]')) return;
     const L = t();
@@ -2398,6 +3617,8 @@
   }
 
   // src/inject/features/alias.js
+  init_core();
+  init_ui();
   var norm = (p) => String(p || "").replace(/[\\/]+$/, "");
   var basenameOf = (p) => norm(p).split(/[\\/]/).pop() || "";
   function extractPathFromTestId(testid) {
@@ -2597,6 +3818,8 @@
   }
 
   // src/inject/features/relocate-dialog.js
+  init_core();
+  init_ui();
   function appendRelocateItem(menu, anchorItem, project) {
     if (menu.querySelector('[data-zcodepro-item="relocate"]')) return;
     const L = t();
@@ -2762,6 +3985,7 @@
   }
 
   // src/inject/features/open-folder.js
+  init_core();
   function appendOpenFolderItem(menu, anchorItem, project) {
     if (menu.querySelector('[data-zcodepro-item="open-folder"]')) return;
     const L = t();
@@ -3022,6 +4246,9 @@
   }
 
   // src/inject/features/file-menu.js
+  init_core();
+  init_core();
+  init_ui();
   var COPY_ABS_TEXTS = ["\u590D\u5236\u7EDD\u5BF9\u8DEF\u5F84", "Copy absolute path"];
   var NO_APPS_TEXTS = ["\u672A\u627E\u5230\u53EF\u7528 App", "No apps found"];
   var ICON_OPEN_DEFAULT = [
@@ -3155,6 +4382,8 @@
   }
 
   // src/inject/features/image-menu.js
+  init_core();
+  init_ui();
   var MIN_SIZE = 48;
   function copyTargetOf(el, x, y) {
     const sizeOk = (img) => {
@@ -3343,10 +4572,10 @@
   function startImageMenu() {
     if (typeof window === "undefined") return;
     if (typeof navigator.clipboard?.write !== "function" || typeof window.ClipboardItem === "undefined") return;
-    let enabled11 = true;
+    let enabled12 = true;
     const refresh = () => {
       void getConfig().then((c) => {
-        enabled11 = !(c.features && c.features.imageCopy === false);
+        enabled12 = !(c.features && c.features.imageCopy === false);
       });
     };
     refresh();
@@ -3355,12 +4584,17 @@
       const img = copyTargetOf(e.target, e.clientX, e.clientY);
       if (!img) return;
       e.preventDefault();
-      if (enabled11) showMenu(e.clientX, e.clientY, img);
+      if (enabled12) showMenu(e.clientX, e.clientY, img);
       refresh();
     }, true);
   }
 
+  // src/inject/features/settings-dialog.js
+  init_core();
+  init_ui();
+
   // src/inject/provider-fields.js
+  init_core();
   var PROVIDER_FIELD_CLS = "h-8 w-full rounded-lg border border-border bg-input px-2.5 text-ui-sm text-foreground outline-none transition-shadow placeholder:text-foreground-subtle focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40";
   function comboField(current2, options, onChange, { disabled = false, placeholder = "", staleLabel = "\uFF08\u624B\u52A8\u8F93\u5165\uFF09", emptyLabel = "" } = {}) {
     const sel = h("select", { class: PROVIDER_FIELD_CLS, disabled: disabled || void 0 });
@@ -3410,50 +4644,10 @@
     return v === "" || v !== "session" && !providers.some((p) => p.id === v);
   }
 
-  // src/inject/features/ws-rows.js
-  var norm2 = (p) => String(p || "").replace(/[\\/]+$/, "");
-  var NEW_ROW_SEL = "section[data-project-id]";
-  var OLD_ROW_SEL = '[data-testid^="workspace-item-"]';
-  var pathByProjectId = /* @__PURE__ */ new Map();
-  function projectRowSelector() {
-    return isNewProjectSidebar() ? NEW_ROW_SEL : OLD_ROW_SEL;
-  }
-  function projectRows(root = document) {
-    return [...root.querySelectorAll(projectRowSelector())];
-  }
-  function rowPath(row) {
-    if (!row) return null;
-    if (row.hasAttribute && row.hasAttribute("data-project-id")) {
-      const host = row.getAttribute("data-project-host");
-      if (host !== null && host !== "local") return null;
-      const id = row.getAttribute("data-project-id");
-      let found = null;
-      for (const el of row.querySelectorAll("[data-task-item-key]")) {
-        const key = el.getAttribute("data-task-item-key") || "";
-        const cut = key.lastIndexOf(":");
-        if (cut > 1) {
-          found = key.slice(0, cut);
-          break;
-        }
-      }
-      if (found) pathByProjectId.set(id, found);
-      return found || pathByProjectId.get(id) || null;
-    }
-    const testid = row.getAttribute && row.getAttribute("data-testid");
-    if (!testid || !testid.startsWith("workspace-item-")) return null;
-    return norm2(testid.slice("workspace-item-".length)) || null;
-  }
-  function findProjectRow(path) {
-    const want = norm2(path);
-    if (!want) return null;
-    for (const row of projectRows()) {
-      const p = rowPath(row);
-      if (p && norm2(p) === want) return row;
-    }
-    return null;
-  }
-
   // src/inject/features/alias-migration.js
+  init_core();
+  init_ui();
+  init_ws_rows();
   var sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   var basenameOf2 = (p) => String(p || "").replace(/[\\/]+$/, "").split(/[\\/]/).pop() || "";
   function waitFor(getter, timeoutMs, step) {
@@ -3894,6 +5088,7 @@
   }
 
   // src/inject/features/styles.js
+  init_core();
   var STYLE_DEFAULTS = {
     rowGap: 20,
     // 段落间距：会话内各块之间的垂直间距
@@ -4164,6 +5359,7 @@
   }
 
   // src/inject/features/theme.js
+  init_core();
   var SC = (light, dark, lightA, darkA) => ({ light, dark, lightA, darkA });
   var SCALES = {
     dracula: SC(
@@ -4572,9 +5768,9 @@
         wvStyled.splice(wvStyled.indexOf(rec), 1);
       }
     };
-    const scan5 = () => document.querySelectorAll("webview").forEach(hook);
-    scan5();
-    if (!webviewScanTimer) webviewScanTimer = setInterval(scan5, 2e3);
+    const scan6 = () => document.querySelectorAll("webview").forEach(hook);
+    scan6();
+    if (!webviewScanTimer) webviewScanTimer = setInterval(scan6, 2e3);
   }
   function applyMediaState() {
     const bg = currentTheme.bg || {};
@@ -5508,6 +6704,11 @@
             settingRow(L.featureTableCopy, L.featureTableCopyDesc, f.tableCopy !== false, async () => {
               const next = !(f.tableCopy !== false);
               if (await setFeature("tableCopy", next)) f.tableCopy = next;
+              refreshRows();
+            }),
+            settingRow(L.featureSessionLink, L.featureSessionLinkDesc, f.sessionLink !== false, async () => {
+              const next = !(f.sessionLink !== false);
+              if (await setFeature("sessionLink", next)) f.sessionLink = next;
               refreshRows();
             }),
             settingRow(L.featureComposerProvider, L.featureComposerProviderDesc, f.composerProvider !== false, async () => {
@@ -9008,6 +10209,9 @@
   }
 
   // src/inject/features/task-order.js
+  init_core();
+  init_ui();
+  init_core();
   var installed = false;
   var dragKey = null;
   function startTaskOrderWatcher() {
@@ -9070,1116 +10274,12 @@
     }
   }
 
-  // src/inject/features/ws-running.js
-  var installed2 = false;
-  var enabled2 = true;
-  var SCAN_DEBOUNCE_MS = 150;
-  var SCAN_FALLBACK_MS = 5e3;
-  var PEEK_FIRST_MS = 2e4;
-  var PEEK_REPEAT_MS = 6e4;
-  var PEEK_SETTLE_MS = 160;
-  var PEEK_MAX_MS = 1500;
-  var PEEK_UNMOUNT_WAIT_MS = 800;
-  var CONFIG_POLL_MIN_MS = 5e3;
-  var CONFIG_POLL_MAX_MS = 6e4;
-  var TASK_SEL = "[data-task-item-key]";
-  var WS_SEL = () => projectRowSelector();
-  function findWsRow(ws) {
-    return findProjectRow(ws);
-  }
-  var LOADER_FALLBACK_PATHS = [
-    "M12 2v4",
-    "m16.2 7.8 2.9-2.9",
-    "M18 12h4",
-    "m19.8 16.2-2.9 2.9",
-    "M12 18v4",
-    "m7.8 19.8-2.9-2.9",
-    "M6 12H2",
-    "m4.2 7.8 2.9-2.9"
-  ];
-  function makeLoaderSvg(baseClass) {
-    const ns = "http://www.w3.org/2000/svg";
-    const proto = document.querySelector("svg.lucide-loader");
-    if (proto) {
-      const clone = proto.cloneNode(true);
-      const origClass = proto.getAttribute("class") || "";
-      const keep = origClass.split(/\s+/).filter((c) => /^(size-|text-)/.test(c)).join(" ");
-      clone.setAttribute("class", ((keep || baseClass) + " animate-spin zcodepro-ws-loader").trim());
-      return clone;
-    }
-    const svg = document.createElementNS(ns, "svg");
-    svg.setAttribute("viewBox", "0 0 24 24");
-    svg.setAttribute("fill", "none");
-    svg.setAttribute("stroke", "currentColor");
-    svg.setAttribute("stroke-width", "2");
-    svg.setAttribute("stroke-linecap", "round");
-    svg.setAttribute("stroke-linejoin", "round");
-    svg.setAttribute("class", (baseClass + " animate-spin zcodepro-ws-loader").trim());
-    for (const d of LOADER_FALLBACK_PATHS) {
-      const path = document.createElementNS(ns, "path");
-      path.setAttribute("d", d);
-      svg.append(path);
-    }
-    return svg;
-  }
-  function setRunningIcon(holder, on) {
-    if (!holder) return;
-    if (on) {
-      if (holder.querySelector(":scope > svg.zcodepro-ws-loader")) return;
-      const orig0 = holder.querySelector(":scope > svg:not(.zcodepro-ws-loader)");
-      const base = (orig0 ? orig0.getAttribute("class") || "" : "size-4").replace(/lucide-[a-z-]*/g, "").trim() || "size-4";
-      holder.append(makeLoaderSvg(base));
-    } else {
-      holder.querySelectorAll(":scope > svg.zcodepro-ws-loader").forEach((el) => el.remove());
-    }
-  }
-  function iconHolderOf(row) {
-    if (row.hasAttribute && row.hasAttribute("data-project-id")) {
-      const toggle2 = row.querySelector('[data-testid="virtual-project-toggle"]');
-      return toggle2 ? toggle2.querySelector(":scope > span") : null;
-    }
-    return row.firstElementChild && row.firstElementChild.querySelector(":scope > span");
-  }
-  function isRunningRow(el) {
-    const scope = el.firstElementChild;
-    if (!scope) return false;
-    const svg = scope.querySelector('svg[class*="lucide-loader"]');
-    return !!svg;
-  }
-  var runningByWs = /* @__PURE__ */ new Map();
-  var peekTimers = /* @__PURE__ */ new Map();
-  var activePeeks = /* @__PURE__ */ new Set();
-  var peekedWs = /* @__PURE__ */ new Set();
-  var wsWithRows = /* @__PURE__ */ new Set();
-  var servicesRef = null;
-  function findServices() {
-    if (servicesRef) return servicesRef;
-    try {
-      const rootEl = document.getElementById("root");
-      const containerKey = rootEl && Object.keys(rootEl).find((k) => k.startsWith("__reactContainer$"));
-      if (!containerKey) return null;
-      const seen2 = /* @__PURE__ */ new Set();
-      let found = null;
-      const scanObj = (o) => {
-        if (!o || typeof o !== "object" || seen2.has(o) || found) return;
-        seen2.add(o);
-        const ts = o.zcodeTaskService;
-        if (ts && typeof ts === "object" && typeof ts.releaseWorkspacePreparation === "function") found = o;
-      };
-      let visited = 0;
-      const visit = (f) => {
-        if (!f || found || visited > 6e4) return;
-        visited++;
-        for (const holder of [f.memoizedProps, f.memoizedState]) {
-          if (!holder || typeof holder !== "object") continue;
-          scanObj(holder);
-          for (const v of Object.values(holder)) {
-            if (v && typeof v === "object") scanObj(v);
-          }
-        }
-        visit(f.child);
-        visit(f.sibling);
-      };
-      visit(rootEl[containerKey]);
-      if (found) servicesRef = found;
-      return found;
-    } catch {
-      return null;
-    }
-  }
-  async function authoritativeIdle(ws) {
-    const services = findServices();
-    const ts = services && services.zcodeTaskService;
-    if (!ts || typeof ts.listActiveTaskIds !== "function") return null;
-    try {
-      const base = String(ws).replace(/[\\/]+$/, "");
-      const a = await ts.listActiveTaskIds({ workspacePath: base });
-      const b = await ts.listActiveTaskIds({ workspacePath: base + "/" });
-      const ids = [...Array.isArray(a) ? a : [], ...Array.isArray(b) ? b : []].map(String);
-      if (!Array.isArray(a) || !Array.isArray(b)) return null;
-      if (!ids.length) return true;
-      const st = await rpc("/task-statuses?ids=" + encodeURIComponent(ids.join(","))).catch(() => null);
-      const TERMINAL = /* @__PURE__ */ new Set(["completed", "error", "interrupted"]);
-      const live = (id) => {
-        const rec = st && st.ok && st.available ? st.statuses[id] : void 0;
-        if (rec === void 0) return true;
-        if (!TERMINAL.has(rec.status)) return true;
-        return Date.now() - rec.updatedAt < 3e5;
-      };
-      return !ids.some(live);
-    } catch {
-      return null;
-    }
-  }
-  function workspaceOf(key) {
-    const i = key.lastIndexOf(":");
-    return i > 0 ? key.slice(0, i) : key;
-  }
-  function wsHead(row) {
-    return row.matches("[aria-expanded]") ? row : row.querySelector("[aria-expanded]");
-  }
-  function domRowsOf(ws) {
-    return [...document.querySelectorAll(TASK_SEL)].filter((e) => workspaceOf(e.getAttribute("data-task-item-key") || "") === ws);
-  }
-  function currentTaskRow() {
-    for (const el of document.querySelectorAll(TASK_SEL)) {
-      if ((el.className + "").includes("bg-selected")) return el;
-    }
-    return null;
-  }
-  var synthClick = (el) => {
-    try {
-      el.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
-    } catch {
-    }
-  };
-  function toggleNavSafe(head) {
-    const cur = currentTaskRow();
-    const backKey = cur ? cur.getAttribute("data-task-item-key") : "";
-    synthClick(head);
-    if (!backKey) return;
-    const back = cur && cur.isConnected ? cur : document.querySelector(`${TASK_SEL}[data-task-item-key="${CSS.escape(backKey)}"]`);
-    if (back) synthClick(back);
-  }
-  function scan() {
-    wsWithRows = /* @__PURE__ */ new Set();
-    for (const el of document.querySelectorAll(TASK_SEL)) {
-      const key = el.getAttribute("data-task-item-key") || "";
-      const ws = workspaceOf(key);
-      if (!ws) continue;
-      wsWithRows.add(ws);
-      const run = isRunningRow(el);
-      let set = runningByWs.get(ws);
-      if (run) {
-        if (!set) {
-          set = /* @__PURE__ */ new Set();
-          runningByWs.set(ws, set);
-        }
-        set.add(key);
-      } else if (set) {
-        set.delete(key);
-      }
-    }
-    syncPeeks();
-    apply();
-  }
-  function handleRemovals(muts) {
-    const removed = [];
-    for (const m of muts) {
-      if (m.type !== "childList") continue;
-      for (const n of m.removedNodes) {
-        if (!(n instanceof Element)) continue;
-        if (n.matches(TASK_SEL)) removed.push(n);
-        else for (const r of n.querySelectorAll(TASK_SEL)) removed.push(r);
-      }
-    }
-    if (!removed.length) return;
-    const infos = removed.map((el) => {
-      const key = el.getAttribute("data-task-item-key") || "";
-      const ws = workspaceOf(key);
-      return key && ws ? { key, ws, run: isRunningRow(el) } : null;
-    }).filter(Boolean);
-    if (!infos.length) return;
-    setTimeout(() => {
-      for (const info of infos) {
-        const row = findWsRow(info.ws);
-        const head = row && wsHead(row);
-        const collapsed = !row || !head || head.getAttribute("aria-expanded") === "false";
-        let set = runningByWs.get(info.ws);
-        if (collapsed && info.run) {
-          if (!set) {
-            set = /* @__PURE__ */ new Set();
-            runningByWs.set(info.ws, set);
-          }
-          set.add(info.key);
-        } else if (set) {
-          set.delete(info.key);
-        }
-      }
-      syncPeeks();
-      apply();
-    }, 0);
-  }
-  function apply() {
-    const seen2 = /* @__PURE__ */ new Set();
-    for (const row of document.querySelectorAll(WS_SEL())) {
-      const path = rowPath(row);
-      if (!path) continue;
-      seen2.add(path);
-      const head = wsHead(row);
-      const collapsed = !head || head.getAttribute("aria-expanded") === "false";
-      const domRunning = !!(runningByWs.get(path) && runningByWs.get(path).size);
-      const normP = (v) => String(v || "").replace(/[\\/]+$/, "");
-      const running = enabled2 && collapsed && (activeProjectPaths.size ? [...activeProjectPaths].some((p2) => normP(p2) === normP(path)) : domRunning);
-      const icon2 = iconHolderOf(row);
-      icon2?.classList.toggle("zcodepro-ws-running", running);
-      setRunningIcon(icon2, running);
-    }
-    applySectionSpin();
-    for (const ws of [...runningByWs.keys()]) if (!seen2.has(ws)) runningByWs.delete(ws);
-  }
-  var headInfoCache = /* @__PURE__ */ new WeakMap();
-  var PROJECT_HEAD_TEXTS = /* @__PURE__ */ new Set(["\u9879\u76EE", "projects"]);
-  var TASK_HEAD_TEXTS = /* @__PURE__ */ new Set(["\u4EFB\u52A1", "tasks"]);
-  function kindFromHeadText(head) {
-    const text = (head.textContent || "").trim().toLowerCase();
-    if (PROJECT_HEAD_TEXTS.has(text)) return "project";
-    if (TASK_HEAD_TEXTS.has(text)) return "task";
-    return null;
-  }
-  function sectionHeads() {
-    const heads = [];
-    for (const sv of document.querySelectorAll("svg[data-purpose-section-chevron]")) {
-      const btn = sv.closest("button");
-      if (btn) heads.push(btn);
-    }
-    for (const h3 of document.querySelectorAll("h3")) heads.push(h3);
-    return heads.map((head) => {
-      const cached = headInfoCache.get(head);
-      if (cached) return { head, cont: cached.cont, kind: cached.kind };
-      const textKind = head.tagName === "BUTTON" ? kindFromHeadText(head) : "task";
-      let cont = head.parentElement;
-      while (cont && !cont.querySelector("li[data-task-item-key]") && cont !== document.body) cont = cont.parentElement;
-      const contOk = cont && cont !== document.body;
-      const kind = textKind || (contOk ? cont.querySelector("section[data-project-id]") ? "project" : "task" : null);
-      headInfoCache.set(head, { cont: contOk ? cont : null, kind });
-      return { head, cont: contOk ? cont : null, kind };
-    }).filter((x) => x.head);
-  }
-  var SEC_SPIN_CLASS = "zcodepro-ws-sec-spin";
-  var anyActiveCache = { at: 0, value: null, busy: false };
-  var sectionActive = { task: false, project: false, pinned: false };
-  var activeProjectPaths = /* @__PURE__ */ new Set();
-  var authActiveByWs = /* @__PURE__ */ new Map();
-  setInterval(() => {
-    if (!anyActiveCache.busy && Date.now() - anyActiveCache.at >= 1e4) globalAnyActive();
-  }, 1e4);
-  function globalAnyActive() {
-    if (anyActiveCache.value !== null && Date.now() - anyActiveCache.at < 1e4) return anyActiveCache.value;
-    if (anyActiveCache.busy) return anyActiveCache.value === true;
-    anyActiveCache.busy = true;
-    sectionActive.task = false;
-    sectionActive.project = false;
-    sectionActive.pinned = false;
-    activeProjectPaths = /* @__PURE__ */ new Set();
-    authActiveByWs = /* @__PURE__ */ new Map();
-    void (async () => {
-      let hit = null;
-      try {
-        const res = await rpc("/projects-v2").catch(() => null);
-        const services = findServices();
-        const ts = services && services.zcodeTaskService;
-        if (res && res.ok && res.available && ts && typeof ts.listActiveTaskIds === "function") {
-          hit = false;
-          const projPaths = /* @__PURE__ */ new Set();
-          for (const proj of res.projects || []) {
-            for (const r of proj.roots || []) {
-              const b = String(r.path || "").replace(/[\\/]+$/, "");
-              if (b) projPaths.add(b);
-            }
-          }
-          const taskSidePaths = /* @__PURE__ */ new Set();
-          for (const el of document.querySelectorAll("[data-task-item-key]")) {
-            const sec = el.closest("section[data-project-id]");
-            if (sec) continue;
-            const k = el.getAttribute("data-task-item-key") || "";
-            const cut = k.lastIndexOf(":");
-            if (cut > 1) taskSidePaths.add(k.slice(0, cut).replace(/[\\/]+$/, ""));
-          }
-          const scanPaths = /* @__PURE__ */ new Set([...projPaths, ...taskSidePaths]);
-          const byKind = { task: /* @__PURE__ */ new Set(), project: /* @__PURE__ */ new Set() };
-          const byKindByPath = /* @__PURE__ */ new Map();
-          const rootToProject = /* @__PURE__ */ new Map();
-          const projectPaths = /* @__PURE__ */ new Map();
-          for (const proj of res.projects || []) {
-            const names = [];
-            for (const r of proj.roots || []) {
-              const b = String(r.path || "").replace(/[\\/]+$/, "");
-              if (b) {
-                rootToProject.set(b, proj.name);
-                names.push(b);
-              }
-            }
-            projectPaths.set(proj.name, names);
-          }
-          for (const base of scanPaths) {
-            const a = await ts.listActiveTaskIds({ workspacePath: base });
-            const b = await ts.listActiveTaskIds({ workspacePath: base + "/" });
-            const ids = [...Array.isArray(a) ? a : [], ...Array.isArray(b) ? b : []].map(String);
-            if (!ids.length) continue;
-            byKindByPath.set(base, ids);
-            const kind = projPaths.has(base) ? "project" : "task";
-            for (const id of ids) byKind[kind].add(id);
-          }
-          const allIds = [...byKind.task, ...byKind.project];
-          const st = allIds.length ? await rpc("/task-statuses?ids=" + encodeURIComponent(allIds.join(","))).catch(() => null) : null;
-          const TERMINAL = /* @__PURE__ */ new Set(["completed", "error", "interrupted"]);
-          const recOf = (id) => st && st.ok && st.available ? st.statuses[id] : void 0;
-          const live = (id) => {
-            const rec = recOf(id);
-            if (rec === void 0) return true;
-            if (!TERMINAL.has(rec.status)) return true;
-            return Date.now() - rec.updatedAt < 3e5;
-          };
-          const liveSession = (id) => {
-            const rec = recOf(id);
-            if (rec === void 0) return !!domRowKeyOf(id);
-            if (!TERMINAL.has(rec.status)) return true;
-            return Date.now() - rec.updatedAt < 3e5;
-          };
-          authActiveByWs = /* @__PURE__ */ new Map();
-          for (const [base, ids] of byKindByPath) {
-            const liveIds = ids.filter(liveSession);
-            if (liveIds.length) authActiveByWs.set(base, liveIds);
-          }
-          activeProjectPaths = /* @__PURE__ */ new Set();
-          for (const [base, ids] of byKindByPath) {
-            if (!projPaths.has(base)) continue;
-            if (ids.some(live)) {
-              const projName = rootToProject.get(base);
-              if (projName) for (const p2 of projectPaths.get(projName) || []) activeProjectPaths.add(p2);
-            }
-          }
-          const taskDomRunning = !!document.querySelector('[data-task-item-key]:not(section[data-project-id] *) svg[class*="lucide-loader"]');
-          const taskLive = [...byKind.task].some(live);
-          const projLive = [...byKind.project].some(live);
-          if (taskLive) sectionActive.task = true;
-          if (projLive) sectionActive.project = true;
-          if (!taskDomRunning && taskLive && document.querySelector("[data-task-item-key]:not(section[data-project-id] *)")) {
-            sectionActive.task = false;
-          }
-          for (const h3 of document.querySelectorAll("h3")) {
-            const list = h3.nextElementSibling;
-            if (!list) continue;
-            for (const el of list.querySelectorAll("[data-task-item-key]")) {
-              if (el.closest("section[data-project-id]")) continue;
-              const k = el.getAttribute("data-task-item-key") || "";
-              const id = k.slice(k.lastIndexOf(":") + 1);
-              const base = k.slice(0, k.lastIndexOf(":")).replace(/[\/]+$/, "");
-              const ids = byKindByPath.get(base) || [];
-              if (ids.map(String).includes(id) && ids.some(live)) {
-                sectionActive.pinned = true;
-                break;
-              }
-            }
-            if (sectionActive.pinned) break;
-          }
-          hit = sectionActive.task || sectionActive.project;
-        }
-      } catch {
-      }
-      if (hit !== null) anyActiveCache = { at: Date.now(), value: hit, busy: false };
-      else anyActiveCache.busy = false;
-      apply();
-    })();
-    return anyActiveCache.value === true;
-  }
-  function applySectionSpin() {
-    if (!enabled2) {
-      document.querySelectorAll("." + SEC_SPIN_CLASS).forEach((el) => el.remove());
-      return;
-    }
-    for (const { head, cont, kind } of sectionHeads()) {
-      const running = !!(cont && cont.querySelector('li[data-task-item-key] svg[class*="lucide-loader"]'));
-      let expanded = true;
-      if (head.tagName === "BUTTON") expanded = head.getAttribute("aria-expanded") !== "false";
-      else {
-        const list = head.nextElementSibling;
-        expanded = !list || list.offsetHeight > 0;
-      }
-      if (!kind) return;
-      const scoped = head.tagName === "H3" ? sectionActive.pinned : kind === "project" ? sectionActive.project : sectionActive.task;
-      const want = !expanded && scoped;
-      const existing = head.querySelector(":scope > ." + SEC_SPIN_CLASS);
-      if (want && !existing) {
-        const span = document.createElement("span");
-        span.className = "flex size-4 shrink-0 items-center justify-center " + SEC_SPIN_CLASS;
-        span.append(makeLoaderSvg("size-4"));
-        head.prepend(span);
-      } else if (!want && existing) {
-        existing.remove();
-      }
-    }
-  }
-  function schedulePeek(ws, delay) {
-    clearTimeout(peekTimers.get(ws));
-    peekTimers.set(ws, setTimeout(() => {
-      peekTimers.delete(ws);
-      void peek(ws);
-    }, delay));
-  }
-  function clearPeek(ws) {
-    const t2 = peekTimers.get(ws);
-    if (t2) {
-      clearTimeout(t2);
-      peekTimers.delete(ws);
-    }
-  }
-  function syncPeeks() {
-    for (const [ws, set] of runningByWs) {
-      if (!enabled2 || !set.size) {
-        clearPeek(ws);
-        continue;
-      }
-      const row = findWsRow(ws);
-      const head = row && wsHead(row);
-      if (!row || !head || head.getAttribute("aria-expanded") !== "false" || wsWithRows.has(ws)) {
-        clearPeek(ws);
-        continue;
-      }
-      if (!peekTimers.has(ws) && !activePeeks.has(ws)) schedulePeek(ws, peekedWs.has(ws) ? PEEK_REPEAT_MS : PEEK_FIRST_MS);
-    }
-  }
-  var peekChain = Promise.resolve();
-  async function peek(ws, opts) {
-    if (!opts?.manual) {
-      const auth = await authoritativeIdle(ws);
-      if (auth !== null) {
-        if (auth) {
-          runningByWs.delete(ws);
-        } else {
-          let set = runningByWs.get(ws);
-          if (!set) {
-            set = /* @__PURE__ */ new Set();
-            runningByWs.set(ws, set);
-          }
-          set.add(ws + ":active");
-          schedulePeek(ws, PEEK_REPEAT_MS);
-        }
-        apply();
-        return true;
-      }
-    }
-    const run = () => peekInner(ws, opts);
-    const p = peekChain.then(run, run);
-    peekChain = p.catch(() => {
-    });
-    return p;
-  }
-  async function peekInner(ws, opts) {
-    if (!opts?.manual && !enabled2 || document.hidden || activePeeks.has(ws)) return false;
-    const row = findWsRow(ws);
-    const head = row && wsHead(row);
-    if (!row || !head || head.getAttribute("aria-expanded") !== "false") return false;
-    if (!currentTaskRow()) {
-      schedulePeek(ws, PEEK_REPEAT_MS);
-      return false;
-    }
-    activePeeks.add(ws);
-    peekedWs.add(ws);
-    const rect = row.getBoundingClientRect();
-    const frozen = row.cloneNode(true);
-    frozen.classList.add("zcodepro-ws-frozen");
-    frozen.style.left = rect.left + "px";
-    frozen.style.top = rect.top + "px";
-    frozen.style.width = rect.width + "px";
-    frozen.style.height = rect.height + "px";
-    document.body.append(frozen);
-    row.style.visibility = "hidden";
-    const hider = installPeekHider(ws);
-    let readOk = false;
-    try {
-      toggleNavSafe(head);
-      readOk = await settleAndRead(ws);
-      const rowNow = findWsRow(ws) || row;
-      const headNow = wsHead(rowNow);
-      if (headNow && headNow.getAttribute("aria-expanded") === "true" && !userTouched(rowNow)) {
-        toggleNavSafe(headNow);
-        await waitForRowsGone(ws);
-      }
-    } finally {
-      removePeekHider(hider);
-      row.style.visibility = "";
-      frozen.remove();
-      activePeeks.delete(ws);
-    }
-    apply();
-    const set = runningByWs.get(ws);
-    if (set && set.size && enabled2) schedulePeek(ws, PEEK_REPEAT_MS);
-    return readOk;
-  }
-  function wsRunningSnapshot() {
-    const curKey = currentTaskRow()?.getAttribute("data-task-item-key") || "";
-    return {
-      running: [...runningByWs.entries()].filter(([, set]) => set.size > 0).map(([ws]) => ws),
-      current: curKey ? workspaceOf(curKey) || null : null
-    };
-  }
-  function domRowKeyOf(id) {
-    if (!id) return "";
-    try {
-      const el = document.querySelector(`[data-task-item-key$=":${CSS.escape(id)}"]`);
-      return el && el.getAttribute("data-task-item-key") || "";
-    } catch {
-      return "";
-    }
-  }
-  function wsRunningKeys() {
-    const keys = /* @__PURE__ */ new Set();
-    for (const set of runningByWs.values()) {
-      for (const k of set) if (!k.endsWith(":active")) keys.add(k);
-    }
-    for (const [base, ids] of authActiveByWs) {
-      for (const id of ids) keys.add(domRowKeyOf(id) || `${base}:${id}`);
-    }
-    return keys;
-  }
-  async function verifyWorkspaceNotRunning(ws) {
-    if (!ws || document.hidden) return false;
-    const row = findWsRow(ws);
-    const head = row && wsHead(row);
-    if (!row || !head) return false;
-    if (head.getAttribute("aria-expanded") !== "false") {
-      let run = false;
-      for (const el of domRowsOf(ws)) if (isRunningRow(el)) run = true;
-      return !run;
-    }
-    let verified = false;
-    try {
-      verified = await peek(ws, { manual: true }) === true;
-    } catch {
-    }
-    if (!verified) return false;
-    const set = runningByWs.get(ws);
-    return !(set && set.size);
-  }
-  function settleAndRead(ws) {
-    return new Promise((resolve) => {
-      const t0 = Date.now();
-      let lastCount = -1;
-      let stableAt = 0;
-      let zeroRows = false;
-      const timer = setInterval(() => {
-        const rows = domRowsOf(ws);
-        const elapsed = Date.now() - t0;
-        if (rows.length !== lastCount) {
-          lastCount = rows.length;
-          stableAt = Date.now();
-        }
-        const settled = rows.length > 0 && rows.length === lastCount && Date.now() - stableAt >= PEEK_SETTLE_MS;
-        if (!settled && elapsed < PEEK_MAX_MS) return;
-        clearInterval(timer);
-        if (lastCount === 0) {
-          zeroRows = true;
-        } else {
-          let set = runningByWs.get(ws);
-          if (!set) {
-            set = /* @__PURE__ */ new Set();
-            runningByWs.set(ws, set);
-          }
-          for (const el of rows) {
-            const key = el.getAttribute("data-task-item-key") || "";
-            if (isRunningRow(el)) set.add(key);
-            else set.delete(key);
-          }
-        }
-        resolve(!zeroRows);
-      }, 80);
-    });
-  }
-  var PEEK_EXEMPT_CLASS = "zcodepro-peek-exempt";
-  var cssAttr = (v) => String(v).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-  function installPeekHider(ws) {
-    const rowSel3 = `${TASK_SEL}[data-task-item-key^="${cssAttr(ws + ":")}"]`;
-    for (const r of document.querySelectorAll(rowSel3)) r.classList.add(PEEK_EXEMPT_CLASS);
-    const style = document.createElement("style");
-    style.textContent = `${rowSel3}:not(.${PEEK_EXEMPT_CLASS}){display:none!important}`;
-    document.head.append(style);
-    return { style, sel: rowSel3 };
-  }
-  function removePeekHider(hider) {
-    hider.style.remove();
-    for (const r of document.querySelectorAll("." + PEEK_EXEMPT_CLASS)) r.classList.remove(PEEK_EXEMPT_CLASS);
-  }
-  function waitForRowsGone(ws) {
-    const sel = `${TASK_SEL}[data-task-item-key^="${cssAttr(ws + ":")}"]:not(.${PEEK_EXEMPT_CLASS})`;
-    return new Promise((resolve) => {
-      const t0 = Date.now();
-      const timer = setInterval(() => {
-        if (!document.querySelector(sel) || Date.now() - t0 >= PEEK_UNMOUNT_WAIT_MS) {
-          clearInterval(timer);
-          resolve();
-        }
-      }, 40);
-    });
-  }
-  var TOUCH_WINDOW_MS = 800;
-  var wsTouchAt = /* @__PURE__ */ new WeakMap();
-  function userTouched(row) {
-    const at = wsTouchAt.get(row);
-    return !!at && Date.now() - at < TOUCH_WINDOW_MS;
-  }
-  function inSel(node, sel) {
-    return !!(node instanceof Element && node.closest && node.closest(sel));
-  }
-  function relevant(muts) {
-    for (const m of muts) {
-      if (inSel(m.target, TASK_SEL) || inSel(m.target, WS_SEL())) return true;
-      for (const n of m.addedNodes) {
-        if (n instanceof Element && (n.matches(TASK_SEL) || n.matches(WS_SEL()) || n.querySelector(TASK_SEL) || n.querySelector(WS_SEL()))) return true;
-      }
-      for (const n of m.removedNodes) {
-        if (n instanceof Element && (n.matches(TASK_SEL) || n.matches(WS_SEL()) || n.querySelector(TASK_SEL))) return true;
-      }
-    }
-    return false;
-  }
-  var pollMs = CONFIG_POLL_MIN_MS;
-  async function refreshConfig() {
-    try {
-      const res = await rpc("/config");
-      if (res && res.ok && res.config && res.config.features) {
-        const next = res.config.features.wsRunningSpin !== false;
-        if (next !== enabled2) {
-          enabled2 = next;
-          if (!next) {
-            for (const ws of [...peekTimers.keys()]) clearPeek(ws);
-            apply();
-          }
-          return true;
-        }
-      }
-    } catch {
-    }
-    return false;
-  }
-  function pollConfig() {
-    setTimeout(async () => {
-      if (document.hidden) pollMs = CONFIG_POLL_MAX_MS;
-      else pollMs = await refreshConfig() ? CONFIG_POLL_MIN_MS : Math.min(Math.round(pollMs * 1.5), CONFIG_POLL_MAX_MS);
-      pollConfig();
-    }, pollMs);
-  }
-  var scanDebounce = 0;
-  function startWsRunningSpin() {
-    if (installed2 || typeof document === "undefined") return;
-    installed2 = true;
-    const st = document.createElement("style");
-    st.id = "__zcodepro_ws_style__";
-    st.textContent = ".zcodepro-ws-loader{color:color-mix(in srgb, currentColor 85%, black) !important}";
-    document.head.append(st);
-    void refreshConfig();
-    pollConfig();
-    const observer2 = new MutationObserver((muts) => {
-      if (!relevant(muts)) return;
-      handleRemovals(muts);
-      if (!scanDebounce) {
-        scanDebounce = setTimeout(() => {
-          scanDebounce = 0;
-          scan();
-        }, SCAN_DEBOUNCE_MS);
-      }
-    });
-    observer2.observe(document.body, { childList: true, subtree: true });
-    scan();
-    setInterval(() => {
-      if (!document.hidden && enabled2) scan();
-    }, SCAN_FALLBACK_MS);
-    document.addEventListener("visibilitychange", () => {
-      if (!document.hidden) scan();
-    });
-    document.addEventListener("click", (e) => {
-      if (!e.isTrusted) return;
-      const row = e.target instanceof Element && e.target.closest(WS_SEL());
-      if (row) wsTouchAt.set(row, Date.now());
-    }, true);
-  }
-
-  // src/inject/features/session-switch.js
-  var MRU_LIMIT = 50;
-  var SCAN_DEBOUNCE_MS2 = 150;
-  var SCAN_FALLBACK_MS2 = 5e3;
-  var INITIAL_COUNT = 10;
-  var PAGE_SIZE = 5;
-  var UNSEEN_LIMIT = 50;
-  var mru = [];
-  var current = null;
-  var titles = /* @__PURE__ */ new Map();
-  var popupEl = null;
-  var aliasesCache = {};
-  var highlight = 0;
-  var scanDebounce2 = 0;
-  var popupMode = "mru";
-  var visibleCount = INITIAL_COUNT;
-  var unseen = /* @__PURE__ */ new Set();
-  var lastRunKeys = null;
-  var hotkeys = { ...DEFAULT_SHORTCUTS };
-  function loadHotkeys() {
-    return getConfig(true).then((cfg) => {
-      const sc = cfg && cfg.shortcuts;
-      if (sc && typeof sc === "object") {
-        for (const k of Object.keys(DEFAULT_SHORTCUTS)) {
-          if (typeof sc[k] === "string" && /^[a-z0-9]$/.test(sc[k])) hotkeys[k] = sc[k];
-        }
-      }
-    }).catch(() => {
-    });
-  }
-  function firstLineOf(item) {
-    const tEl = item.querySelector('[class*="truncate"]');
-    return (tEl ? tEl.textContent : (item.innerText || "").split("\n")[0])?.trim() || "";
-  }
-  function workspaceOf2(key) {
-    const i = key.lastIndexOf(":");
-    return i > 0 ? key.slice(0, i) : key;
-  }
-  function findCurrent() {
-    for (const el of document.querySelectorAll("[data-task-item-key]")) {
-      if ((el.className + "").includes("bg-selected")) return el;
-    }
-    return null;
-  }
-  function record(key) {
-    if (key) unseen.delete(key);
-    if (key && key !== current) {
-      current = key;
-      mru = mru.filter((k) => k !== key);
-      mru.unshift(key);
-      if (mru.length > MRU_LIMIT) mru.length = MRU_LIMIT;
-    }
-  }
-  function scan2() {
-    const cur = findCurrent();
-    if (cur) record(cur.getAttribute("data-task-item-key"));
-    for (const el of document.querySelectorAll("[data-task-item-key]")) {
-      titles.set(el.getAttribute("data-task-item-key"), firstLineOf(el));
-    }
-  }
-  var rowSel2 = "[data-task-item-key]";
-  var inTaskRow = (node) => node instanceof Element && !!node.closest && !!node.closest(rowSel2);
-  function taskRowMutations(muts) {
-    for (const m of muts) {
-      if (m.type === "attributes") {
-        if (inTaskRow(m.target)) return true;
-      } else if (m.type === "characterData") {
-        if (m.target.parentElement && inTaskRow(m.target.parentElement)) return true;
-      } else if (inTaskRow(m.target)) {
-        return true;
-      } else {
-        for (const n of m.addedNodes) {
-          if (n instanceof Element && (n.matches(rowSel2) || !!n.querySelector(rowSel2))) return true;
-        }
-      }
-    }
-    return false;
-  }
-  function scheduleScan() {
-    if (scanDebounce2) return;
-    scanDebounce2 = setTimeout(() => {
-      scanDebounce2 = 0;
-      scan2();
-    }, SCAN_DEBOUNCE_MS2);
-  }
-  async function switchTo(key) {
-    const id = key.slice(key.lastIndexOf(":") + 1);
-    const find = () => document.querySelector(`[data-task-item-key="${CSS.escape(key)}"]`) || (id ? document.querySelector(`[data-task-item-key$=":${CSS.escape(id)}"]`) : null);
-    let item = find();
-    if (!item) {
-      const ws = workspaceOf2(key);
-      const header = findProjectRow(ws);
-      const expander = header && header.querySelector("[aria-expanded]");
-      if (expander && expander.getAttribute("aria-expanded") === "false") {
-        expander.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
-        for (let i = 0; i < 20 && !(item = find()); i++) await new Promise((r) => setTimeout(r, 100));
-      }
-    }
-    if (!item) return false;
-    item.scrollIntoView({ block: "nearest" });
-    item.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
-    return true;
-  }
-  function attentionList() {
-    const run = wsRunningKeys();
-    const idOf = (k) => k.slice(k.lastIndexOf(":") + 1);
-    const runKeyById = new Map([...run].map((k) => [idOf(k), k]));
-    const listed = /* @__PURE__ */ new Set();
-    const head = [];
-    for (const k of mru) {
-      const id = idOf(k);
-      if (listed.has(id)) continue;
-      const runForm = runKeyById.get(id);
-      if (run.has(k) || unseen.has(k) || runForm) {
-        head.push(runForm || k);
-        listed.add(id);
-      }
-    }
-    const tail = [];
-    const push = (k) => {
-      const id = idOf(k);
-      if (listed.has(id)) return;
-      listed.add(id);
-      tail.push(k);
-    };
-    for (const k of run) push(k);
-    for (const k of unseen) push(k);
-    return [...head, ...tail];
-  }
-  function activeList() {
-    return popupMode === "attention" ? attentionList() : mru;
-  }
-  function closePopup(commit) {
-    if (!popupEl) return;
-    const idx = highlight;
-    const list = activeList();
-    popupEl.remove();
-    popupEl = null;
-    if (commit && list[idx] && list[idx] !== current) {
-      void switchTo(list[idx]).then((ok) => {
-        if (!ok) showToast(t().switcherFailed, "error");
-      });
-    }
-  }
-  function findTitle(key) {
-    const item = document.querySelector(`[data-task-item-key="${CSS.escape(key)}"]`);
-    if (item) titles.set(key, firstLineOf(item));
-    const id = key.slice(key.lastIndexOf(":") + 1);
-    return titles.get(key) || `sess ${id.slice(0, 8)}`;
-  }
-  async function fetchMissingTitles(keys) {
-    const sessIdOf4 = (k) => k.slice(k.lastIndexOf(":") + 1);
-    const missing = keys.filter((k) => {
-      const id = sessIdOf4(k);
-      return id && !titles.get(k) && !document.querySelector(`[data-task-item-key$=":${CSS.escape(id)}"]`);
-    });
-    if (!missing.length) return;
-    const st = await rpc("/task-statuses?ids=" + encodeURIComponent(missing.map(sessIdOf4).join(","))).catch(() => null);
-    if (!st || !st.ok || !st.available || !st.statuses) return;
-    for (const k of missing) {
-      const rec = st.statuses[sessIdOf4(k)];
-      if (rec && rec.title) titles.set(k, String(rec.title));
-    }
-  }
-  function projLabelOf(key, aliases2) {
-    const ws = workspaceOf2(key);
-    if (!ws) return "";
-    return aliases2[ws] || ws.replace(/[\\/]+$/, "").split(/[\\/]/).pop();
-  }
-  function renderPopup() {
-    if (!popupEl) return;
-    const L = t();
-    const list = popupEl.querySelector("[data-zcodepro-switcher-list]");
-    const full = activeList();
-    const shown = full.slice(0, visibleCount);
-    const run = popupMode === "attention" ? wsRunningKeys() : null;
-    list.replaceChildren(...shown.map((key) => {
-      const proj = projLabelOf(key, aliasesCache);
-      return h(
-        "div",
-        {
-          class: "zcodepro-switcher-row",
-          "data-active": full[highlight] === key ? "" : void 0,
-          onClick: () => {
-            highlight = full.indexOf(key);
-            closePopup(true);
-          }
-        },
-        // 标题文本包 span：截断省略作用在文本节点上（flex 容器自身 ellipsis 无效）
-        h(
-          "div",
-          { class: "zcodepro-switcher-title" },
-          key === current ? h("span", { class: "zcodepro-switcher-tag" }, L.switcherCurrent) : null,
-          run && run.has(key) ? h("span", { class: "zcodepro-switcher-tag zcodepro-switcher-tag-run" }, L.switcherRunning) : null,
-          run && !run.has(key) ? h("span", { class: "zcodepro-switcher-tag zcodepro-switcher-tag-new" }, L.switcherUnseen) : null,
-          h("span", null, findTitle(key))
-        ),
-        // 无项目归属（如置顶）时不渲染空行
-        proj ? h("div", { class: "zcodepro-switcher-ws" }, proj) : null
-      );
-    }));
-    if (full.length > shown.length) {
-      list.append(h(
-        "div",
-        { class: "zcodepro-switcher-more" },
-        L.switcherMore.replaceAll("{n}", String(full.length - shown.length))
-      ));
-    }
-  }
-  var openPopupInflight = null;
-  function openPopup(mode = "mru") {
-    if (popupEl) return;
-    if (openPopupInflight) return openPopupInflight;
-    openPopupInflight = openPopupInner(mode).finally(() => {
-      openPopupInflight = null;
-    });
-    return openPopupInflight;
-  }
-  async function openPopupInner(mode) {
-    popupMode = mode;
-    visibleCount = INITIAL_COUNT;
-    highlight = 0;
-    const cfg = await getConfig().catch(() => null);
-    aliasesCache = cfg && cfg.aliases && typeof cfg.aliases === "object" ? cfg.aliases : {};
-    if (mode === "attention") await fetchMissingTitles(attentionList()).catch(() => {
-    });
-    ensureStyle();
-    const L = t();
-    popupEl = h(
-      "div",
-      {
-        class: "zcodepro-switcher-overlay",
-        // 点弹窗外 = 取消（不切）
-        onMousedown: (e) => {
-          if (e.target === popupEl) closePopup(false);
-        }
-      },
-      h(
-        "div",
-        { class: "zcodepro-switcher" },
-        // 提示行键位跟随当前配置（改键后新开的弹窗即用新键位）
-        h(
-          "div",
-          { class: "zcodepro-switcher-hint" },
-          (mode === "attention" ? L.switcherAttentionHint : L.switcherHint).replaceAll("{prev}", hotkeys.switchPrev).replaceAll("{next}", hotkeys.switchNext)
-        ),
-        h("div", { "data-zcodepro-switcher-list": "1", class: "zcodepro-switcher-list" })
-      )
-    );
-    document.body.append(popupEl);
-    renderPopup();
-  }
-  function scrollHighlight() {
-    const row = popupEl && popupEl.querySelector("[data-active]");
-    if (row) row.scrollIntoView({ block: "nearest" });
-  }
-  function moveUp() {
-    const len = Math.min(activeList().length, visibleCount);
-    if (len < 2) return;
-    highlight = highlight > 0 ? highlight - 1 : len - 1;
-    renderPopup();
-    scrollHighlight();
-  }
-  function moveDown() {
-    const full = activeList();
-    const len = Math.min(full.length, visibleCount);
-    if (len < 2) return;
-    if (highlight < len - 1) {
-      highlight += 1;
-    } else if (visibleCount < full.length) {
-      visibleCount = Math.min(visibleCount + PAGE_SIZE, full.length);
-      highlight = len;
-    } else {
-      highlight = 0;
-    }
-    renderPopup();
-    scrollHighlight();
-  }
-  function startSessionSwitch() {
-    scan2();
-    void loadHotkeys();
-    window.addEventListener("zcodepro:config-changed", () => {
-      void loadHotkeys();
-    });
-    new MutationObserver((muts) => {
-      if (taskRowMutations(muts)) scheduleScan();
-    }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
-    setInterval(() => {
-      if (!document.hidden) scan2();
-    }, SCAN_FALLBACK_MS2);
-    document.addEventListener("visibilitychange", () => {
-      if (!document.hidden) scan2();
-    });
-    setInterval(() => {
-      if (document.hidden) return;
-      const now = wsRunningKeys();
-      if (lastRunKeys) {
-        const idOf = (k) => k.slice(k.lastIndexOf(":") + 1);
-        const nowIds = new Set([...now].map(idOf));
-        for (const k of lastRunKeys) {
-          if (!nowIds.has(idOf(k)) && k !== current) unseen.add(k);
-        }
-      }
-      lastRunKeys = now;
-      if (unseen.size > UNSEEN_LIMIT) unseen = new Set([...unseen].slice(-UNSEEN_LIMIT));
-    }, 1e4);
-    document.addEventListener("click", (e) => {
-      const item = e.target instanceof Element && e.target.closest("[data-task-item-key]");
-      if (item) record(item.getAttribute("data-task-item-key"));
-    }, true);
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && popupEl) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        closePopup(false);
-        return;
-      }
-      const bareK = e.key.toLowerCase();
-      if (popupEl && !e.altKey && !e.ctrlKey && !e.metaKey && !e.isComposing && (bareK === hotkeys.switchPrev || bareK === hotkeys.switchNext)) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        if (bareK === hotkeys.switchPrev) moveUp();
-        else moveDown();
-        return;
-      }
-      if (popupEl && (e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === "Enter")) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        if (e.key === "ArrowUp") moveUp();
-        else if (e.key === "ArrowDown") moveDown();
-        else if (!e.repeat) closePopup(true);
-        return;
-      }
-      if (!e.altKey || e.ctrlKey || e.metaKey || e.isComposing) return;
-      if (document.querySelector(".zcodepro-overlay")) return;
-      const k = e.key.toLowerCase();
-      const isHot = k === hotkeys.switchLast || k === hotkeys.switchPrev || k === hotkeys.switchNext || k === hotkeys.switchRecent || k === hotkeys.switchAttention;
-      if (!isHot) return;
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      void (async () => {
-        const cfg = await getConfig();
-        if (cfg.features && cfg.features.sessionSwitch === false) return;
-        if (k === hotkeys.switchLast) {
-          if (e.repeat) return;
-          closePopup(false);
-          const live = findCurrent();
-          if (live) record(live.getAttribute("data-task-item-key"));
-          const target = live ? mru[0] === current ? mru[1] : mru.find((mk) => mk !== current) : mru[0];
-          if (!target) {
-            showToast(t().switcherEmpty, "warning");
-            return;
-          }
-          void switchTo(target).then((ok) => {
-            if (!ok) showToast(t().switcherFailed, "error");
-          });
-          return;
-        }
-        if (k === hotkeys.switchAttention) {
-          if (e.repeat) return;
-          closePopup(false);
-          if (!attentionList().length) {
-            showToast(t().switcherAttentionEmpty, "warning");
-            return;
-          }
-          await openPopup("attention");
-          return;
-        }
-        if (k === hotkeys.switchRecent) {
-          if (!e.repeat && !popupEl && !openPopupInflight) {
-            if (!mru.length) {
-              showToast(t().switcherEmpty, "warning");
-              return;
-            }
-            await openPopup("mru");
-          }
-          return;
-        }
-        if (openPopupInflight) {
-          await openPopupInflight;
-        } else if (!popupEl) {
-          if (!mru.length) {
-            showToast(t().switcherEmpty, "warning");
-            return;
-          }
-          await openPopup("mru");
-        }
-        if (k === hotkeys.switchPrev) moveUp();
-        else moveDown();
-      })();
-    }, true);
-    window.addEventListener("blur", () => closePopup(false));
-  }
+  // src/inject/index.js
+  init_session_switch();
 
   // src/inject/features/newtab-panels.js
+  init_core();
+  init_ui();
   var GRID_HINTS = ["\u8FD0\u884C\u547D\u4EE4\u548C\u67E5\u770B\u8F93\u51FA", "Run commands and view output"];
   var OFFICIAL_SUFFIX = "@zcode-plugins-official";
   var OPEN_FN_MARK = "\u6253\u5F00\u63D2\u4EF6 UI";
@@ -10216,19 +10316,19 @@
   function findBridge() {
     let holder = null;
     const seen2 = /* @__PURE__ */ new Set();
-    const scan5 = (o) => {
+    const scan6 = (o) => {
       if (!o || typeof o !== "object" || seen2.has(o) || holder) return;
       seen2.add(o);
       if (typeof o.pluginUiBridgeService === "object" && o.pluginUiBridgeService) {
         holder = o.pluginUiBridgeService;
         return;
       }
-      for (const v of Object.values(o)) if (v && typeof v === "object") scan5(v);
+      for (const v of Object.values(o)) if (v && typeof v === "object") scan6(v);
     };
     eachFiber((f) => {
       for (const h2 of [f.memoizedProps, f.memoizedState]) {
         if (!h2 || typeof h2 !== "object") continue;
-        scan5(h2);
+        scan6(h2);
         if (holder) return true;
       }
       return false;
@@ -10365,6 +10465,8 @@
   }
 
   // src/inject/features/status-bar.js
+  init_core();
+  init_ui();
   var enabled4 = true;
   var items = DEFAULT_STATUS_ITEMS.map((x) => ({ ...x }));
   var barEl = null;
@@ -10426,19 +10528,19 @@
   function findUsageService() {
     let found = null;
     const seen2 = /* @__PURE__ */ new Set();
-    const scan5 = (o) => {
+    const scan6 = (o) => {
       if (!o || typeof o !== "object" || seen2.has(o) || found) return;
       seen2.add(o);
       if (typeof o.usageStatsService === "object" && o.usageStatsService) {
         found = o.usageStatsService;
         return;
       }
-      for (const v of Object.values(o)) if (v && typeof v === "object") scan5(v);
+      for (const v of Object.values(o)) if (v && typeof v === "object") scan6(v);
     };
     eachFiber2((f) => {
       for (const h2 of [f.memoizedProps, f.memoizedState]) {
         if (!h2 || typeof h2 !== "object") continue;
-        scan5(h2);
+        scan6(h2);
         if (found) return true;
       }
       return false;
@@ -10666,6 +10768,7 @@
   }
 
   // src/inject/features/turn-usage.js
+  init_core();
   var enabled5 = true;
   var recentTurns = [];
   var scanTimer = 0;
@@ -10846,6 +10949,7 @@
   }
 
   // src/inject/features/title-lock.js
+  init_core();
   var TASK_SEL2 = "[data-task-item-key]";
   var SCAN_DEBOUNCE_MS3 = 150;
   var SCAN_FALLBACK_MS3 = 5e3;
@@ -11109,6 +11213,7 @@
   }
 
   // src/inject/features/title-gen.js
+  init_core();
   var CONV2 = '[class*="@md/conversation"]';
   var USER_ROW = '[class*="user-row"]';
   var SCAN_DEBOUNCE_MS4 = 300;
@@ -11279,6 +11384,8 @@
   }
 
   // src/inject/features/auto-rename.js
+  init_core();
+  init_ui();
   var TASK_SEL4 = "[data-task-item-key]";
   var ACTIONS_SEL = "[data-task-row-actions]";
   var SCAN_DEBOUNCE_MS5 = 300;
@@ -11331,11 +11438,11 @@
   async function injectHoverButtons() {
     const cfg = await getConfig();
     if (!cfg || !cfg.titleGen) return;
-    const enabled11 = cfg.titleGen.hoverBtn !== false;
+    const enabled12 = cfg.titleGen.hoverBtn !== false;
     const L = t();
     for (const area of document.querySelectorAll(ACTIONS_SEL)) {
       const existing = area.querySelector('[data-zcodepro-item="auto-rename"]');
-      if (!enabled11) {
+      if (!enabled12) {
         existing?.remove();
         continue;
       }
@@ -11401,11 +11508,11 @@
       ctxKey = row ? row.getAttribute("data-task-item-key") || "" : "";
       ctxAt = Date.now();
     }, true);
-    let scanTimer2 = 0;
+    let scanTimer3 = 0;
     const schedule = () => {
-      if (scanTimer2) return;
-      scanTimer2 = setTimeout(() => {
-        scanTimer2 = 0;
+      if (scanTimer3) return;
+      scanTimer3 = setTimeout(() => {
+        scanTimer3 = 0;
         void injectHoverButtons();
       }, SCAN_DEBOUNCE_MS5);
     };
@@ -11422,7 +11529,12 @@
     window.addEventListener("zcodepro:config-changed", schedule);
   }
 
+  // src/inject/index.js
+  init_ws_running();
+
   // src/inject/features/idle-reclaim.js
+  init_core();
+  init_ws_running();
   var CHECK_MS = 3e4;
   var MIN_MINUTES = 1;
   var MAX_MINUTES = 1440;
@@ -11548,6 +11660,7 @@
   }
 
   // src/inject/features/sandbox-reclaim.js
+  init_core();
   var CHECK_MS2 = 3e4;
   var MIN_BUDGET = 8;
   var MAX_BUDGET = 64;
@@ -11660,6 +11773,7 @@
   }
 
   // src/inject/features/plugin-card-retry.js
+  init_core();
   var SCAN_MS = 15e3;
   var CLICK_INTERVAL_MS = 3e4;
   var MARKERS = ["\u63D2\u4EF6\u754C\u9762"];
@@ -11699,6 +11813,8 @@
   }
 
   // src/inject/features/toolbar-icons.js
+  init_core();
+  init_ui();
   var HIDE_CLASS = "zcodepro-tb-hidden";
   var SYNC_DEBOUNCE_MS = 150;
   var SCAN_FALLBACK_MS5 = 5e3;
@@ -11931,6 +12047,8 @@
   }
 
   // src/inject/features/pinned-collapse.js
+  init_core();
+  init_ui();
   var COLLAPSED_CLASS = "zcodepro-pin-collapsed";
   var HEAD_CLASS = "zcodepro-pin-head";
   var STORE_KEY = "zcodepro:pinned-collapsed";
@@ -12061,6 +12179,8 @@
   }
 
   // src/inject/features/table-copy.js
+  init_ui();
+  init_core();
   var installed6 = false;
   var enabled9 = true;
   function cleanTable(table) {
@@ -12174,10 +12294,10 @@
         void copyTable(table);
       }));
     };
-    const scan5 = () => {
+    const scan6 = () => {
       for (const bar of document.querySelectorAll("[data-markdown-table-toolbar]")) enhance(bar);
     };
-    scan5();
+    scan6();
     void getConfig().then((cfg) => {
       enabled9 = cfg.features ? cfg.features.tableCopy !== false : true;
     }).catch(() => {
@@ -12189,14 +12309,152 @@
       });
     });
     const observer2 = new MutationObserver(() => {
-      if (enabled9) scan5();
+      if (enabled9) scan6();
     });
     observer2.observe(document.body, { childList: true, subtree: true });
   }
 
-  // src/inject/features/composer-provider.js
+  // src/inject/features/session-link.js
+  init_core();
+  init_ui();
+  var CONV3 = '[class*="@md/conversation"]';
+  var SKIP_SEL = "pre, code, a, button, input, textarea, select, [data-zcodepro-sess]";
+  var SCAN_DEBOUNCE_MS6 = 300;
+  var SESS_RE = /(?<![A-Za-z0-9_])(?:session|sess)_[A-Za-z0-9][A-Za-z0-9_-]*[A-Za-z0-9]/g;
+  function matchIds(text) {
+    SESS_RE.lastIndex = 0;
+    const out = [];
+    for (let m; m = SESS_RE.exec(text); ) {
+      out.push({ start: m.index, end: m.index + m[0].length, id: m[0] });
+    }
+    return out;
+  }
   var installed7 = false;
   var enabled10 = true;
+  var titleCache = /* @__PURE__ */ new Map();
+  var pendingIds = /* @__PURE__ */ new Set();
+  var fetchTimer = 0;
+  var scanTimer2 = 0;
+  function makeLink(id) {
+    const span = document.createElement("span");
+    span.className = "zcodepro-sess-link";
+    span.dataset.zcodeproSess = id;
+    span.title = id;
+    span.textContent = titleCache.get(id) || id;
+    return span;
+  }
+  function linkifyTextNode(node) {
+    const text = node.textContent || "";
+    if (!text.includes("sess")) return;
+    const ms = matchIds(text);
+    if (!ms.length) return;
+    const el = node.parentElement;
+    if (!el || el.closest(SKIP_SEL)) return;
+    const row = el.closest('[class*="-row"]');
+    if (row && row.querySelector("[data-is-streaming]")) return;
+    const frag = document.createDocumentFragment();
+    let pos = 0;
+    for (const m of ms) {
+      if (m.start > pos) frag.append(document.createTextNode(text.slice(pos, m.start)));
+      if (!titleCache.has(m.id) && !pendingIds.has(m.id)) pendingIds.add(m.id);
+      frag.append(makeLink(m.id));
+      pos = m.end;
+    }
+    if (pos < text.length) frag.append(document.createTextNode(text.slice(pos)));
+    node.replaceWith(frag);
+  }
+  function scan5() {
+    for (const conv of document.querySelectorAll(CONV3)) {
+      const walker = document.createTreeWalker(conv, NodeFilter.SHOW_TEXT);
+      const nodes = [];
+      for (let n; n = walker.nextNode(); ) nodes.push(n);
+      for (const n of nodes) linkifyTextNode(n);
+    }
+    queueTitleFetch();
+  }
+  function queueTitleFetch() {
+    if (fetchTimer || !pendingIds.size) return;
+    fetchTimer = setTimeout(() => {
+      fetchTimer = 0;
+      const ids = [...pendingIds];
+      pendingIds.clear();
+      void fetchTitles(ids);
+    }, 500);
+  }
+  async function fetchTitles(ids) {
+    const st = await rpc("/task-statuses?ids=" + encodeURIComponent(ids.join(","))).catch(() => null);
+    if (!st || !st.ok || !st.available || !st.statuses) return;
+    for (const id of ids) {
+      const rec = st.statuses[id];
+      if (rec && rec.title) {
+        const title = String(rec.title);
+        titleCache.set(id, title);
+        for (const span of document.querySelectorAll(`[data-zcodepro-sess="${CSS.escape(id)}"]`)) {
+          span.textContent = title;
+        }
+      }
+    }
+  }
+  function unwrapAll() {
+    for (const span of [...document.querySelectorAll("[data-zcodepro-sess]")]) {
+      span.replaceWith(document.createTextNode(span.getAttribute("data-zcodepro-sess") || ""));
+    }
+  }
+  function setEnabled(cfg) {
+    const next = cfg.features ? cfg.features.sessionLink !== false : true;
+    if (enabled10 && !next) unwrapAll();
+    enabled10 = next;
+    if (next) scheduleScan4();
+  }
+  function scheduleScan4() {
+    if (scanTimer2) return;
+    scanTimer2 = setTimeout(() => {
+      scanTimer2 = 0;
+      if (enabled10) scan5();
+    }, SCAN_DEBOUNCE_MS6);
+  }
+  function convMutations(muts) {
+    for (const m of muts) {
+      const el = m.type === "characterData" ? m.target.parentElement : m.target;
+      if (el instanceof Element && el.closest && el.closest(CONV3)) return true;
+      for (const n of m.addedNodes) {
+        if (n instanceof Element && n.closest && n.closest(CONV3)) return true;
+      }
+    }
+    return false;
+  }
+  function startSessionLink() {
+    if (installed7 || typeof document === "undefined") return;
+    installed7 = true;
+    ensureStyle();
+    void getConfig().then(setEnabled).catch(() => {
+    });
+    window.addEventListener("zcodepro:config-changed", () => {
+      void getConfig(true).then(setEnabled).catch(() => {
+      });
+    });
+    scan5();
+    new MutationObserver((muts) => {
+      if (enabled10 && convMutations(muts)) scheduleScan4();
+    }).observe(document.body, { childList: true, subtree: true, characterData: true });
+    document.addEventListener("click", (e) => {
+      const span = e.target instanceof Element && e.target.closest("[data-zcodepro-sess]");
+      if (!span || !enabled10) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const id = span.getAttribute("data-zcodepro-sess") || "";
+      const row = document.querySelector(`[data-task-item-key$=":${CSS.escape(id)}"]`);
+      const key = row ? row.getAttribute("data-task-item-key") : `:${id}`;
+      void Promise.resolve().then(() => (init_session_switch(), session_switch_exports)).then((m) => m.switchTo(key)).then((ok) => {
+        if (!ok) showToast(t().switcherFailed, "error");
+      });
+    });
+  }
+
+  // src/inject/features/composer-provider.js
+  init_core();
+  var installed8 = false;
+  var enabled11 = true;
   var TRIGGER_SEL = '[data-testid="chat-model-select-trigger"]';
   function labelParts(label) {
     const text = (label || "").trim();
@@ -12232,7 +12490,7 @@
       const parts = labelParts(btn.getAttribute("aria-label") || "");
       if (!parts) continue;
       const holders = holdersOf(btn, parts.model);
-      if (enabled10) {
+      if (enabled11) {
         if (!parts.provider || !holders.length) continue;
         const target = `${parts.provider} / ${parts.model}`;
         for (const el of holders) {
@@ -12252,8 +12510,8 @@
     }
   }
   function startComposerProvider() {
-    if (installed7 || typeof document === "undefined") return;
-    installed7 = true;
+    if (installed8 || typeof document === "undefined") return;
+    installed8 = true;
     const COMPOSER_SEL = '[data-composer-layout], [data-composer-leading-actions], [data-composer-leading-content], [data-testid="chat-model-select-trigger"]';
     const relevant2 = (muts) => {
       for (const m of muts) {
@@ -12275,21 +12533,21 @@
       schedule.t = setTimeout(apply3, 120);
     };
     void getConfig().then((cfg) => {
-      enabled10 = cfg.features ? cfg.features.composerProvider !== false : true;
+      enabled11 = cfg.features ? cfg.features.composerProvider !== false : true;
     }).catch(() => {
     });
     window.addEventListener("zcodepro:config-changed", () => {
       void getConfig(true).then((cfg) => {
         const next = cfg.features ? cfg.features.composerProvider !== false : true;
-        if (next !== enabled10) {
-          enabled10 = next;
+        if (next !== enabled11) {
+          enabled11 = next;
           apply3();
         }
       }).catch(() => {
       });
     });
     const observer2 = new MutationObserver((muts) => {
-      if (enabled10 && relevant2(muts)) schedule();
+      if (enabled11 && relevant2(muts)) schedule();
     });
     observer2.observe(document.body, {
       childList: true,
@@ -12303,6 +12561,8 @@
   }
 
   // src/inject/features/plugin-updates.js
+  init_core();
+  init_ui();
   var NOTIFIED_KEY = "zcodepro-plugin-updates-notified";
   async function startPluginUpdateCheck() {
     const status = await rpc("/plugins/status");
@@ -12331,6 +12591,7 @@
   }
 
   // src/inject/index.js
+  init_ui();
   (function zcodeproInject() {
     if (typeof window === "undefined") return;
     if (window.__zcodeproInjected) {
@@ -12459,6 +12720,10 @@
       }
       try {
         startTableCopy();
+      } catch {
+      }
+      try {
+        startSessionLink();
       } catch {
       }
       try {

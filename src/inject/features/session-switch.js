@@ -113,7 +113,8 @@ function scheduleScan() {
 }
 
 // 切到指定会话：条目不在 DOM（项目折叠）时先展开项目行，等条目出现再点击
-async function switchTo(key) {
+//（session-link.js 的会话 ID 链接也走这里切换）
+export async function switchTo(key) {
   // 权威扫描拼出的键（工作区前缀无尾斜杠）可能与行键（可能带尾斜杠）不同形，
   // 精确匹配落空时按会话 id 后缀兜底（会话 id 全局唯一，不会命中别的会话）
   const id = key.slice(key.lastIndexOf(':') + 1);

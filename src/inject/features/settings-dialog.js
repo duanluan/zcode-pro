@@ -384,6 +384,11 @@ export function openSettingsDialog() {
             if (await setFeature('tableCopy', next)) f.tableCopy = next;
             refreshRows();
           }),
+          settingRow(L.featureSessionLink, L.featureSessionLinkDesc, f.sessionLink !== false, async () => {
+            const next = !(f.sessionLink !== false);
+            if (await setFeature('sessionLink', next)) f.sessionLink = next;
+            refreshRows();
+          }),
           settingRow(L.featureComposerProvider, L.featureComposerProviderDesc, f.composerProvider !== false, async () => {
             const next = !(f.composerProvider !== false);
             if (await setFeature('composerProvider', next)) f.composerProvider = next;
