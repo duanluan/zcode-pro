@@ -789,10 +789,10 @@ export function openSettingsDialog() {
       renderToolbarSwitch();
       // “外观”标签页的二级结构：样式（原内容）/ 状态栏（统计项顺序与显隐）/
       // 主题（皮肤与自定义主题）/ 背景图（图库、文件夹轮换、网址）
-      const paneStylesSub1 = h('div', { class: 'mt-2' });
+      const paneStylesSub1 = h('div', { class: 'mt-2', style: 'display:none' });
       const paneStylesSub2 = h('div', { class: 'mt-2', style: 'display:none' });
       const paneStylesSub3 = h('div', { class: 'mt-2', style: 'display:none' });
-      const paneStylesSub4 = h('div', { class: 'mt-2', style: 'display:none' });
+      const paneStylesSub4 = h('div', { class: 'mt-2' }); // 默认子页是壁纸，初始显示它
       const ITEM_NAMES = {
         ctx: 'sbItemCtx', tokRate: 'sbItemTokRate', questions: 'sbItemQuestions',
         todayTokens: 'sbItemTodayTokens', totalTokens: 'sbItemTotalTokens', tasks: 'sbItemTasks',
@@ -1451,13 +1451,13 @@ export function openSettingsDialog() {
       void refreshBgFiles();
       void refreshFolderInfo();
 
-      let stylesSubTab = 'styles';
+      let stylesSubTab = 'bgimg'; // 默认停在第一个子页（壁纸）
       const stylesSubTablist = h('div', { role: 'tablist', 'aria-orientation': 'horizontal', class: 'zcodepro-tablist' });
       const renderStylesSubTabs = () => stylesSubTablist.replaceChildren(...[
+        ['bgimg', L.themeBgPane],
+        ['colors', L.themeColorsPane],
         ['styles', L.tabStylesPane],
         ['status', L.tabStatusPane],
-        ['colors', L.themeColorsPane],
-        ['bgimg', L.themeBgPane],
       ].map(([id, label]) => h('button', {
         type: 'button', role: 'tab', class: 'zcodepro-tab',
         'aria-selected': String(stylesSubTab === id),

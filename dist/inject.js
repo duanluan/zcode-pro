@@ -7267,10 +7267,10 @@
           for (const c of fontCells) c.setOptions(list);
         })();
         renderToolbarSwitch();
-        const paneStylesSub1 = h("div", { class: "mt-2" });
+        const paneStylesSub1 = h("div", { class: "mt-2", style: "display:none" });
         const paneStylesSub2 = h("div", { class: "mt-2", style: "display:none" });
         const paneStylesSub3 = h("div", { class: "mt-2", style: "display:none" });
-        const paneStylesSub4 = h("div", { class: "mt-2", style: "display:none" });
+        const paneStylesSub4 = h("div", { class: "mt-2" });
         const ITEM_NAMES = {
           ctx: "sbItemCtx",
           tokRate: "sbItemTokRate",
@@ -8189,13 +8189,13 @@
         renderThemeBg();
         void refreshBgFiles();
         void refreshFolderInfo();
-        let stylesSubTab = "styles";
+        let stylesSubTab = "bgimg";
         const stylesSubTablist = h("div", { role: "tablist", "aria-orientation": "horizontal", class: "zcodepro-tablist" });
         const renderStylesSubTabs = () => stylesSubTablist.replaceChildren(...[
-          ["styles", L.tabStylesPane],
-          ["status", L.tabStatusPane],
+          ["bgimg", L.themeBgPane],
           ["colors", L.themeColorsPane],
-          ["bgimg", L.themeBgPane]
+          ["styles", L.tabStylesPane],
+          ["status", L.tabStatusPane]
         ].map(([id, label]) => h("button", {
           type: "button",
           role: "tab",
