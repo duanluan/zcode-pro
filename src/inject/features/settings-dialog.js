@@ -635,10 +635,15 @@ export function openSettingsDialog() {
       // 数字框滚轮/手输调节，改完即存即生效
       const savedStyles = config.styles || {};
       let saveTimer = null;
+      let pendingStyles = {};
       const persistStyles = (partial) => {
+        // 防抖期间的多次改动合并提交：150ms 内连调两个字段时前一个不能丢
+        Object.assign(pendingStyles, partial);
         clearTimeout(saveTimer);
         saveTimer = setTimeout(async () => {
-          const res = await rpc('/config', { method: 'POST', body: { styles: partial } });
+          const body = pendingStyles;
+          pendingStyles = {};
+          const res = await rpc('/config', { method: 'POST', body: { styles: body } });
           clearConfigCache();
           if (res.ok) applyStyles((res.config && res.config.styles) || savedStyles);
           else showToast(L.failed + ': ' + errText(res), 'error');
@@ -892,6 +897,7 @@ export function openSettingsDialog() {
           const res = await rpc('/config', { method: 'POST', body: { features: { statusBar: to } } });
           clearConfigCache();
           if (res.ok) { config.features = { ...(config.features || {}), statusBar: to }; }
+          else showToast(L.failed + ': ' + errText(res), 'error'); // 失败提示；下面 renderMaster 按配置重画，开关自己弹回
           window.dispatchEvent(new CustomEvent('zcodepro:config-changed'));
           renderMaster();
         });
@@ -948,7 +954,7 @@ export function openSettingsDialog() {
         });
         return n;
       };
-      const bgUrl = (name) => `${HELPER_URL}/bg/file/${encodeURIComponent(name)}`;
+      const bgUrl = (name) => `${HELPER_URL}/bg/file/${encodeURIComponent(name)}?t=${encodeURIComponent(liveBoot().token || '')}`; // 媒体路由认 URL 上的 token
       const saveTheme = async (patch) => {
         themeCfg = {
           skin: patch.skin !== undefined ? patch.skin : themeCfg.skin,
@@ -986,7 +992,7 @@ export function openSettingsDialog() {
             && !bgFiles.some((f) => sameName(f.name, themeCfg.bg.file))) {
             themeCfg = { ...themeCfg, bg: { ...themeCfg.bg, file: '' } };
             await saveTheme({ bg: { file: '' } });
-            showToast(L.themeBgDeletedActive, 'success');
+            showToast(L.themeBgDeletedActive, 'warning');
             return;
           }
         }
@@ -1353,7 +1359,9 @@ export function openSettingsDialog() {
                 , h('span', { class: 'text-ui-sm text-foreground-subtle' }, L.themeBgIntervalUnit)),
             h('p', { class: 'text-ui-xs/relaxed text-foreground-subtle' },
               themeCfg.bg.folder
-                ? (folderInfo.count > 0 ? L.themeBgFolderCount.replaceAll('{n}', String(folderInfo.count)) : L.themeBgFolderMissing)
+                ? (folderInfo.count > 0
+                  ? (themeCfg.bg.intervalMin > 0 ? L.themeBgFolderCount : L.themeBgFolderCountIdle).replaceAll('{n}', String(folderInfo.count))
+                  : L.themeBgFolderMissing)
                 : L.themeBgFolderHint))),
         ] : themeCfg.bg.mode === 'url' ? [
           h('div', { class: 'flex flex-col gap-2' },
@@ -1784,25 +1792,30 @@ export function openSettingsDialog() {
       renderPerfToggle();
       const perfNumberRow = (labelText, tip, key, fallback, min) => {
         const v = Number(config[key]);
+        const nf = numberField({
+          value: Number.isFinite(v) ? v : fallback,
+          fallback,
+          min,
+          max: 1440,
+          step: 1,
+          onCommit: async (n) => {
+            const res = await rpc('/config', { method: 'POST', body: { [key]: n } });
+            if (res.ok && res.config) {
+              config[key] = res.config[key];
+              clearConfigCache();
+            } else {
+              // 保存失败：提示并回滚显示值，别让界面留着没存上的数字
+              showToast(L.failed + ': ' + errText(res), 'error');
+              nf.set(Number.isFinite(Number(config[key])) ? Number(config[key]) : fallback);
+            }
+          },
+        });
         return h('div', { class: 'flex items-center justify-between gap-2 px-2 py-1.5' },
           h('div', { class: 'min-w-0' },
             h('div', { class: 'text-ui-sm font-medium text-foreground' }, labelText),
             ...(tip ? [h('div', { class: 'mt-0.5 text-ui-xs/relaxed text-foreground-subtle' }, tip)] : [])),
           h('div', { class: 'flex shrink-0 items-center gap-1' },
-            numberField({
-              value: Number.isFinite(v) ? v : fallback,
-              fallback,
-              min,
-              max: 1440,
-              step: 1,
-              onCommit: async (n) => {
-                const res = await rpc('/config', { method: 'POST', body: { [key]: n } });
-                if (res.ok && res.config) {
-                  config[key] = res.config[key];
-                  clearConfigCache();
-                }
-              },
-            }).el,
+            nf.el,
             h('span', { class: 'text-ui-xs text-foreground-subtle' }, L.idleReclaimUnit)));
       };
       panePerf.append(
@@ -2320,7 +2333,7 @@ export function openSettingsDialog() {
             // 信息卡（仅版本行；配置未建，启用开关随配置出现）
             h('div', { class: 'mt-3 rounded-xl border border-border p-2' },
               h('div', { class: 'flex flex-wrap items-center gap-2' },
-                h('span', { class: 'shrink-0 whitespace-nowrap text-ui-xs/relaxed text-foreground-subtle' }, `插件 ${visionRes.pluginVersion || '—'}`))),
+                h('span', { class: 'shrink-0 whitespace-nowrap text-ui-xs/relaxed text-foreground-subtle' }, `${L.pluginLabel} ${visionRes.pluginVersion || '—'}`))),
             h('div', { class: 'mt-3 flex justify-end' }, initBtn),
           );
           return;
@@ -2437,14 +2450,14 @@ export function openSettingsDialog() {
           const res = await rpc('/vision/test', { method: 'POST', body: {} });
           testBtn.disabled = false;
           testBtn.textContent = L.visionTest;
-          visionTestPre.textContent = res.output || res.error || '';
+          visionTestPre.textContent = res.output || errText(res) || '';
         });
         paneVision.replaceChildren(
           h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.visionDesc),
           // 信息卡：插件版本 + 启用图片识别开关（与 rtk/headroom 面板同款式）
           h('div', { class: 'mt-3 rounded-xl border border-border p-2' },
             h('div', { class: 'flex flex-wrap items-center gap-2' },
-              h('span', { class: 'shrink-0 whitespace-nowrap text-ui-xs/relaxed text-foreground-subtle' }, `插件 ${visionRes.pluginVersion || '—'}`),
+              h('span', { class: 'shrink-0 whitespace-nowrap text-ui-xs/relaxed text-foreground-subtle' }, `${L.pluginLabel} ${visionRes.pluginVersion || '—'}`),
               h('div', { class: 'ml-auto' },
                 settingRow(L.visionEnabled, '', visionCfg.enabled !== false, async () => {
                   visionCfg.enabled = !(visionCfg.enabled !== false);
@@ -2547,7 +2560,7 @@ export function openSettingsDialog() {
       let rtkLocText = '';
       const renderRtkVersion = (meta) => {
         const v = String(meta.version || '').replace(/^rtk\s+/i, '').trim();
-        rtkVersionLine.textContent = `插件 ${meta.pluginVersion || '—'}${v ? ` · rtk ${v}` : ''}`;
+        rtkVersionLine.textContent = `${L.pluginLabel} ${meta.pluginVersion || '—'}${v ? ` · rtk ${v}` : ''}`;
         rtkLocText = meta.binPath || '';
       };
       renderRtkVersion(rtkRes);
@@ -2744,7 +2757,7 @@ export function openSettingsDialog() {
       // 关 = 直连上游；只改供应商地址，不动代理进程（headroom 可被其他程序共用）
       const hrSwitchRow = h('div');
       const renderHrVersion = (meta) => {
-        hrVersionLine.textContent = `插件 ${meta.pluginVersion || '—'}${meta.version ? ` · headroom ${meta.version}` : ''}`;
+        hrVersionLine.textContent = `${L.pluginLabel} ${meta.pluginVersion || '—'}${meta.version ? ` · headroom ${meta.version}` : ''}`;
         hrLocText = meta.binPath || '';
       };
       renderHrVersion(headroomRes);
@@ -2827,10 +2840,10 @@ export function openSettingsDialog() {
             const doneMsg = isStart ? L.hrStarted : L.hrStopped;
             const timeoutMs = isStart ? 90 * 1000 : 30 * 1000;
             const t0 = Date.now();
-            const timerSpan = h('span', { class: 'text-ui-sm text-foreground-subtle/70' }, msg + ' (0s)');
+            const timerSpan = h('span', { class: 'text-ui-sm text-foreground-subtle/70' }, msg + (isZhLocale() ? '（0s）' : ' (0s)'));
             hrStatusLine.replaceChildren(timerSpan);
             timerIv = setInterval(() => {
-              timerSpan.textContent = msg + ` (${Math.round((Date.now() - t0) / 1000)}s)`;
+              timerSpan.textContent = msg + (isZhLocale() ? `（${Math.round((Date.now() - t0) / 1000)}s）` : ` (${Math.round((Date.now() - t0) / 1000)}s)`);
             }, 1000);
             // RPC 完成后进入轮询（RPC 执行实际的 stop/start，可能要 3-10 秒）。
             // 轮询出结果前 hrBusy 一直占着：期间再点开关或按钮直接忽略，否则
@@ -3135,7 +3148,7 @@ export function openSettingsDialog() {
         if (!titleGenCfg) {
           paneTitleGen.replaceChildren(
             h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.titleGenShortDesc),
-            h('p', { class: 'mt-2 text-ui-sm text-destructive' }, L.visionLoadFailed + ': ' + errText(titleGenRes)),
+            h('p', { class: 'mt-2 text-ui-sm text-destructive' }, L.titleGenLoadFailed + ': ' + errText(titleGenRes)),
           );
           return;
         }

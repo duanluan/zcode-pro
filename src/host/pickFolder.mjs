@@ -4,7 +4,7 @@
 
 import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, statSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { dirname, isAbsolute } from 'node:path';
 
 // kdialog（KDE 原生）：起始目录参数可靠生效。
 // xdg-desktop-portal-kde 不读 current_folder 选项（二进制中无该字符串），
@@ -126,7 +126,9 @@ function portalPickFolder(startDir, title, timeoutMs) {
       const call = spawnSync('gdbus', ['call', '--session', '--dest', 'org.freedesktop.portal.Desktop',
         '--object-path', '/org/freedesktop/portal/desktop',
         '--method', 'org.freedesktop.portal.FileChooser.OpenFile', '', title, opts], { encoding: 'utf8' });
-      if (call.status !== 0 || !/object path/i.test((call.stdout || '') + (call.stderr || ''))) finish(undefined);
+      // gdbus 的 GVariant 文本输出写作 objectpath（无空格），旧版按 "object path"
+      // 匹配永远判失败；两种写法都认
+      if (call.status !== 0 || !/object ?path/i.test((call.stdout || '') + (call.stderr || ''))) finish(undefined);
     });
 
     timer = setTimeout(() => finish(null), timeoutMs);
@@ -175,13 +177,18 @@ function powershellPickFolder(startDir, title, timeoutMs = 600000) {
 
 export async function pickFolderSystem(startDir, title, timeoutMs = 180000) {
   const dialogTitle = title || '选择文件夹';
+  // 起始目录只接受绝对路径：相对路径（尤其以 -- 开头的）会被 kdialog 当成命令行
+  // 选项；不合法就不作起始目录——Windows 忽略预选（对话框自行落到默认位置），
+  // Linux 退回默认目录
+  const rawStart = String(startDir || '');
+  const startArg = rawStart && isAbsolute(rawStart) ? rawStart : '';
   if (process.platform === 'win32') {
-    const r = await powershellPickFolder(String(startDir || ''), dialogTitle, timeoutMs);
+    const r = await powershellPickFolder(startArg, dialogTitle, timeoutMs);
     if (r !== undefined) return { path: r };
     return { unavailable: true };
   }
   if (process.platform !== 'linux') return { unavailable: true };
-  const start = firstExistingDir(String(startDir || '/'));
+  const start = firstExistingDir(startArg || '/');
   if (kdialogAvailable()) {
     const r = await kdialogPickFolder(start, dialogTitle);
     if (r !== undefined) return { path: r };

@@ -386,7 +386,11 @@ export function openMigrationDialog() {
             return footer;
           })()
         );
-      })();
+      })().catch((err) => {
+        // 异步体任一异常都要收场：否则弹窗空着永远转圈，还有未处理的拒绝
+        console.warn('[zcodepro] alias-migrate 弹窗内容加载失败: ' + (err && err.message));
+        try { close(); } catch { /* ignore */ }
+      });
     },
   });
 }

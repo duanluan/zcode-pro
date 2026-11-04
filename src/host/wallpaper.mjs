@@ -6,7 +6,7 @@
 import { copyFileSync, existsSync, mkdirSync, openSync, closeSync, readSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, isAbsolute, join } from 'node:path';
 import {
-  loadConfig, saveConfig, mergeThemeConfig, configFileUnreadable,
+  loadConfig, saveConfig, withConfigLock, mergeThemeConfig, configFileUnreadable,
   backgroundsDir, transcodeDir, listBgFiles, sanitizeBgName, bgMagicOk, cleanupBgTranscode,
   BG_EXT, VIDEO_EXT, BG_MAX_BYTES, VIDEO_MAX_BYTES, BG_MAX_COUNT,
   BG_MODES, BG_PARAM_KEYS, unlinkOrDefer, renameOrReplace, sweepDeferredBg,
@@ -96,27 +96,31 @@ export async function runWallpaperCli(argv, dataRoot) {
       const mode = argv[1];
       if (!BG_MODES.has(mode)) throw new Error(`set 用法: wallpaper set none|library <文件>|folder <目录>|url <地址>|web <地址>（mode 收到: ${mode ?? '(空)'}）`);
       if (mode === 'none' ? argv.length > 2 : argv.length !== 3) throw new Error(`${mode} 模式用法: wallpaper set ${mode}${mode === 'none' ? '' : ' <值>'}`);
-      ensureWritableConfig(configFile);
-      const cfg = loadConfig(configFile);
-      const bg = bgOf(cfg);
-      bg.mode = mode;
-      if (mode === 'library') {
-        const file = sanitizeBgName(argv[2] || '');
-        if (!file) throw new Error('library 模式需要图库文件名（可用 wallpaper list 查看）');
-        if (!listBgFiles(dataRoot).some((f) => f.name === file)) throw new Error(`图库里没有 ${file}`);
-        bg.file = file;
-      } else if (mode === 'folder') {
-        const folder = String(argv[2] || '').trim();
-        if (!folder || !isAbsolute(folder) || !existsSync(folder) || !statSync(folder).isDirectory()) throw new Error('folder 需要已存在的目录绝对路径');
-        bg.folder = folder;
-      } else if (mode === 'url' || mode === 'web') {
-        const url = String(argv[2] || '').trim();
-        if (!/^https?:\/\/\S+$/i.test(url) || /[<>"'\\]/.test(url)) throw new Error(`${mode} 需以 http(s):// 开头且不含引号尖括号`);
-        bg.url = url;
-      }
-      cfg.theme = mergeThemeConfig({ ...cfg.theme, bg });
-      saveConfig(configFile, cfg);
-      console.log(`已切换：mode=${mode}，约 5 秒后生效。当前配置：${JSON.stringify(cfg.theme.bg)}`);
+      // 读改写（loadConfig→改→saveConfig）放进跨进程锁内同步执行，
+      // 防止与运行中的 helper 等写入方互相覆盖整份配置
+      await withConfigLock(configFile, () => {
+        ensureWritableConfig(configFile);
+        const cfg = loadConfig(configFile);
+        const bg = bgOf(cfg);
+        bg.mode = mode;
+        if (mode === 'library') {
+          const file = sanitizeBgName(argv[2] || '');
+          if (!file) throw new Error('library 模式需要图库文件名（可用 wallpaper list 查看）');
+          if (!listBgFiles(dataRoot).some((f) => f.name === file)) throw new Error(`图库里没有 ${file}`);
+          bg.file = file;
+        } else if (mode === 'folder') {
+          const folder = String(argv[2] || '').trim();
+          if (!folder || !isAbsolute(folder) || !existsSync(folder) || !statSync(folder).isDirectory()) throw new Error('folder 需要已存在的目录绝对路径');
+          bg.folder = folder;
+        } else if (mode === 'url' || mode === 'web') {
+          const url = String(argv[2] || '').trim();
+          if (!/^https?:\/\/\S+$/i.test(url) || /[<>"'\\]/.test(url)) throw new Error(`${mode} 需以 http(s):// 开头且不含引号尖括号`);
+          bg.url = url;
+        }
+        cfg.theme = mergeThemeConfig({ ...cfg.theme, bg });
+        saveConfig(configFile, cfg);
+        console.log(`已切换：mode=${mode}，约 5 秒后生效。当前配置：${JSON.stringify(cfg.theme.bg)}`);
+      });
       return 0;
     }
 
@@ -128,16 +132,19 @@ export async function runWallpaperCli(argv, dataRoot) {
       const unknown = flags.filter((f) => f !== '--random' && f !== '--sequential');
       if (unknown.length) throw new Error(`rotate 不认识 ${unknown.join(' ')}，只支持 --random/--sequential`);
       if (flags.includes('--random') && flags.includes('--sequential')) throw new Error('--random 与 --sequential 只能选一个');
-      ensureWritableConfig(configFile);
-      const cfg = loadConfig(configFile);
-      const bg = bgOf(cfg);
-      bg.intervalMin = Math.round(iv);
-      if (flags.includes('--random')) bg.folderRandom = true;
-      if (flags.includes('--sequential')) bg.folderRandom = false;
-      cfg.theme = mergeThemeConfig({ ...cfg.theme, bg });
-      saveConfig(configFile, cfg);
-      const out = cfg.theme.bg;
-      console.log(`轮换/刷新间隔已设置：间隔 ${out.intervalMin} 分钟（${out.intervalMin === 0 ? '不轮换/不刷新' : '生效中'}），顺序 ${out.folderRandom === false ? '按列表' : '随机'}`);
+      // 读改写放进跨进程锁内同步执行，防止与别的写入方互相覆盖整份配置
+      await withConfigLock(configFile, () => {
+        ensureWritableConfig(configFile);
+        const cfg = loadConfig(configFile);
+        const bg = bgOf(cfg);
+        bg.intervalMin = Math.round(iv);
+        if (flags.includes('--random')) bg.folderRandom = true;
+        if (flags.includes('--sequential')) bg.folderRandom = false;
+        cfg.theme = mergeThemeConfig({ ...cfg.theme, bg });
+        saveConfig(configFile, cfg);
+        const out = cfg.theme.bg;
+        console.log(`轮换/刷新间隔已设置：间隔 ${out.intervalMin} 分钟（${out.intervalMin === 0 ? '不轮换/不刷新' : '生效中'}），顺序 ${out.folderRandom === false ? '按列表' : '随机'}`);
+      });
       return 0;
     }
 
@@ -148,13 +155,16 @@ export async function runWallpaperCli(argv, dataRoot) {
         return [s.slice(0, i).trim(), s.slice(i + 1).trim()];
       });
       if (!pairs.length) throw new Error('params 至少要一个 键=值（可用键见 wallpaper -h）');
-      ensureWritableConfig(configFile);
-      const cfg = loadConfig(configFile);
-      const bg = bgOf(cfg);
-      applyParams(bg, pairs);
-      cfg.theme = mergeThemeConfig({ ...cfg.theme, bg });
-      saveConfig(configFile, cfg);
-      console.log(`参数已更新，约 5 秒后生效：${JSON.stringify(cfg.theme.bg)}`);
+      // 读改写放进跨进程锁内同步执行，防止与别的写入方互相覆盖整份配置
+      await withConfigLock(configFile, () => {
+        ensureWritableConfig(configFile);
+        const cfg = loadConfig(configFile);
+        const bg = bgOf(cfg);
+        applyParams(bg, pairs);
+        cfg.theme = mergeThemeConfig({ ...cfg.theme, bg });
+        saveConfig(configFile, cfg);
+        console.log(`参数已更新，约 5 秒后生效：${JSON.stringify(cfg.theme.bg)}`);
+      });
       return 0;
     }
 
@@ -189,8 +199,9 @@ export async function runWallpaperCli(argv, dataRoot) {
       if (existing.size + added > BG_MAX_COUNT) throw new Error(`图库最多 ${BG_MAX_COUNT} 个文件，请先删除一些再上传`);
       const done = [];
       for (const { src, name } of plan) {
-        // 临时名+改名：复制中断不留半截文件，读方也不会看到混合字节
-        const tmp = join(dir, `${name}.${Date.now().toString(36)}.tmp`);
+        // 临时名+改名：复制中断不留半截文件，读方也不会看到混合字节。
+        // 名字带 pid+随机：与 helper 的上传路径撞同一文件名时不共用临时文件
+        const tmp = join(dir, `${name}.${process.pid}.${Date.now().toString(36)}.${Math.random().toString(36).slice(2, 6)}.tmp`);
         try {
           copyFileSync(src, tmp);
           renameOrReplace(tmp, join(dir, name));
@@ -203,14 +214,17 @@ export async function runWallpaperCli(argv, dataRoot) {
       sweepDeferredBg(dir);
       let selected = '';
       if (flags.includes('--select') && done.length) {
-        const cfg = loadConfig(configFile);
-        if (configFileUnreadable()) throw new Error(`文件已入库（${done.join(', ')}）但配置在上传期间变为不可读，未设为壁纸；修复配置后跑 wallpaper set library ${done[0]}`);
-        const bg = bgOf(cfg);
-        bg.mode = 'library';
-        bg.file = done[0];
-        cfg.theme = mergeThemeConfig({ ...cfg.theme, bg });
-        saveConfig(configFile, cfg);
-        selected = '，并已设为当前壁纸';
+        // 读改写放进跨进程锁内同步执行，防止与别的写入方互相覆盖整份配置
+        selected = await withConfigLock(configFile, () => {
+          const cfg = loadConfig(configFile);
+          if (configFileUnreadable()) throw new Error(`文件已入库（${done.join(', ')}）但配置在上传期间变为不可读，未设为壁纸；修复配置后跑 wallpaper set library ${done[0]}`);
+          const bg = bgOf(cfg);
+          bg.mode = 'library';
+          bg.file = done[0];
+          cfg.theme = mergeThemeConfig({ ...cfg.theme, bg });
+          saveConfig(configFile, cfg);
+          return '，并已设为当前壁纸';
+        });
       }
       console.log(`已上传 ${done.length} 个文件${selected}：${done.join(', ')}`);
       return 0;

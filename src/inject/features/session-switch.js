@@ -23,6 +23,7 @@ let mru = [];          // 会话键（data-task-item-key），最近使用的在
 let current = null;    // 当前会话键
 let titles = new Map(); // 键 → 会话标题（展示缓存；条目在 DOM 时实时读取）
 let popupEl = null;    // 打开的切换弹窗（null = 未打开）
+let popupList = null;  // 弹窗打开时的列表快照（null = 弹窗未打开）
 let aliasesCache = {}; // 项目路径 → 别名（打开弹窗时预取，renderPopup 同步使用）
 let highlight = 0;
 let scanDebounce = 0;
@@ -33,8 +34,10 @@ let lastRunKeys = null;  // 上次采样的运行键集合（用于识别“运�
 // 键位（alt+字母/数字）：默认见 core.js，可在设置 → 快捷键修改；
 // 设置保存时会派发 zcodepro:config-changed，这里刷新缓存
 let hotkeys = { ...DEFAULT_SHORTCUTS };
+let featureOn = true; // features.sessionSwitch 的同步缓存：键按下时先判再拦截
 function loadHotkeys() {
   return getConfig(true).then((cfg) => {
+    featureOn = !(cfg.features && cfg.features.sessionSwitch === false);
     const sc = cfg && cfg.shortcuts;
     if (sc && typeof sc === 'object') {
       for (const k of Object.keys(DEFAULT_SHORTCUTS)) {
@@ -58,15 +61,18 @@ function workspaceOf(key) {
 }
 
 function findCurrent() {
-  for (const el of document.querySelectorAll('[data-task-item-key]')) {
-    if ((el.className + '').includes('bg-selected')) return el;
-  }
-  return null;
+  // 交给选择器引擎找选中行（比全表扫 className 快，语义相同）
+  return document.querySelector('[data-task-item-key].bg-selected');
 }
+
+// 会话 id（键的最后一段）：同一会话的键有“权威拼键/DOM 行键”两种形态，
+// unseen 的增删与当前会话比较都按 id，别按整键。入参容 null/undefined——
+// current 在新建任务视图（无选中行）时一直是 null
+const idOf = (k) => { const s = String(k || ''); return s.slice(s.lastIndexOf(':') + 1); };
 
 // 记录一次“切到 key”；顺带刷新在场条目的标题缓存。切入即视为已查看
 function record(key) {
-  if (key) unseen.delete(key);
+  if (key) for (const k of unseen) if (idOf(k) === idOf(key)) unseen.delete(k);
   if (key && key !== current) {
     current = key;
     mru = mru.filter((k) => k !== key);
@@ -75,13 +81,41 @@ function record(key) {
   }
 }
 
+// “运行结束记未查看”的判定（10 秒采样定时器每轮调用）：对比上一轮运行键集合
+// prevKeys 与本轮 nowKeys，从运行集合消失（转终态）且结束时不是当前会话的键
+// 并入 unseen 集合。按会话 id 判“消失”——同一会话的键形会随行挂载/卸载在
+// “权威拼的键”与“DOM 行键”之间切换，按整键比较会把键形切换误判成运行结束，
+// 生成一行点不动的“未查看”幽灵行；当前查看中的会话同样按 id 排除，currentKey
+// 容 null/undefined（新建任务视图无选中行）。超上限留最近 UNSEEN_LIMIT 条。
+// 返回处理后的新 unseen 集合（不改入参）；从 setInterval 抽成具名函数供测试截取
+function collectEndedUnseen(prevKeys, nowKeys, currentKey, unseenSet) {
+  const out = new Set(unseenSet);
+  if (prevKeys) {
+    const nowIds = new Set([...nowKeys].map(idOf));
+    const curId = currentKey == null ? '' : idOf(currentKey);
+    for (const k of prevKeys) {
+      if (!nowIds.has(idOf(k)) && idOf(k) !== curId) out.add(k);
+    }
+  }
+  return out.size > UNSEEN_LIMIT ? new Set([...out].slice(-UNSEEN_LIMIT)) : out;
+}
+
 // 扫描：bg-selected 标记识别当前会话（新建任务自动跳转等非点击切换也能捕捉）；
 // 标记缺失时由点击兜底记录。顺带刷新在场条目的标题缓存
 function scan() {
   const cur = findCurrent();
   if (cur) record(cur.getAttribute('data-task-item-key'));
+  const seen = new Set();
   for (const el of document.querySelectorAll('[data-task-item-key]')) {
-    titles.set(el.getAttribute('data-task-item-key'), firstLineOf(el));
+    const key = el.getAttribute('data-task-item-key');
+    seen.add(key);
+    titles.set(key, firstLineOf(el));
+  }
+  // 标题缓存兜底清理：会话键只增不减会慢慢攒内存；保留弹窗要用的（最近使用 +
+  // 当前在场），删掉的以后要用会按“无缓存”重新取
+  if (titles.size > 500) {
+    const keep = new Set([...seen, current, ...mru, ...(popupList || []), ...unseen]);
+    for (const k of titles.keys()) if (!keep.has(k)) titles.delete(k);
   }
 }
 
@@ -148,7 +182,6 @@ export async function switchTo(key) {
 // 判定才是“运行中”，点击也命中在场行）
 function attentionList() {
   const run = wsRunningKeys();
-  const idOf = (k) => k.slice(k.lastIndexOf(':') + 1);
   const runKeyById = new Map([...run].map((k) => [idOf(k), k]));
   const listed = new Set();
   const head = [];
@@ -165,9 +198,12 @@ function attentionList() {
   return [...head, ...tail];
 }
 
-// 弹窗当前列表：普通模式为 MRU 全量；attention 模式为运行中 + 未查看
+// 弹窗当前列表：普通模式为 MRU 全量；attention 模式为运行中 + 未查看。
+// 弹窗开着期间 10 秒采样定时器会增删“运行中/未查看”条目、点击记录会改 MRU，
+// 用实时列表对渲染时的高亮下标取目标会错位切错会话——打开时存下快照，
+// 移动与提交一律用它，弹窗关闭即丢弃
 function activeList() {
-  return popupMode === 'attention' ? attentionList() : mru;
+  return popupList || (popupMode === 'attention' ? attentionList() : mru);
 }
 
 function closePopup(commit) {
@@ -176,6 +212,7 @@ function closePopup(commit) {
   const list = activeList();
   popupEl.remove();
   popupEl = null;
+  popupList = null;
   if (commit && list[idx] && list[idx] !== current) {
     void switchTo(list[idx]).then((ok) => { if (!ok) showToast(t().switcherFailed, 'error'); });
   }
@@ -257,10 +294,13 @@ async function openPopupInner(mode) {
   popupMode = mode;
   visibleCount = INITIAL_COUNT;
   highlight = 0;
+  popupList = null;
   const cfg = await getConfig().catch(() => null);
   aliasesCache = (cfg && cfg.aliases && typeof cfg.aliases === 'object') ? cfg.aliases : {};
   // attention 模式的行可能整段来自权威扫描（折叠项目），先补齐它们的标题再渲染
   if (mode === 'attention') await fetchMissingTitles(attentionList()).catch(() => {});
+  // 快照定格在这一刻的列表（渲染、移动、提交共用，见 activeList 注释）
+  popupList = activeList();
   ensureStyle();
   const L = t();
   popupEl = h('div', {
@@ -321,23 +361,14 @@ export function startSessionSwitch() {
   document.addEventListener('visibilitychange', () => { if (!document.hidden) scan(); });
 
   // “运行完未查看”跟踪：周期采样运行键集合（ws-running 维护的实时状态），
-  // 从运行集合消失（转终态）且结束时不是当前会话的记为未查看；
-  // 用户切入该会话（record）即清除。注入前已结束的任务无从判定，不追溯
+  // 判定规则在 collectEndedUnseen（键形切换不算结束、当前会话不记、超上限截尾，
+  // 见其注释）。用户切入该会话（record）即清除。注入前已结束的任务无从判定，
+  // 不追溯
   setInterval(() => {
     if (document.hidden) return;
     const now = wsRunningKeys();
-    if (lastRunKeys) {
-      // 按会话 id 判“从运行集合消失”：同一会话的键形会随行挂载/卸载在
-      // “权威拼的键”与“DOM 行键”之间切换，按整键比较会把键形切换误判成
-      // 运行结束，生成一行点不动的“未查看”幽灵行
-      const idOf = (k) => k.slice(k.lastIndexOf(':') + 1);
-      const nowIds = new Set([...now].map(idOf));
-      for (const k of lastRunKeys) {
-        if (!nowIds.has(idOf(k)) && k !== current) unseen.add(k);
-      }
-    }
+    unseen = collectEndedUnseen(lastRunKeys, now, current, unseen);
     lastRunKeys = now;
-    if (unseen.size > UNSEEN_LIMIT) unseen = new Set([...unseen].slice(-UNSEEN_LIMIT));
   }, 10_000);
 
   // 点击兜底：bg-selected 标记不可用/未出现时，点条目（含本功能派发的合成点击）即记录
@@ -381,6 +412,8 @@ export function startSessionSwitch() {
     const isHot = k === hotkeys.switchLast || k === hotkeys.switchPrev || k === hotkeys.switchNext
       || k === hotkeys.switchRecent || k === hotkeys.switchAttention;
     if (!isHot) return;
+    // 功能关闭时不拦截按键（先同步判再 preventDefault，别吞掉应用自己的键位）
+    if (!featureOn) return;
     e.preventDefault();
     e.stopImmediatePropagation();
     void (async () => {

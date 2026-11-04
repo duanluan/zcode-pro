@@ -6,9 +6,17 @@
 // ZCODEPRO_SYNC_FORCE_FETCH=1 可强制走 fetch（排障/测试用）。
 import { spawn, spawnSync } from 'node:child_process';
 import { mkdtemp } from 'node:fs/promises'; // fs 的 mkdtemp 是回调版，await 它会把 undefined 当回调
-import { readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+
+// 响应体大小上限：文本体按 helper.mjs 导出功能的 8MB 上限（它自己在 8MB 拒绝保存）
+// 留 1MB 余量；下载按背景图 10MB 上限（helper.mjs 的 BG_MAX_BYTES）留 2MB 余量。
+// 超限直接报错，不把响应整包读进内存
+const BODY_MAX_BYTES = 9 * 1024 * 1024;
+const DOWNLOAD_MAX_BYTES = 12 * 1024 * 1024;
+
+const sizeError = (maxBytes) => `响应体超过 ${Math.round(maxBytes / 1024 / 1024)}MB 上限，已拒绝读取`;
 
 // curl 退出码 → 人话（err.message 是整条命令行，对用户没有信息量）
 const CURL_EXIT = {
@@ -37,7 +45,11 @@ function curlQuote(v) {
 }
 
 function proxyEnvVars(proxyUrl) {
-  if (!proxyUrl) return {};
+  // 空 = 不用代理：显式清空环境里的全局代理变量（curl 会自动读它们，
+  // 与 fetch 兜底路径“完全不读代理”的约定不一致）
+  if (!proxyUrl) {
+    return { HTTP_PROXY: '', HTTPS_PROXY: '', http_proxy: '', https_proxy: '', ALL_PROXY: '', all_proxy: '' };
+  }
   return {
     HTTP_PROXY: proxyUrl, HTTPS_PROXY: proxyUrl,
     http_proxy: proxyUrl, https_proxy: proxyUrl,
@@ -98,8 +110,13 @@ async function fetchWebdavRequest({ method, url, login = '', password = '', uplo
     const i = h.indexOf(':');
     if (i > 0) hdrs[h.slice(0, i).trim()] = h.slice(i + 1).trim();
   }
-  if (method === 'PUT') hdrs['Content-Type'] = contentType !== undefined ? contentType : 'application/json';
+  if (method === 'PUT') {
+    // 与 curl 分支一致：contentType 显式传 null 表示不加头，别把字面量 null 发出去
+    const ct = contentType !== undefined ? contentType : 'application/json';
+    if (ct) hdrs['Content-Type'] = ct;
+  }
   if (login || password) hdrs['Authorization'] = 'Basic ' + Buffer.from(`${login}:${password}`).toString('base64');
+
   try {
     const res = await fetch(url, {
       method,
@@ -108,15 +125,38 @@ async function fetchWebdavRequest({ method, url, login = '', password = '', uplo
       signal: AbortSignal.timeout(Math.max(10000, timeoutMs)),
       body: method === 'PUT' && uploadFile ? readFileSync(uploadFile) : undefined,
     });
+    const limited = await readBodyLimited(res, downloadFile ? DOWNLOAD_MAX_BYTES : BODY_MAX_BYTES);
+    if (limited.error) return { ok: false, httpCode: null, body: '', error: limited.error, redirectUrl: '' };
     if (downloadFile) {
-      writeFileSync(downloadFile, Buffer.from(await res.arrayBuffer()));
+      writeFileSync(downloadFile, limited.data);
       return { ok: true, httpCode: res.status, body: '', error: '', redirectUrl: res.headers.get('location') || '' };
     }
-    const body = await res.text().catch(() => '');
-    return { ok: true, httpCode: res.status, body, error: '', redirectUrl: res.headers.get('location') || '' };
+    return { ok: true, httpCode: res.status, body: limited.data.toString('utf8'), error: '', redirectUrl: res.headers.get('location') || '' };
   } catch (err) {
     return { ok: false, httpCode: null, body: '', error: fetchErrText(err), redirectUrl: '' };
   }
+}
+
+// 按上限读响应体：Content-Length 已声明超限就直接拒；没声明时用响应读取器边读边
+// 计数，超限立即中断，不整包 arrayBuffer/text 之后再查
+async function readBodyLimited(res, maxBytes) {
+  const declared = Number(res.headers.get('content-length'));
+  if (Number.isFinite(declared) && declared > maxBytes) return { error: sizeError(maxBytes) };
+  if (!res.body) return { data: Buffer.alloc(0) };
+  const chunks = [];
+  let total = 0;
+  const reader = res.body.getReader();
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.length;
+    if (total > maxBytes) {
+      try { await reader.cancel(); } catch { /* 连接已断开 */ }
+      return { error: sizeError(maxBytes) };
+    }
+    chunks.push(value);
+  }
+  return { data: Buffer.concat(chunks) };
 }
 
 // 执行一次 WebDAV 请求。method 为 GET / PUT / MKCOL / DELETE / PROPFIND；PUT 用
@@ -156,21 +196,35 @@ export async function webdavRequest({ method, url, login = '', password = '', up
         else resolveRun({ code: -2, stdout: '', stderr: String(err.message || err) });
       });
       child.on('close', (code) => resolveRun({ code: code == null ? -2 : code, stdout, stderr }));
+      // curl 提前退出（杀软拦截瞬退等）时 stdin 写入抛 EPIPE：不兜住会崩掉整个进程
+      child.stdin.on('error', () => { /* 由 close 事件走错误分支 */ });
       child.stdin.write(cfg);
       child.stdin.end();
     });
     // 探测时还在、用时被删掉的极端情形：同样转 fetch 兜底，不再报“依赖 curl”
-    if (r.code === -1) return fetchWebdavRequest({ method, url, login, password, uploadFile, timeoutMs, headers });
+    if (r.code === -1) return fetchWebdavRequest({ method, url, login, password, uploadFile, timeoutMs, headers, contentType, downloadFile });
     if (r.code !== 0) {
       const why = CURL_EXIT[r.code] || `curl 退出码 ${r.code}`;
-      const hint = (r.stderr.split('\n').find((l) => l.trim()) || '').trim();
+      // 错误提示会进前端展示：URL 里内联的 user:pass 脱敏，别把密码带出去
+      const hint = (r.stderr.split('\n').find((l) => l.trim()) || '').trim().replace(/(\w+:\/\/)[^/@\s]+@/g, '$1***@');
       return { ok: false, httpCode: null, body: '', error: hint ? `${why}（${hint}）` : why };
     }
-    let body = '';
-    try { body = readFileSync(bodyFile, 'utf8'); } catch { /* 无响应体 */ }
     // -w 追加了 redirect_url（无重定向时为空），parseInt 只取开头的状态码不受影响
     const httpCode = Number(parseInt(r.stdout.trim(), 10)) || 0;
     const redirectUrl = r.stdout.trim().split(/\s+/)[1] || '';
+    // curl 把响应整包落到文件：读进内存（或宣告下载成功）之前先看大小，超限报错
+    const limit = downloadFile ? DOWNLOAD_MAX_BYTES : BODY_MAX_BYTES;
+    let size = 0;
+    try { size = statSync(downloadFile || bodyFile).size; } catch { /* 无响应体 */ }
+    if (size > limit) {
+      // 超限下载删掉目标文件再报错：fetch 分支不写盘，curl 分支也不能把超限文件留在 downloadFile
+      if (downloadFile) { try { rmSync(downloadFile, { force: true }); } catch { /* 删不掉也照报超限 */ } }
+      return { ok: false, httpCode: null, body: '', error: sizeError(limit) };
+    }
+    let body = '';
+    if (!downloadFile) {
+      try { body = readFileSync(bodyFile, 'utf8'); } catch { /* 无响应体 */ }
+    }
     return { ok: true, httpCode, body, error: '', redirectUrl };
   } finally {
     try { rmSync(dir, { recursive: true, force: true }); } catch { /* ignore */ }
@@ -186,6 +240,7 @@ export async function webdavPutWithMkcol({ url, login, password, uploadFile, pro
   try {
     const u = new URL(url);
     const segs = u.pathname.split('/').filter(Boolean);
+
     segs.pop(); // 最后一段是文件名
     let cur = u.origin;
     for (const s of segs) {
@@ -218,6 +273,7 @@ export function parseWebdavListing(body) {
     // 目录条目（collection 标记或 href 以 / 结尾）不要
     if (/<(?:[A-Za-z0-9_.-]+:)?collection[\s/>]/.test(block)) continue;
     if (href.endsWith('/')) continue;
+
     const rawName = (href.split('?')[0].split('#')[0].split('/').filter(Boolean).pop()) || '';
     let name = rawName;
     try { name = decodeURIComponent(rawName); } catch { /* 已是普通字符串 */ }

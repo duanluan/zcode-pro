@@ -52,6 +52,9 @@ function saveSeenSoon() {
 }
 const cooldown = new Map(); // sandboxId → 释放失败冷却截止时刻
 let disabledLogged = false;
+// 功能开关缓存成模块变量（config-changed 时更新）：关闭时巡检早退，
+// 不再每个周期发一次 getConfig
+let enabled = true;
 
 function onPortsMessage(e) {
   const d = e.data;
@@ -78,8 +81,13 @@ function isVisible(wv) {
 }
 
 async function tick() {
+  if (!enabled) {
+    seen.clear();
+    return;
+  }
   const cfg = await getConfig();
-  if ((cfg.features || {}).sandboxReclaim === false) {
+  enabled = !cfg.features || cfg.features.sandboxReclaim !== false;
+  if (!enabled) {
     seen.clear();
     return;
   }
@@ -144,6 +152,14 @@ async function tick() {
 export function startSandboxReclaim() {
   loadSeen();
   window.addEventListener('message', onPortsMessage);
+  // 开关经设置弹窗改动时更新缓存（外部直接改配置文件不走这条路，靠下一轮
+  // tick 里的 getConfig 兜——但那要功能开着才会走到）
+  window.addEventListener('zcodepro:config-changed', () => {
+    void getConfig(true).then((cfg) => {
+      enabled = !cfg.features || cfg.features.sandboxReclaim !== false;
+      if (!enabled) seen.clear();
+    }).catch(() => {});
+  });
   const loop = () => { tick().catch(() => { /* 单次巡检失败不影响后续 */ }); };
   loop();
   setInterval(loop, CHECK_MS);

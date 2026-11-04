@@ -2,7 +2,7 @@
 // 读用于 helper 的 /projects 端点；写仅用于“切换文件夹”后的路径引用同步，
 // 采用原子写并保留备份。
 
-import { copyFileSync, existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, readFileSync, renameSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 export function readSettings(settingsFile) {
@@ -24,9 +24,22 @@ export function writeSettingsAtomic(settingsFile, next) {
   if (existsSync(settingsFile)) {
     try { copyFileSync(settingsFile, backup); } catch { /* 备份失败不阻塞 */ }
   }
-  const tmp = settingsFile + '.zcodepro-tmp';
+  const tmp = `${settingsFile}.${process.pid}.${Date.now().toString(36)}.tmp`; // 防多写者共用同一 .tmp 撕裂
   writeFileSync(tmp, JSON.stringify(next, null, 2), 'utf8');
   renameSync(tmp, settingsFile);
+}
+
+// 读改写 setting.json 的路径引用同步：应用本体也在写这个文件，写回前核对文件
+// mtime，期间被写过就重读重算再写（最多重算一次），别用旧快照覆盖应用刚写的条目
+export function remapSettingsPathsAtomic(settingsFile, oldPath, newPath) {
+  const mtimeOf = () => { try { return statSync(settingsFile).mtimeMs; } catch { return 0; } };
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const stamp = mtimeOf();
+    const next = remapSettingsPaths(readSettings(settingsFile), oldPath, newPath);
+    if (attempt === 0 && mtimeOf() !== stamp) continue; // 期间被写过：重读重算再写
+    writeSettingsAtomic(settingsFile, next);
+    return;
+  }
 }
 
 // 将 setting.json 中所有引用旧路径的字段映射到新路径，返回新 settings 对象。

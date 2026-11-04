@@ -54,7 +54,11 @@ function findOpenSidePane() {
 }
 
 // pluginUiBridgeService（listSurfaces 数据源）
+// 找不到也记退避时间戳：fiber 全遍历（上限 20 万节点）每 5 秒重走一遍太贵，
+// 60 秒后再试（bridge 随应用启动就绪，晚到超过一分钟的场景很少）
+let bridgeMissAt = 0;
 function findBridge() {
+  if (bridgeMissAt && Date.now() - bridgeMissAt < 60_000) return null;
   let holder = null;
   const seen = new Set();
   const scan = (o) => {
@@ -74,6 +78,7 @@ function findBridge() {
     }
     return false;
   });
+  if (!holder) bridgeMissAt = Date.now();
   return holder;
 }
 
@@ -170,7 +175,12 @@ async function injectPanels(grid) {
       ev.stopPropagation();
       const sc = sessionScope();
       const open = findOpenSidePane();
-      if (!sc || !open) {
+      // 打开函数找不到与没有会话是两回事，提示分开，别都说成“需要会话”
+      if (!open) {
+        showToast(L.ntpOpenMissing, 'warning');
+        return;
+      }
+      if (!sc) {
         showToast(L.ntpNeedSession, 'warning');
         return;
       }

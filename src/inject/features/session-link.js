@@ -2,13 +2,12 @@
 // 任务名链接，点击切到对应会话。任务名优先取侧栏行标题，行不在场（项目折叠等）
 // 时按 id 批量查任务索引（/task-statuses）；查不到名字就保留原 ID 文本，仍然可点。
 // 只改纯文本节点：代码块/链接/按钮/输入框/自家已处理节点不动；流式输出中的行
-// 先跳过（文本还在变，等渲染完成后重新扫描时再处理），避免与应用重绘互相干扰。
+// 先跳过（文本还在变，等渲染完成后整行补处理），避免与应用重绘互相干扰。
 import { rpc, t, getConfig } from '../core.js';
 import { ensureStyle, showToast } from '../ui.js';
 
 const CONV = '[class*="@md/conversation"]';
 const SKIP_SEL = 'pre, code, a, button, input, textarea, select, [data-zcodepro-sess]';
-const SCAN_DEBOUNCE_MS = 300;
 // 会话 id：sess_ 与 session_ 两种前缀（新版应用为 session_），尾字符必须是
 // 字母数字（防止把 "session_xxx-" 里说明文字的连字符吞进来）
 const SESS_RE = /(?<![A-Za-z0-9_])(?:session|sess)_[A-Za-z0-9][A-Za-z0-9_-]*[A-Za-z0-9]/g;
@@ -26,9 +25,13 @@ export function matchIds(text) {
 let installed = false;
 let enabled = true;
 const titleCache = new Map(); // 会话 id → 任务名（查过一次就不再查）
+const TITLE_CACHE_MAX = 500;
 const pendingIds = new Set(); // 扫到但还没查过名字的 id
 let fetchTimer = 0;
-let scanTimer = 0;
+// 处理过的文本节点记下来（确认没有会话 id 或在跳过区的）：流式输出期间反复
+// 重扫时跳过它们，不再逐个跑正则。文本改动会让标记作废（观察器里删标记）
+const doneNodes = new WeakSet();
+const streamingRows = new Set(); // 流式输出中跳过的回答行：渲染完成后整行补处理
 
 function makeLink(id) {
   const span = document.createElement('span');
@@ -39,16 +42,18 @@ function makeLink(id) {
   return span;
 }
 
-function linkifyTextNode(node) {
+function processTextNode(node) {
+  if (!node || doneNodes.has(node)) return;
   const text = node.textContent || '';
-  if (!text.includes('sess')) return;
-  const ms = matchIds(text);
-  if (!ms.length) return;
+  if (!text.includes('sess')) { doneNodes.add(node); return; }
   const el = node.parentElement;
-  if (!el || el.closest(SKIP_SEL)) return;
-  // 流式输出中的行文本还在变，等渲染完成再处理
+  if (!el || el.closest(SKIP_SEL)) { doneNodes.add(node); return; }
+  // 流式输出中的行文本还在变，等渲染完成再处理（不记已处理，行收尾时补）
   const row = el.closest('[class*="-row"]');
-  if (row && row.querySelector('[data-is-streaming]')) return;
+  if (row && row.querySelector('[data-is-streaming]')) { streamingRows.add(row); return; }
+  const ms = matchIds(text);
+  if (!ms.length) { doneNodes.add(node); return; }
+  doneNodes.add(node);
   const frag = document.createDocumentFragment();
   let pos = 0;
   for (const m of ms) {
@@ -61,14 +66,31 @@ function linkifyTextNode(node) {
   node.replaceWith(frag);
 }
 
-function scan() {
-  for (const conv of document.querySelectorAll(CONV)) {
-    const walker = document.createTreeWalker(conv, NodeFilter.SHOW_TEXT);
-    // 先收集全部文本节点再改：边走边替换会漏掉刚换出来的节点
-    const nodes = [];
-    for (let n; (n = walker.nextNode());) nodes.push(n);
-    for (const n of nodes) linkifyTextNode(n);
+// 收集子树里的文本节点（先收集再处理：边走边替换会漏掉刚换出来的节点）
+function walkTexts(root, out) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  for (let n; (n = walker.nextNode());) out.push(n);
+}
+
+// 流式结束的行补处理：结束信号（[data-is-streaming] 摘除）本身是一次 DOM 变动，
+// 观察器回调里调到这里检查；行已经不在 DOM 就出队
+function flushStreamingRows() {
+  if (!streamingRows.size) return;
+  const nodes = [];
+  for (const row of [...streamingRows]) {
+    if (!row.isConnected) { streamingRows.delete(row); continue; }
+    if (row.querySelector('[data-is-streaming]')) continue;
+    streamingRows.delete(row);
+    walkTexts(row, nodes);
   }
+  for (const n of nodes) processTextNode(n);
+}
+
+function scan() {
+  const nodes = [];
+  for (const conv of document.querySelectorAll(CONV)) walkTexts(conv, nodes);
+  for (const n of nodes) processTextNode(n);
+  flushStreamingRows();
   queueTitleFetch();
 }
 
@@ -92,6 +114,9 @@ async function fetchTitles(ids) {
     if (rec && rec.title) {
       const title = String(rec.title);
       titleCache.set(id, title);
+      // 标题缓存只增不减会慢慢攒内存（session-switch.js 的 titles 同款问题）：
+      // 超上限删最旧的（Map 迭代序即插入序），删掉的 id 之后再扫到会重新查名
+      while (titleCache.size > TITLE_CACHE_MAX) titleCache.delete(titleCache.keys().next().value);
       for (const span of document.querySelectorAll(`[data-zcodepro-sess="${CSS.escape(id)}"]`)) {
         span.textContent = title;
       }
@@ -110,26 +135,12 @@ function setEnabled(cfg) {
   const next = cfg.features ? cfg.features.sessionLink !== false : true;
   if (enabled && !next) unwrapAll();
   enabled = next;
-  // 刚打开开关时会话区没有变动，补一次扫描才能立刻出链接
-  if (next) scheduleScan();
+  // 刚打开开关时会话区没有变动，补一次扫描才能立刻出链接（此时全量扫正是必要时机）
+  if (next) scan();
 }
 
-function scheduleScan() {
-  if (scanTimer) return;
-  scanTimer = setTimeout(() => { scanTimer = 0; if (enabled) scan(); }, SCAN_DEBOUNCE_MS);
-}
-
-// 只有会话容器内的变动才值得重新扫描：侧栏/弹窗等高频变动在此滤掉
-function convMutations(muts) {
-  for (const m of muts) {
-    const el = m.type === 'characterData' ? m.target.parentElement : m.target;
-    if (el instanceof Element && el.closest && el.closest(CONV)) return true;
-    for (const n of m.addedNodes) {
-      if (n instanceof Element && n.closest && n.closest(CONV)) return true;
-    }
-  }
-  return false;
-}
+// 只有会话容器内的变动才值得处理：侧栏/弹窗等高频变动在此滤掉
+const inConv = (el) => !!(el && el.closest && el.closest(CONV));
 
 export function startSessionLink() {
   if (installed || typeof document === 'undefined') return;
@@ -140,8 +151,36 @@ export function startSessionLink() {
     void getConfig(true).then(setEnabled).catch(() => {});
   });
   scan();
-  new MutationObserver((muts) => { if (enabled && convMutations(muts)) scheduleScan(); })
-    .observe(document.body, { childList: true, subtree: true, characterData: true });
+  // 观察器优先做定向处理：只跑变动涉及的文本节点（新增子树、改动的文本），
+  // 不再每 300ms 全量重扫整个会话容器；只有会话容器整块换新（首次、切视图）
+  // 才全量扫一次。流式输出期间的高频变动在这里被压成逐节点的轻检查
+  new MutationObserver((muts) => {
+    const texts = [];
+    let structural = false;
+    for (const m of muts) {
+      if (m.type === 'characterData') {
+        // 文本改过：已处理标记作废。开关关着也做，重新打开时标记不失真
+        doneNodes.delete(m.target);
+        if (enabled && inConv(m.target.parentElement)) texts.push(m.target);
+        continue;
+      }
+      for (const n of m.addedNodes) {
+        if (!enabled) continue;
+        if (n.nodeType === Node.TEXT_NODE) {
+          if (inConv(n.parentElement)) texts.push(n);
+          continue;
+        }
+        if (!(n instanceof Element) || !n.closest) continue;
+        if (n.matches(CONV) || n.querySelector(CONV)) { structural = true; continue; }
+        if (inConv(n) && !n.closest(SKIP_SEL)) walkTexts(n, texts);
+      }
+    }
+    if (!enabled) return;
+    if (structural) { scan(); return; }
+    for (const t of texts) processTextNode(t);
+    flushStreamingRows();
+    queueTitleFetch();
+  }).observe(document.body, { childList: true, subtree: true, characterData: true });
 
   // 点击事件委托给 document：应用重绘换掉链接节点也不影响后续点击
   document.addEventListener('click', (e) => {

@@ -27,32 +27,35 @@
   async function getConfig(force = false) {
     const now = Date.now();
     if (!force && configCache.value && now - configCache.at < 3e3) return configCache.value;
-    if (configInflight) return configInflight;
-    configInflight = (async () => {
+    if (!force && configInflight) return configInflight;
+    const gen = configGen;
+    const p = (async () => {
       try {
         const res = await rpc("/config");
         if (res.ok && res.config) {
-          configCache = { value: res.config, at: Date.now() };
+          if (gen === configGen) configCache = { value: res.config, at: Date.now() };
           return res.config;
         }
         return configCache.value || { features: {} };
       } finally {
-        configInflight = null;
+        if (configInflight === p) configInflight = null;
       }
     })();
-    return configInflight;
+    configInflight = p;
+    return p;
   }
   function clearConfigCache() {
     configCache = { value: null, at: 0 };
+    configGen++;
   }
   function zcodeAppVersion() {
     const v = liveBoot().zcodeVersion;
     return typeof v === "string" && v ? v : "";
   }
   function zcodeVersionGte(version, major, minor, patch = 0) {
-    const m = String(version || "").match(/^(\d+)\.(\d+)\.(\d+)/);
+    const m = String(version || "").match(/^v?(\d+)(?:\.(\d+))?(?:\.(\d+))?/);
     if (!m) return false;
-    const a = Number(m[1]), b = Number(m[2]), c = Number(m[3]);
+    const a = Number(m[1]), b = Number(m[2] || 0), c = Number(m[3] || 0);
     return a > major || a === major && (b > minor || b === minor && c >= patch);
   }
   function officialRenameSupported() {
@@ -85,14 +88,15 @@
     });
   }
   function isZhLocale() {
+    if (zhCache.v != null && Date.now() - zhCache.at < 3e3) return zhCache.v;
     let pref = null;
     try {
       pref = window.localStorage.getItem("zcode-locale-preference");
     } catch {
     }
-    if (pref === "zh-CN" || pref === "en-US") return pref === "zh-CN";
-    if (cachedSystemLocale) return cachedSystemLocale === "zh-CN";
-    return /^zh/i.test(navigator.language || "zh-CN");
+    const v = pref === "zh-CN" || pref === "en-US" ? pref === "zh-CN" : cachedSystemLocale ? cachedSystemLocale === "zh-CN" : /^zh/i.test(navigator.language || "zh-CN");
+    zhCache = { at: Date.now(), v };
+    return v;
   }
   function t() {
     return isZhLocale() ? zh : en;
@@ -161,13 +165,14 @@
   function itemText(item) {
     return (item.textContent || "").trim();
   }
-  var BOOT, HELPER_URL, configCache, configInflight, DEFAULT_SHORTCUTS, STATUS_SESSION_IDS, STATUS_GLOBAL_IDS, DEFAULT_TURN_ITEMS, DEFAULT_STATUS_ITEMS, newSidebarCached, zh, en, cachedSystemLocale, errEn;
+  var BOOT, HELPER_URL, configCache, configInflight, configGen, DEFAULT_SHORTCUTS, STATUS_SESSION_IDS, STATUS_GLOBAL_IDS, DEFAULT_TURN_ITEMS, DEFAULT_STATUS_ITEMS, newSidebarCached, zh, en, cachedSystemLocale, zhCache, errEn;
   var init_core = __esm({
     "src/inject/core.js"() {
       BOOT = typeof window !== "undefined" ? window.__ZCODEPRO__ || {} : {};
       HELPER_URL = BOOT.helperUrl || "http://127.0.0.1:47889";
       configCache = { value: null, at: 0 };
       configInflight = null;
+      configGen = 0;
       DEFAULT_SHORTCUTS = {
         switchLast: "z",
         // 立即切到上次会话
@@ -180,8 +185,8 @@
         switchAttention: "r"
         // 打开运行中 / 未查看
       };
-      STATUS_SESSION_IDS = /* @__PURE__ */ new Set(["ctx", "sessionCost", "questions", "tokRate"]);
-      STATUS_GLOBAL_IDS = /* @__PURE__ */ new Set(["todayTokens", "todayCost", "totalTokens", "totalCost", "tasks"]);
+      STATUS_SESSION_IDS = /* @__PURE__ */ new Set(["ctx", "questions", "tokRate"]);
+      STATUS_GLOBAL_IDS = /* @__PURE__ */ new Set(["todayTokens", "totalTokens", "tasks"]);
       DEFAULT_TURN_ITEMS = [
         { id: "turnIn", on: true },
         // 输入
@@ -218,7 +223,7 @@
         zcodeStatsCounts: "\u6280\u80FD {total} \u4E2A\uFF08\u672C\u5730 {user} \xB7 \u63D2\u4EF6 {plugin}\uFF09",
         zcodeStatsChars: "\u5B8C\u6574\u6E05\u5355\u7EA6 {n} \u5B57\u7B26",
         zcodeBudgetDefaultTag: "\uFF08\u9ED8\u8BA4\u503C\uFF09",
-        zcodeStatsDegraded: "\u8D85\u51FA\u9884\u7B97\uFF1A\u5B8C\u6574\u6E05\u5355\u653E\u4E0D\u4E0B\uFF0C\u964D\u7EA7\u4E3A\u4EC5\u540D\u79F0\uFF0C\u6A21\u578B\u770B\u4E0D\u5230\u6280\u80FD\u63CF\u8FF0",
+        zcodeStatsDegraded: "\u8D85\u51FA\u9884\u7B97\uFF1A\u5B8C\u6574\u6E05\u5355\u653E\u4E0D\u4E0B\uFF0C\u964D\u7EA7\u4E3A\u53EA\u5269\u6280\u80FD\u540D\u548C\u8DEF\u5F84\uFF0C\u6A21\u578B\u770B\u4E0D\u5230\u6280\u80FD\u63CF\u8FF0",
         zcodeStatsOk: "\u9884\u7B97\u5145\u8DB3\uFF1A\u6E05\u5355\u5E26\u5B8C\u6574\u63CF\u8FF0\u6CE8\u5165\u65B0\u4F1A\u8BDD",
         zcodeStatsSuggest: "\u5EFA\u8BAE\u9884\u7B97 {n} \u5B57\u7B26\uFF08\u7559 20% \u4F59\u91CF\uFF09",
         zcodeBudgetApply: "\u7528\u5EFA\u8BAE\u503C",
@@ -229,7 +234,7 @@
         zcodeSkillIncludeInstructions: "\u6280\u80FD\u8BF4\u660E\u6CE8\u5165",
         zcodeSkillIncludeInstructionsDesc: "skills.includeInstructions\uFF1A\u6280\u80FD\u8BF4\u660E\u662F\u5426\u968F\u6E05\u5355\u4E00\u8D77\u6CE8\u5165",
         zcodeSkillBudget: "\u6280\u80FD\u6E05\u5355\u9884\u7B97\uFF08\u5B57\u7B26\uFF09",
-        zcodeSkillBudgetDesc: "skills.metadataBudget\uFF1A\u5B8C\u6574\u6E05\u5355\u8D85\u8FC7\u8BE5\u957F\u5EA6\u5C31\u964D\u7EA7\u4E3A\u4EC5\u540D\u79F0\uFF0C\u9ED8\u8BA4 20000",
+        zcodeSkillBudgetDesc: "skills.metadataBudget\uFF1A\u5B8C\u6574\u6E05\u5355\u8D85\u8FC7\u8BE5\u957F\u5EA6\u5C31\u964D\u7EA7\u4E3A\u53EA\u5269\u6280\u80FD\u540D\u548C\u8DEF\u5F84\uFF0C\u9ED8\u8BA4 20000",
         zcodeSkillRoots: "\u989D\u5916\u6280\u80FD\u76EE\u5F55",
         zcodeSkillRootsDesc: "skills.roots\uFF1A\u6BCF\u884C\u4E00\u4E2A\u76EE\u5F55\uFF0C\u76EE\u5F55\u4E0B\u7684\u6280\u80FD\u4F1A\u88AB\u53D1\u73B0\uFF08~/.zcode/skills\u3001~/.agents/skills \u4E4B\u5916\u7684\u8865\u5145\uFF09",
         zcodeSave: "\u4FDD\u5B58",
@@ -355,7 +360,7 @@
         featureTaskOrder: "\u4FA7\u8FB9\u680F\u4F1A\u8BDD\u62D6\u52A8\u6392\u5E8F",
         featureTaskOrderDesc: "\u62D6\u52A8\u8C03\u6574\u7F6E\u9876\u3001\u9879\u76EE\u4E0E\u5206\u7EC4\u4E2D\u7684\u4F1A\u8BDD\u987A\u5E8F\uFF0C\u91CD\u542F\u540E\u4E0D\u53D8\u3002",
         featureSessionSwitch: "\u4F1A\u8BDD\u5FEB\u6377\u5207\u6362",
-        featureSessionSwitchDesc: "{last} \u6765\u56DE\u4E0A\u6B21\u4F1A\u8BDD\uFF1Balt+\u65B9\u5411\u952E/\u5FEB\u6377\u952E\u9009\u6700\u8FD1\u4F1A\u8BDD\uFF1B\u952E\u4F4D\u53EF\u6539",
+        featureSessionSwitchDesc: "{last} \u6765\u56DE\u4E0A\u6B21\u4F1A\u8BDD\uFF1B\u6309 alt+\u5B57\u6BCD\u6253\u5F00\u5207\u6362\u5F39\u7A97\uFF0C\u5F39\u7A97\u91CC\u7528\u65B9\u5411\u952E\u6216\u5FEB\u6377\u952E\u9009\u62E9\uFF1B\u952E\u4F4D\u53EF\u6539",
         featureTitleLock: "\u91CD\u547D\u540D\u4F1A\u8BDD\u540D\u9501\u5B9A",
         featureTitleLockDesc: "\u624B\u52A8\u91CD\u547D\u540D\u8FC7\u7684\u4F1A\u8BDD\u4E0D\u88AB\u81EA\u52A8\u6807\u9898\u8986\u76D6\uFF0C\u4FA7\u680F\u59CB\u7EC8\u663E\u793A\u91CD\u547D\u540D\u540E\u7684\u540D\u5B57\u3002",
         tabTitleGen: "\u81EA\u52A8\u91CD\u547D\u540D",
@@ -440,12 +445,13 @@
         featureNewtabPanelsDesc: "\u65B0\u6807\u7B7E\u9875\u52A0\u5165\u7B2C\u4E09\u65B9\u63D2\u4EF6\uFF08headroom\u3001rtk \u7B49\uFF09\u7684\u9762\u677F\u5361\u7247\uFF0C\u70B9\u51FB\u5728\u4FA7\u8FB9\u9762\u677F\u6253\u5F00\u3002",
         ntpDescSuffix: "\u63D2\u4EF6\u9762\u677F",
         ntpNeedSession: "\u5148\u6253\u5F00\u4E00\u4E2A\u4EFB\u52A1\u4F1A\u8BDD\uFF0C\u518D\u4ECE\u65B0\u6807\u7B7E\u9875\u6253\u5F00\u63D2\u4EF6\u9762\u677F",
+        ntpOpenMissing: "\u5F53\u524D\u754C\u9762\u6CA1\u6709\u6253\u5F00\u63D2\u4EF6\u9762\u677F\u7684\u5165\u53E3\uFF0C\u65E0\u6CD5\u4ECE\u65B0\u6807\u7B7E\u9875\u6253\u5F00\u63D2\u4EF6\u9762\u677F",
         featureStatusBarDesc: "\u63D0\u95EE\u8F93\u5165\u6846\u53F3\u4E0B\u89D2\u548C\u6BCF\u8F6E\u56DE\u7B54\u6700\u540E\u663E\u793A\u7EDF\u8BA1\u9879\u3002",
         tabStylesPane: "\u6837\u5F0F",
         tabStatusPane: "\u72B6\u6001\u680F",
         themeColorsPane: "\u4E3B\u9898",
         themeBgRegions: "\u5206\u533A\u80CC\u666F",
-        themeBgRegionFollow: "\u65E0\u80CC\u666F",
+        themeBgRegionFollow: "\u8DDF\u968F\u5168\u5C40\u58C1\u7EB8",
         themeBgRegionLeft: "\u5DE6\u4FA7\u8FB9\u680F",
         themeBgRegionCenter: "\u4E2D\u95F4\u533A\u57DF",
         themeBgRegionRight: "\u53F3\u4FA7\u8FB9\u680F",
@@ -480,6 +486,7 @@
         themeBgIntervalHint: "\u8F6E\u6362\u95F4\u9694\uFF08\u5206\u949F\uFF09",
         themeBgIntervalUnit: "\u5206\u949F\u540E\u8F6E\u6362\uFF0C\u8BBE\u4E3A 0 \u4E0D\u8F6E\u6362",
         themeBgFolderCount: "\u6587\u4EF6\u5939\u91CC\u6709 {n} \u4E2A\u58C1\u7EB8\u6587\u4EF6\uFF0C\u5B9A\u65F6\u8F6E\u6362\u4E2D\u3002",
+        themeBgFolderCountIdle: "\u6587\u4EF6\u5939\u91CC\u6709 {n} \u4E2A\u58C1\u7EB8\u6587\u4EF6\uFF0C\u5F53\u524D\u4E0D\u8F6E\u6362\u3002",
         themeBgFolderMissing: "\u6587\u4EF6\u5939\u4E0D\u5B58\u5728\u6216\u91CC\u9762\u6CA1\u6709\u58C1\u7EB8\u6587\u4EF6\u3002",
         themeBgUrlIntervalUnit: "\u5206\u949F\u540E\u5237\u65B0\uFF0C\u8BBE\u4E3A 0 \u4E0D\u5237\u65B0",
         themeBgUrlInvalid: "\u7F51\u5740\u9700\u4EE5 http(s):// \u5F00\u5934",
@@ -497,7 +504,7 @@
         themeBgDialogFrost: "\u8BBE\u7F6E\u5F39\u7A97\u78E8\u7802",
         themeBgMisc: "\u5176\u4ED6",
         themeBgFollowGlobal: "\u8DDF\u968F\u5168\u5C40",
-        themeBgRegionsHint: '\u6BCF\u884C\u7684\u7F29\u653E\u3001\u906E\u7F69\u53EF\u5355\u72EC\u8BBE\u7F6E\uFF0C\u9009"\u8DDF\u968F\u5168\u5C40"\u5373\u8DDF\u968F"\u753B\u9762"\u7684\u503C\uFF1B\u6A21\u7CCA\u3001\u8F6C\u573A\u3001\u64AD\u653E\u4EC5\u4F5C\u7528\u4E8E\u5168\u5C40\u58C1\u7EB8\uFF08\u5206\u533A\u53EA\u80FD\u94FA\u56FE\uFF0C\u4E0D\u80FD\u64AD\u89C6\u9891\uFF09\u3002\u5206\u533A\u7528\u6587\u4EF6\u5939\u65F6\uFF0C\u8F6E\u6362\u95F4\u9694\u4E0E\u968F\u673A\u987A\u5E8F\u6CBF\u7528\u5168\u5C40\u8BBE\u7F6E\u3002',
+        themeBgRegionsHint: "\u6BCF\u884C\u7684\u7F29\u653E\u3001\u906E\u7F69\u53EF\u5355\u72EC\u8BBE\u7F6E\uFF0C\u9009\u201C\u8DDF\u968F\u5168\u5C40\u201D\u5373\u8DDF\u968F\u201C\u753B\u9762\u201D\u7684\u503C\uFF1B\u6A21\u7CCA\u3001\u8F6C\u573A\u3001\u64AD\u653E\u4EC5\u4F5C\u7528\u4E8E\u5168\u5C40\u58C1\u7EB8\uFF08\u5206\u533A\u53EA\u80FD\u94FA\u56FE\uFF0C\u4E0D\u80FD\u64AD\u89C6\u9891\uFF09\u3002\u5206\u533A\u7528\u6587\u4EF6\u5939\u65F6\uFF0C\u8F6E\u6362\u95F4\u9694\u4E0E\u968F\u673A\u987A\u5E8F\u6CBF\u7528\u5168\u5C40\u8BBE\u7F6E\u3002",
         themeBgPlayback: "\u64AD\u653E\uFF08\u89C6\u9891\u58C1\u7EB8\uFF09",
         themeBgVolume: "\u97F3\u91CF",
         themeBgVolumeHint: "\u89C6\u9891\u58C1\u7EB8\u7684\u97F3\u8F68\u97F3\u91CF\uFF0C0 = \u9759\u97F3\uFF08\u9ED8\u8BA4\uFF09",
@@ -583,6 +590,10 @@
         pathCopyFailed: "\u590D\u5236\u8DEF\u5F84\u5931\u8D25",
         fileOpenDefault: "\u9ED8\u8BA4\u5E94\u7528\u6253\u5F00",
         fileReveal: "\u6253\u5F00\u6240\u5728\u76EE\u5F55",
+        fileActionFailed: "{label}\u5931\u8D25\uFF1A{err}",
+        unknownError: "\u672A\u77E5\u9519\u8BEF",
+        pluginLabel: "\u63D2\u4EF6",
+        manualInput: "\uFF08\u624B\u52A8\u8F93\u5165\uFF09",
         featureAutoUpdatePlugins: "\u81EA\u52A8\u66F4\u65B0",
         featureAutoUpdatePluginsRepo: "duanluan/zcode-plugins",
         featureAutoUpdatePluginsDesc: "",
@@ -601,7 +612,7 @@
         visionForceInterceptAuto: "\u4E0D\u80FD\u8BC6\u56FE\u5C31\u4F7F\u7528\u63D2\u4EF6",
         visionForceInterceptTrue: "\u59CB\u7EC8\u4F7F\u7528\u63D2\u4EF6",
         visionForceInterceptFalse: "\u4E0D\u4F7F\u7528\u63D2\u4EF6",
-        visionForceInterceptHint: "\u4E0D\u80FD\u8BC6\u56FE\u5C31\u4F7F\u7528\u63D2\u4EF6 = \u8DDF\u968F ZCode\u300C\u6A21\u578B\u8BBE\u7F6E\u300D\u91CC\u8BE5\u6A21\u578B\u7684\u56FE\u7247\u5F00\u5173\uFF1A\u5F00 = \u6A21\u578B\u81EA\u770B\u4E0D\u91CD\u590D\u8BC6\u522B\uFF0C\u5173 = \u8D70\u8BC6\u522B\u4EE3\u7406\uFF08tool \u6A21\u5F0F\u51FA\u8BC6\u522B\u5361\u7247\uFF09\uFF1B\u59CB\u7EC8\u4F7F\u7528\u63D2\u4EF6 = \u80FD\u770B\u56FE\u4E5F\u5F3A\u5236\u8D70\u8BC6\u522B\u4EE3\u7406\uFF08\u53CC\u91CD\u8BC6\u522B\u6362\u5361\u7247\uFF09\uFF1B\u4E0D\u4F7F\u7528\u63D2\u4EF6 = \u80FD\u770B\u56FE\u5C31\u653E\u884C\uFF08\u4E0D\u80FD\u8BC6\u56FE\u7684\u6A21\u578B\u4ECD\u8D70\u8BC6\u522B\u4EE3\u7406\uFF09",
+        visionForceInterceptHint: "\u4E0D\u80FD\u8BC6\u56FE\u5C31\u4F7F\u7528\u63D2\u4EF6 = \u8DDF\u968F ZCode\u201C\u6A21\u578B\u8BBE\u7F6E\u201D\u91CC\u8BE5\u6A21\u578B\u7684\u56FE\u7247\u5F00\u5173\uFF1A\u5F00 = \u6A21\u578B\u81EA\u770B\u4E0D\u91CD\u590D\u8BC6\u522B\uFF0C\u5173 = \u8D70\u8BC6\u522B\u4EE3\u7406\uFF08tool \u6A21\u5F0F\u51FA\u8BC6\u522B\u5361\u7247\uFF09\uFF1B\u59CB\u7EC8\u4F7F\u7528\u63D2\u4EF6 = \u80FD\u770B\u56FE\u4E5F\u5F3A\u5236\u8D70\u8BC6\u522B\u4EE3\u7406\uFF08\u53CC\u91CD\u8BC6\u522B\u6362\u5361\u7247\uFF09\uFF1B\u4E0D\u4F7F\u7528\u63D2\u4EF6 = \u80FD\u770B\u56FE\u5C31\u653E\u884C\uFF08\u4E0D\u80FD\u8BC6\u56FE\u7684\u6A21\u578B\u4ECD\u8D70\u8BC6\u522B\u4EE3\u7406\uFF09",
         visionMode: "\u94FE\u6A21\u5F0F",
         visionModeFallback: "\u4F9D\u6B21\u5C1D\u8BD5",
         visionModeFallbackDesc: "\u524D\u4E00\u4E2A\u5931\u8D25\u624D\u8BD5\u4E0B\u4E00\u4E2A\uFF0C\u4EFB\u4E00\u6210\u529F\u5373\u6B62\uFF08\u4E3B\u529B + \u5907\u7528\uFF09\u3002",
@@ -629,6 +640,7 @@
         visionCompressKB: "\u538B\u7F29\u9608\u503C KB",
         visionCompressKBHint: "\u8D85\u8FC7\u8BE5\u5927\u5C0F\u7684\u56FE\u5148\u538B\u7F29\u518D\u8BC6\u522B\uFF08\u6700\u957F\u8FB9 2000\u3001JPEG\uFF09\uFF1B0 = \u4E0D\u538B\u7F29",
         visionLoadFailed: "\u8BFB\u53D6\u89C6\u89C9\u4EE3\u7406\u914D\u7F6E\u5931\u8D25",
+        titleGenLoadFailed: "\u8BFB\u53D6\u81EA\u52A8\u91CD\u547D\u540D\u914D\u7F6E\u5931\u8D25",
         tabRtk: "rtk",
         rtkDesc: "rtk \u63D2\u4EF6\uFF1A\u628A\u5E38\u89C1\u5F00\u53D1\u547D\u4EE4\u7684\u8F93\u51FA\u538B\u7F29 60-90% \u518D\u8FDB\u5165\u4E0A\u4E0B\u6587\uFF08/rtk-* \u547D\u4EE4\u7F16\u8F91\u540C\u4E00\u914D\u7F6E\uFF09\u3002",
         rtkEnabled: "\u542F\u7528",
@@ -770,7 +782,7 @@
         relocateTitle: "\u5207\u6362\u6587\u4EF6\u5939",
         relocateDesc: "\u5C06\u8BE5\u9879\u76EE\u6307\u5411\u53E6\u4E00\u4E2A\u6587\u4EF6\u5939\uFF1A\u4FA7\u8FB9\u680F\u3001\u5DF2\u6253\u5F00\u6807\u7B7E\u9875\u4E0E\u672C\u5730\u4EFB\u52A1\u5386\u53F2\u4E00\u5E76\u8FC1\u79FB\uFF0C\u76EE\u5F55\u672C\u8EAB\u4E0D\u4F1A\u88AB\u79FB\u52A8\uFF0C\u4F1A\u8BDD\u8BB0\u5F55\u4E0D\u4F1A\u4E22\u5931\u3002",
         relocateNewPathLabel: "\u65B0\u6587\u4EF6\u5939",
-        relocateConfirm: "\u79FB\u52A8",
+        relocateConfirm: "\u5207\u6362",
         relocateHint: "\u76EE\u6807\u6587\u4EF6\u5939\u9700\u5DF2\u5B58\u5728\uFF0C\u53EF\u8F93\u5165\u8DEF\u5F84\u6216\u70B9\u51FB\u201C\u6D4F\u89C8\u201D\u9009\u62E9\uFF1B\u5B8C\u6210\u540E\u754C\u9762\u5C06\u81EA\u52A8\u5237\u65B0\u3002",
         relocateSuccess: "\u5DF2\u5207\u6362\u6587\u4EF6\u5939\uFF0C\u6B63\u5728\u5237\u65B0\u754C\u9762\u2026",
         relocateIndexSkipped: "\u5DF2\u5207\u6362\u6587\u4EF6\u5939\uFF1B\u4EFB\u52A1\u5386\u53F2\u672A\u80FD\u540C\u6B65\uFF08\u672C\u673A\u7F3A\u5C11 SQLite \u652F\u6301\uFF09\uFF0C\u65E7\u4EFB\u52A1\u6761\u76EE\u53EF\u80FD\u4ECD\u6307\u5411\u65E7\u8DEF\u5F84\u3002",
@@ -794,10 +806,10 @@
         tabZcode: "ZCode CLI",
         zcodeDesc: "ZCode behavior settings (written to ~/.zcode/cli/config.json); takes effect for new sessions.",
         zcodeStatsTitle: "Skill listing check",
-        zcodeStatsCounts: "{total} skills ({user} local \xB7 {plugin} plugin)",
+        zcodeStatsCounts: "{total} skills ({user} local \xB7 {plugin} from plugins)",
         zcodeStatsChars: "Full listing \u2248 {n} characters",
         zcodeBudgetDefaultTag: " (default)",
-        zcodeStatsDegraded: "Over budget: the listing degrades to names only, so the model cannot see skill descriptions",
+        zcodeStatsDegraded: "Over budget: the listing degrades to names and file paths only, so the model cannot see skill descriptions",
         zcodeStatsOk: "Within budget: the full listing with descriptions is injected into new sessions",
         zcodeStatsSuggest: "Suggested budget {n} characters (with 20% margin)",
         zcodeBudgetApply: "Use suggested",
@@ -808,7 +820,7 @@
         zcodeSkillIncludeInstructions: "Skill instructions injection",
         zcodeSkillIncludeInstructionsDesc: "skills.includeInstructions: whether skill instructions are injected along with the listing",
         zcodeSkillBudget: "Skill listing budget (characters)",
-        zcodeSkillBudgetDesc: "skills.metadataBudget: the listing degrades to names only beyond this length; default 20000",
+        zcodeSkillBudgetDesc: "skills.metadataBudget: the listing degrades to names and file paths only beyond this length; default 20000",
         zcodeSkillRoots: "Extra skill directories",
         zcodeSkillRootsDesc: "skills.roots: one directory per line; skills under them are discovered (beyond ~/.zcode/skills and ~/.agents/skills)",
         zcodeSave: "Save",
@@ -823,9 +835,9 @@
         zcodeFeatSkillDesc: "features.skill: the Skill tool is available (the skill system must also be on)",
         zcodeFeatMcp: "MCP tools",
         zcodeFeatMcpDesc: "features.mcp: use tools provided by MCP servers",
-        zcodeMemoryHint: "Memory is not here: workspace memory is toggled in the official settings under Settings \u2192 Agent capabilities \u2192 Memory (with the memory viewer).",
+        zcodeMemoryHint: "Workspace memory is not configured here; toggle it in the official settings under Settings \u2192 Agent capabilities \u2192 Memory (with the memory viewer).",
         agentsDesc: "Written to ~/.zcode/AGENTS.md and used as default instructions in every session across all projects. Takes effect for new sessions; per-project AGENTS.md can extend or override it. Content over 100 KB is truncated by the app.",
-        agentsPlaceholder: "Instructions followed by all projects by default; save empty to remove the global prompt",
+        agentsPlaceholder: "Instructions followed by all projects by default; leave empty and save to remove the global prompt",
         agentsSave: "Save",
         agentsSaved: "Global prompt saved.",
         agentsLoadFailed: "Failed to load the global prompt",
@@ -846,7 +858,7 @@
         proxyScopeSyncDesc: "WebDAV upload and download go through the proxy.",
         tabSync: "Sync",
         tabDebug: "Debug",
-        testNoSessionHint: "With \u201Cfollow current session [current model]\u201D selected, the provider [model] of the last session is used.",
+        testNoSessionHint: 'With "Follow current session" selected, the provider and model of the last session are used (the label shows the model name in brackets).',
         syncDesc: 'Manually back up ZCode Pro settings and model settings to WebDAV, or restore them on a new computer. The two items are stored as separate files, so you can upload or overwrite either one alone; every upload also keeps a timestamped history version (how many to keep is set in the "History" row; older ones are removed automatically after upload) and download lets you pick any of them. Data moves only when you click, never automatically.',
         syncUrlPlaceholder: "https://dav.example.com/dav/",
         syncDir: "Folder",
@@ -859,7 +871,7 @@
         syncPruned: "removed {n} older history versions",
         syncSave: "Save",
         syncSaved: "Sync settings saved.",
-        syncFormHint: "Sync files go inside the folder (default zcode-pro, multi-level allowed, created automatically): zcodepro.json and model.json are always the latest version; timestamped history versions are kept alongside.",
+        syncFormHint: "Sync files go inside the folder (default zcode-pro, multi-level allowed, created automatically): zcodepro.json and model.json always hold the latest version; timestamped history versions are kept alongside.",
         syncRecLink: "Jianguoyun WebDAV",
         syncRecSuffix: " \u2014 use the app password, not your account password.",
         syncIncludeZcp: "ZCode Pro settings",
@@ -869,7 +881,7 @@
         syncUpload: "Upload",
         syncDownload: "Download",
         syncUploading: "Uploading\u2026",
-        syncUploaded: "Uploaded to the server.",
+        syncUploaded: "Uploaded to the server",
         syncDownloaded: "Restored from the server.",
         syncLastPush: "Last upload",
         syncLastPull: "Last download",
@@ -877,7 +889,7 @@
         syncConfirmTitle: "Download from the server",
         syncConfirmDesc: "The selected file will overwrite the matching local section (a .zcodepro-backup copy is kept next to each file); your local sync config and credentials stay untouched. Restarting ZCode is recommended after restoring model settings. Import now?",
         syncConfirmGo: "Import",
-        syncPickDesc: "Fixed names are always the latest version; timestamped files are the history each upload leaves behind. Import overwrites the matching local section.",
+        syncPickDesc: "Fixed names always hold the latest version; timestamped files are the history each upload leaves behind. Import overwrites the matching local section.",
         syncVerDeleteLatestNote: 'Note: this is the "latest" file that older zcode-pro installs download from; deleting it breaks their download. Timestamped history versions are not affected.',
         syncHint: "Sync credentials are stored locally in zcodepro.json only; model settings contain the API keys of custom providers and go to your own WebDAV only.",
         syncTest: "Test",
@@ -922,11 +934,11 @@
         lineHeightName: "Answer line height",
         lineHeightDesc: "Line height of answer text (multiplier).",
         thinkingLineHeightName: "Work-log line height",
-        thinkingLineHeightDesc: "Line height of the \u201Cworked for\u2026\u201D history panel (tool entries and reasoning, multiplier).",
+        thinkingLineHeightDesc: 'Line height of the "worked for\u2026" history panel (tool entries and reasoning, multiplier).',
         userLineHeightName: "Question line height",
         userLineHeightDesc: "Line height of question text (multiplier).",
         contentWidthName: "Content width",
-        contentWidthDesc: "Max width of conversation content; accepts px or % (e.g. 900px, 85%).",
+        contentWidthDesc: "Max width of conversation content; accepts px or % (e.g. 900px, 85%). Shows the current actual width by default; % is relative to the session area.",
         defaultValue: "default",
         resetDefault: "Reset to default",
         featureProjectMenu: "Project menu actions",
@@ -934,27 +946,27 @@
         featureTaskOrder: "Sidebar session drag ordering",
         featureTaskOrderDesc: "Drag to reorder sessions in Pinned, Projects and Groups; survives restarts.",
         featureSessionSwitch: "Session quick switch",
-        featureSessionSwitchDesc: "{last} toggles to the last session; alt + arrows pick recent sessions; keys remappable",
+        featureSessionSwitchDesc: "{last} toggles between the current and the last session; alt + letter opens the switcher popup, pick with arrows or hotkeys inside; keys remappable",
         featureTitleLock: "Keep renamed session titles",
         featureTitleLockDesc: "Sessions you renamed keep their custom title in the sidebar.",
         tabTitleGen: "Auto rename",
-        titleGenShortDesc: "When a new session starts answering, generates the task name with the chosen provider and prompt and saves it as a manual rename the built-in title never overrides.",
+        titleGenShortDesc: "When a new session starts answering, generates the task name with the chosen provider and prompt and saves it as a manual rename that the built-in title never overrides.",
         titleGenEnabled: "Enable",
         titleGenProvider: "Provider",
         titleGenProviderNone: "Custom endpoint (no provider)",
         titleGenProviderSession: "Follow current session",
         titleGenProviderDeleted: " (deleted)",
         titleGenModel: "Model",
-        titleGenModelHint: "Pick from the list, or type a model id",
+        titleGenModelHint: "Pick from the list, or type a model ID",
         titleGenModelEmpty: "(not set)",
         titleGenModelSessionHint: "Pick from the list; the first entry follows the session model",
         titleGenModelFollowSession: "Follow the session model",
-        titleGenModelManualHint: "Type a model id",
+        titleGenModelManualHint: "Type a model ID",
         titleGenBaseUrl: "Base URL",
         titleGenApiKey: "API Key",
         titleGenFormat: "Protocol",
         titleGenPrompt: "Prompt",
-        titleGenPromptPlaceholder: "Leave empty for the built-in default prompt (button below shows it)",
+        titleGenPromptPlaceholder: "Leave empty for the built-in default prompt (the button below shows it)",
         titleGenPromptReset: "Use default prompt",
         titleGenSample: "Test message",
         titleGenTest: "Test",
@@ -963,18 +975,18 @@
         titleGenTestFailed: "Generation failed",
         titleGenManual: "Manual rename",
         titleGenHoverBtn: "Task row hover button",
-        titleGenHoverBtnDesc: "Show an \u201CAuto rename\u201D button next to the archive button when hovering a task row.",
+        titleGenHoverBtnDesc: 'Show an "Auto rename" button next to the archive button when hovering a task row.',
         titleGenMenuEntry: "Context menu item",
-        titleGenMenuEntryDesc: "Show \u201CAuto rename\u201D below \u201CRename task\u201D in the task context menu.",
+        titleGenMenuEntryDesc: 'Show "Auto rename" below "Rename task" in the task context menu.',
         titleGenRecentQa: "Recent Q&A rounds",
-        titleGenRecentQaDesc: "Manual rename takes this many recent Q&A rounds as material.",
+        titleGenRecentQaDesc: "Manual rename uses the last N Q&A rounds as input.",
         autoRenameItem: "Auto rename",
         autoRenameWorking: "Generating title\u2026",
         autoRenameDone: "Renamed: ",
         featureWsRunning: "Running indicator when collapsed",
         featureWsRunningDesc: "Collapsed project and task headers show a loader while sessions run.",
         tabPerformance: "Performance",
-        perfDesc: "ZCode keeps a session process resident for every project you have opened and never reclaims it, so memory grows with projects. When enabled, projects unused for a while with nothing running release their memory automatically: sessions are untouched and reload when reopened, with a few seconds wait on the first reply. The project in use, running sessions, background commands and scheduled tasks are never reclaimed. Background-command detection reads system process info via built-in tools (Linux / macOS / Windows); when unavailable, the feature disables itself.",
+        perfDesc: "ZCode keeps a session process resident for every project you have opened and never reclaims it, so memory grows with projects. When enabled, projects unused for a while with nothing running release their memory automatically: sessions are untouched and reload when reopened, with a few seconds' wait on the first reply. The project in use, running sessions, background commands and scheduled tasks are never reclaimed. Background-command detection reads system process info via built-in tools (Linux / macOS / Windows); when unavailable, the feature disables itself.",
         featureIdleReclaim: "Idle project memory reclaim",
         featureIdleReclaimDesc: "Qualifying projects release their memory; sessions are untouched and reload when reopened.",
         idleReclaimMinutesLabel: "Idle minutes before reclaim",
@@ -990,9 +1002,9 @@
         featurePinnedCollapse: "Collapsible Pinned section",
         featurePinnedCollapseDesc: "The Pinned header collapses/expands its task list.",
         featureSandboxReclaim: "Plugin card sandbox reclaim",
-        featureSandboxReclaimDesc: "Reclaims the oldest sandboxes at the 64 cap so new cards keep opening; released cards come back when their session is reopened.",
+        featureSandboxReclaimDesc: "Reclaims the oldest sandboxes when the 64-slot cap is hit so new cards keep opening; released cards come back when their session is reopened.",
         featurePluginCardRetry: "Plugin card auto-retry",
-        featurePluginCardRetryDesc: 'Auto-clicks "Reload" on cards that failed the slot cap; they recover as soon as a slot frees up.',
+        featurePluginCardRetryDesc: 'Auto-clicks "Reload" on cards that hit the slot cap; they recover as soon as a slot frees up.',
         visionCardUi: "Vision cards",
         pinnedToggleAria: "Collapse/expand Pinned",
         sidebarProjectSpacingName: "Project spacing",
@@ -1018,18 +1030,19 @@
         featureNewtabPanelsDesc: "Adds third-party plugin panels (headroom, rtk, ...) to the new tab page; click to open in the side pane.",
         ntpDescSuffix: "plugin panel",
         ntpNeedSession: "Open a task session first, then open plugin panels from the new tab page",
+        ntpOpenMissing: "No plugin-panel opener in this UI; cannot open plugin panels from the new tab page",
         featureStatusBarDesc: "Shows statistics at the bottom-right of the input box and at the end of each answer.",
         tabStylesPane: "Styles",
         tabStatusPane: "Status bar",
         themeColorsPane: "Theme",
         themeBgRegions: "Regional backgrounds",
-        themeBgRegionFollow: "None",
+        themeBgRegionFollow: "Follow global",
         themeBgRegionLeft: "Left sidebar",
         themeBgRegionCenter: "Center area",
         themeBgRegionRight: "Right sidebar",
         themeBgPane: "Wallpaper",
         themeSkinTitle: "Skins",
-        themeSkinDesc: 'Famous editor theme palettes, auto-matching ZCode\u2019s light / dark mode; "Default" keeps ZCode as-is, "Custom" is tuned below.',
+        themeSkinDesc: `Well-known editor theme palettes, auto-matching ZCode's light / dark mode; "Default" keeps ZCode as-is, "Custom" is tuned below.`,
         themeSkinCustom: "Custom",
         themeCustomTitle: "Custom theme",
         themeCustomHint: "Color changes apply live (auto-switches to the custom skin); set light and dark separately \u2014 pick 5 colors and the whole palette is derived.",
@@ -1040,7 +1053,7 @@
         themeCustomFg: "Text",
         themeCustomMuted: "Muted text",
         themeCustomAccent: "Accent",
-        themeBgDesc: "Wallpapers can be images, videos or web pages, rendered behind the UI. Sources: local library (pick one image), folder (rotate on a timer), image URL (refresh on a timer) or a web page; left / center / right regions can each have their own (static images only, with their own fit and mask). Sidebar, chat, composer and the settings dialog reveal the wallpaper \u2014 the settings dialog is frosted; the frosting can be turned off here; context menus and other dialogs stay opaque for readability. The library uploads over WebDAV with the zcode-pro sync group (overwrite, no history versions).",
+        themeBgDesc: "Wallpapers can be images, videos or web pages, rendered behind the UI. Sources: local library (pick one image), folder (rotate on a timer), image URL (refresh on a timer) or a web page; left / center / right regions can each have their own background (static images only, with their own fit and mask). Sidebar, chat, composer and the settings window reveal the wallpaper \u2014 the settings window is frosted; the frosting can be turned off here; context menus and other dialogs stay opaque for readability. The library uploads over WebDAV with the zcode-pro sync group (overwrite, no history versions).",
         themeBgModeNone: "None",
         themeBgModeLibrary: "Library",
         themeBgModeFolder: "Folder",
@@ -1056,10 +1069,11 @@
         themeBgFolderHint: "Pick a folder of wallpapers; files are read in place, not copied.",
         themeBgFolderRandom: "Random order",
         themeBgIntervalHint: "Rotation interval (minutes)",
-        themeBgIntervalUnit: "minutes before rotation; 0 = no rotation",
+        themeBgIntervalUnit: "minutes between rotations; 0 = no rotation",
         themeBgFolderCount: "{n} wallpaper files in the folder, rotating on the timer.",
+        themeBgFolderCountIdle: "{n} wallpaper files in the folder, rotation off.",
         themeBgFolderMissing: "Folder missing or contains no wallpaper files.",
-        themeBgUrlIntervalUnit: "minutes before refresh; 0 = no refresh",
+        themeBgUrlIntervalUnit: "minutes between refreshes; 0 = no refresh",
         themeBgUrlInvalid: "URL must start with http(s)://",
         themeBgWebHint: "Web wallpapers render behind the UI in a sandboxed iframe; the page plays its own animation or video. Only pages with their own transparent background reveal the wallpaper; pages that need a login session may not show.",
         themeBgSource: "Source",
@@ -1072,7 +1086,7 @@
         themeBgMask: "Mask opacity",
         themeBgBlur: "Wallpaper blur",
         themeBgPanel: "Panel opacity",
-        themeBgDialogFrost: "Frosted settings dialog",
+        themeBgDialogFrost: "Frosted settings window",
         themeBgMisc: "Other",
         themeBgFollowGlobal: "Follow global",
         themeBgRegionsHint: 'Fit and mask can be set per row; "Follow global" uses the Display values. Blur, transition and playback apply only to the global wallpaper (regions are static images, no video). Region folders reuse the global rotation interval and order settings.',
@@ -1098,7 +1112,7 @@
         sbItemQuestions: "Questions asked",
         sbMaster: "Enable statistics",
         sbMasterDesc: "Master switch: turning this off disables both the input-box statistics and per-turn labels.",
-        sbGroupSession: "Session statistics (follows current session)",
+        sbGroupSession: "Session statistics (follows the current session)",
         sbGroupGlobal: "Global statistics",
         sbGroupTurn: "Per-turn statistics (answer rows)",
         sbLabelIn: "in",
@@ -1106,7 +1120,7 @@
         sbLabelCache: "cache",
         turnUsageTitle: "Turn tokens",
         sbLabelQuestions: "asks",
-        sbItemTodayTokens: "Today tokens",
+        sbItemTodayTokens: "Tokens today",
         sbItemTasks: "Tasks",
         sbLabelCtx: "ctx",
         sbLabelTurns: "calls",
@@ -1121,8 +1135,8 @@
         tabShortcuts: "Shortcuts",
         hkTitle: "Session quick switch",
         hkAltZ: "Toggle between the current and the last-used session",
-        hkAltX: "Move the highlight up (earlier sessions) in the popup",
-        hkAltC: "Move the highlight down (recent sessions); at the bottom it loads 5 more and highlights the first newly loaded entry",
+        hkAltX: "Move the highlight up (earlier tasks) in the popup",
+        hkAltC: "Move the highlight down (more recent tasks); at the bottom it loads 5 more and highlights the first newly loaded entry",
         hkAltE: "Open the last 10 tasks",
         hkAltR: "Open running / finished-but-unseen tasks",
         hkArrow: "Move the highlight while the popup is open (same rules as alt + {prev} / alt + {next})",
@@ -1143,7 +1157,7 @@
         hkResetDone: "Shortcuts reset to defaults",
         featureFileActions: "File menu actions",
         featureFileActionsDesc: 'Adds "Open with default app" and "Reveal in file manager" to the right-click menu of file links in chat.',
-        featureImageCopy: "Image right-click copy",
+        featureImageCopy: "Copy image",
         featureTableCopy: "Copy table",
         featureComposerProvider: "Provider in model name",
         featureImageCopyDesc: "Right-click an image in chat or the enlarged preview to copy it to the clipboard.",
@@ -1161,6 +1175,10 @@
         pathCopyFailed: "Failed to copy the path.",
         fileOpenDefault: "Open with default app",
         fileReveal: "Reveal in file manager",
+        fileActionFailed: "{label} failed: {err}",
+        unknownError: "Unknown error",
+        pluginLabel: "Plugin",
+        manualInput: " (manual input)",
         featureAutoUpdatePlugins: "Auto-update",
         featureAutoUpdatePluginsRepo: "duanluan/zcode-plugins",
         featureAutoUpdatePluginsDesc: "",
@@ -1176,10 +1194,10 @@
         visionDesc: "When the main model cannot see images (e.g. glm-5.3), images in messages are recognized by the vision models below and passed to the main model as text (zcode-vision plugin; /vision-* commands edit the same file).",
         visionEnabled: "Enable",
         visionForceIntercept: "Main model",
-        visionForceInterceptAuto: "Use plugin only if model can't see images",
-        visionForceInterceptTrue: "Always use plugin",
-        visionForceInterceptFalse: "Never use plugin",
-        visionForceInterceptHint: "Use plugin only if model can't see images = follow the image toggle in ZCode model settings: on = the model sees images itself (no duplicate recognition), off = route through the vision proxy (tool mode shows the result card); Always use plugin = forced double recognition for the card; Never use plugin = let capable models see images (models that can't still go through the plugin)",
+        visionForceInterceptAuto: "Use the plugin only if the model cannot see images",
+        visionForceInterceptTrue: "Always use the plugin",
+        visionForceInterceptFalse: "Never use the plugin",
+        visionForceInterceptHint: "Use the plugin only if the model cannot see images = follow the image toggle in ZCode model settings: on = the model sees images itself (no duplicate recognition), off = route through the vision proxy (tool mode shows the result card); Always use the plugin = forced double recognition for the card; Never use the plugin = let capable models see images (models that can't still go through the plugin)",
         visionMode: "Chain mode",
         visionModeFallback: "Fallback",
         visionModeFallbackDesc: "Try in order until one succeeds (primary + backup).",
@@ -1193,10 +1211,10 @@
         visionUseProvider: "Provider",
         visionSkipAfterFailures: "Skip after failures",
         visionSkipAfterFailuresHint: "After this many consecutive failures a proxy is skipped and the next one is tried; 0 = never skip",
-        visionSkipMinutes: "Skip minutes",
+        visionSkipMinutes: "Skip for (minutes)",
         visionSkipMinutesHint: "How long a skipped proxy rests before being retried; any success resets the counter",
         visionResetChain: "Reset default chain",
-        visionResetChainConfirm: "Reset chain mode and the proxy list to the default single-level chain (session: follow session and its current model)? Current proxy edits will be lost. Continue?",
+        visionResetChainConfirm: `Reset chain mode and the proxy list to the default single-level chain (the "session" entry follows the session's provider and model)? Current proxy edits will be lost. Continue?`,
         visionBaseUrl: "API URL",
         visionModel: "Model",
         visionApiKey: "API Key",
@@ -1204,9 +1222,10 @@
         visionTest: "Test",
         visionTesting: "Testing\u2026",
         visionTestFailed: "Vision proxy test failed",
-        visionCompressKB: "Compress threshold KB",
+        visionCompressKB: "Compression threshold (KB)",
         visionCompressKBHint: "Images above this size are compressed first (max edge 2000, JPEG); 0 = never",
         visionLoadFailed: "Failed to load the vision config",
+        titleGenLoadFailed: "Failed to load the auto-rename config",
         tabRtk: "rtk",
         rtkDesc: "rtk plugin: compresses common dev command output by 60-90% before it reaches the context (/rtk-* commands edit the same files).",
         rtkEnabled: "Enable",
@@ -1215,15 +1234,15 @@
         rtkBinInstalled: "rtk installed; PATH takes effect for sessions after signing out and back in \u2014 the plugin hook works immediately",
         rtkWhitelistTitle: "Whitelist (pass through without compression)",
         rtkBuiltinLabel: "Built-in exemptions (read-only, follow plugin updates):",
-        rtkWhitelistDesc: "Each entry is name (e.g. docker) or git:name (e.g. git:clone); added commands skip compression. Built-ins (git add/commit/push, mkdir/cp, \u2026) cannot be removed.",
+        rtkWhitelistDesc: "Each entry is a name (e.g. docker) or git:name (e.g. git:clone); added commands skip compression. Built-ins (git add/commit/push, mkdir/cp, \u2026) cannot be removed.",
         rtkWhitelistPlaceholder: "name or git:name, press Enter to add",
         rtkWhitelistAdd: "Add",
         rtkWhitelistClear: "Clear",
         rtkWhitelistCleared: "Whitelist cleared",
-        rtkWhitelistInvalid: "Entry must be name or git:name",
+        rtkWhitelistInvalid: "Entry must be a name or git:name",
         rtkLoadFailed: "Failed to load the rtk config",
         tabHeadroom: "Headroom",
-        headroomDesc: "Headroom plugin: a local compression proxy on 127.0.0.1 (port 8787 by default) that compresses context sent to the model to save tokens (/hr-* commands edit the same file). Switching the device restarts the proxy, so requests in progress may be interrupted once.",
+        headroomDesc: "Headroom plugin: a local compression proxy on 127.0.0.1 (port 8787 by default) that compresses context sent to the model to save tokens (/hr-* commands edit the same file). Switching the compression device restarts the proxy, so requests in progress may be interrupted once.",
         headroomBinMissing: "The headroom program was not found, so the proxy cannot start. The settings below take effect once it is installed.",
         hrInstallBin: "Install headroom binary",
         hrBinInstalled: "headroom installed; reopen the app or a session and the proxy will start automatically",
@@ -1265,7 +1284,7 @@
         headroomWatcher: "Watcher",
         headroomWatcherOn: "Running",
         headroomWatcherOff: "Stopped",
-        headroomSaverDetect: "Power-saver detection",
+        headroomSaverDetect: "Power-save detection",
         headroomRefresh: "Refresh",
         headroomStart: "Start",
         headroomRestart: "Restart",
@@ -1275,28 +1294,28 @@
         headroomStoppedWarn: "Proxy stopped; providers pointing at 127.0.0.1 cannot connect.",
         headroomBackend: "Compression device",
         headroomBackendAuto: "Auto \xB7 GPU first",
-        headroomBackendCpu: "Power saving \xB7 CPU first",
+        headroomBackendCpu: "Power-save \xB7 CPU first",
         headroomBackendNative: " (native)",
-        headroomBackendDesc: "Auto lets headroom pick the fastest device (CUDA/MPS); CPU forces CPU compression (power saving, no VRAM). Native headroom values (onnx, pytorch_mps, \u2026) also work. Switching restarts the proxy to apply.",
+        headroomBackendDesc: "Auto lets headroom pick the fastest device (CUDA/MPS); CPU forces CPU compression (power saving, no VRAM). Native headroom values (onnx, pytorch_mps, \u2026) also work. Switching restarts the proxy to apply the change.",
         headroomPower: "Power-save auto switch",
         headroomPowerOff: "Off",
         headroomPowerOffDesc: "No auto switching; always follow the compression device.",
         headroomPowerBattery: "On battery",
         headroomPowerBatteryDesc: "On battery (discharging) \u2192 CPU; switches back when plugged in.",
-        headroomPowerSaver: "Power-saver",
-        headroomPowerSaverDesc: "Only the system power-saver mode \u2192 CPU; back when it exits.",
+        headroomPowerSaver: "Power saver",
+        headroomPowerSaverDesc: "Only the system power saver mode \u2192 CPU; back when it exits.",
         hrCpuPinnedHint: "The compression device is pinned to CPU, so power-save switching no longer changes anything.",
         headroomInterval: "Watch interval",
         headroomIntervalDesc: "Seconds between power checks (10\u20133600, default 60); applies from the next round.",
         headroomSecUnit: "s",
-        upgradeCheck: "Check update",
+        upgradeCheck: "Check for updates",
         upgradeChecking: "Checking\u2026",
         upgradeUpToDate: "Up to date ({v})",
         upgradeFound: "{v} available",
         upgradeNow: "Update",
         upgradeRunning: "Updating\u2026",
         upgradeStop: "Stop",
-        upgradeStopped: "Upgrade stopped",
+        upgradeStopped: "Update stopped",
         upgradeDone: "Updated to {v}",
         upgradeFinished: "Update finished",
         upgradeCheckFailed: "Update check failed",
@@ -1313,9 +1332,9 @@
         aliasSaved: "Alias updated.",
         aliasCleared: "Real name restored.",
         aliasHint: "The directory name on disk is unchanged: terminals, file managers and other path-based UI still show the real name.",
-        featureProjectMenuDescNew: 'Open folder and copy path in the project "More" menu. Renaming is built in since ZCode 3.16.1 ("Edit project"), so the custom alias is retired.',
+        featureProjectMenuDescNew: 'Open folder and copy path in the project "More" menu. Renaming is built into ZCode \u2265 3.16.1 ("Edit project"), so the custom alias is retired.',
         aliasMigrateTitle: "Migrate project aliases",
-        aliasMigrateDesc: 'This ZCode supports renaming projects (project "More" menu \u2192 Edit project), so the custom alias feature is retired. Write your saved aliases into the official project names by picking the projects below; only the project name changes, folders on disk are untouched.',
+        aliasMigrateDesc: 'This ZCode supports renaming projects (project "More" menu \u2192 Edit project), so the custom alias feature is retired. Apply your saved aliases to the official project names by picking the projects below; only the project name changes, folders on disk are untouched.',
         aliasMigrateItemHint: 'The alias becomes the project name (re-editable anytime via "Edit project"). Only unmarked entries can be checked; migrated, merged, deleted, not-on-this-machine and manually-renamed ones cannot \u2014 to rename those projects, use "Edit project" in the project "More" menu directly.',
         aliasMigrateStateDone: "Migrated",
         aliasMigrateStateMerged: 'Merged into "{name}"',
@@ -1348,7 +1367,7 @@
         relocateTitle: "Switch folder",
         relocateDesc: "Points this project at another folder: the sidebar, open tabs and local task history move along. The directory itself is not moved and no sessions are lost.",
         relocateNewPathLabel: "New folder",
-        relocateConfirm: "Move",
+        relocateConfirm: "Switch",
         relocateHint: "The target folder must already exist. Enter a path or use Browse; the UI refreshes automatically afterwards.",
         relocateSuccess: "Folder switched. Refreshing\u2026",
         relocateIndexSkipped: "Folder switched, but the task history was not synced (SQLite support missing); old entries may still point to the old path.",
@@ -1363,6 +1382,7 @@
         retryHint: "Please retry"
       };
       cachedSystemLocale = null;
+      zhCache = { at: 0, v: null };
       errEn = {
         "invalid-path": "Invalid project path",
         "not-found": "The folder does not exist",
@@ -1371,7 +1391,6 @@
         "agents-read": "Failed to read AGENTS.md",
         "agents-write": "Failed to write AGENTS.md",
         "config-save": "Failed to save config",
-        "settings-write": "Failed to update setting.json",
         "workspace-empty": "Workspace not found or has no sessions",
         "order-write": "Failed to persist ordering",
         "group-not-found": "No group contains these sessions",
@@ -1385,10 +1404,10 @@
         "vision-read": "Failed to read zcode-vision.json",
         "vision-write": "Failed to write zcode-vision.json",
         "vision-test": "Vision test failed",
-        "proxy-invalid": "Proxy must look like http://127.0.0.1:7890, or be empty",
+        "proxy-invalid": "The proxy must be a URL like http://127.0.0.1:7890, or be empty",
         "proxy-not-set": "Set the proxy address first",
         "rtk-invalid": "Invalid rtk config",
-        "rtk-update": "Failed to check rtk updates (GitHub Releases unreachable? Set a proxy in the Proxy tab)",
+        "rtk-update": "Failed to check for rtk updates (GitHub Releases unreachable? Set a proxy in the Proxy tab)",
         "rtk-write": "Failed to write the rtk config",
         "headroom-read": "Failed to read headroom.json",
         "headroom-write": "Failed to write headroom.json",
@@ -1397,7 +1416,8 @@
         "headroom-sh": "sh not found; cannot run the headroom plugin script",
         "headroom-action": "The headroom action failed",
         "headroom-status": "Failed to read the headroom status",
-        "headroom-upgrade": "headroom upgrade failed",
+        "headroom-update": "headroom update failed",
+        "ZCODE_NOT_FOUND": "ZCode executable not found",
         "plugins-status": "Failed to read the plugin list",
         "plugins-update": "Failed to update plugins",
         "sync-invalid": "Invalid sync settings",
@@ -1407,7 +1427,35 @@
         "sync-request": "The WebDAV request failed",
         "sync-run": "Sync failed",
         "sync-file-invalid": "Invalid backup file name",
-        "sync-export": "Failed to save the backup to disk"
+        "sync-export": "Failed to save the backup to disk",
+        // 壁纸（bg-*）
+        "bg-folder": "Invalid or unreadable wallpaper folder path",
+        "bg-name": "Invalid file name (must end with a supported extension and include no path separators)",
+        "bg-data": "Image data must be a data:image/*;base64 URL (upload videos via /bg/upload)",
+        "bg-size": "The file is too large",
+        "bg-count": "The wallpaper library is full; delete some files first",
+        "bg-magic": "The file content does not match its extension",
+        "bg-write": "Failed to write the wallpaper file",
+        "bg-delete": "Failed to delete the wallpaper file",
+        // 视频转码
+        "transcode-src": "Invalid source video for transcoding",
+        "transcode-fps": "Unsupported frame-rate cap",
+        "transcode-busy": "The transcode queue is full; retry later",
+        "no-ffmpeg": "ffmpeg not found; the frame-rate cap is unavailable",
+        // 配置/文件读写
+        "config-unreadable": "zcodepro.json is unreadable or corrupted; fix the config file first",
+        "zcode-config-unreadable": "The ZCode config is unparseable; write aborted",
+        "read-error": "Failed to read the file",
+        "cli-not-found": "ZCode CLI not found (resources/glm/zcode.cjs)",
+        // 重定位（relocate）
+        "new-not-found": "The target folder does not exist",
+        "protected-path": "Refused: the path points inside the ZCode data directory",
+        "same-path": "The new location is the same as the current one",
+        "export-cancelled": "Canceled",
+        // 其他
+        "no-content": "This session has no Q&A content yet",
+        "title-gen-disabled": "Auto rename is not enabled",
+        "headroom-provider-config": "ZCode provider config not found (v2/config.json)"
       };
     }
   });
@@ -2462,6 +2510,7 @@
   }
   function findServices() {
     if (servicesRef) return servicesRef;
+    if (servicesMissAt && Date.now() - servicesMissAt < 6e4) return null;
     try {
       const rootEl = document.getElementById("root");
       const containerKey = rootEl && Object.keys(rootEl).find((k) => k.startsWith("__reactContainer$"));
@@ -2490,8 +2539,10 @@
       };
       visit(rootEl[containerKey]);
       if (found) servicesRef = found;
+      else servicesMissAt = Date.now();
       return found;
     } catch {
+      servicesMissAt = Date.now();
       return null;
     }
   }
@@ -2611,8 +2662,8 @@
       const head = wsHead(row);
       const collapsed = !head || head.getAttribute("aria-expanded") === "false";
       const domRunning = !!(runningByWs.get(path) && runningByWs.get(path).size);
-      const normP = (v) => String(v || "").replace(/[\\/]+$/, "");
-      const running = enabled2 && collapsed && (activeProjectPaths.size ? [...activeProjectPaths].some((p2) => normP(p2) === normP(path)) : domRunning);
+      const normP2 = (v) => String(v || "").replace(/[\\/]+$/, "");
+      const running = enabled2 && collapsed && (activeProjectPaths.size ? [...activeProjectPaths].some((p2) => normP2(p2) === normP2(path)) : domRunning);
       const icon2 = iconHolderOf(row);
       icon2?.classList.toggle("zcodepro-ws-running", running);
       setRunningIcon(icon2, running);
@@ -2632,7 +2683,10 @@
       const btn = sv.closest("button");
       if (btn) heads.push(btn);
     }
-    for (const h3 of document.querySelectorAll("h3")) heads.push(h3);
+    for (const h3 of document.querySelectorAll("h3")) {
+      if (h3.closest("main")) continue;
+      heads.push(h3);
+    }
     return heads.map((head) => {
       const cached = headInfoCache.get(head);
       if (cached) return { head, cont: cached.cont, kind: cached.kind };
@@ -2646,7 +2700,7 @@
     }).filter((x) => x.head);
   }
   function globalAnyActive() {
-    if (anyActiveCache.value !== null && Date.now() - anyActiveCache.at < 1e4) return anyActiveCache.value;
+    if (anyActiveCache.value !== null && Date.now() - anyActiveCache.at < 3e4) return anyActiveCache.value;
     if (anyActiveCache.busy) return anyActiveCache.value === true;
     anyActiveCache.busy = true;
     sectionActive.task = false;
@@ -2693,10 +2747,14 @@
             }
             projectPaths.set(proj.name, names);
           }
-          for (const base of scanPaths) {
-            const a = await ts.listActiveTaskIds({ workspacePath: base });
-            const b = await ts.listActiveTaskIds({ workspacePath: base + "/" });
-            const ids = [...Array.isArray(a) ? a : [], ...Array.isArray(b) ? b : []].map(String);
+          const pairs = await Promise.all([...scanPaths].map(async (base) => {
+            const [a, b] = await Promise.all([
+              ts.listActiveTaskIds({ workspacePath: base }),
+              ts.listActiveTaskIds({ workspacePath: base + "/" })
+            ]);
+            return [base, [...Array.isArray(a) ? a : [], ...Array.isArray(b) ? b : []].map(String)];
+          }));
+          for (const [base, ids] of pairs) {
             if (!ids.length) continue;
             byKindByPath.set(base, ids);
             const kind = projPaths.has(base) ? "project" : "task";
@@ -2778,7 +2836,7 @@
         const list = head.nextElementSibling;
         expanded = !list || list.offsetHeight > 0;
       }
-      if (!kind) return;
+      if (!kind) continue;
       const scoped = head.tagName === "H3" ? sectionActive.pinned : kind === "project" ? sectionActive.project : sectionActive.task;
       const want = !expanded && scoped;
       const existing = head.querySelector(":scope > ." + SEC_SPIN_CLASS);
@@ -3068,7 +3126,7 @@
       if (row) wsTouchAt.set(row, Date.now());
     }, true);
   }
-  var installed2, enabled2, SCAN_DEBOUNCE_MS, SCAN_FALLBACK_MS, PEEK_FIRST_MS, PEEK_REPEAT_MS, PEEK_SETTLE_MS, PEEK_MAX_MS, PEEK_UNMOUNT_WAIT_MS, CONFIG_POLL_MIN_MS, CONFIG_POLL_MAX_MS, TASK_SEL, WS_SEL, LOADER_FALLBACK_PATHS, runningByWs, peekTimers, activePeeks, peekedWs, wsWithRows, servicesRef, synthClick, headInfoCache, PROJECT_HEAD_TEXTS, TASK_HEAD_TEXTS, SEC_SPIN_CLASS, anyActiveCache, sectionActive, activeProjectPaths, authActiveByWs, peekChain, PEEK_EXEMPT_CLASS, cssAttr, TOUCH_WINDOW_MS, wsTouchAt, pollMs, scanDebounce;
+  var installed2, enabled2, SCAN_DEBOUNCE_MS, SCAN_FALLBACK_MS, PEEK_FIRST_MS, PEEK_REPEAT_MS, PEEK_SETTLE_MS, PEEK_MAX_MS, PEEK_UNMOUNT_WAIT_MS, CONFIG_POLL_MIN_MS, CONFIG_POLL_MAX_MS, TASK_SEL, WS_SEL, LOADER_FALLBACK_PATHS, runningByWs, peekTimers, activePeeks, peekedWs, wsWithRows, servicesRef, servicesMissAt, synthClick, headInfoCache, PROJECT_HEAD_TEXTS, TASK_HEAD_TEXTS, SEC_SPIN_CLASS, anyActiveCache, sectionActive, activeProjectPaths, authActiveByWs, peekChain, PEEK_EXEMPT_CLASS, cssAttr, TOUCH_WINDOW_MS, wsTouchAt, pollMs, scanDebounce;
   var init_ws_running = __esm({
     "src/inject/features/ws-running.js"() {
       init_core();
@@ -3102,6 +3160,7 @@
       peekedWs = /* @__PURE__ */ new Set();
       wsWithRows = /* @__PURE__ */ new Set();
       servicesRef = null;
+      servicesMissAt = 0;
       synthClick = (el) => {
         try {
           el.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
@@ -3117,8 +3176,9 @@
       activeProjectPaths = /* @__PURE__ */ new Set();
       authActiveByWs = /* @__PURE__ */ new Map();
       setInterval(() => {
-        if (!anyActiveCache.busy && Date.now() - anyActiveCache.at >= 1e4) globalAnyActive();
-      }, 1e4);
+        if (document.hidden || !enabled2) return;
+        if (!anyActiveCache.busy && Date.now() - anyActiveCache.at >= 3e4) globalAnyActive();
+      }, 3e4);
       peekChain = Promise.resolve();
       PEEK_EXEMPT_CLASS = "zcodepro-peek-exempt";
       cssAttr = (v) => String(v).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
@@ -3137,6 +3197,7 @@
   });
   function loadHotkeys() {
     return getConfig(true).then((cfg) => {
+      featureOn = !(cfg.features && cfg.features.sessionSwitch === false);
       const sc = cfg && cfg.shortcuts;
       if (sc && typeof sc === "object") {
         for (const k of Object.keys(DEFAULT_SHORTCUTS)) {
@@ -3155,13 +3216,12 @@
     return i > 0 ? key.slice(0, i) : key;
   }
   function findCurrent() {
-    for (const el of document.querySelectorAll("[data-task-item-key]")) {
-      if ((el.className + "").includes("bg-selected")) return el;
-    }
-    return null;
+    return document.querySelector("[data-task-item-key].bg-selected");
   }
   function record(key) {
-    if (key) unseen.delete(key);
+    if (key) {
+      for (const k of unseen) if (idOf(k) === idOf(key)) unseen.delete(k);
+    }
     if (key && key !== current) {
       current = key;
       mru = mru.filter((k) => k !== key);
@@ -3169,11 +3229,29 @@
       if (mru.length > MRU_LIMIT) mru.length = MRU_LIMIT;
     }
   }
+  function collectEndedUnseen(prevKeys, nowKeys, currentKey2, unseenSet) {
+    const out = new Set(unseenSet);
+    if (prevKeys) {
+      const nowIds = new Set([...nowKeys].map(idOf));
+      const curId = currentKey2 == null ? "" : idOf(currentKey2);
+      for (const k of prevKeys) {
+        if (!nowIds.has(idOf(k)) && idOf(k) !== curId) out.add(k);
+      }
+    }
+    return out.size > UNSEEN_LIMIT ? new Set([...out].slice(-UNSEEN_LIMIT)) : out;
+  }
   function scan2() {
     const cur = findCurrent();
     if (cur) record(cur.getAttribute("data-task-item-key"));
+    const seen2 = /* @__PURE__ */ new Set();
     for (const el of document.querySelectorAll("[data-task-item-key]")) {
-      titles.set(el.getAttribute("data-task-item-key"), firstLineOf(el));
+      const key = el.getAttribute("data-task-item-key");
+      seen2.add(key);
+      titles.set(key, firstLineOf(el));
+    }
+    if (titles.size > 500) {
+      const keep = /* @__PURE__ */ new Set([...seen2, current, ...mru, ...popupList || [], ...unseen]);
+      for (const k of titles.keys()) if (!keep.has(k)) titles.delete(k);
     }
   }
   function taskRowMutations(muts) {
@@ -3219,7 +3297,6 @@
   }
   function attentionList() {
     const run = wsRunningKeys();
-    const idOf = (k) => k.slice(k.lastIndexOf(":") + 1);
     const runKeyById = new Map([...run].map((k) => [idOf(k), k]));
     const listed = /* @__PURE__ */ new Set();
     const head = [];
@@ -3244,7 +3321,7 @@
     return [...head, ...tail];
   }
   function activeList() {
-    return popupMode === "attention" ? attentionList() : mru;
+    return popupList || (popupMode === "attention" ? attentionList() : mru);
   }
   function closePopup(commit) {
     if (!popupEl) return;
@@ -3252,6 +3329,7 @@
     const list = activeList();
     popupEl.remove();
     popupEl = null;
+    popupList = null;
     if (commit && list[idx] && list[idx] !== current) {
       void switchTo(list[idx]).then((ok) => {
         if (!ok) showToast(t().switcherFailed, "error");
@@ -3335,10 +3413,12 @@
     popupMode = mode;
     visibleCount = INITIAL_COUNT;
     highlight = 0;
+    popupList = null;
     const cfg = await getConfig().catch(() => null);
     aliasesCache = cfg && cfg.aliases && typeof cfg.aliases === "object" ? cfg.aliases : {};
     if (mode === "attention") await fetchMissingTitles(attentionList()).catch(() => {
     });
+    popupList = activeList();
     ensureStyle();
     const L = t();
     popupEl = h(
@@ -3409,15 +3489,8 @@
     setInterval(() => {
       if (document.hidden) return;
       const now = wsRunningKeys();
-      if (lastRunKeys) {
-        const idOf = (k) => k.slice(k.lastIndexOf(":") + 1);
-        const nowIds = new Set([...now].map(idOf));
-        for (const k of lastRunKeys) {
-          if (!nowIds.has(idOf(k)) && k !== current) unseen.add(k);
-        }
-      }
+      unseen = collectEndedUnseen(lastRunKeys, now, current, unseen);
       lastRunKeys = now;
-      if (unseen.size > UNSEEN_LIMIT) unseen = new Set([...unseen].slice(-UNSEEN_LIMIT));
     }, 1e4);
     document.addEventListener("click", (e) => {
       const item = e.target instanceof Element && e.target.closest("[data-task-item-key]");
@@ -3451,6 +3524,7 @@
       const k = e.key.toLowerCase();
       const isHot = k === hotkeys.switchLast || k === hotkeys.switchPrev || k === hotkeys.switchNext || k === hotkeys.switchRecent || k === hotkeys.switchAttention;
       if (!isHot) return;
+      if (!featureOn) return;
       e.preventDefault();
       e.stopImmediatePropagation();
       void (async () => {
@@ -3506,7 +3580,7 @@
     }, true);
     window.addEventListener("blur", () => closePopup(false));
   }
-  var MRU_LIMIT, SCAN_DEBOUNCE_MS2, SCAN_FALLBACK_MS2, INITIAL_COUNT, PAGE_SIZE, UNSEEN_LIMIT, mru, current, titles, popupEl, aliasesCache, highlight, scanDebounce2, popupMode, visibleCount, unseen, lastRunKeys, hotkeys, rowSel2, inTaskRow, openPopupInflight;
+  var MRU_LIMIT, SCAN_DEBOUNCE_MS2, SCAN_FALLBACK_MS2, INITIAL_COUNT, PAGE_SIZE, UNSEEN_LIMIT, mru, current, titles, popupEl, popupList, aliasesCache, highlight, scanDebounce2, popupMode, visibleCount, unseen, lastRunKeys, hotkeys, featureOn, idOf, rowSel2, inTaskRow, openPopupInflight;
   var init_session_switch = __esm({
     "src/inject/features/session-switch.js"() {
       init_core();
@@ -3523,6 +3597,7 @@
       current = null;
       titles = /* @__PURE__ */ new Map();
       popupEl = null;
+      popupList = null;
       aliasesCache = {};
       highlight = 0;
       scanDebounce2 = 0;
@@ -3531,6 +3606,11 @@
       unseen = /* @__PURE__ */ new Set();
       lastRunKeys = null;
       hotkeys = { ...DEFAULT_SHORTCUTS };
+      featureOn = true;
+      idOf = (k) => {
+        const s = String(k || "");
+        return s.slice(s.lastIndexOf(":") + 1);
+      };
       rowSel2 = "[data-task-item-key]";
       inTaskRow = (node) => node instanceof Element && !!node.closest && !!node.closest(rowSel2);
       openPopupInflight = null;
@@ -4356,7 +4436,9 @@
       const L = t();
       const fire = (endpoint, label) => {
         rpc(endpoint, { method: "POST", body: { path } }).then((r) => {
-          if (r && r.ok === false) showToast(`${label}\u5931\u8D25\uFF1A${r.error || "\u672A\u77E5\u9519\u8BEF"}`, "error");
+          if (r && r.ok === false) {
+            showToast(L.fileActionFailed.replaceAll("{label}", label).replaceAll("{err}", errText(r) || L.unknownError), "error");
+          }
         }).catch(() => {
         });
       };
@@ -4572,10 +4654,10 @@
   function startImageMenu() {
     if (typeof window === "undefined") return;
     if (typeof navigator.clipboard?.write !== "function" || typeof window.ClipboardItem === "undefined") return;
-    let enabled12 = true;
+    let enabled14 = true;
     const refresh = () => {
       void getConfig().then((c) => {
-        enabled12 = !(c.features && c.features.imageCopy === false);
+        enabled14 = !(c.features && c.features.imageCopy === false);
       });
     };
     refresh();
@@ -4584,7 +4666,7 @@
       const img = copyTargetOf(e.target, e.clientX, e.clientY);
       if (!img) return;
       e.preventDefault();
-      if (enabled12) showMenu(e.clientX, e.clientY, img);
+      if (enabled14) showMenu(e.clientX, e.clientY, img);
       refresh();
     }, true);
   }
@@ -4596,7 +4678,7 @@
   // src/inject/provider-fields.js
   init_core();
   var PROVIDER_FIELD_CLS = "h-8 w-full rounded-lg border border-border bg-input px-2.5 text-ui-sm text-foreground outline-none transition-shadow placeholder:text-foreground-subtle focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40";
-  function comboField(current2, options, onChange, { disabled = false, placeholder = "", staleLabel = "\uFF08\u624B\u52A8\u8F93\u5165\uFF09", emptyLabel = "" } = {}) {
+  function comboField(current2, options, onChange, { disabled = false, placeholder = "", staleLabel = t().manualInput, emptyLabel = "" } = {}) {
     const sel = h("select", { class: PROVIDER_FIELD_CLS, disabled: disabled || void 0 });
     const input = h("input", { type: "text", value: current2, placeholder, class: PROVIDER_FIELD_CLS, disabled: disabled || void 0 });
     const sync3 = () => {
@@ -5005,7 +5087,13 @@
               return footer;
             })()
           );
-        })();
+        })().catch((err) => {
+          console.warn("[zcodepro] alias-migrate \u5F39\u7A97\u5185\u5BB9\u52A0\u8F7D\u5931\u8D25: " + (err && err.message));
+          try {
+            close();
+          } catch {
+          }
+        });
       }
     });
   }
@@ -5360,6 +5448,7 @@
 
   // src/inject/features/theme.js
   init_core();
+  var mediaAuth = () => "t=" + encodeURIComponent(liveBoot().token || "");
   var SC = (light, dark, lightA, darkA) => ({ light, dark, lightA, darkA });
   var SCALES = {
     dracula: SC(
@@ -5726,6 +5815,21 @@
     }
     for (const t2 of wpTimers) clearInterval(t2);
     wpTimers.clear();
+    if (webviewScanTimer) {
+      clearInterval(webviewScanTimer);
+      webviewScanTimer = null;
+    }
+    for (const rec of [...wvStyled]) {
+      if (rec.handler) rec.el.removeEventListener("dom-ready", rec.handler);
+      if (rec.key) {
+        try {
+          void rec.el.removeCSS(rec.key).catch(() => {
+          });
+        } catch {
+        }
+      }
+      wvStyled.splice(wvStyled.indexOf(rec), 1);
+    }
   }
   var webviewScanTimer = null;
   var wvStyled = [];
@@ -5848,7 +5952,7 @@
     el.dataset.wpFps = String(cap);
     if (!cap || !name) {
       if (!cap && name && el.src && el.src.includes("/bg/transcode/file/")) {
-        const orig = (from === "folder" ? `${helperUrl}/bg/folder/file/` : `${helperUrl}/bg/file/`) + encodeURIComponent(name);
+        const orig = (from === "folder" ? `${helperUrl}/bg/folder/file/` : `${helperUrl}/bg/file/`) + encodeURIComponent(name) + "?" + mediaAuth();
         const at = el.currentTime;
         el.src = orig;
         el.addEventListener("loadedmetadata", () => {
@@ -5873,7 +5977,7 @@
       const swapTo = () => {
         if (!el.isConnected) return;
         if (el.dataset.wpFps !== reqCap) return;
-        const target = `${helperUrl}/bg/transcode/file/${res.key}.mp4`;
+        const target = `${helperUrl}/bg/transcode/file/${res.key}.mp4?${mediaAuth()}`;
         if (el.src === target) return;
         const at = el.currentTime;
         el.src = target;
@@ -5902,7 +6006,7 @@
           wpTimers.delete(poll);
           return;
         }
-        void fetch(`${helperUrl}/bg/transcode/file/${res.key}.mp4`).then((r) => {
+        void fetch(`${helperUrl}/bg/transcode/file/${res.key}.mp4?${mediaAuth()}`).then((r) => {
           if (!r.ok) return;
           clearInterval(poll);
           wpTimers.delete(poll);
@@ -5974,6 +6078,7 @@
     const markBgOn = () => {
       bgStyleEl.textContent = `html.zcodepro-bg-on{background-color:rgb(${rgb}) !important;}html.zcodepro-bg-on webview{background:transparent !important;}`;
       root.classList.add("zcodepro-bg-on");
+      applyWebviewTransparency();
     };
     if (sourceSig === lastWpSig && wpSlide && wpSlide.isConnected) {
       markBgOn();
@@ -5984,6 +6089,7 @@
     const commit = () => {
       lastWpSig = sourceSig;
       clearWpTimers();
+      applyWebviewTransparency();
       wpTickFn = null;
     };
     markBgOn();
@@ -6111,7 +6217,7 @@
     };
     const showFile = (f, from) => {
       wpItem = { name: f.name, from };
-      const u = from === "folder" ? `${helperUrl}/bg/folder/file/${encodeURIComponent(f.name)}` : `${helperUrl}/bg/file/${encodeURIComponent(f.name)}`;
+      const u = from === "folder" ? `${helperUrl}/bg/folder/file/${encodeURIComponent(f.name)}?${mediaAuth()}` : `${helperUrl}/bg/file/${encodeURIComponent(f.name)}?${mediaAuth()}`;
       if (/\.(mp4|webm|mov)$/i.test(f.name)) setupVideo(u, f.name, from);
       else setImage(u);
     };
@@ -6260,7 +6366,7 @@
         regionState[region] = null;
       };
       if (r.mode === "library") {
-        if (r.file) setState(`url("${helperUrl}/bg/file/${encodeURIComponent(r.file)}")`, null);
+        if (r.file) setState(`url("${helperUrl}/bg/file/${encodeURIComponent(r.file)}?${mediaAuth()}")`, null);
         else drop();
       } else if (r.mode === "url") {
         const u = safeUrl(r.url);
@@ -6278,7 +6384,7 @@
             regionFolderIdx[region] = (regionFolderIdx[region] + 1) % files.length;
             idx = regionFolderIdx[region];
           }
-          const image = `url("${helperUrl}/bg/folder/file/${encodeURIComponent(files[idx].name)}?dir=${encodeURIComponent(r.folder)}")`;
+          const image = `url("${helperUrl}/bg/folder/file/${encodeURIComponent(files[idx].name)}?dir=${encodeURIComponent(r.folder)}&${mediaAuth()}")`;
           if (regionState[region]) regionState[region].image = image;
           addRule(region, image);
           flush();
@@ -6327,7 +6433,7 @@
       }).catch(() => {
         pollFail = Math.max(pollFail + 1, 3);
       });
-    }, 5e3);
+    }, 3e4);
     document.addEventListener("visibilitychange", applyMediaState);
     window.addEventListener("focus", applyMediaState);
     window.addEventListener("blur", applyMediaState);
@@ -6986,10 +7092,14 @@
         renderTabs();
         const savedStyles = config.styles || {};
         let saveTimer = null;
+        let pendingStyles = {};
         const persistStyles = (partial) => {
+          Object.assign(pendingStyles, partial);
           clearTimeout(saveTimer);
           saveTimer = setTimeout(async () => {
-            const res = await rpc("/config", { method: "POST", body: { styles: partial } });
+            const body2 = pendingStyles;
+            pendingStyles = {};
+            const res = await rpc("/config", { method: "POST", body: { styles: body2 } });
             clearConfigCache();
             if (res.ok) applyStyles(res.config && res.config.styles || savedStyles);
             else showToast(L.failed + ": " + errText(res), "error");
@@ -7300,7 +7410,7 @@
             clearConfigCache();
             if (res.ok) {
               config.features = { ...config.features || {}, statusBar: to };
-            }
+            } else showToast(L.failed + ": " + errText(res), "error");
             window.dispatchEvent(new CustomEvent("zcodepro:config-changed"));
             renderMaster();
           });
@@ -7358,7 +7468,7 @@
           });
           return n;
         };
-        const bgUrl = (name) => `${HELPER_URL}/bg/file/${encodeURIComponent(name)}`;
+        const bgUrl = (name) => `${HELPER_URL}/bg/file/${encodeURIComponent(name)}?t=${encodeURIComponent(liveBoot().token || "")}`;
         const saveTheme = async (patch) => {
           themeCfg = {
             skin: patch.skin !== void 0 ? patch.skin : themeCfg.skin,
@@ -7391,7 +7501,7 @@
             if (themeCfg.bg.mode === "library" && themeCfg.bg.file && !bgFiles.some((f) => sameName2(f.name, themeCfg.bg.file))) {
               themeCfg = { ...themeCfg, bg: { ...themeCfg.bg, file: "" } };
               await saveTheme({ bg: { file: "" } });
-              showToast(L.themeBgDeletedActive, "success");
+              showToast(L.themeBgDeletedActive, "warning");
               return;
             }
           }
@@ -7919,7 +8029,7 @@
               h(
                 "p",
                 { class: "text-ui-xs/relaxed text-foreground-subtle" },
-                themeCfg.bg.folder ? folderInfo.count > 0 ? L.themeBgFolderCount.replaceAll("{n}", String(folderInfo.count)) : L.themeBgFolderMissing : L.themeBgFolderHint
+                themeCfg.bg.folder ? folderInfo.count > 0 ? (themeCfg.bg.intervalMin > 0 ? L.themeBgFolderCount : L.themeBgFolderCountIdle).replaceAll("{n}", String(folderInfo.count)) : L.themeBgFolderMissing : L.themeBgFolderHint
               )
             ))
           ] : themeCfg.bg.mode === "url" ? [
@@ -8425,6 +8535,23 @@
         renderPerfToggle();
         const perfNumberRow = (labelText, tip, key, fallback, min) => {
           const v = Number(config[key]);
+          const nf = numberField({
+            value: Number.isFinite(v) ? v : fallback,
+            fallback,
+            min,
+            max: 1440,
+            step: 1,
+            onCommit: async (n) => {
+              const res = await rpc("/config", { method: "POST", body: { [key]: n } });
+              if (res.ok && res.config) {
+                config[key] = res.config[key];
+                clearConfigCache();
+              } else {
+                showToast(L.failed + ": " + errText(res), "error");
+                nf.set(Number.isFinite(Number(config[key])) ? Number(config[key]) : fallback);
+              }
+            }
+          });
           return h(
             "div",
             { class: "flex items-center justify-between gap-2 px-2 py-1.5" },
@@ -8437,20 +8564,7 @@
             h(
               "div",
               { class: "flex shrink-0 items-center gap-1" },
-              numberField({
-                value: Number.isFinite(v) ? v : fallback,
-                fallback,
-                min,
-                max: 1440,
-                step: 1,
-                onCommit: async (n) => {
-                  const res = await rpc("/config", { method: "POST", body: { [key]: n } });
-                  if (res.ok && res.config) {
-                    config[key] = res.config[key];
-                    clearConfigCache();
-                  }
-                }
-              }).el,
+              nf.el,
               h("span", { class: "text-ui-xs text-foreground-subtle" }, L.idleReclaimUnit)
             )
           );
@@ -9021,7 +9135,7 @@
                 h(
                   "div",
                   { class: "flex flex-wrap items-center gap-2" },
-                  h("span", { class: "shrink-0 whitespace-nowrap text-ui-xs/relaxed text-foreground-subtle" }, `\u63D2\u4EF6 ${visionRes.pluginVersion || "\u2014"}`)
+                  h("span", { class: "shrink-0 whitespace-nowrap text-ui-xs/relaxed text-foreground-subtle" }, `${L.pluginLabel} ${visionRes.pluginVersion || "\u2014"}`)
                 )
               ),
               h("div", { class: "mt-3 flex justify-end" }, initBtn)
@@ -9186,7 +9300,7 @@
             const res = await rpc("/vision/test", { method: "POST", body: {} });
             testBtn.disabled = false;
             testBtn.textContent = L.visionTest;
-            visionTestPre.textContent = res.output || res.error || "";
+            visionTestPre.textContent = res.output || errText(res) || "";
           });
           paneVision.replaceChildren(
             h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.visionDesc),
@@ -9197,7 +9311,7 @@
               h(
                 "div",
                 { class: "flex flex-wrap items-center gap-2" },
-                h("span", { class: "shrink-0 whitespace-nowrap text-ui-xs/relaxed text-foreground-subtle" }, `\u63D2\u4EF6 ${visionRes.pluginVersion || "\u2014"}`),
+                h("span", { class: "shrink-0 whitespace-nowrap text-ui-xs/relaxed text-foreground-subtle" }, `${L.pluginLabel} ${visionRes.pluginVersion || "\u2014"}`),
                 h(
                   "div",
                   { class: "ml-auto" },
@@ -9332,7 +9446,7 @@
         let rtkLocText = "";
         const renderRtkVersion = (meta) => {
           const v = String(meta.version || "").replace(/^rtk\s+/i, "").trim();
-          rtkVersionLine.textContent = `\u63D2\u4EF6 ${meta.pluginVersion || "\u2014"}${v ? ` \xB7 rtk ${v}` : ""}`;
+          rtkVersionLine.textContent = `${L.pluginLabel} ${meta.pluginVersion || "\u2014"}${v ? ` \xB7 rtk ${v}` : ""}`;
           rtkLocText = meta.binPath || "";
         };
         renderRtkVersion(rtkRes);
@@ -9547,7 +9661,7 @@
         let hrLocText = "";
         const hrSwitchRow = h("div");
         const renderHrVersion = (meta) => {
-          hrVersionLine.textContent = `\u63D2\u4EF6 ${meta.pluginVersion || "\u2014"}${meta.version ? ` \xB7 headroom ${meta.version}` : ""}`;
+          hrVersionLine.textContent = `${L.pluginLabel} ${meta.pluginVersion || "\u2014"}${meta.version ? ` \xB7 headroom ${meta.version}` : ""}`;
           hrLocText = meta.binPath || "";
         };
         renderHrVersion(headroomRes);
@@ -9633,10 +9747,10 @@
               const doneMsg = isStart ? L.hrStarted : L.hrStopped;
               const timeoutMs = isStart ? 90 * 1e3 : 30 * 1e3;
               const t0 = Date.now();
-              const timerSpan = h("span", { class: "text-ui-sm text-foreground-subtle/70" }, msg + " (0s)");
+              const timerSpan = h("span", { class: "text-ui-sm text-foreground-subtle/70" }, msg + (isZhLocale() ? "\uFF080s\uFF09" : " (0s)"));
               hrStatusLine.replaceChildren(timerSpan);
               timerIv = setInterval(() => {
-                timerSpan.textContent = msg + ` (${Math.round((Date.now() - t0) / 1e3)}s)`;
+                timerSpan.textContent = msg + (isZhLocale() ? `\uFF08${Math.round((Date.now() - t0) / 1e3)}s\uFF09` : ` (${Math.round((Date.now() - t0) / 1e3)}s)`);
               }, 1e3);
               void (async () => {
                 const kick = await rpcDone;
@@ -9971,7 +10085,7 @@
           if (!titleGenCfg) {
             paneTitleGen.replaceChildren(
               h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.titleGenShortDesc),
-              h("p", { class: "mt-2 text-ui-sm text-destructive" }, L.visionLoadFailed + ": " + errText(titleGenRes))
+              h("p", { class: "mt-2 text-ui-sm text-destructive" }, L.titleGenLoadFailed + ": " + errText(titleGenRes))
             );
             return;
           }
@@ -10214,6 +10328,29 @@
   init_core();
   var installed = false;
   var dragKey = null;
+  var lastOverRow = null;
+  var lastOverBefore = false;
+  var moveRaf = 0;
+  var pendingMove = null;
+  function applyMove() {
+    const mv = pendingMove;
+    pendingMove = null;
+    if (!mv || !dragKey) return;
+    const list = mv.row.parentElement;
+    if (!list) return;
+    const src = [...list.querySelectorAll("[data-task-item-key]")].find((el) => el.getAttribute("data-task-item-key") === dragKey);
+    if (src && src !== mv.row) {
+      mv.row.parentNode.insertBefore(src, mv.before ? mv.row : mv.row.nextSibling);
+    }
+  }
+  function scheduleMove(row, before) {
+    pendingMove = { row, before };
+    if (moveRaf) return;
+    moveRaf = requestAnimationFrame(() => {
+      moveRaf = 0;
+      applyMove();
+    });
+  }
   function startTaskOrderWatcher() {
     if (installed || typeof document === "undefined") return;
     installed = true;
@@ -10224,6 +10361,12 @@
     }, true);
     document.addEventListener("dragend", () => {
       dragKey = null;
+      lastOverRow = null;
+      pendingMove = null;
+      if (moveRaf) {
+        cancelAnimationFrame(moveRaf);
+        moveRaf = 0;
+      }
     }, true);
     document.addEventListener("dragover", (e) => {
       if (!dragKey) return;
@@ -10233,13 +10376,14 @@
       if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
       const rect = row.getBoundingClientRect();
       const before = e.clientY < rect.top + rect.height / 2;
-      const src = [...row.parentElement.querySelectorAll("[data-task-item-key]")].find((el) => el.getAttribute("data-task-item-key") === dragKey);
-      if (src && src !== row) {
-        row.parentNode.insertBefore(src, before ? row : row.nextSibling);
-      }
+      if (row === lastOverRow && before === lastOverBefore) return;
+      lastOverRow = row;
+      lastOverBefore = before;
+      scheduleMove(row, before);
     }, true);
     document.addEventListener("drop", (e) => {
       if (!dragKey) return;
+      applyMove();
       const row = e.target.closest && e.target.closest("[data-task-item-key]");
       const list = row ? row.parentElement : null;
       if (!list) return;
@@ -10248,11 +10392,12 @@
       e.preventDefault();
       e.stopPropagation();
       dragKey = null;
-      void persistOrder(rows.map((el) => el.getAttribute("data-task-item-key")));
+      const hint = row.closest("section[data-project-id]") ? "project" : row.closest("section") ? "section" : "pinned";
+      void persistOrder(rows.map((el) => el.getAttribute("data-task-item-key")), hint);
     }, true);
   }
   var persisting = false;
-  async function persistOrder(ordered) {
+  async function persistOrder(ordered, hint) {
     if (persisting) return;
     persisting = true;
     try {
@@ -10260,9 +10405,7 @@
       if (config.features && config.features.taskOrder === false) return;
       ensureStyle();
       const L = t();
-      const workspaces = new Set(ordered.map((k) => k.slice(0, k.lastIndexOf(":"))));
-      const scope = workspaces.size === 1 ? "workspace" : "group-members";
-      const res = await rpc("/task-order", { method: "POST", body: { scope, ordered } });
+      const res = await rpc("/task-order", { method: "POST", body: { hint, ordered } });
       if (res && res.ok) {
         showToast(L.taskOrderSaved, "success");
         setTimeout(() => location.reload(), 600);
@@ -10313,7 +10456,9 @@
     });
     return found;
   }
+  var bridgeMissAt = 0;
   function findBridge() {
+    if (bridgeMissAt && Date.now() - bridgeMissAt < 6e4) return null;
     let holder = null;
     const seen2 = /* @__PURE__ */ new Set();
     const scan6 = (o) => {
@@ -10333,6 +10478,7 @@
       }
       return false;
     });
+    if (!holder) bridgeMissAt = Date.now();
     return holder;
   }
   function sessionScope() {
@@ -10411,7 +10557,11 @@
         ev.stopPropagation();
         const sc = sessionScope();
         const open = findOpenSidePane();
-        if (!sc || !open) {
+        if (!open) {
+          showToast(L.ntpOpenMissing, "warning");
+          return;
+        }
+        if (!sc) {
           showToast(L.ntpNeedSession, "warning");
           return;
         }
@@ -10477,11 +10627,13 @@
   var EST_CHARS_PER_TOKEN = 2;
   var streamSample = null;
   var streamEst = null;
+  function composerEl() {
+    return document.querySelector("main textarea, main [contenteditable=true], form textarea, form [contenteditable=true]") || document.querySelector("textarea, [contenteditable=true]");
+  }
   function sampleStream() {
-    const main = document.querySelector("main") || document.body;
-    const ta = document.querySelector("textarea, [contenteditable=true]");
-    const typed = ta ? String(ta.value != null ? ta.value : ta.textContent || "").length : 0;
-    const len = Math.max(0, (main.textContent || "").length - typed);
+    const rows = document.querySelectorAll('[class*="@md/conversation"] [class*="assistant-row"]');
+    const last = rows.length ? rows[rows.length - 1] : null;
+    const len = last ? (last.textContent || "").length : 0;
     const now = Date.now();
     const prev = streamSample;
     streamSample = { len, at: now };
@@ -10491,27 +10643,44 @@
   }
   var lastRenderedHtml = null;
   function selectedSessionId() {
-    const row = [...document.querySelectorAll("[data-task-item-key]")].find((e) => (e.className + "").includes("bg-selected"));
+    const row = document.querySelector("[data-task-item-key].bg-selected");
     const key = row ? row.getAttribute("data-task-item-key") : "";
     const i = key.lastIndexOf(":sess");
     return i > 0 ? key.slice(i + 1) : "";
   }
+  var ctxEl = null;
+  var ctxMissAt = 0;
   function readCtx() {
-    for (const el of document.querySelectorAll("[title], [aria-label]")) {
-      if (el.closest(".zcodepro-statusbar")) continue;
+    const parse = (el) => {
       const text = el.getAttribute("title") || el.getAttribute("aria-label") || "";
-      if (!/上下文|context/i.test(text)) continue;
+      if (!/上下文|context/i.test(text)) return null;
       const m = text.match(/([\d][\d,]*)\s*\/[^0-9]*([\d][\d,]*)/);
-      if (!m) continue;
+      if (!m) return null;
       const used = Number(m[1].replace(/,/g, ""));
       const size = Number(m[2].replace(/,/g, ""));
-      if (used > 0 && size > used) return { used, size };
+      return used > 0 && size > used ? { used, size } : null;
+    };
+    if (ctxEl && ctxEl.isConnected) {
+      const hit = parse(ctxEl);
+      if (hit) return hit;
+      ctxEl = null;
     }
+    if (Date.now() - ctxMissAt < 3e4) return null;
+    for (const el of document.querySelectorAll("[title], [aria-label]")) {
+      if (el.closest(".zcodepro-statusbar")) continue;
+      const hit = parse(el);
+      if (hit) {
+        ctxEl = el;
+        return hit;
+      }
+    }
+    ctxMissAt = Date.now();
     return null;
   }
   var usageSvc = null;
   var official = null;
   var officialAt = 0;
+  var officialFails = 0;
   function eachFiber2(visit) {
     const rootEl = document.getElementById("root");
     const key = rootEl && Object.keys(rootEl).find((k) => k.startsWith("__reactContainer$"));
@@ -10548,7 +10717,7 @@
     return found;
   }
   function refreshOfficial() {
-    const period = official ? 5 * 6e4 : 3e4;
+    const period = official ? 5 * 6e4 : Math.min(3e4 * 2 ** officialFails, 10 * 6e4);
     if (Date.now() - officialAt < period) return;
     officialAt = Date.now();
     void (async () => {
@@ -10562,17 +10731,22 @@
         ]);
         const now = /* @__PURE__ */ new Date();
         const key = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0");
-        let todayTokens = 0;
+        let todayTokens = null;
         const day = (d7 && Array.isArray(d7.dailyModelUsage) ? d7.dailyModelUsage : []).find((d) => d.date === key);
-        if (day) for (const m of day.models || []) todayTokens += Number(m.totalTokens) || 0;
+        if (day) {
+          todayTokens = 0;
+          for (const m of day.models || []) todayTokens += Number(m.totalTokens) || 0;
+        }
         official = {
           todayTokens,
           totalTokens: Number(all && all.summary && all.summary.totalTokens) || 0,
           totalSessions: Number(all && all.summary && all.summary.totalSessions) || 0
         };
+        officialFails = 0;
         renderBar();
       } catch {
         usageSvc = null;
+        officialFails = Math.min(officialFails + 1, 6);
       }
     })();
   }
@@ -10601,6 +10775,7 @@
       return (yi % 1 === 0 ? String(yi) : yi.toFixed(1)) + "\u4EBF";
     }
     const wan = Math.round(n / 1e4 * 10) / 10;
+    if (wan >= 1e4) return Math.round(n / 1e8 * 10) / 10 + "\u4EBF";
     return (wan % 1 === 0 ? String(wan) : wan.toFixed(1)) + "\u4E07";
   }
   function itemContent(id, L) {
@@ -10616,11 +10791,12 @@
         const useEst = !!streaming || !(r && r.out > 0);
         const shown = useEst ? est : r.out;
         if (shown == null) return null;
-        const estMark = useEst && est != null ? isZhLocale() ? "\u2248" : "\u2248" : "";
-        const detail = r ? `${L.sbLabelOut} ${r.out.toLocaleString()} tok/s \xB7 ${isZhLocale() ? "\u603B\u91CF" : "total"} ${r.total.toLocaleString()} tok/s` : isZhLocale() ? "\u65E0 usage \u6570\u636E\uFF0C\u6309\u6587\u672C\u589E\u957F\u4F30\u7B97" : "no usage data, estimated from text growth";
+        const zh2 = isZhLocale();
+        const estMark = useEst && est != null ? "\u2248" : "";
+        const detail = r ? `${L.sbLabelOut} ${r.out.toLocaleString()} tok/s \xB7 ${zh2 ? "\u603B\u91CF" : "total"} ${r.total.toLocaleString()} tok/s` : zh2 ? "\u65E0 usage \u6570\u636E\uFF0C\u6309\u6587\u672C\u589E\u957F\u4F30\u7B97" : "no usage data, estimated from text growth";
         return {
           html: sbIcon("tokRate") + label(L.sbLabelOut) + `<b>${estMark}${fmtNum(Math.round(shown * 10) / 10)} tok/s</b>`,
-          title: `${L.sbItemTokRate}${isZhLocale() ? "\uFF08\u672C\u4F1A\u8BDD\uFF09" : " (this session)"}\uFF1A${detail}`,
+          title: `${L.sbItemTokRate}${zh2 ? "\uFF08\u672C\u4F1A\u8BDD\uFF09\uFF1A" : " (this session): "}${detail}`,
           tone: ""
         };
       }
@@ -10631,7 +10807,7 @@
           const tone = pct >= 95 ? "danger" : pct >= 80 ? "warn" : "";
           return {
             html: sbIcon("ctx") + label(L.sbLabelCtx) + `<b>${fmtNum(dom.used)}/${fmtNum(dom.size)}${isZhLocale() ? "\uFF08" : "("}${pct}%${isZhLocale() ? "\uFF09" : ")"}</b>`,
-            title: `${L.sbItemCtx}\uFF1A${dom.used.toLocaleString()} / ${dom.size.toLocaleString()}`,
+            title: `${L.sbItemCtx}${isZhLocale() ? "\uFF1A" : ": "}${dom.used.toLocaleString()} / ${dom.size.toLocaleString()}`,
             tone
           };
         }
@@ -10643,7 +10819,7 @@
         return n > 0 ? { html: sbIcon("asks") + label(L.sbLabelQuestions) + String(n), title: L.sbItemQuestions } : null;
       }
       case "todayTokens": {
-        const n = official ? official.todayTokens : g ? g.todayTokens : 0;
+        const n = official && official.todayTokens != null ? official.todayTokens : g ? g.todayTokens : 0;
         return n > 0 ? { html: sbIcon("today") + label(L.sbLabelToday) + fmtNum(n), title: L.sbItemTodayTokens } : null;
       }
       case "totalTokens": {
@@ -10659,7 +10835,7 @@
     }
   }
   function renderBar() {
-    const ta = document.querySelector("textarea, [contenteditable=true]");
+    const ta = composerEl();
     const host = ta && (ta.closest("form") || ta.parentElement);
     if (!enabled4 || !host || !host.parentElement) {
       if (barEl) barEl.remove();
@@ -10675,7 +10851,7 @@
       }
       host.parentElement.insertBefore(barEl, host.nextSibling);
     }
-    const hasSession = !![...document.querySelectorAll("[data-task-item-key]")].find((e) => (e.className + "").includes("bg-selected"));
+    const hasSession = !!document.querySelector("[data-task-item-key].bg-selected");
     barEl.style.marginBottom = hasSession ? "-14px" : "0";
     barEl.style.paddingBottom = hasSession ? "0" : "7px";
     const L = t();
@@ -10731,7 +10907,7 @@
         enabled4 = cfg.features ? cfg.features.statusBar !== false : true;
         const saved = cfg.statusBar && Array.isArray(cfg.statusBar.items) ? cfg.statusBar.items : null;
         if (saved) {
-          const list = saved.filter((x) => DEFAULT_STATUS_ITEMS.some((d) => d.id === x.id)).map((x) => ({ ...x }));
+          const list = saved.filter((x) => DEFAULT_STATUS_ITEMS.some((d) => d.id === x.id)).map((x) => ({ ...x, on: x.on !== false }));
           const known = new Set(list.map((x) => x.id));
           for (const d of DEFAULT_STATUS_ITEMS) {
             if (!known.has(d.id)) {
@@ -10804,15 +10980,18 @@
     if (n >= 1e8) return (n / 1e8).toFixed(1) + "\u4EBF";
     if (n >= 1e4) {
       const wan = Math.round(n / 1e4 * 10) / 10;
+      if (wan >= 1e4) return Math.round(n / 1e8 * 10) / 10 + "\u4EBF";
       return (wan % 1 === 0 ? String(wan) : wan.toFixed(1)) + "\u4E07";
     }
     return String(n);
   }
   function findRows() {
     const rows = [];
+    const seen2 = /* @__PURE__ */ new Set();
     for (const btn of document.querySelectorAll('[data-testid^="v4-copy-"]')) {
       const row = btn.parentElement;
-      if (!row || row.dataset.zcodeproTurn) continue;
+      if (!row || seen2.has(row)) continue;
+      seen2.add(row);
       if (!row.querySelector('[data-testid^="v4-feedback-"]')) continue;
       const timeEl = [...row.querySelectorAll("span")].find((s) => /\d{1,2}:\d{2}$/.test((s.textContent || "").trim()));
       if (timeEl) {
@@ -10830,19 +11009,10 @@
     return i > 0 ? key.slice(i + 1) : "";
   }
   function injectRow(row, bucket) {
-    row.dataset.zcodeproTurn = "1";
     if (!bucket || bucket.in + bucket.out <= 0) return;
     const L = t();
-    const el = document.createElement("span");
-    el.dataset.zcodeproTurnSpan = "1";
-    el.className = "select-none text-ui-sm text-foreground-subtlest";
-    el.style.whiteSpace = "nowrap";
-    el.style.display = "inline-flex";
-    el.style.alignItems = "center";
-    el.style.gap = "4px";
-    el.style.marginLeft = "10px";
     const cachePct = bucket.in > 0 && bucket.cacheRead > 0 ? (bucket.cacheRead / bucket.in * 100).toFixed(2) : "";
-    const group = (html) => `<span style="display:inline-flex;align-items:center;gap:2px">${html}</span>`;
+    const group = (html2) => `<span style="display:inline-flex;align-items:center;gap:2px">${html2}</span>`;
     const em = (text) => `<em style="font-style:normal;opacity:.75">${text}</em>`;
     const DOT = '<span style="opacity:.45">\xB7</span>';
     const sections = [];
@@ -10852,43 +11022,72 @@
       else if (s.id === "turnOut") sections.push(group(icon("down") + em(L.sbLabelOut) + fmt(bucket.out)));
       else if (s.id === "turnCache" && cachePct) sections.push(group(icon("cache") + em(L.sbLabelCache) + cachePct + "%"));
     }
+    const old = row.querySelector("[data-zcodepro-turn-span]");
     if (!sections.length) {
+      if (old) old.remove();
       delete row.dataset.zcodeproTurn;
-      el.remove();
       return;
     }
     const VBAR = '<span style="display:inline-block;width:1px;height:10px;background:currentColor;opacity:.3;margin:0 5px"></span>';
-    el.innerHTML = VBAR + sections.join(DOT);
-    el.title = `${L.turnUsageTitle}\uFF1A${L.sbLabelIn} ${bucket.in.toLocaleString()} / ${L.sbLabelOut} ${bucket.out.toLocaleString()}` + (bucket.cacheRead > 0 ? ` / ${L.sbLabelCache} ${bucket.cacheRead.toLocaleString()}` : "");
+    const html = VBAR + sections.join(DOT);
+    if (old && old.innerHTML === html) {
+      row.dataset.zcodeproTurn = "1";
+      return;
+    }
+    if (old) old.remove();
+    const el = document.createElement("span");
+    el.dataset.zcodeproTurnSpan = "1";
+    el.className = "select-none text-ui-sm text-foreground-subtlest";
+    el.style.whiteSpace = "nowrap";
+    el.style.display = "inline-flex";
+    el.style.alignItems = "center";
+    el.style.gap = "4px";
+    el.style.marginLeft = "10px";
+    el.innerHTML = html;
+    el.title = `${L.turnUsageTitle}${isZhLocale() ? "\uFF1A" : ": "}${L.sbLabelIn} ${bucket.in.toLocaleString()} / ${L.sbLabelOut} ${bucket.out.toLocaleString()}` + (bucket.cacheRead > 0 ? ` / ${L.sbLabelCache} ${bucket.cacheRead.toLocaleString()}` : "");
+    row.dataset.zcodeproTurn = "1";
     row.append(el);
   }
   function rowTimeTs(text) {
     const now = /* @__PURE__ */ new Date();
     let m = text.match(/^(\d{1,2}):(\d{2})$/);
     if (m) return new Date(now.getFullYear(), now.getMonth(), now.getDate(), +m[1], +m[2]).getTime();
-    m = text.match(/^昨天\s*(\d{1,2}):(\d{2})$/);
+    m = text.match(/^(昨天|Yesterday)\s*(\d{1,2}):(\d{2})$/);
     if (m) {
       const y = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
-      return new Date(y.getFullYear(), y.getMonth(), y.getDate(), +m[1], +m[2]).getTime();
+      return new Date(y.getFullYear(), y.getMonth(), y.getDate(), +m[2], +m[3]).getTime();
     }
     m = text.match(/^(\d{1,2})\/(\d{1,2})\s*(\d{1,2}):(\d{2})$/);
-    if (m) return new Date(now.getFullYear(), +m[1] - 1, +m[2], +m[3], +m[4]).getTime();
+    if (m) {
+      let ts = new Date(now.getFullYear(), +m[1] - 1, +m[2], +m[3], +m[4]).getTime();
+      if (ts > now.getTime()) ts = new Date(now.getFullYear() - 1, +m[1] - 1, +m[2], +m[3], +m[4]).getTime();
+      return ts;
+    }
     return null;
   }
   var lastSid2 = "";
   function scan3() {
-    if (!enabled5) return;
+    const clearRow = (row) => {
+      for (const el of row.querySelectorAll('[data-zcodepro-turn-span], span[title^="\u672C\u8F6E"], span[title^="Turn"]')) el.remove();
+      delete row.dataset.zcodeproTurn;
+    };
+    const rows = findRows().sort((a, b) => a.ts - b.ts);
+    if (!enabled5) {
+      for (const r of rows) clearRow(r.row);
+      return;
+    }
     const sid = currentSessionId();
     if (sid !== lastSid2) {
       lastSid2 = sid;
       recentTurns = [];
+      for (const r of rows) clearRow(r.row);
       void tick2();
+      return;
     }
-    for (const el of document.querySelectorAll('[data-zcodepro-turn-span], span[title^="\u672C\u8F6E"], span[title^="Turn"]')) el.remove();
-    for (const row of document.querySelectorAll("[data-zcodepro-turn]")) delete row.dataset.zcodeproTurn;
-    if (document.hidden || !recentTurns.length) return;
-    const rows = findRows().sort((a, b) => a.ts - b.ts);
-    if (!rows.length) return;
+    if (document.hidden || !recentTurns.length) {
+      for (const r of rows) clearRow(r.row);
+      return;
+    }
     const agg = rows.map(() => ({ in: 0, out: 0, cacheRead: 0 }));
     const dayOf = (t2) => {
       const d = new Date(t2);
@@ -10908,13 +11107,17 @@
     }
     for (let i = 0; i < rows.length; i++) {
       if (agg[i].in + agg[i].out > 0) injectRow(rows[i].row, agg[i]);
+      else clearRow(rows[i].row);
     }
   }
+  var tickSeq2 = 0;
   async function tick2() {
     if (!enabled5 || document.hidden) return;
     const sid = currentSessionId();
+    const seq = ++tickSeq2;
     const res = await rpc("/stats/usage" + (sid ? "?session=" + encodeURIComponent(sid) : "")).catch(() => null);
     if (res && res.ok && Array.isArray(res.recentTurns)) {
+      if (seq !== tickSeq2 || sid !== currentSessionId()) return;
       recentTurns = res.recentTurns;
       scan3();
     }
@@ -10928,6 +11131,7 @@
     window.addEventListener("zcodepro:config-changed", () => {
       void getConfig().then((cfg) => {
         enabled5 = cfg.features ? cfg.features.statusBar !== false : true;
+        scan3();
       }).catch(() => {
       });
       refreshTurnItems();
@@ -11017,14 +11221,16 @@
   }
   function scheduleEnforce(key, { immediate = false } = {}) {
     if (immediate) {
-      if (enabled6 && pinned) {
-        const want = pinned.get(sessIdOf(key));
-        if (want !== void 0) {
-          for (const item of findRows2(key)) {
-            for (const el of titleElsOf(item)) writeTitle(el, want);
-          }
+      void (async () => {
+        const map = await fetchPinned();
+        if (!map) return;
+        const want = map.get(sessIdOf(key));
+        if (want === void 0) return;
+        for (const item of findRows2(key)) {
+          if (item.querySelector('input, textarea, [contenteditable="true"]')) continue;
+          for (const el of titleElsOf(item)) writeTitle(el, want);
         }
-      }
+      })();
     }
     if (pendingKeys.has(key)) return;
     pendingKeys.add(key);
@@ -11257,11 +11463,11 @@
     return stripped.length < raw.length / 3;
   }
   async function onNewTaskRow(key) {
+    const cfg = await getConfig().catch(() => null);
+    if (!cfg || !cfg.titleGen || cfg.titleGen.enabled !== true) return;
     const selDeadline = Date.now() + SELECT_WAIT_MS;
     while (currentKey() !== key && Date.now() < selDeadline) await sleep2(200);
     if (currentKey() !== key) return;
-    const cfg = await getConfig().catch(() => null);
-    if (!cfg || !cfg.titleGen || cfg.titleGen.enabled !== true) return;
     const sessId = sessIdOf2(key);
     if (!sessId || attempted.has(sessId)) return;
     attempted.add(sessId);
@@ -11293,7 +11499,7 @@
     let lastChange = Date.now();
     try {
       while (Date.now() - startAt < COLLECT_MAX_MS) {
-        await sleep2(500);
+        await sleep2(2e3);
         if (currentKey() !== key) {
           lastChange = Date.now();
           continue;
@@ -11411,7 +11617,7 @@
         void refreshPinnedTitles();
         showToast(L.autoRenameDone + res.title, "success");
       } else {
-        showToast(res && res.error || L.failed, "error");
+        showToast(errText(res) || L.failed, "error");
       }
     } finally {
       runningKeys.delete(key);
@@ -11438,11 +11644,11 @@
   async function injectHoverButtons() {
     const cfg = await getConfig();
     if (!cfg || !cfg.titleGen) return;
-    const enabled12 = cfg.titleGen.hoverBtn !== false;
+    const enabled14 = cfg.titleGen.hoverBtn !== false;
     const L = t();
     for (const area of document.querySelectorAll(ACTIONS_SEL)) {
       const existing = area.querySelector('[data-zcodepro-item="auto-rename"]');
-      if (!enabled12) {
+      if (!enabled14) {
         existing?.remove();
         continue;
       }
@@ -11508,11 +11714,11 @@
       ctxKey = row ? row.getAttribute("data-task-item-key") || "" : "";
       ctxAt = Date.now();
     }, true);
-    let scanTimer3 = 0;
+    let scanTimer2 = 0;
     const schedule = () => {
-      if (scanTimer3) return;
-      scanTimer3 = setTimeout(() => {
-        scanTimer3 = 0;
+      if (scanTimer2) return;
+      scanTimer2 = setTimeout(() => {
+        scanTimer2 = 0;
         void injectHoverButtons();
       }, SCAN_DEBOUNCE_MS5);
     };
@@ -11543,13 +11749,15 @@
   var scanDisabledLogged = false;
   var bootAt = Date.now();
   var startupSweepDone = false;
+  var enabled7 = true;
+  var normP = (v) => String(v || "").replace(/[\\/]+$/, "");
   async function sidebarWorkspaces() {
     const out = /* @__PURE__ */ new Set();
     const res = await rpc("/projects-v2").catch(() => null);
     if (res && res.ok && res.available) {
       for (const proj of res.projects || []) {
         for (const r of proj.roots || []) {
-          const p = String(r.path || "").replace(/[\/]+$/, "");
+          const p = normP(r.path);
           if (p) out.add(p);
         }
       }
@@ -11558,7 +11766,10 @@
   }
   async function reclaim(ws) {
     const services = findServices();
-    if (!services) return false;
+    if (!services) {
+      console.info("[zcodepro] idle-reclaim: \u4F1A\u8BDD\u670D\u52A1\u4E0D\u53EF\u7528\uFF0C\u672C\u8F6E\u4E0D\u56DE\u6536 " + ws);
+      return false;
+    }
     try {
       await services.zcodeTaskService.releaseWorkspacePreparation({
         workspacePath: ws.endsWith("/") ? ws : ws + "/"
@@ -11582,8 +11793,8 @@
       blockUntil.set(ws, Date.now() + cooldownMs);
       return;
     }
-    const currentNow = wsRunningSnapshot().current;
-    if (!currentNow || currentNow === ws) {
+    const currentNow = normP(wsRunningSnapshot().current);
+    if (!currentNow || currentNow === normP(ws)) {
       blockUntil.set(ws, Date.now() + cooldownMs);
       return;
     }
@@ -11591,8 +11802,13 @@
     blockUntil.set(ws, Date.now() + cooldownMs);
   }
   async function tick3() {
+    if (!enabled7) {
+      idleSince.clear();
+      return;
+    }
     const cfg = await getConfig();
-    if ((cfg.features || {}).idleReclaim === false) {
+    enabled7 = !cfg.features || cfg.features.idleReclaim !== false;
+    if (!enabled7) {
       idleSince.clear();
       return;
     }
@@ -11606,8 +11822,8 @@
       idleSince.clear();
       return;
     }
-    const busy = new Set(snap.running);
-    busy.add(snap.current);
+    const busy = new Set(snap.running.map(normP));
+    busy.add(normP(snap.current));
     const workspaces = await sidebarWorkspaces();
     for (const ws of [...idleSince.keys(), ...blockUntil.keys()]) {
       if (!workspaces.has(ws)) {
@@ -11615,7 +11831,7 @@
         blockUntil.delete(ws);
       }
     }
-    const candidates = [...workspaces].filter((ws) => !busy.has(ws));
+    const candidates = [...workspaces].filter((ws) => !busy.has(normP(ws)));
     const res = candidates.length ? await rpc("/idle-busy", { method: "POST", body: { paths: candidates } }) : { ok: true, scan: true, busy: [] };
     if (!res.ok || res.scan === false) {
       if (!scanDisabledLogged) {
@@ -11651,6 +11867,13 @@
     }
   }
   function startIdleReclaim() {
+    window.addEventListener("zcodepro:config-changed", () => {
+      void getConfig(true).then((cfg) => {
+        enabled7 = !cfg.features || cfg.features.idleReclaim !== false;
+        if (!enabled7) idleSince.clear();
+      }).catch(() => {
+      });
+    });
     const loop = () => {
       tick3().catch(() => {
       });
@@ -11691,6 +11914,7 @@
   }
   var cooldown = /* @__PURE__ */ new Map();
   var disabledLogged = false;
+  var enabled8 = true;
   function onPortsMessage(e) {
     const d = e.data;
     if (!d || d.type !== "zcode:plugin-sandbox-ports" || typeof d.sandboxId !== "string") return;
@@ -11708,8 +11932,13 @@
     return Number(getComputedStyle(root).opacity) > 0.5;
   }
   async function tick4() {
+    if (!enabled8) {
+      seen.clear();
+      return;
+    }
     const cfg = await getConfig();
-    if ((cfg.features || {}).sandboxReclaim === false) {
+    enabled8 = !cfg.features || cfg.features.sandboxReclaim !== false;
+    if (!enabled8) {
       seen.clear();
       return;
     }
@@ -11764,6 +11993,13 @@
   function startSandboxReclaim() {
     loadSeen();
     window.addEventListener("message", onPortsMessage);
+    window.addEventListener("zcodepro:config-changed", () => {
+      void getConfig(true).then((cfg) => {
+        enabled8 = !cfg.features || cfg.features.sandboxReclaim !== false;
+        if (!enabled8) seen.clear();
+      }).catch(() => {
+      });
+    });
     const loop = () => {
       tick4().catch(() => {
       });
@@ -11776,17 +12012,19 @@
   init_core();
   var SCAN_MS = 15e3;
   var CLICK_INTERVAL_MS = 3e4;
-  var MARKERS = ["\u63D2\u4EF6\u754C\u9762"];
+  var BUTTON_TEXTS = ["\u91CD\u65B0\u52A0\u8F7D", "reload"];
+  var markerHit = (ctx) => ctx.includes("\u63D2\u4EF6\u754C\u9762") || ctx.includes("plugin") && /fail|limit|max|error|too many/.test(ctx);
   var lastClickAt = 0;
+  var cardHint = () => !!document.querySelector("webview, [data-sandbox-page-root]");
   function failedRetryButtons() {
     const out = [];
     for (const btn of document.querySelectorAll("button")) {
-      if ((btn.textContent || "").trim() !== "\u91CD\u65B0\u52A0\u8F7D") continue;
+      if (!BUTTON_TEXTS.includes((btn.textContent || "").trim().toLowerCase())) continue;
       let anc = btn;
       for (let i = 0; i < 4 && anc.parentElement; i++) {
         anc = anc.parentElement;
-        const ctx = anc.textContent || "";
-        if (MARKERS.some((m) => ctx.includes(m))) {
+        const ctx = (anc.textContent || "").toLowerCase();
+        if (markerHit(ctx)) {
           out.push(btn);
           break;
         }
@@ -11799,6 +12037,7 @@
     if ((cfg.features || {}).pluginCardRetry === false) return;
     const now = Date.now();
     if (now - lastClickAt < CLICK_INTERVAL_MS) return;
+    if (!cardHint()) return;
     for (const btn of failedRetryButtons()) {
       lastClickAt = now;
       btn.click();
@@ -11820,7 +12059,7 @@
   var SCAN_FALLBACK_MS5 = 5e3;
   var ROW_SEL = "[data-task-item-key]";
   var MENU_SEL = '[data-testid="task-new-button"], [data-testid="automations-open"], [data-testid="plugin-store-sidebar-open"], [data-testid="sidebar-search-open"], [data-slot="command"], [data-testid="desktop-top-nav-back"]';
-  var enabled7 = true;
+  var enabled9 = true;
   var rowEl = null;
   var origs = null;
   var syncTimer = 0;
@@ -11963,7 +12202,7 @@
     return scroll.getBoundingClientRect().width < NARROW_SIDEBAR_PX;
   }
   function sync() {
-    if (!enabled7) return;
+    if (!enabled9) return;
     const parts = findParts();
     if (!parts) {
       if (rowEl) rowEl.style.display = "none";
@@ -12025,8 +12264,8 @@
   }
   async function refreshConfig2() {
     const cfg = await getConfig(true).catch(() => null);
-    enabled7 = !cfg || !cfg.features || cfg.features.toolbarIcons !== false;
-    if (enabled7) sync();
+    enabled9 = !cfg || !cfg.features || cfg.features.toolbarIcons !== false;
+    if (enabled9) sync();
     else teardown();
   }
   function startToolbarIcons() {
@@ -12054,10 +12293,11 @@
   var STORE_KEY = "zcodepro:pinned-collapsed";
   var SYNC_DEBOUNCE_MS2 = 300;
   var SCAN_FALLBACK_MS6 = 5e3;
-  var enabled8 = true;
+  var enabled10 = true;
   var syncTimer2 = 0;
   function findPinnedHeader() {
     for (const h3 of document.querySelectorAll("h3")) {
+      if (h3.closest("main")) continue;
       const list = h3.nextElementSibling;
       if (list && list.querySelector("li[data-task-item-key]")) return h3;
     }
@@ -12110,9 +12350,12 @@
       return true;
     }
     h3.classList.add(HEAD_CLASS);
-    h3.addEventListener("click", () => {
-      if (enabled8) toggle();
-    });
+    if (!h3.dataset.zcodeproPinHead) {
+      h3.dataset.zcodeproPinHead = "1";
+      h3.addEventListener("click", () => {
+        if (enabled10) toggle();
+      });
+    }
     const btn = h("button", {
       type: "button",
       class: "zcodepro-pin-chevron",
@@ -12120,7 +12363,7 @@
       "aria-expanded": collapsed ? "false" : "true",
       onClick: (e) => {
         e.stopPropagation();
-        if (enabled8) toggle();
+        if (enabled10) toggle();
       }
     });
     btn.append(chevronSvg());
@@ -12128,7 +12371,7 @@
     return true;
   }
   function sync2() {
-    if (enabled8) apply2();
+    if (enabled10) apply2();
   }
   function scheduleSync2() {
     if (syncTimer2) return;
@@ -12157,8 +12400,8 @@
   }
   async function refreshConfig3() {
     const cfg = await getConfig(true).catch(() => null);
-    enabled8 = !cfg || !cfg.features || cfg.features.pinnedCollapse !== false;
-    if (enabled8) sync2();
+    enabled10 = !cfg || !cfg.features || cfg.features.pinnedCollapse !== false;
+    if (enabled10) sync2();
     else teardown2();
   }
   function startPinnedCollapse() {
@@ -12182,7 +12425,7 @@
   init_ui();
   init_core();
   var installed6 = false;
-  var enabled9 = true;
+  var enabled11 = true;
   function cleanTable(table) {
     const clone = table.cloneNode(false);
     const walk = (src, dst) => {
@@ -12299,17 +12542,34 @@
     };
     scan6();
     void getConfig().then((cfg) => {
-      enabled9 = cfg.features ? cfg.features.tableCopy !== false : true;
+      enabled11 = cfg.features ? cfg.features.tableCopy !== false : true;
     }).catch(() => {
     });
     window.addEventListener("zcodepro:config-changed", () => {
       void getConfig(true).then((cfg) => {
-        enabled9 = cfg.features ? cfg.features.tableCopy !== false : true;
+        enabled11 = cfg.features ? cfg.features.tableCopy !== false : true;
       }).catch(() => {
       });
     });
-    const observer2 = new MutationObserver(() => {
-      if (enabled9) scan6();
+    let scanTimer2 = 0;
+    const scheduleScan4 = () => {
+      if (scanTimer2) return;
+      scanTimer2 = setTimeout(() => {
+        scanTimer2 = 0;
+        if (enabled11) scan6();
+      }, 300);
+    };
+    const maybeTable = (muts) => {
+      for (const m of muts) {
+        for (const n of m.addedNodes) {
+          if (!(n instanceof Element)) continue;
+          if (n.matches("[data-markdown-table-toolbar]") || n.querySelector("[data-markdown-table-toolbar]")) return true;
+        }
+      }
+      return false;
+    };
+    const observer2 = new MutationObserver((muts) => {
+      if (enabled11 && maybeTable(muts)) scheduleScan4();
     });
     observer2.observe(document.body, { childList: true, subtree: true });
   }
@@ -12319,7 +12579,6 @@
   init_ui();
   var CONV3 = '[class*="@md/conversation"]';
   var SKIP_SEL = "pre, code, a, button, input, textarea, select, [data-zcodepro-sess]";
-  var SCAN_DEBOUNCE_MS6 = 300;
   var SESS_RE = /(?<![A-Za-z0-9_])(?:session|sess)_[A-Za-z0-9][A-Za-z0-9_-]*[A-Za-z0-9]/g;
   function matchIds(text) {
     SESS_RE.lastIndex = 0;
@@ -12330,11 +12589,13 @@
     return out;
   }
   var installed7 = false;
-  var enabled10 = true;
+  var enabled12 = true;
   var titleCache = /* @__PURE__ */ new Map();
+  var TITLE_CACHE_MAX = 500;
   var pendingIds = /* @__PURE__ */ new Set();
   var fetchTimer = 0;
-  var scanTimer2 = 0;
+  var doneNodes = /* @__PURE__ */ new WeakSet();
+  var streamingRows = /* @__PURE__ */ new Set();
   function makeLink(id) {
     const span = document.createElement("span");
     span.className = "zcodepro-sess-link";
@@ -12343,15 +12604,29 @@
     span.textContent = titleCache.get(id) || id;
     return span;
   }
-  function linkifyTextNode(node) {
+  function processTextNode(node) {
+    if (!node || doneNodes.has(node)) return;
     const text = node.textContent || "";
-    if (!text.includes("sess")) return;
-    const ms = matchIds(text);
-    if (!ms.length) return;
+    if (!text.includes("sess")) {
+      doneNodes.add(node);
+      return;
+    }
     const el = node.parentElement;
-    if (!el || el.closest(SKIP_SEL)) return;
+    if (!el || el.closest(SKIP_SEL)) {
+      doneNodes.add(node);
+      return;
+    }
     const row = el.closest('[class*="-row"]');
-    if (row && row.querySelector("[data-is-streaming]")) return;
+    if (row && row.querySelector("[data-is-streaming]")) {
+      streamingRows.add(row);
+      return;
+    }
+    const ms = matchIds(text);
+    if (!ms.length) {
+      doneNodes.add(node);
+      return;
+    }
+    doneNodes.add(node);
     const frag = document.createDocumentFragment();
     let pos = 0;
     for (const m of ms) {
@@ -12363,13 +12638,29 @@
     if (pos < text.length) frag.append(document.createTextNode(text.slice(pos)));
     node.replaceWith(frag);
   }
-  function scan5() {
-    for (const conv of document.querySelectorAll(CONV3)) {
-      const walker = document.createTreeWalker(conv, NodeFilter.SHOW_TEXT);
-      const nodes = [];
-      for (let n; n = walker.nextNode(); ) nodes.push(n);
-      for (const n of nodes) linkifyTextNode(n);
+  function walkTexts(root, out) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    for (let n; n = walker.nextNode(); ) out.push(n);
+  }
+  function flushStreamingRows() {
+    if (!streamingRows.size) return;
+    const nodes = [];
+    for (const row of [...streamingRows]) {
+      if (!row.isConnected) {
+        streamingRows.delete(row);
+        continue;
+      }
+      if (row.querySelector("[data-is-streaming]")) continue;
+      streamingRows.delete(row);
+      walkTexts(row, nodes);
     }
+    for (const n of nodes) processTextNode(n);
+  }
+  function scan5() {
+    const nodes = [];
+    for (const conv of document.querySelectorAll(CONV3)) walkTexts(conv, nodes);
+    for (const n of nodes) processTextNode(n);
+    flushStreamingRows();
     queueTitleFetch();
   }
   function queueTitleFetch() {
@@ -12389,6 +12680,7 @@
       if (rec && rec.title) {
         const title = String(rec.title);
         titleCache.set(id, title);
+        while (titleCache.size > TITLE_CACHE_MAX) titleCache.delete(titleCache.keys().next().value);
         for (const span of document.querySelectorAll(`[data-zcodepro-sess="${CSS.escape(id)}"]`)) {
           span.textContent = title;
         }
@@ -12402,27 +12694,11 @@
   }
   function setEnabled(cfg) {
     const next = cfg.features ? cfg.features.sessionLink !== false : true;
-    if (enabled10 && !next) unwrapAll();
-    enabled10 = next;
-    if (next) scheduleScan4();
+    if (enabled12 && !next) unwrapAll();
+    enabled12 = next;
+    if (next) scan5();
   }
-  function scheduleScan4() {
-    if (scanTimer2) return;
-    scanTimer2 = setTimeout(() => {
-      scanTimer2 = 0;
-      if (enabled10) scan5();
-    }, SCAN_DEBOUNCE_MS6);
-  }
-  function convMutations(muts) {
-    for (const m of muts) {
-      const el = m.type === "characterData" ? m.target.parentElement : m.target;
-      if (el instanceof Element && el.closest && el.closest(CONV3)) return true;
-      for (const n of m.addedNodes) {
-        if (n instanceof Element && n.closest && n.closest(CONV3)) return true;
-      }
-    }
-    return false;
-  }
+  var inConv = (el) => !!(el && el.closest && el.closest(CONV3));
   function startSessionLink() {
     if (installed7 || typeof document === "undefined") return;
     installed7 = true;
@@ -12435,11 +12711,40 @@
     });
     scan5();
     new MutationObserver((muts) => {
-      if (enabled10 && convMutations(muts)) scheduleScan4();
+      const texts = [];
+      let structural = false;
+      for (const m of muts) {
+        if (m.type === "characterData") {
+          doneNodes.delete(m.target);
+          if (enabled12 && inConv(m.target.parentElement)) texts.push(m.target);
+          continue;
+        }
+        for (const n of m.addedNodes) {
+          if (!enabled12) continue;
+          if (n.nodeType === Node.TEXT_NODE) {
+            if (inConv(n.parentElement)) texts.push(n);
+            continue;
+          }
+          if (!(n instanceof Element) || !n.closest) continue;
+          if (n.matches(CONV3) || n.querySelector(CONV3)) {
+            structural = true;
+            continue;
+          }
+          if (inConv(n) && !n.closest(SKIP_SEL)) walkTexts(n, texts);
+        }
+      }
+      if (!enabled12) return;
+      if (structural) {
+        scan5();
+        return;
+      }
+      for (const t2 of texts) processTextNode(t2);
+      flushStreamingRows();
+      queueTitleFetch();
     }).observe(document.body, { childList: true, subtree: true, characterData: true });
     document.addEventListener("click", (e) => {
       const span = e.target instanceof Element && e.target.closest("[data-zcodepro-sess]");
-      if (!span || !enabled10) return;
+      if (!span || !enabled12) return;
       e.preventDefault();
       e.stopPropagation();
       const id = span.getAttribute("data-zcodepro-sess") || "";
@@ -12454,7 +12759,7 @@
   // src/inject/features/composer-provider.js
   init_core();
   var installed8 = false;
-  var enabled11 = true;
+  var enabled13 = true;
   var TRIGGER_SEL = '[data-testid="chat-model-select-trigger"]';
   function labelParts(label) {
     const text = (label || "").trim();
@@ -12490,7 +12795,7 @@
       const parts = labelParts(btn.getAttribute("aria-label") || "");
       if (!parts) continue;
       const holders = holdersOf(btn, parts.model);
-      if (enabled11) {
+      if (enabled13) {
         if (!parts.provider || !holders.length) continue;
         const target = `${parts.provider} / ${parts.model}`;
         for (const el of holders) {
@@ -12533,21 +12838,21 @@
       schedule.t = setTimeout(apply3, 120);
     };
     void getConfig().then((cfg) => {
-      enabled11 = cfg.features ? cfg.features.composerProvider !== false : true;
+      enabled13 = cfg.features ? cfg.features.composerProvider !== false : true;
     }).catch(() => {
     });
     window.addEventListener("zcodepro:config-changed", () => {
       void getConfig(true).then((cfg) => {
         const next = cfg.features ? cfg.features.composerProvider !== false : true;
-        if (next !== enabled11) {
-          enabled11 = next;
+        if (next !== enabled13) {
+          enabled13 = next;
           apply3();
         }
       }).catch(() => {
       });
     });
     const observer2 = new MutationObserver((muts) => {
-      if (enabled11 && relevant2(muts)) schedule();
+      if (enabled13 && relevant2(muts)) schedule();
     });
     observer2.observe(document.body, {
       childList: true,

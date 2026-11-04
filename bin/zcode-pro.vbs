@@ -9,7 +9,9 @@ If WScript.Arguments.Count > 0 Then
   Dim parts()
   ReDim parts(WScript.Arguments.Count - 1)
   For i = 0 To WScript.Arguments.Count - 1
-    parts(i) = """" & WScript.Arguments(i) & """"
+    ' 剔除参数里的双引号（Windows 文件名不含引号）：带着引号拼进 cmd /c 会提前
+    ' 闭合引号，后面的字符被当命令执行（如拖放文件名带引号的场景）
+    parts(i) = """" & Replace(WScript.Arguments(i), """", "") & """"
   Next
   cmd = cmd & " " & Join(parts, " ")
 End If

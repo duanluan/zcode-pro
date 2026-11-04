@@ -105,15 +105,20 @@ function writeTitle(el, text) {
 function scheduleEnforce(key, { immediate = false } = {}) {
   if (immediate) {
     // 新上屏的行（项目展开/滚动复现）带着旧名出现，用户此刻正看着列表——
-    // 立即用缓存表钉回，不等复核（编辑中的行不会到这：isMismatch 已排除 input）
-    if (enabled && pinned) {
-      const want = pinned.get(sessIdOf(key));
-      if (want !== undefined) {
-        for (const item of findRows(key)) {
-          for (const el of titleElsOf(item)) writeTitle(el, want);
-        }
+    // 立即钉回，不等复核；写前先拉最新表：缓存表可能还是重命名前的旧名，
+    // 直接用会把刚改的新名闪回旧名（拉表失败/功能关闭则本轮不干预，同复核分支；
+    // fetchPinned 有并发去重，与复核批量触发合用一次请求）
+    void (async () => {
+      const map = await fetchPinned();
+      if (!map) return;
+      const want = map.get(sessIdOf(key));
+      if (want === undefined) return;
+      for (const item of findRows(key)) {
+        // 拉表期间行内可能出现输入框（进入重命名），编辑中的行不写
+        if (item.querySelector('input, textarea, [contenteditable="true"]')) continue;
+        for (const el of titleElsOf(item)) writeTitle(el, want);
       }
-    }
+    })();
   }
   if (pendingKeys.has(key)) return;
   pendingKeys.add(key);

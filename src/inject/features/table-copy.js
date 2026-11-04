@@ -138,11 +138,27 @@ export function startTableCopy() {
     for (const bar of document.querySelectorAll('[data-markdown-table-toolbar]')) enhance(bar);
   };
   scan();
-  // 会话滚动/新回答渲染都会新增表格：body 子树观察器兜底（现有各功能同款模式）
+  // 会话滚动/新回答渲染都会新增表格：body 子树观察器兜底（现有各功能同款模式）。
+  // 回调先粗判新增节点里有没有表格工具条，命中才去抖扫描——每个变动批次都
+  // 全档 querySelectorAll 在流式渲染期是纯开销（自家插按钮的变动也会带进来）
   void getConfig().then((cfg) => { enabled = cfg.features ? cfg.features.tableCopy !== false : true; }).catch(() => {});
   window.addEventListener('zcodepro:config-changed', () => {
     void getConfig(true).then((cfg) => { enabled = cfg.features ? cfg.features.tableCopy !== false : true; }).catch(() => {});
   });
-  const observer = new MutationObserver(() => { if (enabled) scan(); });
+  let scanTimer = 0;
+  const scheduleScan = () => {
+    if (scanTimer) return;
+    scanTimer = setTimeout(() => { scanTimer = 0; if (enabled) scan(); }, 300);
+  };
+  const maybeTable = (muts) => {
+    for (const m of muts) {
+      for (const n of m.addedNodes) {
+        if (!(n instanceof Element)) continue;
+        if (n.matches('[data-markdown-table-toolbar]') || n.querySelector('[data-markdown-table-toolbar]')) return true;
+      }
+    }
+    return false;
+  };
+  const observer = new MutationObserver((muts) => { if (enabled && maybeTable(muts)) scheduleScan(); });
   observer.observe(document.body, { childList: true, subtree: true });
 }

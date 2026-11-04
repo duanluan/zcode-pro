@@ -15,7 +15,7 @@
 //   文件编码，避开代码页问题；
 // - 仓库内 PowerShell 脚本（install.ps1 等）必须保存为带 BOM 的 UTF-8。
 import { execFileSync } from 'node:child_process';
-import { accessSync, chmodSync, constants as fsConstants, copyFileSync, existsSync, mkdirSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { accessSync, chmodSync, constants as fsConstants, copyFileSync, existsSync, lstatSync, mkdirSync, readFileSync, readlinkSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, sep } from 'node:path';
 import { homedir, platform } from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -144,6 +144,13 @@ function lnkIsOurs(lnkPath) {
 
 const psQuote = (s) => String(s).replace(/'/g, "''"); // PowerShell 单引号字面量转义
 
+// 降级快捷方式的起始位置：命令所在目录；剥不出绝对路径（PATH 里的裸命令名）就
+// 交给调用方走回退（USERPROFILE 等），别把文件名当目录
+const cmdWorkDir = (cmd) => {
+  const d = String(cmd).replace(/[\\/][^\\/]*$/, '');
+  return /^[A-Za-z]:[\\/]/.test(d) || /^[\\/]{2}/.test(d) ? d : '';
+};
+
 // 快捷方式计划（导出仅供测试审查，不执行）。desktop 为真时同时创建桌面快捷方式，
 // 桌面目录由 PowerShell 的 GetFolderPath 解析（正确跟随 OneDrive 重定向等）。
 // wshOk 为假（WSH 异常的机器）时降级：.lnk 直接经 cmd 最小化启动，不再依赖
@@ -159,7 +166,9 @@ export function windowsShortcutPlan(cmd, desktop = false, wshOk = true, menuLnk 
     '  Dim parts()',
     '  ReDim parts(WScript.Arguments.Count - 1)',
     '  For i = 0 To WScript.Arguments.Count - 1',
-    '    parts(i) = """" & WScript.Arguments(i) & """"',
+    "    ' strip double quotes from each arg (Windows filenames never contain them)",
+    "    ' an embedded quote would close the quoting and let the rest run as a command",
+    '    parts(i) = """" & Replace(WScript.Arguments(i), """", "") & """"',
     '  Next',
     '  cmd = cmd & " " & Join(parts, " ")',
     'End If',
@@ -182,8 +191,12 @@ export function windowsShortcutPlan(cmd, desktop = false, wshOk = true, menuLnk 
   ] : [
     'function setProps($l) {',
     '  $l.TargetPath = "$env:SystemRoot\\System32\\cmd.exe"',
+    // cmd.exe 会展开参数里的 %VAR%：cmd 路径本身含 % 的安装位置会被展开成别的
+    // 文件。命令行参数没有可靠转义方式，暂不处理（vbs 主路径不受影响）
     `  $l.Arguments = '/c start "ZCodePro-Setup" /min "${psQuote(cmd)}"'`,
-    `  $l.WorkingDirectory = '${psQuote(paths.vbsDir)}'`,
+    // 降级分支不建 vbsDir（目录可能不存在，快捷方式会报“起始位置无效”）：
+    // 起始位置改用命令所在目录
+    `  $l.WorkingDirectory = '${psQuote(cmdWorkDir(cmd) || process.env.USERPROFILE || process.env.HOME || paths.vbsDir)}'`,
     "  $l.Description = 'ZCode 桌面版增强启动器（壁纸引擎、皮肤主题等，不修改客户端文件）'",
     iconLine,
     '  $l.WindowStyle = 7',
@@ -215,7 +228,7 @@ export function windowsShortcutPlan(cmd, desktop = false, wshOk = true, menuLnk 
 // PowerShell 的 GetFolderPath，正确跟随 OneDrive 重定向）。OneDrive 桌面重定向时
 // 桌面在 %OneDrive%\Desktop，未重定向时在用户主目录
 export function desktopLnkPathApprox() {
-  for (const od of [process.env.OneDrive, process.env.OneDriveConsumer]) {
+  for (const od of [process.env.OneDrive, process.env.OneDriveConsumer, process.env.OneDriveCommercial]) {
     if (od && existsSync(join(od, 'Desktop'))) return join(od, 'Desktop', 'ZCode Pro.lnk');
   }
   return join(homedir(), 'Desktop', 'ZCode Pro.lnk');
@@ -325,7 +338,10 @@ const shortcutItem = {
       // 早期版本写过 0644 的条目：即使内容无需重写也补上执行位（原因见 writeDesktopEntry）
       chmodSync(target, 0o755);
       const exec = (cur.match(/^Exec=(.+)$/m) || [])[1] || '';
-      if (exec.includes(cmd)) {
+      // 去掉引号后全等比较：子串判断会把指向旧命令（如 zcode-pro-old）的条目
+      // 误当成已指向当前命令而跳过更新
+      const execCmd = exec.trim().replace(/^"(.*)"$/, '$1');
+      if (execCmd === cmd) {
         parts.push('app-menu entry already exists and points to the current command, nothing to do');
       } else {
         writeDesktopEntry(target, cmd);
@@ -394,6 +410,10 @@ const shortcutItem = {
     if (existsSync(app) && !existsSync(marker)) {
       return { skipped: `${app} exists and was not created by setup, not overwritten` };
     }
+    // 归属标记先于内容写入：中途失败（复制图标、写启动器等）留下的残包仍带标记，
+    // 下次重装直接覆盖重建；反过来（标记最后写）会留下装不进也卸不掉的半成品
+    mkdirSync(contents, { recursive: true });
+    writeFileSync(marker, '');
     let iconCopied = false;
     for (const src of [join('/', 'Applications', 'ZCode.app', 'Contents', 'Resources', 'app.icns'),
                        join(homedir(), 'Applications', 'ZCode.app', 'Contents', 'Resources', 'app.icns')]) {
@@ -407,20 +427,28 @@ const shortcutItem = {
     }
     mkdirSync(join(contents, 'MacOS'), { recursive: true });
     const launcher = join(contents, 'MacOS', 'zcode-pro');
-    writeFileSync(launcher, `#!/bin/sh\nexec "${cmd}" "$@"\n`);
+    // 路径里的 " ` $ \ 按 shell 双引号规则转义：不转义时路径含这些字符会破坏
+    // 生成的启动器甚至被当命令替换求值
+    writeFileSync(launcher, `#!/bin/sh\nexec "${String(cmd).replace(/([\\"`$])/g, '\\$1')}" "$@"\n`);
     chmodSync(launcher, 0o755);
     writeFileSync(join(contents, 'Info.plist'), plistContent(iconCopied));
-    writeFileSync(marker, '');
     let detail = `created ${app} (launcher -> ${cmd}${iconCopied ? ', icon copied' : ''})`;
     if (opts.desktop) {
       const link = macDesktopLink();
-      if (existsSync(link)) {
+      // 断链符号链接 existsSync 也返回假，会被误判成不存在，symlinkSync 反而报
+      // EEXIST 被空 catch 吞掉、桌面入口静默建不出：存在性改用 lstat 判断
+      let linkExists = true;
+      try { lstatSync(link); } catch { linkExists = false; }
+      if (linkExists) {
         detail += '; desktop entry with the same name exists, not overwritten';
       } else {
         try {
           symlinkSync(app, link);
           detail += `; desktop ${link}`;
-        } catch { /* 建链接失败仅省略桌面入口 */ }
+        } catch (err) {
+          // EEXIST（判断与创建之间被抢先建出）按“已存在不覆盖”汇报；其余失败只省略桌面入口
+          if (err?.code === 'EEXIST') detail += '; desktop entry with the same name exists, not overwritten';
+        }
       }
     }
     return { detail };
@@ -454,7 +482,10 @@ const shortcutItem = {
     const paths = windowsPaths();
     const hadVbs = existsSync(paths.vbsPath);
     const hadLnk = existsSync(paths.lnkPath);
-    if (!hadVbs && !hadLnk) return { skipped: 'no setup-created shortcuts found' };
+    // 桌面 .lnk 可能是唯一残留（开始菜单与 vbs 已被清掉）：提前返回前一并判断，
+    // 否则桌面快捷方式漏删
+    const hadDesk = existsSync(desktopLnkPathApprox());
+    if (!hadVbs && !hadLnk && !hadDesk) return { skipped: 'no setup-created shortcuts found' };
     // .lnk 可能已被 install.ps1 等重建并指向它自己：只有 Arguments 带本功能归属
     // 标记才删；校验失败也保留 .lnk（宁可漏删不误删）
     let lnkRemoved = false;
@@ -473,7 +504,7 @@ const shortcutItem = {
         '}',
       ].join('\r\n'));
       verified = true;
-      lnkRemoved = !existsSync(paths.lnkPath);
+      lnkRemoved = !existsSync(paths.lnkPath) && !existsSync(desktopLnkPathApprox());
     } catch { /* 校验失败则不动 .lnk */ }
     let vbsCleaned = !hadVbs;
     if (hadVbs) {
@@ -493,7 +524,7 @@ const shortcutItem = {
       }
     }
     const parts = [];
-    if (hadLnk) {
+    if (hadLnk || hadDesk) {
       parts.push(lnkRemoved ? 'start-menu/desktop shortcut' : verified ? 'shortcut not created by setup, kept' : 'shortcut ownership check failed, .lnk kept');
     }
     if (hadVbs) parts.push(vbsCleaned ? 'generated launcher script' : 'launcher script (delete failed)');
@@ -506,9 +537,17 @@ const shortcutItem = {
     if (!existsSync(marker)) return { skipped: 'no setup-created app bundle found' };
     // setup --desktop 建的桌面入口一并清理（只删指向本应用包的链接）
     const link = macDesktopLink();
-    try {
-      if (existsSync(link) && realpathSync(link) === realpathSync(app)) rmSync(link);
-    } catch { /* 链接失效则忽略 */ }
+    // 断链符号链接 existsSync 返回假、realpath 抛错，都会漏删：存在性用 lstat 判断
+    let linkInfo = null;
+    try { linkInfo = lstatSync(link); } catch { /* 无桌面入口 */ }
+    if (linkInfo) {
+      // 目标比较先用链接记录的文本（本功能建链时写的就是应用包路径，断链也读得出），
+      // 再退回解析后的真实路径（目标经其他符号链接中转的情形）
+      let ours = false;
+      try { ours = linkInfo.isSymbolicLink() && readlinkSync(link) === app; } catch { /* 读不出目标 */ }
+      if (!ours) { try { ours = realpathSync(link) === realpathSync(app); } catch { /* 断链且目标文本不同 */ } }
+      if (ours) rmSync(link);
+    }
     rmSync(app, { recursive: true, force: true });
     return { detail: `removed ${app}` };
   },

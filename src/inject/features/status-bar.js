@@ -21,13 +21,20 @@ const EST_CHARS_PER_TOKEN = 2;
 let streamSample = null; // 上一次采样 { len, at }
 let streamEst = null; // 最近一次估算 { value, at }
 
+// 输入框（composer）：优先在 main/form 里找，弹窗里的 textarea/contenteditable
+//（重命名等）排在文档前面时不会抢位；找不到再退回全文档第一个
+function composerEl() {
+  return document.querySelector('main textarea, main [contenteditable=true], form textarea, form [contenteditable=true]')
+    || document.querySelector('textarea, [contenteditable=true]');
+}
+
 function sampleStream() {
-  // 采样“主区文本 - 输入框文本”长度：回答文本不在按钮的父链里（实测），
-  // 主区覆盖整个对话；减掉输入框避免用户打字被当成生成
-  const main = document.querySelector('main') || document.body;
-  const ta = document.querySelector('textarea, [contenteditable=true]');
-  const typed = ta ? String(ta.value != null ? ta.value : (ta.textContent || '')).length : 0;
-  const len = Math.max(0, (main.textContent || '').length - typed);
+  // 采样最后一条回答行的文本长度：速率本来就是它的增长。原先取整个 main 的
+  // textContent 长度，长会话那是 MB 级字符串，每 2 秒拼一次太贵；回答行不含
+  // 输入框，用户打字不会被算成生成，不再需要扣减输入框长度
+  const rows = document.querySelectorAll('[class*="@md/conversation"] [class*="assistant-row"]');
+  const last = rows.length ? rows[rows.length - 1] : null;
+  const len = last ? (last.textContent || '').length : 0;
   const now = Date.now();
   const prev = streamSample;
   streamSample = { len, at: now };
@@ -42,7 +49,8 @@ let lastRenderedHtml = null; // renderBar 去重：内容没变不重写 DOM
 // 选中会话的 id：只认 bg-selected 行（不走 turn-usage 的“侧栏最新一行”回退——
 // 那会让新建会话视图顶着别的会话数据）；无选中返回空串
 function selectedSessionId() {
-  const row = [...document.querySelectorAll('[data-task-item-key]')].find((e) => (e.className + '').includes('bg-selected'));
+  // 交给选择器引擎找选中行（比全表扫 className 快，语义相同）
+  const row = document.querySelector('[data-task-item-key].bg-selected');
   const key = row ? row.getAttribute('data-task-item-key') : '';
   const i = key.lastIndexOf(':sess');
   return i > 0 ? key.slice(i + 1) : '';
@@ -50,19 +58,33 @@ function selectedSessionId() {
 
 // 官方输入框工具栏的上下文显示：title 形如“上下文已用 61,400 / 总量 1,000,000”，
 // 解析出已用与总量；读不到返回 null（ctx 项回退按会话记录估算 token 数）。
-// 直接在全文档找（该显示全局唯一），排除自己渲染的 title
+// 直接在全文档找（该显示全局唯一），排除自己渲染的 title。
+// 命中过的元素记下来：每轮全文档扫 [title] 太贵，元素还在就直接读它
+let ctxEl = null;
+let ctxMissAt = 0; // 全档扫落空后的时刻：30 秒内不再扫（每 2 秒一轮照扫太贵）
 function readCtx() {
-  for (const el of document.querySelectorAll('[title], [aria-label]')) {
-    if (el.closest('.zcodepro-statusbar')) continue;
+  const parse = (el) => {
     const text = el.getAttribute('title') || el.getAttribute('aria-label') || '';
-    if (!/上下文|context/i.test(text)) continue;
+    if (!/上下文|context/i.test(text)) return null;
     // 格式为“已用 497,101 / 总量 1,000,000”：斜杠后可能带“总量”等文字再接数字
     const m = text.match(/([\d][\d,]*)\s*\/[^0-9]*([\d][\d,]*)/);
-    if (!m) continue;
+    if (!m) return null;
     const used = Number(m[1].replace(/,/g, ''));
     const size = Number(m[2].replace(/,/g, ''));
-    if (used > 0 && size > used) return { used, size };
+    return used > 0 && size > used ? { used, size } : null;
+  };
+  if (ctxEl && ctxEl.isConnected) {
+    const hit = parse(ctxEl);
+    if (hit) return hit;
+    ctxEl = null; // 内容变了/被替换成自己的 title：重新全量找
   }
+  if (Date.now() - ctxMissAt < 30_000) return null; // 上次全档扫落空：退避期内不重扫
+  for (const el of document.querySelectorAll('[title], [aria-label]')) {
+    if (el.closest('.zcodepro-statusbar')) continue;
+    const hit = parse(el);
+    if (hit) { ctxEl = el; return hit; }
+  }
+  ctxMissAt = Date.now();
   return null;
 }
 
@@ -71,6 +93,7 @@ function readCtx() {
 let usageSvc = null;
 let official = null; // { todayTokens, totalTokens, totalSessions }
 let officialAt = 0;
+let officialFails = 0; // 连续失败次数：接口长期不可用时拉长重试间隔，别每 30 秒全量扫一遍 fiber
 // 从 React fiber 树遍历（newtab-panels.js 同款）
 function eachFiber(visit) {
   const rootEl = document.getElementById('root');
@@ -106,9 +129,9 @@ function findUsageService() {
   return found;
 }
 function refreshOfficial() {
-  // 成功后 5 分钟刷新一次；尚未成功（页面刚加载服务未就绪等）30 秒重试，
-  // 避免首次失败吃满冷却期
-  const period = official ? 5 * 60_000 : 30_000;
+  // 成功后 5 分钟刷新一次；尚未成功（页面刚加载服务未就绪等）30 秒起试，
+  // 连续失败指数退避到 10 分钟封顶——服务缺失时 fiber 全遍历每次几十到几百毫秒
+  const period = official ? 5 * 60_000 : Math.min(30_000 * 2 ** officialFails, 10 * 60_000);
   if (Date.now() - officialAt < period) return;
   officialAt = Date.now();
   void (async () => {
@@ -122,17 +145,21 @@ function refreshOfficial() {
       ]);
       const now = new Date();
       const key = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
-      let todayTokens = 0;
+      // 找不到当天条目（日期键形态不符等）时保持 null：显示层回退本地聚合，
+      // 不用 0 顶掉明明有值的本地数据
+      let todayTokens = null;
       const day = ((d7 && Array.isArray(d7.dailyModelUsage)) ? d7.dailyModelUsage : []).find((d) => d.date === key);
-      if (day) for (const m of day.models || []) todayTokens += Number(m.totalTokens) || 0;
+      if (day) { todayTokens = 0; for (const m of day.models || []) todayTokens += Number(m.totalTokens) || 0; }
       official = {
         todayTokens,
         totalTokens: Number(all && all.summary && all.summary.totalTokens) || 0,
         totalSessions: Number(all && all.summary && all.summary.totalSessions) || 0,
       };
+      officialFails = 0;
       renderBar();
     } catch {
       usageSvc = null; // 服务失效（页面重载等），下个周期重挖
+      officialFails = Math.min(officialFails + 1, 6);
     }
   })();
 }
@@ -169,6 +196,7 @@ function fmtNum(n) {
     return (yi % 1 === 0 ? String(yi) : yi.toFixed(1)) + '亿';
   }
   const wan = Math.round((n / 10000) * 10) / 10;
+  if (wan >= 10000) return (Math.round((n / 1e8) * 10) / 10) + '亿'; // 万位四舍五入进到 1 万万 → 显示亿
   return (wan % 1 === 0 ? String(wan) : wan.toFixed(1)) + '万';
 }
 
@@ -191,13 +219,14 @@ function itemContent(id, L) {
       const useEst = !!streaming || !(r && r.out > 0);
       const shown = useEst ? est : r.out;
       if (shown == null) return null;
-      const estMark = useEst && est != null ? (isZhLocale() ? '≈' : '≈') : '';
+      const zh = isZhLocale();
+      const estMark = useEst && est != null ? '≈' : '';
       const detail = r
-        ? `${L.sbLabelOut} ${r.out.toLocaleString()} tok/s · ${isZhLocale() ? '总量' : 'total'} ${r.total.toLocaleString()} tok/s`
-        : (isZhLocale() ? '无 usage 数据，按文本增长估算' : 'no usage data, estimated from text growth');
+        ? `${L.sbLabelOut} ${r.out.toLocaleString()} tok/s · ${zh ? '总量' : 'total'} ${r.total.toLocaleString()} tok/s`
+        : (zh ? '无 usage 数据，按文本增长估算' : 'no usage data, estimated from text growth');
       return {
         html: sbIcon('tokRate') + label(L.sbLabelOut) + `<b>${estMark}${fmtNum(Math.round(shown * 10) / 10)} tok/s</b>`,
-        title: `${L.sbItemTokRate}${isZhLocale() ? '（本会话）' : ' (this session)'}：${detail}`,
+        title: `${L.sbItemTokRate}${zh ? '（本会话）：' : ' (this session): '}${detail}`,
         tone: '',
       };
     }
@@ -208,7 +237,7 @@ function itemContent(id, L) {
         const tone = pct >= 95 ? 'danger' : pct >= 80 ? 'warn' : '';
         return {
           html: sbIcon('ctx') + label(L.sbLabelCtx) + `<b>${fmtNum(dom.used)}/${fmtNum(dom.size)}${isZhLocale() ? '（' : '('}${pct}%${isZhLocale() ? '）' : ')'}</b>`,
-          title: `${L.sbItemCtx}：${dom.used.toLocaleString()} / ${dom.size.toLocaleString()}`,
+          title: `${L.sbItemCtx}${isZhLocale() ? '：' : ': '}${dom.used.toLocaleString()} / ${dom.size.toLocaleString()}`,
           tone,
         };
       }
@@ -221,7 +250,7 @@ function itemContent(id, L) {
       return n > 0 ? { html: sbIcon('asks') + label(L.sbLabelQuestions) + String(n), title: L.sbItemQuestions } : null;
     }
     case 'todayTokens': {
-      const n = official ? official.todayTokens : (g ? g.todayTokens : 0);
+      const n = (official && official.todayTokens != null) ? official.todayTokens : (g ? g.todayTokens : 0);
       return n > 0 ? { html: sbIcon('today') + label(L.sbLabelToday) + fmtNum(n), title: L.sbItemTodayTokens } : null;
     }
     case 'totalTokens': {
@@ -239,7 +268,7 @@ function itemContent(id, L) {
 
 function renderBar() {
   // 3.16.1 的输入框是 contenteditable（旧版是 textarea），两种都认
-  const ta = document.querySelector('textarea, [contenteditable=true]');
+  const ta = composerEl();
   const host = ta && (ta.closest('form') || ta.parentElement);
   if (!enabled || !host || !host.parentElement) {
     if (barEl) barEl.remove();
@@ -258,8 +287,7 @@ function renderBar() {
   // 新建会话视图（无选中会话）下方是官方的功能按钮区，不能往下压：上下对称
   // 留 7px；普通会话视图下方是窗口底的官方留白，压进去贴底（同为约 7px）。
   // 按选中会话判定视图（按钮区与状态条不在同一父容器，兄弟判断不可用）
-  const hasSession = !![...document.querySelectorAll('[data-task-item-key]')]
-    .find((e) => (e.className + '').includes('bg-selected'));
+  const hasSession = !!document.querySelector('[data-task-item-key].bg-selected');
   barEl.style.marginBottom = hasSession ? '-14px' : '0';
   barEl.style.paddingBottom = hasSession ? '0' : '7px';
   const L = t();
@@ -326,7 +354,9 @@ export function startStatusBar() {
       if (saved) {
         // 保存的顺序为准（会话组在前已由设置保存时归一化；这里再归一化一次
         // 防御旧版本保存的交错顺序）；新版本新增的默认项按默认组位补齐
-        const list = saved.filter((x) => DEFAULT_STATUS_ITEMS.some((d) => d.id === x.id)).map((x) => ({ ...x }));
+        // on 归一化与设置页同口径（on !== false 为开）：旧存档缺 on 字段时
+        // 两处显隐判定一致
+        const list = saved.filter((x) => DEFAULT_STATUS_ITEMS.some((d) => d.id === x.id)).map((x) => ({ ...x, on: x.on !== false }));
         const known = new Set(list.map((x) => x.id));
         for (const d of DEFAULT_STATUS_ITEMS) {
           if (!known.has(d.id)) {

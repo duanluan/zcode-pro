@@ -1,7 +1,7 @@
 // 会话 ID 识别回归测试：断言 session-link.js 的 matchIds 切分文本的结果。
 // 零依赖，node scripts/test-session-link.mjs（或 npm test）直接跑，全绿退出码 0。
 // 覆盖：sess_/session_ 两种前缀、连字符 id、单词/下划线边界不误吞、
-// 尾随连字符不吞、"session_" 后至少一个字符、多段文本切分位置。
+// 尾随连字符不吞、"session_" 后至少两个字符、多段文本切分位置。
 import assert from 'node:assert/strict';
 import { matchIds } from '../src/inject/features/session-link.js';
 
@@ -24,10 +24,14 @@ assert.deepEqual(matchIds('前缀-sess_abc1234 算一个').map((m) => m.id), ['s
 // 尾随连字符/下划线不吞进 ID
 assert.deepEqual(matchIds('sess_abc123- 是连字符').map((m) => m.id), ['sess_abc123']);
 assert.deepEqual(matchIds('sess_abc123_ 同理').map((m) => m.id), ['sess_abc123']);
-// 前缀后至少一个字符：裸 "sess_" 不算
+// 前缀后至少两个字符（正则首尾各要一个字符）：裸 "sess_" 与单字符都不算
 assert.deepEqual(matchIds('sess_ 结尾'), []);
-// 同一段文本反复调用结果稳定（游标正确复位）
-const twice = `x ${id1} y`;
-assert.deepEqual(matchIds(twice), matchIds(twice));
+assert.deepEqual(matchIds('sess_a 单字符不算'), []);
+// 同一个 ID 在一段文本里出现两次要各自命中（游标正确复位）
+const dup = 'sess_abc123 sess_abc123';
+assert.deepEqual(matchIds(dup), [
+  { start: 0, end: 11, id: 'sess_abc123' },
+  { start: 12, end: 23, id: 'sess_abc123' },
+]);
 
 console.log('session-link matchIds: all assertions passed');

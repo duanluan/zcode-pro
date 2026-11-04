@@ -43,6 +43,7 @@ function fmt(n) {
   if (n >= 1e8) return (n / 1e8).toFixed(1) + '亿';
   if (n >= 1e4) {
     const wan = Math.round((n / 1e4) * 10) / 10;
+    if (wan >= 10000) return (Math.round((n / 1e8) * 10) / 10) + '亿'; // 万位四舍五入进到 1 万万 → 显示亿
     return (wan % 1 === 0 ? String(wan) : wan.toFixed(1)) + '万';
   }
   return String(n);
@@ -53,9 +54,12 @@ function fmt(n) {
 // 行内时间文本只用于解析该轮的提问时刻
 function findRows() {
   const rows = [];
+  const seen = new Set();
   for (const btn of document.querySelectorAll('[data-testid^="v4-copy-"]')) {
     const row = btn.parentElement;
-    if (!row || row.dataset.zcodeproTurn) continue;
+    // 一行有多个复制按钮时只收一次（桶归属按行算，重了会把一份用量算多遍）
+    if (!row || seen.has(row)) continue;
+    seen.add(row);
     if (!row.querySelector('[data-testid^="v4-feedback-"]')) continue;
     const timeEl = [...row.querySelectorAll('span')].find((s) => /\d{1,2}:\d{2}$/.test((s.textContent || '').trim()));
     if (timeEl) { const ts = rowTimeTs((timeEl.textContent || '').trim()); if (ts != null) rows.push({ row, ts }); }
@@ -63,7 +67,9 @@ function findRows() {
   return rows;
 }
 
-// 当前会话 id：优先选中行，回退侧栏最新一行（状态栏共用本函数）
+// 当前会话 id：优先选中行，无选中行（新建任务视图等）回退侧栏最新一行。
+// 只认 :sess/:session 形态的键，其它任务键返回空串；
+// 状态栏用自己的严格版（selectedSessionId，不回退）
 export function currentSessionId() {
   const rows = [...document.querySelectorAll('[data-task-item-key]')];
   const cur = rows.find((e) => (e.className + '').includes('bg-selected')) || rows[rows.length - 1];
@@ -73,18 +79,8 @@ export function currentSessionId() {
 }
 
 function injectRow(row, bucket) {
-  row.dataset.zcodeproTurn = '1';
   if (!bucket || bucket.in + bucket.out <= 0) return;
   const L = t();
-  const el = document.createElement('span');
-  el.dataset.zcodeproTurnSpan = '1';
-  el.className = 'select-none text-ui-sm text-foreground-subtlest';
-  // 按钮行是 flex 容器：本元素作为子项会被压缩导致内容折行，锁成单行
-  el.style.whiteSpace = 'nowrap';
-  el.style.display = 'inline-flex';
-  el.style.alignItems = 'center';
-  el.style.gap = '4px'; // 组与 · 分隔之间的间距
-  el.style.marginLeft = '10px'; // 与左侧时间拉开
   // 与状态栏同款：图标 + 文字 + 数据；缓存有量时给命中率
   // 保留两位小数：长上下文会话命中率普遍 99%+，取整会全部显示 100% 失真
   const cachePct = bucket.in > 0 && bucket.cacheRead > 0
@@ -101,47 +97,82 @@ function injectRow(row, bucket) {
     else if (s.id === 'turnOut') sections.push(group(icon('down') + em(L.sbLabelOut) + fmt(bucket.out)));
     else if (s.id === 'turnCache' && cachePct) sections.push(group(icon('cache') + em(L.sbLabelCache) + cachePct + '%'));
   }
-  if (!sections.length) { delete row.dataset.zcodeproTurn; el.remove(); return; }
+  const old = row.querySelector('[data-zcodepro-turn-span]');
+  if (!sections.length) {
+    // 全隐藏：撤掉行里已有的标注与行标记（不注入）
+    if (old) old.remove();
+    delete row.dataset.zcodeproTurn;
+    return;
+  }
   const VBAR = '<span style="display:inline-block;width:1px;height:10px;background:currentColor;opacity:.3;margin:0 5px"></span>';
-  el.innerHTML = VBAR + sections.join(DOT);
-  el.title = `${L.turnUsageTitle}：${L.sbLabelIn} ${bucket.in.toLocaleString()} / ${L.sbLabelOut} ${bucket.out.toLocaleString()}`
+  const html = VBAR + sections.join(DOT);
+  // 数据没变就不动 DOM（含段的显隐顺序）：每轮全删全注会在流式期反复触发布局
+  if (old && old.innerHTML === html) { row.dataset.zcodeproTurn = '1'; return; }
+  if (old) old.remove();
+  const el = document.createElement('span');
+  el.dataset.zcodeproTurnSpan = '1';
+  el.className = 'select-none text-ui-sm text-foreground-subtlest';
+  // 按钮行是 flex 容器：本元素作为子项会被压缩导致内容折行，锁成单行
+  el.style.whiteSpace = 'nowrap';
+  el.style.display = 'inline-flex';
+  el.style.alignItems = 'center';
+  el.style.gap = '4px'; // 组与 · 分隔之间的间距
+  el.style.marginLeft = '10px'; // 与左侧时间拉开
+  el.innerHTML = html;
+  el.title = `${L.turnUsageTitle}${isZhLocale() ? '：' : ': '}${L.sbLabelIn} ${bucket.in.toLocaleString()} / ${L.sbLabelOut} ${bucket.out.toLocaleString()}`
     + (bucket.cacheRead > 0 ? ` / ${L.sbLabelCache} ${bucket.cacheRead.toLocaleString()}` : '');
+  row.dataset.zcodeproTurn = '1';
   row.append(el); // 追加在按钮行末尾（时间之后）
 }
 
 // 回答行时间文本 → 当年本地时间的时间戳（毫秒）。
-// 官方三种形态：今天“18:16”、昨天“昨天 18:16”、更早“10/21 17:41”。
+// 官方三种形态：今天“18:16”、昨天“昨天 18:16”/“Yesterday 18:16”、更早“10/21 17:41”。
 // 行时间是提问时刻，调用桶是完成时刻——一轮的用量按“本条提问到下一条
 // 提问之间”的区间归属（见 scan），因此这里只取可比时间戳
 function rowTimeTs(text) {
   const now = new Date();
   let m = text.match(/^(\d{1,2}):(\d{2})$/);
   if (m) return new Date(now.getFullYear(), now.getMonth(), now.getDate(), +m[1], +m[2]).getTime();
-  m = text.match(/^昨天\s*(\d{1,2}):(\d{2})$/);
-  if (m) { const y = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1); return new Date(y.getFullYear(), y.getMonth(), y.getDate(), +m[1], +m[2]).getTime(); }
+  m = text.match(/^(昨天|Yesterday)\s*(\d{1,2}):(\d{2})$/);
+  if (m) { const y = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1); return new Date(y.getFullYear(), y.getMonth(), y.getDate(), +m[2], +m[3]).getTime(); }
   m = text.match(/^(\d{1,2})\/(\d{1,2})\s*(\d{1,2}):(\d{2})$/);
-  if (m) return new Date(now.getFullYear(), +m[1] - 1, +m[2], +m[3], +m[4]).getTime();
+  if (m) {
+    // 月日形态不带年份：算出来在未来的按上一年（1 月看到 12 月的行）
+    let ts = new Date(now.getFullYear(), +m[1] - 1, +m[2], +m[3], +m[4]).getTime();
+    if (ts > now.getTime()) ts = new Date(now.getFullYear() - 1, +m[1] - 1, +m[2], +m[3], +m[4]).getTime();
+    return ts;
+  }
   return null;
 }
 
 let lastSid = '';
 function scan() {
-  if (!enabled) return;
+  // 清理只在回答行内做（原来全档删标注再重注，长会话白扫白写）：
+  // 行内旧标注与旧版本格式（标题前缀“本轮/”Turn“）的标注一并清
+  const clearRow = (row) => {
+    for (const el of row.querySelectorAll('[data-zcodepro-turn-span], span[title^="本轮"], span[title^="Turn"]')) el.remove();
+    delete row.dataset.zcodeproTurn;
+  };
+  const rows = findRows().sort((a, b) => a.ts - b.ts); // 可见行按时间升序
+  // 清理放在 enabled 判定之前：关闭统计开关后残留的标注也能被清掉
+  if (!enabled) {
+    for (const r of rows) clearRow(r.row);
+    return;
+  }
   // 会话切换瞬间：旧会话的桶还留在 recentTurns 里，若继续归属会把别的会话
   // 的调用安到新视图的旧回答上——先清掉并立即重拉（拉到前只清不注）
   const sid = currentSessionId();
   if (sid !== lastSid) {
     lastSid = sid;
     recentTurns = [];
+    for (const r of rows) clearRow(r.row);
     void tick();
+    return;
   }
-  // 每轮重算：先移除上一次注入的标注并清行标记（进行中的轮数值会增长）；
-  // 按标题前缀一并清掉旧版本格式的标注
-  for (const el of document.querySelectorAll('[data-zcodepro-turn-span], span[title^="本轮"], span[title^="Turn"]')) el.remove();
-  for (const row of document.querySelectorAll('[data-zcodepro-turn]')) delete row.dataset.zcodeproTurn;
-  if (document.hidden || !recentTurns.length) return;
-  const rows = findRows().sort((a, b) => a.ts - b.ts); // 可见行按时间升序
-  if (!rows.length) return;
+  if (document.hidden || !recentTurns.length) {
+    for (const r of rows) clearRow(r.row);
+    return;
+  }
   // 区间归属：每条回答拥有“自己的提问时刻 ≤ 桶完成时刻 < 下一条提问时刻”
   // 的全部调用（一轮可能跨多个分钟）；最后一条收到其后所有桶（进行中的轮）。
   // 行集是虚拟列表的可见窗口，同一条回答的邻居行在场时归属稳定
@@ -163,14 +194,20 @@ function scan() {
   }
   for (let i = 0; i < rows.length; i++) {
     if (agg[i].in + agg[i].out > 0) injectRow(rows[i].row, agg[i]);
+    else clearRow(rows[i].row); // 归属变空（窗口移动等）：撤掉旧标注
   }
 }
 
+let tickSeq = 0;
 async function tick() {
   if (!enabled || document.hidden) return;
   const sid = currentSessionId();
+  const seq = ++tickSeq;
   const res = await rpc('/stats/usage' + (sid ? '?session=' + encodeURIComponent(sid) : '')).catch(() => null);
   if (res && res.ok && Array.isArray(res.recentTurns)) {
+    // 乱序的在途响应不采纳，且取数期间换了会话就丢弃（旧会话的桶
+    // 不能安到新视图的回答行上）——与 status-bar 的 tickSeq 守卫同款
+    if (seq !== tickSeq || sid !== currentSessionId()) return;
     // 同分钟桶随时间增长，全量替换
     recentTurns = res.recentTurns;
     scan();
@@ -181,7 +218,10 @@ export function startTurnUsage() {
   void getConfig().then((cfg) => { enabled = cfg.features ? cfg.features.statusBar !== false : true; }).catch(() => {});
   refreshTurnItems();
   window.addEventListener('zcodepro:config-changed', () => {
-    void getConfig().then((cfg) => { enabled = cfg.features ? cfg.features.statusBar !== false : true; }).catch(() => {});
+    void getConfig().then((cfg) => {
+      enabled = cfg.features ? cfg.features.statusBar !== false : true;
+      scan(); // 开关变化后立即重扫：关掉时清残留标注
+    }).catch(() => {});
     refreshTurnItems();
   });
   // 回答行出现即注入（去抖）；数据 5 秒刷新一次

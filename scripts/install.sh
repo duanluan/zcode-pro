@@ -26,8 +26,22 @@ uninstall() {
   rm -f "$BIN/zcode-pro"
   if [ "$OS" = "Linux" ]; then
     rm -f "$DESTDIR${XDG_DATA_HOME:-$HOME/.local/share}/applications/zcode-pro.desktop"
+    # 桌面条目按 setup.mjs 的 desktopDir 同款定位（xdg-user-dir 跟随本地化目录名，
+    # 如 ~/桌面），只删带 setup 归属标记的，同名的外来文件不动
+    DESKTOP_DIR=$(xdg-user-dir DESKTOP 2>/dev/null | head -n 1)
+    if [ -z "$DESKTOP_DIR" ]; then
+      if [ -d "$HOME/Desktop" ]; then DESKTOP_DIR=$HOME/Desktop; else DESKTOP_DIR=$HOME/桌面; fi
+    fi
+    DENTRY="$DESTDIR$DESKTOP_DIR/zcode-pro.desktop"
+    if [ -f "$DENTRY" ] && grep -q 'X-ZCodePro-Setup=true' "$DENTRY"; then
+      rm -f "$DENTRY"
+    fi
     update-desktop-database "${XDG_DATA_HOME:-$HOME/.local/share}/applications" 2>/dev/null || true
   fi
+  # zcode-pro setup 装进 ZCode 数据目录的壁纸命令/技能一并清掉（与 setup --uninstall 同款清单）
+  ZP_DATA="${ZCODE_DATA_BASE_DIR:-$HOME}/.zcode"
+  rm -f "$ZP_DATA/commands/wallpaper.md"
+  rm -rf "$ZP_DATA/skills/wallpaper"
   echo "[zcode-pro] 已卸载。"
 }
 
@@ -82,7 +96,10 @@ ln -sfn "$SHARE/bin/zcode-pro" "$BIN/zcode-pro"
 if [ "$OS" = "Linux" ]; then
   APP_DIR="$DESTDIR${XDG_DATA_HOME:-$HOME/.local/share}/applications"
   mkdir -p "$APP_DIR"
-  sed "s|@bindir@|$BIN|" "$REPO_DIR/packaging/zcode-pro.desktop" > "$APP_DIR/zcode-pro.desktop"
+  # 替换值先做 sed 转义（\、&、分隔符 |），PREFIX 含这些字符不会写坏菜单文件；
+  # 模板 Exec 整体带引号，PREFIX 含空格也不断词（与 setup.mjs 的 desktopEntry 一致）
+  BIN_SED=$(printf '%s' "$BIN" | sed -e 's/[\\&|]/\\&/g')
+  sed "s|@bindir@|$BIN_SED|" "$REPO_DIR/packaging/zcode-pro.desktop" > "$APP_DIR/zcode-pro.desktop"
   # KDE 等环境要求用户目录下 .desktop 带执行位才允许启动
   chmod 755 "$APP_DIR/zcode-pro.desktop"
   update-desktop-database "$APP_DIR" 2>/dev/null || true

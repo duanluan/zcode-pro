@@ -4,7 +4,7 @@
 // JSON 紧跟在偏移 16；files["package.json"] 的 offset 相对 16+jsonLen，且实测
 // 存在 4 字节对齐补位，因此多读几字节、从首个 '{' 开始截取再解析。
 // 读取失败一律返回空串：调用方把空串当作“版本未知”，不启用按版本的分支。
-import { closeSync, openSync, readSync } from 'node:fs';
+import { closeSync, openSync, readSync, realpathSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
 // 本启动器常以 ELECTRON_RUN_AS_NODE 方式复用 ZCode 二进制运行，该模式下 Electron
@@ -15,15 +15,19 @@ process.noAsar = true;
 
 export function zcodeAsarPath(exePath) {
   if (!exePath) return '';
+  // /usr/bin/zcode 这类符号链接兜底命中时，资源目录在链接目标旁而不是 /usr/bin：
+  // 先解析符号链接（解析不了按原路径算）
+  let real = exePath;
+  try { real = realpathSync(exePath); } catch { /* 保持原路径 */ }
   // Electron 约定：Linux/Windows 资源目录在可执行文件旁；macOS 在 Contents/Resources
   const dir = process.platform === 'darwin'
-    ? join(dirname(exePath), '..', 'Resources')
-    : join(dirname(exePath), 'resources');
+    ? join(dirname(real), '..', 'Resources')
+    : join(dirname(real), 'resources');
   return join(dir, 'app.asar');
 }
 
 export function readZcodeVersion(exePath) {
-  let fd = 0;
+  let fd = -1;
   try {
     fd = openSync(zcodeAsarPath(exePath), 'r');
     const head = Buffer.alloc(16);
@@ -35,17 +39,21 @@ export function readZcodeVersion(exePath) {
     if (readSync(fd, hdr, 0, jsonLen, 16) !== jsonLen) return '';
     const entry = JSON.parse(hdr.toString('utf8')).files?.['package.json'];
     if (!entry || entry.unpacked || typeof entry.offset !== 'string') return '';
+    // entry.size 来自 asar 头部 JSON：必须是有限正整数，不然 Buffer.alloc 会被
+    // 异常值（NaN/负数/超大）带崩或读越界
+    const size = Number(entry.size);
+    if (!Number.isInteger(size) || size <= 0) return '';
     const base = 16 + jsonLen + Number(entry.offset);
-    const buf = Buffer.alloc(entry.size + 8);
+    const buf = Buffer.alloc(size + 8);
     readSync(fd, buf, 0, buf.length, base);
     const text = buf.toString('utf8');
     const start = text.indexOf('{');
     if (start < 0) return '';
-    const version = JSON.parse(text.slice(start, start + entry.size)).version;
+    const version = JSON.parse(text.slice(start, start + size)).version;
     return typeof version === 'string' ? version : '';
   } catch {
     return '';
   } finally {
-    if (fd) { try { closeSync(fd); } catch { /* ignore */ } }
+    if (fd >= 0) { try { closeSync(fd); } catch { /* ignore */ } }
   }
 }

@@ -3,12 +3,16 @@
 //   每套皮肤含明、暗两份色值，跟随 ZCode 当前明暗自动选用，不改用户的明暗设置。
 // 壁纸：图片/视频/网页三类，全窗铺在界面后方（fixed slide 层 + 同色遮罩，遮罩
 //   浓度 = 1 - 可见度），换壁纸可直接切换或淡入淡出，可定时轮换；素材存 helper 数据
-//   目录（/bg/file/<name> 引用，免 token）。侧栏/会话流/输入框等表面 token 改写
+//   目录（/bg/file/<name> 引用，URL 带 ?t= token）。侧栏/会话流/输入框等表面 token 改写
 //   为 color-mix 半透明让画面透出；弹窗/菜单等浮层 token 不动，保可读。分区背景
 //   仅静态图。表面半透明在 JS 里做而不是纯 CSS：需要先读皮肤应用后的计算值再
 //   混透明，明暗切换/换肤/调可见度都要重算（重算前先撤掉上一轮注入，避免
 //   color-mix 叠 color-mix 越混越透——PiDeck 踩过同一坑）。
 import { getConfig, rpc, liveBoot, HELPER_URL } from '../core.js';
+
+// 媒体 URL 的鉴权参数：媒体元素（CSS url()/<video>）带不了请求头，helper 的
+// /bg 媒体路由认 URL 上的 ?t= token（外部页面猜不到，读不走图库媒体）
+const mediaAuth = () => 't=' + encodeURIComponent(liveBoot().token || '');
 
 // —— 皮肤定义：色阶制（取自 Radix Colors，MIT）——
 // 每套皮肤 = 一个色相的 12 级色阶 × 明/暗两套 + 透明度叠色。级数语义按 Radix
@@ -380,6 +384,14 @@ function clearWpTimers() {
   if (bgTimer) { clearInterval(bgTimer); bgTimer = null; }
   for (const t of wpTimers) clearInterval(t);
   wpTimers.clear();
+  // webview 透明扫描跟着停掉（不需要时一直空转）：停之前把已插的透明一次性
+  // 撤掉，恢复卡片自己的背景；之后重开壁纸时 markBgOn 会重新启动扫描
+  if (webviewScanTimer) { clearInterval(webviewScanTimer); webviewScanTimer = null; }
+  for (const rec of [...wvStyled]) {
+    if (rec.handler) rec.el.removeEventListener('dom-ready', rec.handler);
+    if (rec.key) { try { void rec.el.removeCSS(rec.key).catch(() => { /* ignore */ }); } catch { /* ignore */ } }
+    wvStyled.splice(wvStyled.indexOf(rec), 1);
+  }
 }
 // 插件卡片（沙箱 webview）页面自带的背景是实色，会把壁纸整块盖住；
 // 用 webview 自带的 insertCSS 把 guest 页面的 html/body 背景改透明（页面每次
@@ -505,7 +517,7 @@ function maybeTranscode(el, name, from) {
   if (!cap || !name) {
     // fpsCap 归零要还原原片：此前可能已换到抽帧版，不还原会一直锁在降质版
     if (!cap && name && el.src && el.src.includes('/bg/transcode/file/')) {
-      const orig = (from === 'folder' ? `${helperUrl}/bg/folder/file/` : `${helperUrl}/bg/file/`) + encodeURIComponent(name);
+      const orig = (from === 'folder' ? `${helperUrl}/bg/folder/file/` : `${helperUrl}/bg/file/`) + encodeURIComponent(name) + '?' + mediaAuth();
       const at = el.currentTime;
       el.src = orig;
       el.addEventListener('loadedmetadata', () => {
@@ -528,7 +540,7 @@ function maybeTranscode(el, name, from) {
     const swapTo = () => {
       if (!el.isConnected) return;
       if (el.dataset.wpFps !== reqCap) return; // 上限已改：旧响应别把元素换到旧帧率版
-      const target = `${helperUrl}/bg/transcode/file/${res.key}.mp4`;
+      const target = `${helperUrl}/bg/transcode/file/${res.key}.mp4?${mediaAuth()}`;
       if (el.src === target) return; // 已经在播抽帧版就别重设 src（视频会重播）
       const at = el.currentTime;
       el.src = target;
@@ -543,7 +555,7 @@ function maybeTranscode(el, name, from) {
     const poll = setInterval(() => {
       if (!el.isConnected) { clearInterval(poll); wpTimers.delete(poll); return; } // 元素已换掉/摘掉：轮询跟着结束
       if (++pollN > 360) { clearInterval(poll); wpTimers.delete(poll); return; } // 30 分钟还没好就放弃（转码失败不再永远轮询）
-      void fetch(`${helperUrl}/bg/transcode/file/${res.key}.mp4`).then((r) => {
+      void fetch(`${helperUrl}/bg/transcode/file/${res.key}.mp4?${mediaAuth()}`).then((r) => {
         if (!r.ok) return;
         clearInterval(poll);
         wpTimers.delete(poll);
@@ -665,6 +677,7 @@ async function applyBackground(bg) {
     bgStyleEl.textContent = `html.zcodepro-bg-on{background-color:rgb(${rgb}) !important;}` +
       `html.zcodepro-bg-on webview{background:transparent !important;}`;
     root.classList.add('zcodepro-bg-on');
+    applyWebviewTransparency(); // 壁纸可见时给插件卡片 webview 插透明（扫描定时器在这里启动）
   };
   if (sourceSig === lastWpSig && wpSlide && wpSlide.isConnected) {
     markBgOn();
@@ -678,6 +691,7 @@ async function applyBackground(bg) {
   const commit = () => {
     lastWpSig = sourceSig;
     clearWpTimers();
+    applyWebviewTransparency(); // clearWpTimers 连 webview 扫描一起停了：壁纸还在用，重新启动
     wpTickFn = null; // 无轮换的来源（web）不残留旧 tick，防调参时装上别的来源的切换
   };
   markBgOn();
@@ -814,8 +828,8 @@ async function applyBackground(bg) {
   const showFile = (f, from) => {
     wpItem = { name: f.name, from };
     const u = from === 'folder'
-      ? `${helperUrl}/bg/folder/file/${encodeURIComponent(f.name)}`
-      : `${helperUrl}/bg/file/${encodeURIComponent(f.name)}`;
+      ? `${helperUrl}/bg/folder/file/${encodeURIComponent(f.name)}?${mediaAuth()}`
+      : `${helperUrl}/bg/file/${encodeURIComponent(f.name)}?${mediaAuth()}`;
     if (/\.(mp4|webm|mov)$/i.test(f.name)) setupVideo(u, f.name, from);
     else setImage(u);
   };
@@ -940,7 +954,7 @@ async function applyRegionBackgrounds(bg, pre) {
     // 规则、清缓存态，与全局"空列表清壁纸"一致，别让上一来源的图顶着新配置显示
     const drop = () => { regionRules.delete(region); regionState[region] = null; };
     if (r.mode === 'library') {
-      if (r.file) setState(`url("${helperUrl}/bg/file/${encodeURIComponent(r.file)}")`, null);
+      if (r.file) setState(`url("${helperUrl}/bg/file/${encodeURIComponent(r.file)}?${mediaAuth()}")`, null);
       else drop();
     } else if (r.mode === 'url') {
       const u = safeUrl(r.url);
@@ -957,7 +971,7 @@ async function applyRegionBackgrounds(bg, pre) {
         let idx = 0;
         if ((currentTheme.bg || {}).folderRandom !== false) idx = files.length > 1 ? Math.floor(Math.random() * files.length) : 0;
         else { regionFolderIdx[region] = (regionFolderIdx[region] + 1) % files.length; idx = regionFolderIdx[region]; }
-        const image = `url("${helperUrl}/bg/folder/file/${encodeURIComponent(files[idx].name)}?dir=${encodeURIComponent(r.folder)}")`;
+        const image = `url("${helperUrl}/bg/folder/file/${encodeURIComponent(files[idx].name)}?dir=${encodeURIComponent(r.folder)}&${mediaAuth()}")`;
         if (regionState[region]) regionState[region].image = image;
         addRule(region, image);
         flush();
@@ -995,7 +1009,7 @@ export function startTheme() {
   // 低频轮询补上；helper 读盘时会清洗配置，脏字段带不进来
   lastThemeSig = JSON.stringify(currentTheme);
   if (themePollTimer) clearInterval(themePollTimer);
-  let pollFail = 0; // 取不到配置就开始跳过取数：helper 挂掉时从 5 秒一轮降到约 25 秒一轮，成功即复位
+  let pollFail = 0; // 取不到配置就开始跳过取数：helper 挂掉时从 30 秒一轮降到约 3 分钟一轮，成功即复位
   themePollTimer = setInterval(() => {
     if (pollFail >= 3 && ++pollFail % 6 !== 0) return; // 跳过取数；每 6 跳试一次，成功即复位
     void getConfig(true).then((cfg) => {
@@ -1004,7 +1018,7 @@ export function startTheme() {
       const sig = JSON.stringify(cfg.theme);
       if (sig !== lastThemeSig) applyAll(cfg.theme);
     }).catch(() => { pollFail = Math.max(pollFail + 1, 3); });
-  }, 5000);
+  }, 30000);
   // 暂停判定的三个触发源：页面可见性（最小化）、窗口焦点、电池状态
   document.addEventListener('visibilitychange', applyMediaState);
   window.addEventListener('focus', applyMediaState);

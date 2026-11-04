@@ -27,28 +27,33 @@ export function rpc(path, options = {}) {
 
 // 配置缓存：菜单每次打开时拉取，保证设置弹窗里的开关即时生效。
 // 并发合并：config-changed 事件的多个监听方会同时 getConfig(true)（绕过
-// 缓存），不合并时一次保存触发 N 个并发全量拉取（每个都是 helper 读盘+序列化）
+// 缓存），不合并时一次保存触发 N 个并发全量拉取（每个都是 helper 读盘+序列化）。
+// force 不并入在途请求：保存后的刷新必须拿到保存后的内容，并入保存前发起的
+// 请求会拿到旧值、还会把旧值写回缓存
 let configCache = { value: null, at: 0 };
 let configInflight = null;
+let configGen = 0; // clearConfigCache 时 +1，作废在途请求写缓存的资格
 export async function getConfig(force = false) {
   const now = Date.now();
   if (!force && configCache.value && now - configCache.at < 3000) return configCache.value;
-  if (configInflight) return configInflight;
-  configInflight = (async () => {
+  if (!force && configInflight) return configInflight;
+  const gen = configGen;
+  const p = (async () => {
     try {
       const res = await rpc('/config');
       if (res.ok && res.config) {
-        configCache = { value: res.config, at: Date.now() };
+        if (gen === configGen) configCache = { value: res.config, at: Date.now() };
         return res.config;
       }
       return configCache.value || { features: {} };
     } finally {
-      configInflight = null;
+      if (configInflight === p) configInflight = null;
     }
   })();
-  return configInflight;
+  configInflight = p;
+  return p;
 }
-export function clearConfigCache() { configCache = { value: null, at: 0 }; }
+export function clearConfigCache() { configCache = { value: null, at: 0 }; configGen++; }
 
 // 会话快捷切换的默认键位（按住 alt 再按）；settings 的“快捷键”标签页可改，
 // 配置存在 config.shortcuts，未写的项回退到这里
@@ -62,8 +67,8 @@ export const DEFAULT_SHORTCUTS = {
 
 // 状态栏任务统计项的两个组：会话级跟随当前会话，全局级始终显示；
 // 设置里两节各自排序，保存时归一化为会话组在前（状态栏两组间一道竖线）
-export const STATUS_SESSION_IDS = new Set(['ctx', 'sessionCost', 'questions', 'tokRate']);
-export const STATUS_GLOBAL_IDS = new Set(['todayTokens', 'todayCost', 'totalTokens', 'totalCost', 'tasks']);
+export const STATUS_SESSION_IDS = new Set(['ctx', 'questions', 'tokRate']);
+export const STATUS_GLOBAL_IDS = new Set(['todayTokens', 'totalTokens', 'tasks']);
 
 // 状态栏统计项的默认清单（顺序即默认显示顺序）；设置 → 外观 → 状态栏里
 // 可调顺序与显隐，配置存在 config.statusBar.items（整表覆盖）
@@ -85,16 +90,20 @@ export const DEFAULT_STATUS_ITEMS = [
 
 // —— ZCode 版本判断（按官方版本启用/停用功能）——
 // 版本来源：启动器从 app.asar 读出后写进 bootstrap（window.__ZCODEPRO__.zcodeVersion），
-// helper 的 /config 响应也附加同名字段。读不到时为空串，各判断保持旧行为。
+// 只经注入 bootstrap 传进页面（helper 的 /config 响应不带这个字段）。读不到时为空串，
+// 各判断保持旧行为。
 export function zcodeAppVersion() {
   const v = liveBoot().zcodeVersion;
   return typeof v === 'string' && v ? v : '';
 }
 
 export function zcodeVersionGte(version, major, minor, patch = 0) {
-  const m = String(version || '').match(/^(\d+)\.(\d+)\.(\d+)/);
+  // 允许两段式版本（"3.17"）与前缀 v，缺省段按 0；预发布号（-rc.1 等）截在正式
+  // 版段后不参与比较、按正式版处理——取舍：预发布版也按新版启用功能，比误判回
+  // 老版本少丢功能
+  const m = String(version || '').match(/^v?(\d+)(?:\.(\d+))?(?:\.(\d+))?/);
   if (!m) return false;
-  const a = Number(m[1]), b = Number(m[2]), c = Number(m[3]);
+  const a = Number(m[1]), b = Number(m[2] || 0), c = Number(m[3] || 0);
   return a > major || (a === major && (b > minor || (b === minor && c >= patch)));
 }
 
@@ -129,7 +138,7 @@ const zh = {
   zcodeStatsCounts: '技能 {total} 个（本地 {user} · 插件 {plugin}）',
   zcodeStatsChars: '完整清单约 {n} 字符',
   zcodeBudgetDefaultTag: '（默认值）',
-  zcodeStatsDegraded: '超出预算：完整清单放不下，降级为仅名称，模型看不到技能描述',
+  zcodeStatsDegraded: '超出预算：完整清单放不下，降级为只剩技能名和路径，模型看不到技能描述',
   zcodeStatsOk: '预算充足：清单带完整描述注入新会话',
   zcodeStatsSuggest: '建议预算 {n} 字符（留 20% 余量）',
   zcodeBudgetApply: '用建议值',
@@ -140,7 +149,7 @@ const zh = {
   zcodeSkillIncludeInstructions: '技能说明注入',
   zcodeSkillIncludeInstructionsDesc: 'skills.includeInstructions：技能说明是否随清单一起注入',
   zcodeSkillBudget: '技能清单预算（字符）',
-  zcodeSkillBudgetDesc: 'skills.metadataBudget：完整清单超过该长度就降级为仅名称，默认 20000',
+  zcodeSkillBudgetDesc: 'skills.metadataBudget：完整清单超过该长度就降级为只剩技能名和路径，默认 20000',
   zcodeSkillRoots: '额外技能目录',
   zcodeSkillRootsDesc: 'skills.roots：每行一个目录，目录下的技能会被发现（~/.zcode/skills、~/.agents/skills 之外的补充）',
   zcodeSave: '保存',
@@ -266,7 +275,7 @@ const zh = {
   featureTaskOrder: '侧边栏会话拖动排序',
   featureTaskOrderDesc: '拖动调整置顶、项目与分组中的会话顺序，重启后不变。',
   featureSessionSwitch: '会话快捷切换',
-  featureSessionSwitchDesc: '{last} 来回上次会话；alt+方向键/快捷键选最近会话；键位可改',
+  featureSessionSwitchDesc: '{last} 来回上次会话；按 alt+字母打开切换弹窗，弹窗里用方向键或快捷键选择；键位可改',
   featureTitleLock: '重命名会话名锁定',
   featureTitleLockDesc: '手动重命名过的会话不被自动标题覆盖，侧栏始终显示重命名后的名字。',
   tabTitleGen: '自动重命名',
@@ -351,12 +360,13 @@ const zh = {
   featureNewtabPanelsDesc: '新标签页加入第三方插件（headroom、rtk 等）的面板卡片，点击在侧边面板打开。',
   ntpDescSuffix: '插件面板',
   ntpNeedSession: '先打开一个任务会话，再从新标签页打开插件面板',
+  ntpOpenMissing: '当前界面没有打开插件面板的入口，无法从新标签页打开插件面板',
   featureStatusBarDesc: '提问输入框右下角和每轮回答最后显示统计项。',
   tabStylesPane: '样式',
   tabStatusPane: '状态栏',
   themeColorsPane: '主题',
   themeBgRegions: '分区背景',
-  themeBgRegionFollow: '无背景',
+  themeBgRegionFollow: '跟随全局壁纸',
   themeBgRegionLeft: '左侧边栏',
   themeBgRegionCenter: '中间区域',
   themeBgRegionRight: '右侧边栏',
@@ -391,6 +401,7 @@ const zh = {
   themeBgIntervalHint: '轮换间隔（分钟）',
   themeBgIntervalUnit: '分钟后轮换，设为 0 不轮换',
   themeBgFolderCount: '文件夹里有 {n} 个壁纸文件，定时轮换中。',
+  themeBgFolderCountIdle: '文件夹里有 {n} 个壁纸文件，当前不轮换。',
   themeBgFolderMissing: '文件夹不存在或里面没有壁纸文件。',
   themeBgUrlIntervalUnit: '分钟后刷新，设为 0 不刷新',
   themeBgUrlInvalid: '网址需以 http(s):// 开头',
@@ -408,7 +419,7 @@ const zh = {
   themeBgDialogFrost: '设置弹窗磨砂',
   themeBgMisc: '其他',
   themeBgFollowGlobal: '跟随全局',
-  themeBgRegionsHint: '每行的缩放、遮罩可单独设置，选"跟随全局"即跟随"画面"的值；模糊、转场、播放仅作用于全局壁纸（分区只能铺图，不能播视频）。分区用文件夹时，轮换间隔与随机顺序沿用全局设置。',
+  themeBgRegionsHint: '每行的缩放、遮罩可单独设置，选“跟随全局”即跟随“画面”的值；模糊、转场、播放仅作用于全局壁纸（分区只能铺图，不能播视频）。分区用文件夹时，轮换间隔与随机顺序沿用全局设置。',
   themeBgPlayback: '播放（视频壁纸）',
   themeBgVolume: '音量',
   themeBgVolumeHint: '视频壁纸的音轨音量，0 = 静音（默认）',
@@ -494,6 +505,10 @@ const zh = {
   pathCopyFailed: '复制路径失败',
   fileOpenDefault: '默认应用打开',
   fileReveal: '打开所在目录',
+  fileActionFailed: '{label}失败：{err}',
+  unknownError: '未知错误',
+  pluginLabel: '插件',
+  manualInput: '（手动输入）',
   featureAutoUpdatePlugins: '自动更新',
   featureAutoUpdatePluginsRepo: 'duanluan/zcode-plugins',
   featureAutoUpdatePluginsDesc: '',
@@ -512,7 +527,7 @@ const zh = {
   visionForceInterceptAuto: '不能识图就使用插件',
   visionForceInterceptTrue: '始终使用插件',
   visionForceInterceptFalse: '不使用插件',
-  visionForceInterceptHint: '不能识图就使用插件 = 跟随 ZCode「模型设置」里该模型的图片开关：开 = 模型自看不重复识别，关 = 走识别代理（tool 模式出识别卡片）；始终使用插件 = 能看图也强制走识别代理（双重识别换卡片）；不使用插件 = 能看图就放行（不能识图的模型仍走识别代理）',
+  visionForceInterceptHint: '不能识图就使用插件 = 跟随 ZCode“模型设置”里该模型的图片开关：开 = 模型自看不重复识别，关 = 走识别代理（tool 模式出识别卡片）；始终使用插件 = 能看图也强制走识别代理（双重识别换卡片）；不使用插件 = 能看图就放行（不能识图的模型仍走识别代理）',
   visionMode: '链模式',
   visionModeFallback: '依次尝试',
   visionModeFallbackDesc: '前一个失败才试下一个，任一成功即止（主力 + 备用）。',
@@ -540,6 +555,7 @@ const zh = {
   visionCompressKB: '压缩阈值 KB',
   visionCompressKBHint: '超过该大小的图先压缩再识别（最长边 2000、JPEG）；0 = 不压缩',
   visionLoadFailed: '读取视觉代理配置失败',
+  titleGenLoadFailed: '读取自动重命名配置失败',
   tabRtk: 'rtk',
   rtkDesc: 'rtk 插件：把常见开发命令的输出压缩 60-90% 再进入上下文（/rtk-* 命令编辑同一配置）。',
   rtkEnabled: '启用',
@@ -681,7 +697,7 @@ const zh = {
   relocateTitle: '切换文件夹',
   relocateDesc: '将该项目指向另一个文件夹：侧边栏、已打开标签页与本地任务历史一并迁移，目录本身不会被移动，会话记录不会丢失。',
   relocateNewPathLabel: '新文件夹',
-  relocateConfirm: '移动',
+  relocateConfirm: '切换',
   relocateHint: '目标文件夹需已存在，可输入路径或点击“浏览”选择；完成后界面将自动刷新。',
   relocateSuccess: '已切换文件夹，正在刷新界面…',
   relocateIndexSkipped: '已切换文件夹；任务历史未能同步（本机缺少 SQLite 支持），旧任务条目可能仍指向旧路径。',
@@ -706,10 +722,10 @@ const en = {
   tabZcode: 'ZCode CLI',
   zcodeDesc: 'ZCode behavior settings (written to ~/.zcode/cli/config.json); takes effect for new sessions.',
   zcodeStatsTitle: 'Skill listing check',
-  zcodeStatsCounts: '{total} skills ({user} local · {plugin} plugin)',
+  zcodeStatsCounts: '{total} skills ({user} local · {plugin} from plugins)',
   zcodeStatsChars: 'Full listing ≈ {n} characters',
   zcodeBudgetDefaultTag: ' (default)',
-  zcodeStatsDegraded: 'Over budget: the listing degrades to names only, so the model cannot see skill descriptions',
+  zcodeStatsDegraded: 'Over budget: the listing degrades to names and file paths only, so the model cannot see skill descriptions',
   zcodeStatsOk: 'Within budget: the full listing with descriptions is injected into new sessions',
   zcodeStatsSuggest: 'Suggested budget {n} characters (with 20% margin)',
   zcodeBudgetApply: 'Use suggested',
@@ -720,7 +736,7 @@ const en = {
   zcodeSkillIncludeInstructions: 'Skill instructions injection',
   zcodeSkillIncludeInstructionsDesc: 'skills.includeInstructions: whether skill instructions are injected along with the listing',
   zcodeSkillBudget: 'Skill listing budget (characters)',
-  zcodeSkillBudgetDesc: 'skills.metadataBudget: the listing degrades to names only beyond this length; default 20000',
+  zcodeSkillBudgetDesc: 'skills.metadataBudget: the listing degrades to names and file paths only beyond this length; default 20000',
   zcodeSkillRoots: 'Extra skill directories',
   zcodeSkillRootsDesc: 'skills.roots: one directory per line; skills under them are discovered (beyond ~/.zcode/skills and ~/.agents/skills)',
   zcodeSave: 'Save',
@@ -735,9 +751,9 @@ const en = {
   zcodeFeatSkillDesc: 'features.skill: the Skill tool is available (the skill system must also be on)',
   zcodeFeatMcp: 'MCP tools',
   zcodeFeatMcpDesc: 'features.mcp: use tools provided by MCP servers',
-  zcodeMemoryHint: 'Memory is not here: workspace memory is toggled in the official settings under Settings → Agent capabilities → Memory (with the memory viewer).',
+  zcodeMemoryHint: 'Workspace memory is not configured here; toggle it in the official settings under Settings → Agent capabilities → Memory (with the memory viewer).',
   agentsDesc: 'Written to ~/.zcode/AGENTS.md and used as default instructions in every session across all projects. Takes effect for new sessions; per-project AGENTS.md can extend or override it. Content over 100 KB is truncated by the app.',
-  agentsPlaceholder: 'Instructions followed by all projects by default; save empty to remove the global prompt',
+  agentsPlaceholder: 'Instructions followed by all projects by default; leave empty and save to remove the global prompt',
   agentsSave: 'Save',
   agentsSaved: 'Global prompt saved.',
   agentsLoadFailed: 'Failed to load the global prompt',
@@ -758,7 +774,7 @@ const en = {
   proxyScopeSyncDesc: 'WebDAV upload and download go through the proxy.',
   tabSync: 'Sync',
   tabDebug: 'Debug',
-  testNoSessionHint: 'With “follow current session [current model]” selected, the provider [model] of the last session is used.',
+  testNoSessionHint: 'With "Follow current session" selected, the provider and model of the last session are used (the label shows the model name in brackets).',
   syncDesc: 'Manually back up ZCode Pro settings and model settings to WebDAV, or restore them on a new computer. The two items are stored as separate files, so you can upload or overwrite either one alone; every upload also keeps a timestamped history version (how many to keep is set in the "History" row; older ones are removed automatically after upload) and download lets you pick any of them. Data moves only when you click, never automatically.',
   syncUrlPlaceholder: 'https://dav.example.com/dav/',
   syncDir: 'Folder',
@@ -771,7 +787,7 @@ const en = {
   syncPruned: 'removed {n} older history versions',
   syncSave: 'Save',
   syncSaved: 'Sync settings saved.',
-  syncFormHint: 'Sync files go inside the folder (default zcode-pro, multi-level allowed, created automatically): zcodepro.json and model.json are always the latest version; timestamped history versions are kept alongside.',
+  syncFormHint: 'Sync files go inside the folder (default zcode-pro, multi-level allowed, created automatically): zcodepro.json and model.json always hold the latest version; timestamped history versions are kept alongside.',
   syncRecLink: 'Jianguoyun WebDAV',
   syncRecSuffix: ' — use the app password, not your account password.',
   syncIncludeZcp: 'ZCode Pro settings',
@@ -781,7 +797,7 @@ const en = {
   syncUpload: 'Upload',
   syncDownload: 'Download',
   syncUploading: 'Uploading…',
-  syncUploaded: 'Uploaded to the server.',
+  syncUploaded: 'Uploaded to the server',
   syncDownloaded: 'Restored from the server.',
   syncLastPush: 'Last upload',
   syncLastPull: 'Last download',
@@ -789,7 +805,7 @@ const en = {
   syncConfirmTitle: 'Download from the server',
   syncConfirmDesc: 'The selected file will overwrite the matching local section (a .zcodepro-backup copy is kept next to each file); your local sync config and credentials stay untouched. Restarting ZCode is recommended after restoring model settings. Import now?',
   syncConfirmGo: 'Import',
-  syncPickDesc: 'Fixed names are always the latest version; timestamped files are the history each upload leaves behind. Import overwrites the matching local section.',
+  syncPickDesc: 'Fixed names always hold the latest version; timestamped files are the history each upload leaves behind. Import overwrites the matching local section.',
   syncVerDeleteLatestNote: 'Note: this is the "latest" file that older zcode-pro installs download from; deleting it breaks their download. Timestamped history versions are not affected.',
   syncHint: 'Sync credentials are stored locally in zcodepro.json only; model settings contain the API keys of custom providers and go to your own WebDAV only.',
   syncTest: 'Test',
@@ -834,11 +850,11 @@ const en = {
   lineHeightName: 'Answer line height',
   lineHeightDesc: 'Line height of answer text (multiplier).',
   thinkingLineHeightName: 'Work-log line height',
-  thinkingLineHeightDesc: 'Line height of the “worked for…” history panel (tool entries and reasoning, multiplier).',
+  thinkingLineHeightDesc: 'Line height of the "worked for…" history panel (tool entries and reasoning, multiplier).',
   userLineHeightName: 'Question line height',
   userLineHeightDesc: 'Line height of question text (multiplier).',
   contentWidthName: 'Content width',
-  contentWidthDesc: 'Max width of conversation content; accepts px or % (e.g. 900px, 85%).',
+  contentWidthDesc: 'Max width of conversation content; accepts px or % (e.g. 900px, 85%). Shows the current actual width by default; % is relative to the session area.',
   defaultValue: 'default',
   resetDefault: 'Reset to default',
   featureProjectMenu: 'Project menu actions',
@@ -846,27 +862,27 @@ const en = {
   featureTaskOrder: 'Sidebar session drag ordering',
   featureTaskOrderDesc: 'Drag to reorder sessions in Pinned, Projects and Groups; survives restarts.',
   featureSessionSwitch: 'Session quick switch',
-  featureSessionSwitchDesc: '{last} toggles to the last session; alt + arrows pick recent sessions; keys remappable',
+  featureSessionSwitchDesc: '{last} toggles between the current and the last session; alt + letter opens the switcher popup, pick with arrows or hotkeys inside; keys remappable',
   featureTitleLock: 'Keep renamed session titles',
   featureTitleLockDesc: 'Sessions you renamed keep their custom title in the sidebar.',
   tabTitleGen: 'Auto rename',
-  titleGenShortDesc: 'When a new session starts answering, generates the task name with the chosen provider and prompt and saves it as a manual rename the built-in title never overrides.',
+  titleGenShortDesc: 'When a new session starts answering, generates the task name with the chosen provider and prompt and saves it as a manual rename that the built-in title never overrides.',
   titleGenEnabled: 'Enable',
   titleGenProvider: 'Provider',
   titleGenProviderNone: 'Custom endpoint (no provider)',
   titleGenProviderSession: 'Follow current session',
   titleGenProviderDeleted: ' (deleted)',
   titleGenModel: 'Model',
-  titleGenModelHint: 'Pick from the list, or type a model id',
+  titleGenModelHint: 'Pick from the list, or type a model ID',
   titleGenModelEmpty: '(not set)',
   titleGenModelSessionHint: 'Pick from the list; the first entry follows the session model',
   titleGenModelFollowSession: 'Follow the session model',
-  titleGenModelManualHint: 'Type a model id',
+  titleGenModelManualHint: 'Type a model ID',
   titleGenBaseUrl: 'Base URL',
   titleGenApiKey: 'API Key',
   titleGenFormat: 'Protocol',
   titleGenPrompt: 'Prompt',
-  titleGenPromptPlaceholder: 'Leave empty for the built-in default prompt (button below shows it)',
+  titleGenPromptPlaceholder: 'Leave empty for the built-in default prompt (the button below shows it)',
   titleGenPromptReset: 'Use default prompt',
   titleGenSample: 'Test message',
   titleGenTest: 'Test',
@@ -875,18 +891,18 @@ const en = {
   titleGenTestFailed: 'Generation failed',
   titleGenManual: 'Manual rename',
   titleGenHoverBtn: 'Task row hover button',
-  titleGenHoverBtnDesc: 'Show an “Auto rename” button next to the archive button when hovering a task row.',
+  titleGenHoverBtnDesc: 'Show an "Auto rename" button next to the archive button when hovering a task row.',
   titleGenMenuEntry: 'Context menu item',
-  titleGenMenuEntryDesc: 'Show “Auto rename” below “Rename task” in the task context menu.',
+  titleGenMenuEntryDesc: 'Show "Auto rename" below "Rename task" in the task context menu.',
   titleGenRecentQa: 'Recent Q&A rounds',
-  titleGenRecentQaDesc: 'Manual rename takes this many recent Q&A rounds as material.',
+  titleGenRecentQaDesc: 'Manual rename uses the last N Q&A rounds as input.',
   autoRenameItem: 'Auto rename',
   autoRenameWorking: 'Generating title…',
   autoRenameDone: 'Renamed: ',
   featureWsRunning: 'Running indicator when collapsed',
   featureWsRunningDesc: 'Collapsed project and task headers show a loader while sessions run.',
   tabPerformance: 'Performance',
-  perfDesc: 'ZCode keeps a session process resident for every project you have opened and never reclaims it, so memory grows with projects. When enabled, projects unused for a while with nothing running release their memory automatically: sessions are untouched and reload when reopened, with a few seconds wait on the first reply. The project in use, running sessions, background commands and scheduled tasks are never reclaimed. Background-command detection reads system process info via built-in tools (Linux / macOS / Windows); when unavailable, the feature disables itself.',
+  perfDesc: 'ZCode keeps a session process resident for every project you have opened and never reclaims it, so memory grows with projects. When enabled, projects unused for a while with nothing running release their memory automatically: sessions are untouched and reload when reopened, with a few seconds\' wait on the first reply. The project in use, running sessions, background commands and scheduled tasks are never reclaimed. Background-command detection reads system process info via built-in tools (Linux / macOS / Windows); when unavailable, the feature disables itself.',
   featureIdleReclaim: 'Idle project memory reclaim',
   featureIdleReclaimDesc: 'Qualifying projects release their memory; sessions are untouched and reload when reopened.',
   idleReclaimMinutesLabel: 'Idle minutes before reclaim',
@@ -902,9 +918,9 @@ const en = {
   featurePinnedCollapse: 'Collapsible Pinned section',
   featurePinnedCollapseDesc: 'The Pinned header collapses/expands its task list.',
   featureSandboxReclaim: 'Plugin card sandbox reclaim',
-  featureSandboxReclaimDesc: 'Reclaims the oldest sandboxes at the 64 cap so new cards keep opening; released cards come back when their session is reopened.',
+  featureSandboxReclaimDesc: 'Reclaims the oldest sandboxes when the 64-slot cap is hit so new cards keep opening; released cards come back when their session is reopened.',
   featurePluginCardRetry: 'Plugin card auto-retry',
-  featurePluginCardRetryDesc: 'Auto-clicks "Reload" on cards that failed the slot cap; they recover as soon as a slot frees up.',
+  featurePluginCardRetryDesc: 'Auto-clicks "Reload" on cards that hit the slot cap; they recover as soon as a slot frees up.',
   visionCardUi: 'Vision cards',
   pinnedToggleAria: 'Collapse/expand Pinned',
   sidebarProjectSpacingName: 'Project spacing',
@@ -930,18 +946,19 @@ const en = {
   featureNewtabPanelsDesc: "Adds third-party plugin panels (headroom, rtk, ...) to the new tab page; click to open in the side pane.",
   ntpDescSuffix: 'plugin panel',
   ntpNeedSession: 'Open a task session first, then open plugin panels from the new tab page',
+  ntpOpenMissing: 'No plugin-panel opener in this UI; cannot open plugin panels from the new tab page',
   featureStatusBarDesc: 'Shows statistics at the bottom-right of the input box and at the end of each answer.',
   tabStylesPane: 'Styles',
   tabStatusPane: 'Status bar',
   themeColorsPane: 'Theme',
   themeBgRegions: 'Regional backgrounds',
-  themeBgRegionFollow: 'None',
+  themeBgRegionFollow: 'Follow global',
   themeBgRegionLeft: 'Left sidebar',
   themeBgRegionCenter: 'Center area',
   themeBgRegionRight: 'Right sidebar',
   themeBgPane: 'Wallpaper',
   themeSkinTitle: 'Skins',
-  themeSkinDesc: 'Famous editor theme palettes, auto-matching ZCode’s light / dark mode; "Default" keeps ZCode as-is, "Custom" is tuned below.',
+  themeSkinDesc: 'Well-known editor theme palettes, auto-matching ZCode\'s light / dark mode; "Default" keeps ZCode as-is, "Custom" is tuned below.',
   themeSkinCustom: 'Custom',
   themeCustomTitle: 'Custom theme',
   themeCustomHint: 'Color changes apply live (auto-switches to the custom skin); set light and dark separately — pick 5 colors and the whole palette is derived.',
@@ -952,7 +969,7 @@ const en = {
   themeCustomFg: 'Text',
   themeCustomMuted: 'Muted text',
   themeCustomAccent: 'Accent',
-  themeBgDesc: 'Wallpapers can be images, videos or web pages, rendered behind the UI. Sources: local library (pick one image), folder (rotate on a timer), image URL (refresh on a timer) or a web page; left / center / right regions can each have their own (static images only, with their own fit and mask). Sidebar, chat, composer and the settings dialog reveal the wallpaper — the settings dialog is frosted; the frosting can be turned off here; context menus and other dialogs stay opaque for readability. The library uploads over WebDAV with the zcode-pro sync group (overwrite, no history versions).',
+  themeBgDesc: 'Wallpapers can be images, videos or web pages, rendered behind the UI. Sources: local library (pick one image), folder (rotate on a timer), image URL (refresh on a timer) or a web page; left / center / right regions can each have their own background (static images only, with their own fit and mask). Sidebar, chat, composer and the settings window reveal the wallpaper — the settings window is frosted; the frosting can be turned off here; context menus and other dialogs stay opaque for readability. The library uploads over WebDAV with the zcode-pro sync group (overwrite, no history versions).',
   themeBgModeNone: 'None',
   themeBgModeLibrary: 'Library',
   themeBgModeFolder: 'Folder',
@@ -968,10 +985,11 @@ const en = {
   themeBgFolderHint: 'Pick a folder of wallpapers; files are read in place, not copied.',
   themeBgFolderRandom: 'Random order',
   themeBgIntervalHint: 'Rotation interval (minutes)',
-  themeBgIntervalUnit: 'minutes before rotation; 0 = no rotation',
+  themeBgIntervalUnit: 'minutes between rotations; 0 = no rotation',
   themeBgFolderCount: '{n} wallpaper files in the folder, rotating on the timer.',
+  themeBgFolderCountIdle: '{n} wallpaper files in the folder, rotation off.',
   themeBgFolderMissing: 'Folder missing or contains no wallpaper files.',
-  themeBgUrlIntervalUnit: 'minutes before refresh; 0 = no refresh',
+  themeBgUrlIntervalUnit: 'minutes between refreshes; 0 = no refresh',
   themeBgUrlInvalid: 'URL must start with http(s)://',
   themeBgWebHint: 'Web wallpapers render behind the UI in a sandboxed iframe; the page plays its own animation or video. Only pages with their own transparent background reveal the wallpaper; pages that need a login session may not show.',
   themeBgSource: 'Source',
@@ -984,7 +1002,7 @@ const en = {
   themeBgMask: 'Mask opacity',
   themeBgBlur: 'Wallpaper blur',
   themeBgPanel: 'Panel opacity',
-  themeBgDialogFrost: 'Frosted settings dialog',
+  themeBgDialogFrost: 'Frosted settings window',
   themeBgMisc: 'Other',
   themeBgFollowGlobal: 'Follow global',
   themeBgRegionsHint: 'Fit and mask can be set per row; "Follow global" uses the Display values. Blur, transition and playback apply only to the global wallpaper (regions are static images, no video). Region folders reuse the global rotation interval and order settings.',
@@ -1010,7 +1028,7 @@ const en = {
   sbItemQuestions: 'Questions asked',
   sbMaster: 'Enable statistics',
   sbMasterDesc: 'Master switch: turning this off disables both the input-box statistics and per-turn labels.',
-  sbGroupSession: 'Session statistics (follows current session)',
+  sbGroupSession: 'Session statistics (follows the current session)',
   sbGroupGlobal: 'Global statistics',
   sbGroupTurn: 'Per-turn statistics (answer rows)',
   sbLabelIn: 'in',
@@ -1018,7 +1036,7 @@ const en = {
   sbLabelCache: 'cache',
   turnUsageTitle: 'Turn tokens',
   sbLabelQuestions: 'asks',
-  sbItemTodayTokens: 'Today tokens',
+  sbItemTodayTokens: 'Tokens today',
   sbItemTasks: 'Tasks',
   sbLabelCtx: 'ctx',
   sbLabelTurns: 'calls',
@@ -1033,8 +1051,8 @@ const en = {
   tabShortcuts: 'Shortcuts',
   hkTitle: 'Session quick switch',
   hkAltZ: 'Toggle between the current and the last-used session',
-  hkAltX: 'Move the highlight up (earlier sessions) in the popup',
-  hkAltC: 'Move the highlight down (recent sessions); at the bottom it loads 5 more and highlights the first newly loaded entry',
+  hkAltX: 'Move the highlight up (earlier tasks) in the popup',
+  hkAltC: 'Move the highlight down (more recent tasks); at the bottom it loads 5 more and highlights the first newly loaded entry',
   hkAltE: 'Open the last 10 tasks',
   hkAltR: 'Open running / finished-but-unseen tasks',
   hkArrow: 'Move the highlight while the popup is open (same rules as alt + {prev} / alt + {next})',
@@ -1055,7 +1073,7 @@ const en = {
   hkResetDone: 'Shortcuts reset to defaults',
   featureFileActions: 'File menu actions',
   featureFileActionsDesc: 'Adds "Open with default app" and "Reveal in file manager" to the right-click menu of file links in chat.',
-  featureImageCopy: 'Image right-click copy',
+  featureImageCopy: 'Copy image',
   featureTableCopy: 'Copy table',
   featureComposerProvider: 'Provider in model name',
   featureImageCopyDesc: 'Right-click an image in chat or the enlarged preview to copy it to the clipboard.',
@@ -1073,6 +1091,10 @@ const en = {
   pathCopyFailed: 'Failed to copy the path.',
   fileOpenDefault: 'Open with default app',
   fileReveal: 'Reveal in file manager',
+  fileActionFailed: '{label} failed: {err}',
+  unknownError: 'Unknown error',
+  pluginLabel: 'Plugin',
+  manualInput: ' (manual input)',
   featureAutoUpdatePlugins: 'Auto-update',
   featureAutoUpdatePluginsRepo: 'duanluan/zcode-plugins',
   featureAutoUpdatePluginsDesc: '',
@@ -1088,10 +1110,10 @@ const en = {
   visionDesc: 'When the main model cannot see images (e.g. glm-5.3), images in messages are recognized by the vision models below and passed to the main model as text (zcode-vision plugin; /vision-* commands edit the same file).',
   visionEnabled: 'Enable',
   visionForceIntercept: 'Main model',
-  visionForceInterceptAuto: "Use plugin only if model can't see images",
-  visionForceInterceptTrue: 'Always use plugin',
-  visionForceInterceptFalse: 'Never use plugin',
-  visionForceInterceptHint: "Use plugin only if model can't see images = follow the image toggle in ZCode model settings: on = the model sees images itself (no duplicate recognition), off = route through the vision proxy (tool mode shows the result card); Always use plugin = forced double recognition for the card; Never use plugin = let capable models see images (models that can't still go through the plugin)",
+  visionForceInterceptAuto: "Use the plugin only if the model cannot see images",
+  visionForceInterceptTrue: 'Always use the plugin',
+  visionForceInterceptFalse: 'Never use the plugin',
+  visionForceInterceptHint: "Use the plugin only if the model cannot see images = follow the image toggle in ZCode model settings: on = the model sees images itself (no duplicate recognition), off = route through the vision proxy (tool mode shows the result card); Always use the plugin = forced double recognition for the card; Never use the plugin = let capable models see images (models that can't still go through the plugin)",
   visionMode: 'Chain mode',
   visionModeFallback: 'Fallback',
   visionModeFallbackDesc: 'Try in order until one succeeds (primary + backup).',
@@ -1105,10 +1127,10 @@ const en = {
   visionUseProvider: 'Provider',
   visionSkipAfterFailures: 'Skip after failures',
   visionSkipAfterFailuresHint: 'After this many consecutive failures a proxy is skipped and the next one is tried; 0 = never skip',
-  visionSkipMinutes: 'Skip minutes',
+  visionSkipMinutes: 'Skip for (minutes)',
   visionSkipMinutesHint: 'How long a skipped proxy rests before being retried; any success resets the counter',
   visionResetChain: 'Reset default chain',
-  visionResetChainConfirm: 'Reset chain mode and the proxy list to the default single-level chain (session: follow session and its current model)? Current proxy edits will be lost. Continue?',
+  visionResetChainConfirm: 'Reset chain mode and the proxy list to the default single-level chain (the "session" entry follows the session\'s provider and model)? Current proxy edits will be lost. Continue?',
   visionBaseUrl: 'API URL',
   visionModel: 'Model',
   visionApiKey: 'API Key',
@@ -1116,9 +1138,10 @@ const en = {
   visionTest: 'Test',
   visionTesting: 'Testing…',
   visionTestFailed: 'Vision proxy test failed',
-  visionCompressKB: 'Compress threshold KB',
+  visionCompressKB: 'Compression threshold (KB)',
   visionCompressKBHint: 'Images above this size are compressed first (max edge 2000, JPEG); 0 = never',
   visionLoadFailed: 'Failed to load the vision config',
+  titleGenLoadFailed: 'Failed to load the auto-rename config',
   tabRtk: 'rtk',
   rtkDesc: 'rtk plugin: compresses common dev command output by 60-90% before it reaches the context (/rtk-* commands edit the same files).',
   rtkEnabled: 'Enable',
@@ -1127,15 +1150,15 @@ const en = {
   rtkBinInstalled: 'rtk installed; PATH takes effect for sessions after signing out and back in — the plugin hook works immediately',
   rtkWhitelistTitle: 'Whitelist (pass through without compression)',
   rtkBuiltinLabel: 'Built-in exemptions (read-only, follow plugin updates):',
-  rtkWhitelistDesc: 'Each entry is name (e.g. docker) or git:name (e.g. git:clone); added commands skip compression. Built-ins (git add/commit/push, mkdir/cp, …) cannot be removed.',
+  rtkWhitelistDesc: 'Each entry is a name (e.g. docker) or git:name (e.g. git:clone); added commands skip compression. Built-ins (git add/commit/push, mkdir/cp, …) cannot be removed.',
   rtkWhitelistPlaceholder: 'name or git:name, press Enter to add',
   rtkWhitelistAdd: 'Add',
   rtkWhitelistClear: 'Clear',
   rtkWhitelistCleared: 'Whitelist cleared',
-  rtkWhitelistInvalid: 'Entry must be name or git:name',
+  rtkWhitelistInvalid: 'Entry must be a name or git:name',
   rtkLoadFailed: 'Failed to load the rtk config',
   tabHeadroom: 'Headroom',
-  headroomDesc: 'Headroom plugin: a local compression proxy on 127.0.0.1 (port 8787 by default) that compresses context sent to the model to save tokens (/hr-* commands edit the same file). Switching the device restarts the proxy, so requests in progress may be interrupted once.',
+  headroomDesc: 'Headroom plugin: a local compression proxy on 127.0.0.1 (port 8787 by default) that compresses context sent to the model to save tokens (/hr-* commands edit the same file). Switching the compression device restarts the proxy, so requests in progress may be interrupted once.',
   headroomBinMissing: 'The headroom program was not found, so the proxy cannot start. The settings below take effect once it is installed.',
   hrInstallBin: 'Install headroom binary',
   hrBinInstalled: 'headroom installed; reopen the app or a session and the proxy will start automatically',
@@ -1177,7 +1200,7 @@ const en = {
   headroomWatcher: 'Watcher',
   headroomWatcherOn: 'Running',
   headroomWatcherOff: 'Stopped',
-  headroomSaverDetect: 'Power-saver detection',
+  headroomSaverDetect: 'Power-save detection',
   headroomRefresh: 'Refresh',
   headroomStart: 'Start',
   headroomRestart: 'Restart',
@@ -1187,28 +1210,28 @@ const en = {
   headroomStoppedWarn: 'Proxy stopped; providers pointing at 127.0.0.1 cannot connect.',
   headroomBackend: 'Compression device',
   headroomBackendAuto: 'Auto · GPU first',
-  headroomBackendCpu: 'Power saving · CPU first',
+  headroomBackendCpu: 'Power-save · CPU first',
   headroomBackendNative: ' (native)',
-  headroomBackendDesc: 'Auto lets headroom pick the fastest device (CUDA/MPS); CPU forces CPU compression (power saving, no VRAM). Native headroom values (onnx, pytorch_mps, …) also work. Switching restarts the proxy to apply.',
+  headroomBackendDesc: 'Auto lets headroom pick the fastest device (CUDA/MPS); CPU forces CPU compression (power saving, no VRAM). Native headroom values (onnx, pytorch_mps, …) also work. Switching restarts the proxy to apply the change.',
   headroomPower: 'Power-save auto switch',
   headroomPowerOff: 'Off',
   headroomPowerOffDesc: 'No auto switching; always follow the compression device.',
   headroomPowerBattery: 'On battery',
   headroomPowerBatteryDesc: 'On battery (discharging) → CPU; switches back when plugged in.',
-  headroomPowerSaver: 'Power-saver',
-  headroomPowerSaverDesc: 'Only the system power-saver mode → CPU; back when it exits.',
+  headroomPowerSaver: 'Power saver',
+  headroomPowerSaverDesc: 'Only the system power saver mode → CPU; back when it exits.',
   hrCpuPinnedHint: 'The compression device is pinned to CPU, so power-save switching no longer changes anything.',
   headroomInterval: 'Watch interval',
   headroomIntervalDesc: 'Seconds between power checks (10–3600, default 60); applies from the next round.',
   headroomSecUnit: 's',
-  upgradeCheck: 'Check update',
+  upgradeCheck: 'Check for updates',
   upgradeChecking: 'Checking…',
   upgradeUpToDate: 'Up to date ({v})',
   upgradeFound: '{v} available',
   upgradeNow: 'Update',
   upgradeRunning: 'Updating…',
   upgradeStop: 'Stop',
-  upgradeStopped: 'Upgrade stopped',
+  upgradeStopped: 'Update stopped',
   upgradeDone: 'Updated to {v}',
   upgradeFinished: 'Update finished',
   upgradeCheckFailed: 'Update check failed',
@@ -1225,9 +1248,9 @@ const en = {
   aliasSaved: 'Alias updated.',
   aliasCleared: 'Real name restored.',
   aliasHint: 'The directory name on disk is unchanged: terminals, file managers and other path-based UI still show the real name.',
-  featureProjectMenuDescNew: 'Open folder and copy path in the project "More" menu. Renaming is built in since ZCode 3.16.1 ("Edit project"), so the custom alias is retired.',
+  featureProjectMenuDescNew: 'Open folder and copy path in the project "More" menu. Renaming is built into ZCode ≥ 3.16.1 ("Edit project"), so the custom alias is retired.',
   aliasMigrateTitle: 'Migrate project aliases',
-  aliasMigrateDesc: 'This ZCode supports renaming projects (project "More" menu → Edit project), so the custom alias feature is retired. Write your saved aliases into the official project names by picking the projects below; only the project name changes, folders on disk are untouched.',
+  aliasMigrateDesc: 'This ZCode supports renaming projects (project "More" menu → Edit project), so the custom alias feature is retired. Apply your saved aliases to the official project names by picking the projects below; only the project name changes, folders on disk are untouched.',
   aliasMigrateItemHint: 'The alias becomes the project name (re-editable anytime via "Edit project"). Only unmarked entries can be checked; migrated, merged, deleted, not-on-this-machine and manually-renamed ones cannot — to rename those projects, use "Edit project" in the project "More" menu directly.',
   aliasMigrateStateDone: 'Migrated',
   aliasMigrateStateMerged: 'Merged into "{name}"',
@@ -1260,7 +1283,7 @@ const en = {
   relocateTitle: 'Switch folder',
   relocateDesc: 'Points this project at another folder: the sidebar, open tabs and local task history move along. The directory itself is not moved and no sessions are lost.',
   relocateNewPathLabel: 'New folder',
-  relocateConfirm: 'Move',
+  relocateConfirm: 'Switch',
   relocateHint: 'The target folder must already exist. Enter a path or use Browse; the UI refreshes automatically afterwards.',
   relocateSuccess: 'Folder switched. Refreshing…',
   relocateIndexSkipped: 'Folder switched, but the task history was not synced (SQLite support missing); old entries may still point to the old path.',
@@ -1297,12 +1320,18 @@ export function startLocaleResolver() {
     .catch(() => { /* 取回失败：沿用 navigator.language 兜底 */ });
 }
 
+let zhCache = { at: 0, v: null };
 export function isZhLocale() {
+  // 结果缓存 3 秒：一轮渲染里要调十几次，localStorage 每次读有成本；
+  // 语言切换本来就会重载界面，短缓存跟得上
+  if (zhCache.v != null && Date.now() - zhCache.at < 3000) return zhCache.v;
   let pref = null;
   try { pref = window.localStorage.getItem('zcode-locale-preference'); } catch { /* ignore */ }
-  if (pref === 'zh-CN' || pref === 'en-US') return pref === 'zh-CN';
-  if (cachedSystemLocale) return cachedSystemLocale === 'zh-CN';
-  return /^zh/i.test(navigator.language || 'zh-CN');
+  const v = (pref === 'zh-CN' || pref === 'en-US') ? pref === 'zh-CN'
+    : cachedSystemLocale ? cachedSystemLocale === 'zh-CN'
+    : /^zh/i.test(navigator.language || 'zh-CN');
+  zhCache = { at: Date.now(), v };
+  return v;
 }
 
 export function t() {
@@ -1319,7 +1348,6 @@ const errEn = {
   'agents-read': 'Failed to read AGENTS.md',
   'agents-write': 'Failed to write AGENTS.md',
   'config-save': 'Failed to save config',
-  'settings-write': 'Failed to update setting.json',
   'workspace-empty': 'Workspace not found or has no sessions',
   'order-write': 'Failed to persist ordering',
   'group-not-found': 'No group contains these sessions',
@@ -1333,10 +1361,10 @@ const errEn = {
   'vision-read': 'Failed to read zcode-vision.json',
   'vision-write': 'Failed to write zcode-vision.json',
   'vision-test': 'Vision test failed',
-  'proxy-invalid': 'Proxy must look like http://127.0.0.1:7890, or be empty',
+  'proxy-invalid': 'The proxy must be a URL like http://127.0.0.1:7890, or be empty',
   'proxy-not-set': 'Set the proxy address first',
   'rtk-invalid': 'Invalid rtk config',
-  'rtk-update': 'Failed to check rtk updates (GitHub Releases unreachable? Set a proxy in the Proxy tab)',
+  'rtk-update': 'Failed to check for rtk updates (GitHub Releases unreachable? Set a proxy in the Proxy tab)',
   'rtk-write': 'Failed to write the rtk config',
   'headroom-read': 'Failed to read headroom.json',
   'headroom-write': 'Failed to write headroom.json',
@@ -1345,7 +1373,8 @@ const errEn = {
   'headroom-sh': 'sh not found; cannot run the headroom plugin script',
   'headroom-action': 'The headroom action failed',
   'headroom-status': 'Failed to read the headroom status',
-  'headroom-upgrade': 'headroom upgrade failed',
+  'headroom-update': 'headroom update failed',
+  'ZCODE_NOT_FOUND': 'ZCode executable not found',
   'plugins-status': 'Failed to read the plugin list',
   'plugins-update': 'Failed to update plugins',
   'sync-invalid': 'Invalid sync settings',
@@ -1356,6 +1385,34 @@ const errEn = {
   'sync-run': 'Sync failed',
   'sync-file-invalid': 'Invalid backup file name',
   'sync-export': 'Failed to save the backup to disk',
+  // 壁纸（bg-*）
+  'bg-folder': 'Invalid or unreadable wallpaper folder path',
+  'bg-name': 'Invalid file name (must end with a supported extension and include no path separators)',
+  'bg-data': 'Image data must be a data:image/*;base64 URL (upload videos via /bg/upload)',
+  'bg-size': 'The file is too large',
+  'bg-count': 'The wallpaper library is full; delete some files first',
+  'bg-magic': 'The file content does not match its extension',
+  'bg-write': 'Failed to write the wallpaper file',
+  'bg-delete': 'Failed to delete the wallpaper file',
+  // 视频转码
+  'transcode-src': 'Invalid source video for transcoding',
+  'transcode-fps': 'Unsupported frame-rate cap',
+  'transcode-busy': 'The transcode queue is full; retry later',
+  'no-ffmpeg': 'ffmpeg not found; the frame-rate cap is unavailable',
+  // 配置/文件读写
+  'config-unreadable': 'zcodepro.json is unreadable or corrupted; fix the config file first',
+  'zcode-config-unreadable': 'The ZCode config is unparseable; write aborted',
+  'read-error': 'Failed to read the file',
+  'cli-not-found': 'ZCode CLI not found (resources/glm/zcode.cjs)',
+  // 重定位（relocate）
+  'new-not-found': 'The target folder does not exist',
+  'protected-path': 'Refused: the path points inside the ZCode data directory',
+  'same-path': 'The new location is the same as the current one',
+  'export-cancelled': 'Canceled',
+  // 其他
+  'no-content': 'This session has no Q&A content yet',
+  'title-gen-disabled': 'Auto rename is not enabled',
+  'headroom-provider-config': 'ZCode provider config not found (v2/config.json)',
 };
 
 export function errText(res) {

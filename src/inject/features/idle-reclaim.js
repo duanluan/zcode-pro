@@ -29,6 +29,13 @@ const blockUntil = new Map();  // 项目路径 → 此前不得再次回收的�
 let scanDisabledLogged = false;
 const bootAt = Date.now();     // 注入时刻 ≈ 应用启动时刻
 let startupSweepDone = false;  // 启动一次性回收是否已执行
+// 功能开关缓存成模块变量（config-changed 时更新）：关闭时巡检早退，
+// 不再每个周期发一次 getConfig，也不扫系统进程
+let enabled = true;
+
+// 项目路径比较前统一去掉尾部分隔符：wsRunningSnapshot().current 是行键原始
+// 前缀（可带尾斜杠），候选路径已去尾分隔符，写法不同会被当成两个项目
+const normP = (v) => String(v || '').replace(/[\\/]+$/, '');
 
 
 // 项目清单改读 helper 的 /projects-v2（官方任务索引 projects/project_roots）：
@@ -39,7 +46,7 @@ async function sidebarWorkspaces() {
   if (res && res.ok && res.available) {
     for (const proj of res.projects || []) {
       for (const r of proj.roots || []) {
-        const p = String(r.path || '').replace(/[\/]+$/, '');
+        const p = normP(r.path);
         if (p) out.add(p);
       }
     }
@@ -49,7 +56,10 @@ async function sidebarWorkspaces() {
 
 async function reclaim(ws) {
   const services = findServices();
-  if (!services) return false;
+  if (!services) {
+    console.info('[zcodepro] idle-reclaim: 会话服务不可用，本轮不回收 ' + ws);
+    return false;
+  }
   try {
     // 应用内部的工作区键带尾分隔符（宿主日志可见），不带则键对不上、调用成空操作
     await services.zcodeTaskService.releaseWorkspacePreparation({
@@ -76,16 +86,21 @@ async function tryReclaim(ws, cooldownMs) {
     blockUntil.set(ws, Date.now() + cooldownMs); return;
   }
   // 复核要展开读行、网络请求也有耗时：期间用户可能已切到该项目，回收前再确认一次归属
-  const currentNow = wsRunningSnapshot().current;
-  if (!currentNow || currentNow === ws) { blockUntil.set(ws, Date.now() + cooldownMs); return; }
+  const currentNow = normP(wsRunningSnapshot().current);
+  if (!currentNow || currentNow === normP(ws)) { blockUntil.set(ws, Date.now() + cooldownMs); return; }
   await reclaim(ws);
   // 无论成败都冷却：失败退避重试；成功后用户再点开则进程重建、重新计时
   blockUntil.set(ws, Date.now() + cooldownMs);
 }
 
 async function tick() {
+  if (!enabled) {
+    idleSince.clear();
+    return;
+  }
   const cfg = await getConfig();
-  if ((cfg.features || {}).idleReclaim === false) {
+  enabled = !cfg.features || cfg.features.idleReclaim !== false;
+  if (!enabled) {
     idleSince.clear();
     return;
   }
@@ -102,15 +117,15 @@ async function tick() {
     idleSince.clear();
     return;
   }
-  const busy = new Set(snap.running);
-  busy.add(snap.current);
+  const busy = new Set(snap.running.map(normP));
+  busy.add(normP(snap.current));
 
   const workspaces = await sidebarWorkspaces();
   for (const ws of [...idleSince.keys(), ...blockUntil.keys()]) {
     if (!workspaces.has(ws)) { idleSince.delete(ws); blockUntil.delete(ws); }
   }
 
-  const candidates = [...workspaces].filter((ws) => !busy.has(ws));
+  const candidates = [...workspaces].filter((ws) => !busy.has(normP(ws)));
   const res = candidates.length
     ? await rpc('/idle-busy', { method: 'POST', body: { paths: candidates } })
     : { ok: true, scan: true, busy: [] };
@@ -148,6 +163,14 @@ async function tick() {
 }
 
 export function startIdleReclaim() {
+  // 开关经设置弹窗改动时更新缓存（外部直接改配置文件不走这条路，靠下一轮
+  // tick 里的 getConfig 兜——但那要功能开着才会走到）
+  window.addEventListener('zcodepro:config-changed', () => {
+    void getConfig(true).then((cfg) => {
+      enabled = !cfg.features || cfg.features.idleReclaim !== false;
+      if (!enabled) idleSince.clear();
+    }).catch(() => {});
+  });
   const loop = () => { tick().catch(() => { /* 单次巡检失败不影响后续 */ }); };
   loop();
   setInterval(loop, CHECK_MS);

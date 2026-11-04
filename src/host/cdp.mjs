@@ -13,14 +13,20 @@ export class CdpConnection {
     this.closed = false;
   }
 
-  async connect() {
+  async connect(timeoutMs = 10_000) {
     if (typeof WebSocket !== 'function') {
       throw new Error('当前运行时缺少全局 WebSocket（需要 Node >= 22 或 ZCode 内置 Node）');
     }
     await new Promise((resolve, reject) => {
       const ws = new WebSocket(this.wsUrl);
-      ws.addEventListener('open', () => resolve(), { once: true });
-      ws.addEventListener('error', () => reject(new Error('无法连接 CDP: ' + this.wsUrl)), { once: true });
+      // 握手超时：CDP HTTP 端点活着但 WS 迟迟不 open（浏览器繁忙/假死）时，
+      // 不能让主循环（热重注册/热替换/重连）一直卡在 connect 上
+      const timer = setTimeout(() => {
+        try { ws.close(); } catch { /* ignore */ }
+        reject(new Error('CDP 连接超时: ' + this.wsUrl));
+      }, timeoutMs);
+      ws.addEventListener('open', () => { clearTimeout(timer); resolve(); }, { once: true });
+      ws.addEventListener('error', () => { clearTimeout(timer); reject(new Error('无法连接 CDP: ' + this.wsUrl)); }, { once: true });
       this.ws = ws;
     });
     this.ws.addEventListener('message', (ev) => this.#onMessage(String(ev.data)));
@@ -28,6 +34,8 @@ export class CdpConnection {
       this.closed = true;
       for (const p of this.pending.values()) { clearTimeout(p.timer); p.reject(new Error('CDP 连接已关闭')); }
       this.pending.clear();
+      this.sessionListeners.clear();
+      this.attachedTargets.clear();
     });
   }
 
@@ -56,6 +64,8 @@ export class CdpConnection {
       const { sessionId } = msg.params;
       this.attachedTargets.delete(sessionId);
       this.#emit(sessionId, { type: 'detached', sessionId });
+      // 会话已死，其监听器一并清掉（sessionId 随页面/iframe 生灭，不清会慢慢攒多）
+      this.sessionListeners.delete(sessionId);
       this.#emit('', { type: 'detached', sessionId });
       return;
     }

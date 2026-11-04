@@ -81,14 +81,15 @@ function linkDominant(t) {
 }
 
 async function onNewTaskRow(key) {
+  // 开关检查放最前：功能关着就不用等选中标记、不占 attempted 名额
+  const cfg = await getConfig().catch(() => null);
+  if (!cfg || !cfg.titleGen || cfg.titleGen.enabled !== true) return;
+
   // 新任务行创建时选中标记可能晚一拍；短暂等待它成为当前会话，
   // 期间没选中（其他入口建的任务）就不处理
   const selDeadline = Date.now() + SELECT_WAIT_MS;
   while (currentKey() !== key && Date.now() < selDeadline) await sleep(200);
   if (currentKey() !== key) return;
-
-  const cfg = await getConfig().catch(() => null);
-  if (!cfg || !cfg.titleGen || cfg.titleGen.enabled !== true) return;
 
   const sessId = sessIdOf(key);
   if (!sessId || attempted.has(sessId)) return;
@@ -124,7 +125,7 @@ async function onNewTaskRow(key) {
   let lastChange = Date.now();
   try {
     while (Date.now() - startAt < COLLECT_MAX_MS) {
-      await sleep(500);
+      await sleep(2000); // 2 秒查一次：每次都要全量扫用户消息行，500ms 太勤
       if (currentKey() !== key) { lastChange = Date.now(); continue; } // 切走：暂停收集
       texts = userTexts();
       if (texts.length !== lastCount) {

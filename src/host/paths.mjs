@@ -1,18 +1,20 @@
 // 跨平台定位 ZCode 桌面版可执行文件。
 // 优先级：--zcode-path 参数 > ZCODEPRO_ZCODE_PATH 环境变量（进程 > 用户注册表） >
 // 平台默认候选路径 > 注册表 App Paths/卸载表（Windows） > PATH 上的 zcode。
-import { existsSync } from 'node:fs';
+import { accessSync, constants as fsConstants, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { arch, homedir, platform } from 'node:os';
+import { homedir, platform } from 'node:os';
 import { execFileSync } from 'node:child_process';
 
-// reg 输出按行取 REG_SZ 后的值，容忍引号与 ",0" 图标序号后缀。
+// reg 输出按行取 REG_SZ / REG_EXPAND_SZ 后的值，容忍引号与 ",0" 图标序号后缀；
+// REG_EXPAND_SZ 的 %VAR% 按当前环境变量展开（cmd 入口的同款兜底也认这种形态）
 const reg = (args) => {
   try {
     return execFileSync('reg', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
   } catch { return ''; }
 };
-const valueAfter = (out) => (out.split(/REG_SZ\s+/)[1] || '').trim();
+const valueAfter = (out) => (out.split(/REG_(?:EXPAND_)?SZ\s+/)[1] || '').trim()
+  .replace(/%([^%]+)%/g, (m, name) => process.env[name] || m);
 
 // 安装脚本 -ZCodePath 持久化的用户级环境变量（HKCU\Environment）：写入后不会传播
 // 到已运行的资源管理器，进程环境变量读不到时从这里兜底，免注销/重启（issue #1）。
@@ -36,6 +38,7 @@ function windowsRegistryCandidates() {
       seen.add(p.toLowerCase());
       winRegistryCandidates.push(p);
     }
+    return p;
   };
   // App Paths：安装器注册的可执行文件全路径（ShellExecute 同款查找）
   for (const root of ['HKLM', 'HKCU']) {
@@ -54,10 +57,12 @@ function windowsRegistryCandidates() {
   ]) {
     const out = reg(['query', key, '/s', '/v', 'DisplayIcon']);
     for (const line of out.split(/\r?\n/)) {
-      const seg = (line.split(/REG_SZ\s+/)[1] || '').trim();
+      const seg = (line.split(/REG_(?:EXPAND_)?SZ\s+/)[1] || '').trim();
       if (seg && /zcode/i.test(seg)) {
-        push(seg);
-        const dir = seg.replace(/[^\\\/]+$/, '');
+        // 目录推导要用去引号去 ",0" 的干净路径：带引号的 DisplayIcon
+        //（Inno 类安装器常见 "...\app.exe",0）不然推出的候选带多余引号
+        const clean = push(seg);
+        const dir = clean.replace(/[^\\\/]+$/, '');
         if (dir) {
           push(join(dir, 'ZCode.exe'));
           push(join(dir, 'zcode.exe'));
@@ -97,7 +102,6 @@ function candidates() {
     '/usr/local/ZCode/zcode',
     join(home, '.local', 'share', 'zcode', 'zcode'),
   ];
-  if (arch() === 'arm64') list.unshift('/opt/ZCode/zcode'); // AUR aarch64 同路径
   return list;
 }
 
@@ -107,7 +111,11 @@ export function resolveZcodeExecutable(explicit) {
     if (!p) return null;
     tried.push(p);
     try {
-      if (existsSync(p)) return p;
+      // 只认可执行的普通文件：名为 ZCode.exe 的目录会被 existsSync 误判成命中
+      const st = statSync(p);
+      if (!st.isFile()) return null;
+      if (platform() !== 'win32') accessSync(p, fsConstants.X_OK); // POSIX 上还要可执行
+      return p;
     } catch { /* ignore */ }
     return null;
   };

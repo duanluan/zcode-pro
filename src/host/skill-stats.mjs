@@ -37,7 +37,12 @@ function parseFrontmatter(text) {
 function loadSkill(dir) {
   const path = join(dir, 'SKILL.md');
   if (!existsSync(path)) return null;
-  const fm = parseFrontmatter(readFileSync(path, 'utf8'));
+  let fm;
+  try {
+    fm = parseFrontmatter(readFileSync(path, 'utf8'));
+  } catch {
+    return null; // 断链、无权限等坏条目跳过，别砸掉整个统计
+  }
   let name;
   let description = '';
   let whenToUse = '';

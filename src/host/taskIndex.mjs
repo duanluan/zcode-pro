@@ -5,8 +5,9 @@
 // - 仅 workspace_key：task_group_workspace_bootstraps（主键）、automation_runs；
 // - workspace_key + workspace_path + workspace_identity：
 //   tasks（key 为联合主键）、automations、off_peak_tasks、task_group_members（key 为联合主键）；
-// - 另有 tasks.meta_json 内嵌 "workspacePath":"<路径>"；
+// - 另有 tasks.meta_json 内嵌 "workspacePath":"<路径>"（冒号后可能带空格，两种写法都替换）；
 //   task_group_view_node_orders.node_key（node_type='task'）内嵌 JSON 数组 ["<workspace_key>","<task_id>"]；
+// - projects/project_roots.root_path（3.16.1+ 虚拟项目）按精确等值替换；
 // - workspace_identity 格式未详，按“引号界定的精确串”替换（哈希值不会含路径，LIKE 只做免更新过滤）；
 // - tasks.searchable_text 是会话内容文本（可能提及任何路径），不属于路径引用，不动。
 //
@@ -76,6 +77,7 @@ export async function probeTaskIndexWritable(dataRoot) {
 }
 
 // 把索引中所有引用 oldPath 的 workspace 键/字段重映射为 newPath，单事务。
+// 旧版库缺表/缺列时跳过对应语句（其余表照常改），不让一张缺表把整个事务回滚。
 // 返回 { changed }（SQLite changes() 计数之和，CLI 驱动返回 null）。
 export async function remapTaskIndexPaths(dataRoot, oldPath, newPath) {
   const dbFile = taskIndexPath(dataRoot);
@@ -95,9 +97,17 @@ export async function remapTaskIndexPaths(dataRoot, oldPath, newPath) {
   const KEY_TABLES = ['tasks', 'task_group_members', 'task_group_workspace_bootstraps', 'automations', 'automation_runs', 'off_peak_tasks'];
   // 带 workspace_path / workspace_identity 的表
   const PATH_TABLES = ['tasks', 'automations', 'off_peak_tasks', 'task_group_members'];
+  // root_path 所在的表（3.16.1+ 虚拟项目，listVirtualProjects 在读）；老库没有照跳
+  const ROOT_TABLES = ['projects', 'project_roots'];
   // 引号界定的 JSON 字符串替换："/a/b/old" 不会命中 "/a/b/old2"
   const quoted = (p) => JSON.stringify(p);
-  const metaToken = (p) => '"workspacePath":' + JSON.stringify(p);
+  // meta_json 里 "workspacePath" 的两种写法（紧凑 / 冒号后带空格）各替换一次
+  const metaTokenPairs = (oldKey, newKey) => [
+    ['"workspacePath":' + JSON.stringify(oldKey), '"workspacePath":' + JSON.stringify(newKey)],
+    ['"workspacePath": ' + JSON.stringify(oldKey), '"workspacePath": ' + JSON.stringify(newKey)],
+  ];
+  // 重映射涉及的全部表名：写入前查 sqlite_master 与列名，旧版库缺表/缺列时跳过对应语句
+  const ALL_TABLES = [...new Set([...KEY_TABLES, ...PATH_TABLES, ...ROOT_TABLES, 'tasks', 'task_group_view_node_orders'])];
 
   if (driver.kind === 'node') return remapWithNode(driver.DatabaseSync, dbFile);
   return remapWithCli(dbFile);
@@ -109,21 +119,39 @@ export async function remapTaskIndexPaths(dataRoot, oldPath, newPath) {
       db.exec(`PRAGMA busy_timeout = ${BUSY_TIMEOUT_MS}`);
       db.exec('BEGIN IMMEDIATE');
       try {
-        const run = (sql, params) => {
-          changed += db.prepare(sql).run(...params).changes;
+        // 先查在场的表和列：旧版库缺表/缺列（缺新表）时跳过对应语句，其余表照常改，
+        // 不再让一张缺表把整个事务回滚掉
+        const present = new Map();
+        const inDb = new Set(db.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all().map((r) => String(r.name)));
+        for (const t of ALL_TABLES) {
+          if (inDb.has(t)) present.set(t, new Set(db.prepare(`PRAGMA table_info(${t})`).all().map((c) => String(c.name))));
+        }
+        const run = (table, column, sql, params) => {
+          if (!present.get(table)?.has(column)) return;
+          try {
+            changed += db.prepare(sql).run(...params).changes;
+          } catch (err) {
+            // 预检后仍撞上缺表/缺列（预检到写入之间被别的进程改库）：跳过这条，其余继续
+            if (!/no such (table|column)/i.test(String(err?.message || err))) throw err;
+          }
         };
         for (const [oldKey, newKey] of variants) {
           for (const table of KEY_TABLES) {
-            run(`UPDATE ${table} SET workspace_key = ? WHERE workspace_key = ?`, [newKey, oldKey]);
+            run(table, 'workspace_key', `UPDATE ${table} SET workspace_key = ? WHERE workspace_key = ?`, [newKey, oldKey]);
           }
           for (const table of PATH_TABLES) {
-            run(`UPDATE ${table} SET workspace_path = ? WHERE workspace_path = ?`, [newKey, oldKey]);
-            run(`UPDATE ${table} SET workspace_identity = replace(workspace_identity, ?, ?)
+            run(table, 'workspace_path', `UPDATE ${table} SET workspace_path = ? WHERE workspace_path = ?`, [newKey, oldKey]);
+            run(table, 'workspace_identity', `UPDATE ${table} SET workspace_identity = replace(workspace_identity, ?, ?)
                  WHERE instr(workspace_identity, ?) > 0`, [quoted(oldKey), quoted(newKey), oldKey]);
           }
-          run(`UPDATE tasks SET meta_json = replace(meta_json, ?, ?)
-               WHERE instr(meta_json, ?) > 0`, [metaToken(oldKey), metaToken(newKey), oldKey]);
-          run(`UPDATE task_group_view_node_orders SET node_key = replace(node_key, ?, ?)
+          for (const table of ROOT_TABLES) {
+            run(table, 'root_path', `UPDATE ${table} SET root_path = ? WHERE root_path = ?`, [newKey, oldKey]);
+          }
+          for (const [oldTok, newTok] of metaTokenPairs(oldKey, newKey)) {
+            run('tasks', 'meta_json', `UPDATE tasks SET meta_json = replace(meta_json, ?, ?)
+               WHERE instr(meta_json, ?) > 0`, [oldTok, newTok, oldKey]);
+          }
+          run('task_group_view_node_orders', 'node_key', `UPDATE task_group_view_node_orders SET node_key = replace(node_key, ?, ?)
                WHERE instr(node_key, ?) > 0`, [quoted(oldKey), quoted(newKey), oldKey]);
         }
         db.exec('COMMIT');
@@ -137,19 +165,36 @@ export async function remapTaskIndexPaths(dataRoot, oldPath, newPath) {
 
   function remapWithCli(file) {
     const esc = (v) => "'" + String(v).replace(/'/g, "''") + "'";
+    // sqlite3 CLI 带 -bail 执行：一条报错就停，缺表/缺列只能靠预检过滤掉
+    // （与 node 驱动同一套在场表/列判定），预检漏掉的照旧报错回滚
+    const present = new Map();
+    const inDb = new Set(runCli(file, "SELECT name FROM sqlite_master WHERE type = 'table';").stdout.split(/\r?\n/).filter(Boolean));
+    for (const t of ALL_TABLES) {
+      if (!inDb.has(t)) continue;
+      const cols = runCli(file, `PRAGMA table_info(${t});`).stdout.split(/\r?\n/).filter(Boolean).map((l) => l.split('|')[1]);
+      present.set(t, new Set(cols));
+    }
     const stmts = [];
+    const add = (table, column, sql) => {
+      if (present.get(table)?.has(column)) stmts.push(sql);
+    };
     for (const [oldKey, newKey] of variants) {
       for (const table of KEY_TABLES) {
-        stmts.push(`UPDATE ${table} SET workspace_key = ${esc(newKey)} WHERE workspace_key = ${esc(oldKey)};`);
+        add(table, 'workspace_key', `UPDATE ${table} SET workspace_key = ${esc(newKey)} WHERE workspace_key = ${esc(oldKey)};`);
       }
       for (const table of PATH_TABLES) {
-        stmts.push(`UPDATE ${table} SET workspace_path = ${esc(newKey)} WHERE workspace_path = ${esc(oldKey)};`);
-        stmts.push(`UPDATE ${table} SET workspace_identity = replace(workspace_identity, ${esc(quoted(oldKey))}, ${esc(quoted(newKey))})
+        add(table, 'workspace_path', `UPDATE ${table} SET workspace_path = ${esc(newKey)} WHERE workspace_path = ${esc(oldKey)};`);
+        add(table, 'workspace_identity', `UPDATE ${table} SET workspace_identity = replace(workspace_identity, ${esc(quoted(oldKey))}, ${esc(quoted(newKey))})
                     WHERE instr(workspace_identity, ${esc(oldKey)}) > 0;`);
       }
-      stmts.push(`UPDATE tasks SET meta_json = replace(meta_json, ${esc(metaToken(oldKey))}, ${esc(metaToken(newKey))})
+      for (const table of ROOT_TABLES) {
+        add(table, 'root_path', `UPDATE ${table} SET root_path = ${esc(newKey)} WHERE root_path = ${esc(oldKey)};`);
+      }
+      for (const [oldTok, newTok] of metaTokenPairs(oldKey, newKey)) {
+        add('tasks', 'meta_json', `UPDATE tasks SET meta_json = replace(meta_json, ${esc(oldTok)}, ${esc(newTok)})
                   WHERE instr(meta_json, ${esc(oldKey)}) > 0;`);
-      stmts.push(`UPDATE task_group_view_node_orders SET node_key = replace(node_key, ${esc(quoted(oldKey))}, ${esc(quoted(newKey))})
+      }
+      add('task_group_view_node_orders', 'node_key', `UPDATE task_group_view_node_orders SET node_key = replace(node_key, ${esc(quoted(oldKey))}, ${esc(quoted(newKey))})
                   WHERE instr(node_key, ${esc(oldKey)}) > 0;`);
     }
     try {
@@ -201,14 +246,14 @@ export async function listVirtualProjects(dataRoot) {
     } else {
       const act = runCli(dbFile,
         `SELECT p.project_id || ${TAB} || p.name || ${TAB} || r.root_path || ${TAB} || r.is_primary || ${TAB} || p.name_overridden${SQL_ACTIVE.slice(SQL_ACTIVE.indexOf(' FROM'))};`).stdout;
-      activeRows = act.split('\n').filter(Boolean).map((l) => {
+      activeRows = act.split(/\r?\n/).filter(Boolean).map((l) => {
         const [pid, name, path, primary, overridden] = l.split('\t');
         return { pid, name, path, primary, name_overridden: overridden };
       });
       const del = runCli(dbFile,
         `SELECT r.root_path FROM projects p JOIN project_roots r ON r.project_id = p.project_id
         WHERE p.deleted = 1 AND (p.host_id = 'local' OR p.host_id IS NULL);`).stdout;
-      deletedRows = del.split('\n').filter(Boolean).map((p) => ({ path: p }));
+      deletedRows = del.split(/\r?\n/).filter(Boolean).map((p) => ({ path: p }));
     }
     const byId = new Map();
     for (const row of activeRows) {
@@ -228,7 +273,7 @@ export async function listVirtualProjects(dataRoot) {
         const db = new driver.DatabaseSync(dbFile, { readOnly: true });
         try { allPaths = db.prepare('SELECT DISTINCT workspace_path FROM tasks').all().map((r) => String(r.workspace_path || '')); } finally { db.close(); }
       } else {
-        allPaths = runCli(dbFile, 'SELECT DISTINCT workspace_path FROM tasks;').stdout.split('\n').filter(Boolean);
+        allPaths = runCli(dbFile, 'SELECT DISTINCT workspace_path FROM tasks;').stdout.split(/\r?\n/).filter(Boolean);
       }
     } catch { /* 读不到就不带，调用方只有项目路径 */ }
     return {
@@ -272,7 +317,6 @@ export async function listTaskStatuses(dataRoot, ids) {
   }
 }
 
-// 已重命名会话的标题表：task_id → title（title_overridden = 1 且未删除）。
 // 状态栏统计用：任务总数（未删除的会话行）
 export async function countTasks(dataRoot) {
   const dbFile = taskIndexPath(dataRoot);
@@ -301,7 +345,7 @@ export async function listOverriddenTitles(dataRoot) {
   const titles = {};
   try {
     if (driver.kind === 'node') {
-      const db = new driver.DatabaseSync(dbFile);
+      const db = new driver.DatabaseSync(dbFile, { readOnly: true });
       try {
         db.exec(`PRAGMA busy_timeout = ${BUSY_TIMEOUT_MS}`);
         for (const row of db.prepare(
@@ -445,7 +489,7 @@ export async function getTaskProviderModel(dataRoot, sessId) {
     : 'WHERE deleted = 0 AND model != \'\' ORDER BY updated_at DESC LIMIT 1';
   try {
     if (driver.kind === 'node') {
-      const db = new driver.DatabaseSync(dbFile);
+      const db = new driver.DatabaseSync(dbFile, { readOnly: true });
       try {
         db.exec(`PRAGMA busy_timeout = ${BUSY_TIMEOUT_MS}`);
         row = db.prepare(`SELECT provider, model FROM tasks ${where}`).get() || null;
@@ -477,7 +521,7 @@ export async function listTaskWorkspaceMap(dataRoot) {
   try {
     let rows = [];
     if (driver.kind === 'node') {
-      const db = new driver.DatabaseSync(dbFile);
+      const db = new driver.DatabaseSync(dbFile, { readOnly: true });
       try {
         db.exec(`PRAGMA busy_timeout = ${BUSY_TIMEOUT_MS}`);
         rows = db.prepare('SELECT task_id, workspace_path, workspace_key FROM tasks').all();
@@ -501,7 +545,7 @@ function runCli(dbFile, script) {
     windowsHide: true,
     input: `.timeout ${BUSY_TIMEOUT_MS}\n` + script,
     encoding: 'utf8',
-    maxBuffer: 1 << 20,
+    maxBuffer: 16 << 20, // 大会话的 JSON 聚合输出轻松过 1MB，与 helper 的上限对齐
   });
   if (r.error) throw r.error;
   if (r.status !== 0) throw new Error('sqlite3 CLI 执行失败: ' + (r.stderr || r.stdout || ('exit ' + r.status)));
@@ -527,51 +571,78 @@ export async function reconcileCustomTitles(dataRoot, writtenMap) {
   const idxFile = taskIndexPath(dataRoot);
   if (!existsSync(cliFile) || !existsSync(idxFile)) return repaired;
 
-  const readCli = async (sessId) => {
-    if (driver.kind === 'node') {
-      const db = new driver.DatabaseSync(cliFile, { readOnly: true });
-      try {
-        return db.prepare("SELECT title, title_source FROM session WHERE id = ?").get(sessId) || null;
-      } finally { db.close(); }
-    }
-    const r = runCli(cliFile, `SELECT coalesce(json_object('title', title, 'title_source', title_source), 'null') FROM session WHERE id = ${esc(sessId)};`);
-    const parsed = JSON.parse(r.stdout.trim() || 'null');
-    return parsed && typeof parsed === 'object' ? parsed : null;
-  };
+  // 会话 id 有 sess_ 与 session_ 两种前缀（新版应用为 session_），两种都认
+  const entries = Object.entries(writtenMap)
+    .filter(([sessId, rec]) => /^(?:sess|session)_[A-Za-z0-9._-]+$/.test(sessId) && rec && typeof rec.title === 'string');
+  if (!entries.length) return repaired;
 
-  for (const [sessId, rec] of Object.entries(writtenMap)) {
-    // 会话 id 有 sess_ 与 session_ 两种前缀（新版应用为 session_），两种都认
-    if (!/^(?:sess|session)_[A-Za-z0-9._-]+$/.test(sessId) || !rec || typeof rec.title !== 'string') continue;
-    let cli;
-    try { cli = await readCli(sessId); } catch { continue; }
-    // CLI 已不是我们所写的 custom 标题：别人改过（手动改名/官方），不碰
-    if (!cli || cli.title_source !== 'custom' || cli.title !== rec.title) continue;
+  // 批量处理：一次读 CLI 标题、一次事务写索引。逐条开关库（旧实现）在
+  // customWritten 多时（上限 500 条）是上千次同步开库/spawnSync，会卡住事件循环
+  if (driver.kind === 'node') {
+    let cliDb = null;
+    let idxDb = null;
     try {
-      if (driver.kind === 'node') {
-        const db = new driver.DatabaseSync(idxFile);
-        try {
-          db.exec(`PRAGMA busy_timeout = ${BUSY_TIMEOUT_MS}`);
-          db.exec('BEGIN IMMEDIATE');
-          try {
-            const r = db.prepare(
-              'UPDATE tasks SET title = ? WHERE task_id = ? AND deleted = 0 AND title_overridden = 1 AND title != ?'
-            ).run(rec.title, sessId, rec.title);
-            db.exec('COMMIT');
-            if (r.changes > 0) repaired.push(sessId);
-          } catch (err) {
-            try { db.exec('ROLLBACK'); } catch { /* 已回滚 */ }
-            throw err;
-          }
-        } finally { db.close(); }
-      } else {
-        const r = runCli(idxFile,
-          'BEGIN IMMEDIATE;\n'
-          + `UPDATE tasks SET title = ${esc(rec.title)} WHERE task_id = ${esc(sessId)} AND deleted = 0 AND title_overridden = 1 AND title != ${esc(rec.title)};\n`
-          + 'SELECT changes();\nCOMMIT;');
-        if (Number(r.stdout.trim()) > 0) repaired.push(sessId);
+      cliDb = new driver.DatabaseSync(cliFile, { readOnly: true });
+      const sel = cliDb.prepare('SELECT title, title_source FROM session WHERE id = ?');
+      const todo = [];
+      for (const [sessId, rec] of entries) {
+        let cli;
+        try { cli = sel.get(sessId) || null; } catch { continue; }
+        // CLI 已不是我们所写的 custom 标题：别人改过（手动改名/官方），不碰
+        if (!cli || cli.title_source !== 'custom' || cli.title !== rec.title) continue;
+        todo.push([sessId, rec.title]);
       }
+      if (!todo.length) return repaired;
+      const done = [];
+      idxDb = new driver.DatabaseSync(idxFile);
+      idxDb.exec(`PRAGMA busy_timeout = ${BUSY_TIMEOUT_MS}`);
+      idxDb.exec('BEGIN IMMEDIATE');
+      try {
+        const upd = idxDb.prepare(
+          'UPDATE tasks SET title = ? WHERE task_id = ? AND deleted = 0 AND title_overridden = 1 AND title != ?'
+        );
+        for (const [sessId, title] of todo) {
+          if (upd.run(title, sessId, title).changes > 0) done.push(sessId);
+        }
+        idxDb.exec('COMMIT');
+      } catch (err) {
+        try { idxDb.exec('ROLLBACK'); } catch { /* 已回滚 */ }
+        throw err;
+      }
+      repaired.push(...done); // 提交成功才记账，回滚时不虚报
     } catch { /* 占用等：下次再校正 */ }
+    finally {
+      try { if (cliDb) cliDb.close(); } catch { /* ignore */ }
+      try { if (idxDb) idxDb.close(); } catch { /* ignore */ }
+    }
+    return repaired;
   }
+
+  // sqlite3 CLI 驱动（缺 node:sqlite 的环境）：同样批量——一次读全部标题，
+  // 一次事务写全部更新（每次 UPDATE 后 SELECT changes() 输出一行计数）
+  try {
+    const ids = entries.map(([sessId]) => esc(sessId)).join(', ');
+    const r = runCli(cliFile,
+      `SELECT coalesce(json_group_array(json_object('id', id, 'title', title, 'title_source', title_source)), '[]') FROM session WHERE id IN (${ids});`);
+    const rows = JSON.parse(r.stdout.trim() || '[]');
+    const byId = new Map(rows.map((row) => [String(row.id), row]));
+    const todo = [];
+    for (const [sessId, rec] of entries) {
+      const cli = byId.get(sessId);
+      if (!cli || cli.title_source !== 'custom' || cli.title !== rec.title) continue;
+      todo.push([sessId, rec.title]);
+    }
+    if (!todo.length) return repaired;
+    const sql = ['BEGIN IMMEDIATE;'];
+    for (const [sessId, title] of todo) {
+      sql.push(`UPDATE tasks SET title = ${esc(title)} WHERE task_id = ${esc(sessId)} AND deleted = 0 AND title_overridden = 1 AND title != ${esc(title)};`);
+      sql.push('SELECT changes();');
+    }
+    sql.push('COMMIT;');
+    const w = runCli(idxFile, sql.join('\n'));
+    const counts = w.stdout.trim().split(/\r?\n/).filter((s) => s !== '').map(Number);
+    todo.forEach(([sessId], i) => { if (counts[i] > 0) repaired.push(sessId); });
+  } catch { /* 占用等：下次再校正 */ }
   return repaired;
 }
 

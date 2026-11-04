@@ -20,12 +20,34 @@ $desktopLnk = Join-Path $desktopDir "ZCode Pro.lnk"
 
 if ($Uninstall) {
   Remove-Item -Recurse -Force $dest -ErrorAction SilentlyContinue
-  Remove-Item $startMenu -ErrorAction SilentlyContinue
-  Remove-Item $desktopLnk -ErrorAction SilentlyContinue
+  # 快捷方式删前先读归属：只删指向安装目标（$dest）的，同名的外来快捷方式保留
+  #（与 setup.mjs 的“校验失败宁可漏删”一致）
+  try {
+    $sh = New-Object -ComObject WScript.Shell
+    foreach ($lnkPath in @($startMenu, $desktopLnk)) {
+      if (-not (Test-Path -LiteralPath $lnkPath)) { continue }
+      $l = $sh.CreateShortcut($lnkPath)
+      $ref = "$($l.TargetPath) $($l.Arguments)"
+      if ($ref.IndexOf($dest, [StringComparison]::OrdinalIgnoreCase) -ge 0) {
+        Remove-Item -LiteralPath $lnkPath -Force -ErrorAction SilentlyContinue
+      }
+    }
+  } catch {
+    Write-Host "[zcode-pro] 快捷方式归属检查失败，已保留，请手动删除。"
+  }
   # -ZCodePath 持久化的用户环境变量一并清除
   Remove-ItemProperty -Path "HKCU:\Environment" -Name "ZCODEPRO_ZCODE_PATH" -ErrorAction SilentlyContinue
+  # zcode-pro setup 装进 ZCode 数据目录的壁纸命令/技能一并清掉（与 setup --uninstall 同款清单）
+  $zpData = Join-Path $(if ($env:ZCODE_DATA_BASE_DIR) { $env:ZCODE_DATA_BASE_DIR } else { $env:USERPROFILE }) ".zcode"
+  Remove-Item -Force (Join-Path $zpData "commands\wallpaper.md") -ErrorAction SilentlyContinue
+  Remove-Item -Recurse -Force (Join-Path $zpData "skills\wallpaper") -ErrorAction SilentlyContinue
   Write-Host "[zcode-pro] 已卸载。"
   exit 0
+}
+
+# 仓库完整性校验先于写注册表：不完整仓库抛错退出时别把环境变量写了一半
+if (-not (Test-Path "$repo\dist\inject.js")) {
+  throw "缺少 dist\inject.js：请使用完整仓库（含构建产物）运行本脚本。"
 }
 
 # 自定义 ZCode 路径：校验并持久化。注意已运行的资源管理器不会继承新写入的用户
@@ -44,11 +66,8 @@ if ($ZCodePath) {
   Write-Host "[zcode-pro] 已保存自定义 ZCode 路径: $customZcode"
 }
 
-if (-not (Test-Path "$repo\dist\inject.js")) {
-  throw "缺少 dist\inject.js：请使用完整仓库（含构建产物）运行本脚本。"
-}
-
-# 1. 程序文件
+# 1. 程序文件（先删旧 bin/src：跨版本删掉的模块文件别永久残留）
+Remove-Item -Recurse -Force "$dest\bin", "$dest\src" -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path "$dest\dist" | Out-Null
 Copy-Item -Recurse -Force "$repo\bin" $dest
 Copy-Item -Recurse -Force "$repo\src" $dest
@@ -103,7 +122,7 @@ function New-ZcodeProShortcut([string]$path) {
       if ($ap) {
         $exe = [string]$ap.'(default)'
         $exe = $exe.Trim('"').Trim()
-        if ($exe -and (Test-Path $exe)) { $lnk.IconLocation = $exe; break }
+        if ($exe -and (Test-Path $exe)) { $lnk.IconLocation = $exe; $iconSet = $true; break }
       }
     }
   }

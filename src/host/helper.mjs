@@ -4,18 +4,18 @@
 
 import { createServer } from 'node:http';
 import { execFile, spawn, spawnSync } from 'node:child_process';
-import { createDecipheriv, createHash } from 'node:crypto';
+import { createDecipheriv, createHash, randomBytes } from 'node:crypto';
 import { appendFileSync, chmodSync, closeSync, copyFileSync, createReadStream, createWriteStream, existsSync, mkdirSync, openSync, readdirSync, readFileSync, readlinkSync, readSync, realpathSync, renameSync, rmSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { mkdtemp } from 'node:fs/promises'; // 注意：fs 的 mkdtemp 是回调版，await 它会把 undefined 当回调
 import { basename, delimiter, dirname, isAbsolute, join, resolve, sep } from 'node:path';
 import { homedir, tmpdir, userInfo } from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { readSettings, writeSettingsAtomic, remapSettingsPaths, isProjectOpenInTabs } from './settings.mjs';
+import { readSettings, remapSettingsPathsAtomic, isProjectOpenInTabs } from './settings.mjs';
 import { taskIndexPath, probeTaskIndexWritable, remapTaskIndexPaths, taskIndexDriverAvailable, listOverriddenTitles, listTaskWorkspaceMap, listTaskStatuses, setTaskTitleIfNotOverridden, setCustomSessionTitle, isTaskTitleOverridden, reconcileCustomTitles, getTaskProviderModel, listVirtualProjects, countTasks, readRecentQa } from './taskIndex.mjs';
 import { pickFolderSystem } from './pickFolder.mjs';
-import { reorderWorkspaceTasks, reorderGroupMembers } from './taskOrder.mjs';
+import { reorderTasks } from './taskOrder.mjs';
 import { webdavRequest, webdavPutWithMkcol, webdavHttpText, parseWebdavListing, findCurl } from './webdav.mjs';
-import { resolveZcodeExecutable } from './paths.mjs';
+import { resolveZcodeExecutable, resolveDataRootDir } from './paths.mjs';
 import { skillStats, DEFAULT_METADATA_BUDGET } from './skill-stats.mjs';
 
 const VERSION = '1.5.1';
@@ -37,7 +37,7 @@ function defaultRtkDir() {
 }
 
 // 主题功能的壁纸图库：用户上传的图片/视频都存这里，helper 以 /bg/file/<name> 提供，
-// 注入层直接引用该 URL（媒体元素/CSS url() 带不了 token 头，该路由免鉴权，见下）
+// 注入层直接引用该 URL（媒体元素/CSS url() 带不了鉴权请求头，URL 带 ?t= token，见下）
 const BG_DIR_NAME = 'backgrounds';
 export function backgroundsDir(dataRoot) {
   return join(dataRoot, BG_DIR_NAME);
@@ -122,7 +122,10 @@ export function renameOrReplace(tmp, dst) {
 export function sweepDeferredBg(dir) {
   try {
     for (const n of readdirSync(dir)) {
-      if (!n.includes('.deleted-')) continue;
+      // .deleted-* 是延迟删除的残留；结尾 .tmp 是上传中断留下的半截文件（正常
+      // 流程会即时改名或删掉）。都只清超过 24 小时的，避免误伤进行中的操作；
+      // 媒体文件扩展名有白名单，正常文件不会以 .tmp 结尾
+      if (!n.includes('.deleted-') && !n.endsWith('.tmp')) continue;
       const f = join(dir, n);
       try {
         if (Date.now() - statSync(f).mtimeMs > 24 * 3600 * 1000) unlinkSync(f);
@@ -142,6 +145,15 @@ export function listBgFiles(dataRoot) {
   } catch { return []; } // 目录不存在 = 空图库
 }
 
+// ?dir= 只认用户配置过的目录（全局文件夹 + 各分区目录）——仅凭 URL 上的 token
+// 还不够，别让持 token 的调用列出/读取任意目录的文件。取文件与列目录两条路由共用这一个判定
+function bgFolderDirAllowed(bgCfg, qDir) {
+  if (!qDir || qDir.length > 4096 || !isAbsolute(qDir)) return false;
+  const allowed = [bgCfg.folder,
+    bgCfg.regions?.left?.folder, bgCfg.regions?.center?.folder, bgCfg.regions?.right?.folder].filter(Boolean);
+  return allowed.includes(qDir);
+}
+
 // 视频壁纸帧率上限：ffmpeg 一次性转码出抽帧版存缓存目录，注入层先播原片、
 // 转码完成再换。没有 ffmpeg 时接口直接报缺依赖，注入层保持原片播放
 export const TRANSCODE_FPS = new Set([15, 30, 60, 90, 120]);
@@ -157,6 +169,7 @@ export function transcodeDir(dataRoot) {
   return join(dataRoot, 'cache', 'transcode');
 }
 const transcodeJobs = new Set(); // 正在转码的 key，防同一文件重复起 ffmpeg
+const transcodeChildren = new Set(); // 在跑的 ffmpeg 子进程：退出/交接时统一收掉，防孤儿进程
 const TRANSCODE_MAX_CONCURRENCY = 2; // 同时最多 2 个 ffmpeg，防批量请求打满 CPU/磁盘
 // URL 路径段解码：非法 % 序列回 null（调用方回 400），不让 URIError 落成 500
 let folderCfgCache = { at: 0, dir: '' };
@@ -213,6 +226,7 @@ function mergeBgRegion(src) {
 export function mergeThemeConfig(saved) {
   const t = saved && typeof saved === 'object' ? saved : {};
   const bg = t.bg && typeof t.bg === 'object' ? t.bg : {};
+  const bgUrl = (str(bg.url, 2000) || '').trim();
   const cfg = {
     skin: THEME_SKINS.has(t.skin) ? t.skin : 'default',
     custom: mergeCustomSkin(t.custom),
@@ -221,7 +235,7 @@ export function mergeThemeConfig(saved) {
       file: str(bg.file, 200) || '',
       folder: str(bg.folder, 4096) || '',
       folderRandom: bg.folderRandom !== false,
-      url: (str(bg.url, 2000) || '').trim(),
+      url: /^https?:\/\//i.test(bgUrl) ? bgUrl : '', // 网页壁纸只收 http(s)（与 wallpaper CLI 校验一致）
       // Number() 容错与相邻数值字段一致：外部写入方（手改配置/壁纸控制插件）写数字字符串也能生效
       intervalMin: bg.intervalMin != null && Number.isFinite(Number(bg.intervalMin)) ? Math.min(1440, Math.max(0, Math.round(Number(bg.intervalMin)))) : 0,
       fit: BG_FITS.has(bg.fit) ? bg.fit : 'cover',
@@ -272,7 +286,8 @@ const ZCODE_PLUGINS_MARKETPLACE = 'duanluan-zcode-plugins';
 const ZCODE_PLUGINS_MARKETPLACE_SOURCE = 'duanluan/zcode-plugins';
 
 function cliPluginsDir() {
-  return join(homedir(), '.zcode', 'cli', 'plugins');
+  // 官方 CLI 数据目录跟 ZCODE_DATA_BASE_DIR 迁移（rollout/v2 同款），别固定 HOME
+  return join(resolveDataRootDir(), 'cli', 'plugins');
 }
 
 export function defaultConfig() {
@@ -430,7 +445,8 @@ function readFileSyncText(p) {
 // 原子写任意 JSON 文件：先写临时文件再改名，避免崩溃留下半截 JSON
 function writeJsonAtomic(file, obj) {
   const tmp = `${file}.${process.pid}.${Date.now().toString(36)}.tmp`; // 防多写者共用同一 .tmp 撕裂
-  writeFileSync(tmp, JSON.stringify(obj, null, 2), 'utf8');
+  try { mkdirSync(dirname(file), { recursive: true }); } catch { /* 目录已存在 */ } // 数据目录缺失时先建，别让写入直接抛
+  writeFileSync(tmp, JSON.stringify(obj, null, 2), { encoding: 'utf8', mode: 0o600 }); // 配置含凭据，限制本人读写
   renameSync(tmp, file);
 }
 
@@ -441,12 +457,106 @@ export function saveConfig(configFile, config) {
   // 整份覆盖上去（WebDAV 账号、样式、主题全丢且不可恢复）。POST /config 另有
   // 显式报错，这里兜住其余调用方；修好文件后 loadConfig 会复位标记恢复可写。
   // 保护只针对 zcodepro.json：写别的文件（/zcode-config 写 cli/config.json）
-  // 直接用 writeJsonAtomic，别被这个标记误伤成静默不写
+  // 直接用 writeJsonAtomic，别被这个标记误伤成静默不写。
+  // 返回是否写入：调用方据此报错（同步导入不能在拒写时还报成功）
   if (configUnreadable) {
     console.error('[zcodepro] zcodepro.json 读取失败或已损坏，拒绝写回以免清空配置');
-    return;
+    return false;
   }
   writeJsonAtomic(configFile, config);
+  return true;
+}
+
+// —— zcodepro.json 跨进程写锁 ——————————————————————————————————
+// 多个进程（helper、wallpaper CLI、同步导入…）会同时读改写 zcodepro.json，
+// 不互斥时各拿旧快照写回，会把对方改的整段配置（WebDAV 凭据、别名、样式）盖掉。
+// 锁 = 配置文件同目录下的锁目录（mkdir 原子创建），目录里写持有者信息（pid + 随机 token）。
+const CONFIG_LOCK_STALE_MS = 10_000; // 锁龄超过这个数按悬挂锁接管
+const CONFIG_LOCK_WAIT_MS = 5_000;   // 等锁上限；等不到带提示继续尽力而为
+
+// 进程还在不在（pid 被系统复用的极端情形由锁龄上限兜底）
+function pidAlive(pid) {
+  if (!Number.isInteger(pid) || pid <= 0) return false;
+  try { process.kill(pid, 0); return true; } catch (err) { return err.code === 'EPERM'; }
+}
+
+// 抢一次锁：mkdir 成功即持有；已有锁时仅在持有者死亡或锁龄超时才拆掉接管。
+// 返回是否拿到（没拿到由调用方等待重试）
+function tryAcquireConfigLock(configFile, token) {
+  const lockDir = configFile + '.lock';
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      mkdirSync(lockDir); // 原子创建：同时只有一个进程成功
+      try {
+        writeFileSync(join(lockDir, 'holder.json'), JSON.stringify({ pid: process.pid, token }), 'utf8');
+      } catch { /* 持有者信息写失败不影响锁本身，释放时按超时接管兜底 */ }
+      return true;
+    } catch (err) {
+      if (err.code !== 'EEXIST') throw err;
+      let stale = false;
+      try {
+        let alive = true;
+        try {
+          const holder = JSON.parse(readFileSync(join(lockDir, 'holder.json'), 'utf8'));
+          alive = pidAlive(Number(holder.pid));
+        } catch { alive = true; } // 持有者信息缺失/写坏：只按锁龄判悬挂
+        stale = Date.now() - statSync(lockDir).mtimeMs > CONFIG_LOCK_STALE_MS || !alive;
+      } catch { stale = true; } // 锁目录正被删/读不了：按悬挂接管
+      if (!stale) return false;
+      try { rmSync(lockDir, { recursive: true, force: true }); } catch { return false; }
+      // 接管后回到循环重试 mkdir（可能被另一个进程抢先）
+    }
+  }
+  return false;
+}
+
+// 释放锁：只认自己那份持有者信息，被别人接管后不能把别人的锁删掉
+function releaseConfigLock(configFile, token) {
+  const lockDir = configFile + '.lock';
+  try {
+    const holder = JSON.parse(readFileSync(join(lockDir, 'holder.json'), 'utf8'));
+    if (holder.token !== token) return;
+  } catch { return; } // 读不到持有者信息（已被接管后删除等）：不动目录，留超时接管
+  try { rmSync(lockDir, { recursive: true, force: true }); } catch { /* ignore */ }
+}
+
+// 在跨进程锁内同步执行 fn 并返回其结果：fn 里保持同步读改写（loadConfig→改→
+// saveConfig 中间不要 await）。等锁上限约 5 秒，等不到带提示继续尽力而为
+//（不加锁至少还能写成，别直接失败）。调用点是 async 就 await 这个函数。
+export async function withConfigLock(configFile, fn) {
+  const token = randomBytes(12).toString('hex');
+  const deadline = Date.now() + CONFIG_LOCK_WAIT_MS;
+  while (!tryAcquireConfigLock(configFile, token)) {
+    if (Date.now() >= deadline) {
+      console.error('[zcodepro] 等 zcodepro.json 写锁超时，继续无锁写入（可能与别的进程互相覆盖）');
+      return fn();
+    }
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  try {
+    return fn();
+  } finally {
+    releaseConfigLock(configFile, token);
+  }
+}
+
+// 同步等锁变体（同步调用点用，如 setHeadroomUsage）：Atomics.wait 睡眠重试，
+// 语义与 withConfigLock 相同
+export function withConfigLockSync(configFile, fn) {
+  const token = randomBytes(12).toString('hex');
+  const deadline = Date.now() + CONFIG_LOCK_WAIT_MS;
+  while (!tryAcquireConfigLock(configFile, token)) {
+    if (Date.now() >= deadline) {
+      console.error('[zcodepro] 等 zcodepro.json 写锁超时，继续无锁写入（可能与别的进程互相覆盖）');
+      return fn();
+    }
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 100);
+  }
+  try {
+    return fn();
+  } finally {
+    releaseConfigLock(configFile, token);
+  }
 }
 
 // 一次性配置迁移已移除（原 wsRunningSpinOff）：旧实验版“折叠项目运行提示”
@@ -578,8 +688,9 @@ function zcodeConfigSnapshot(dataRoot) {
   return { ok: true, values, configured, stats };
 }
 
-export function startHelper({ port, token, dataRoot, state, agentsFile = defaultAgentsFile(), listenTries = 40, rolloutDir = '' }) {
+export function startHelper({ port, token, dataRoot, state, agentsFile = defaultAgentsFile(), listenTries = 40, rolloutDir = '', visionFile = '' }) {
   if (rolloutDir) rolloutDirOverride = rolloutDir;
+  if (!visionFile) visionFile = defaultVisionFile(); // 测试可覆盖，别把启动补写落到真实 ~/.zcode
   const configFile = join(dataRoot, 'zcodepro.json');
   const settingsFile = join(dataRoot, 'v2', 'setting.json');
   const bootConfig = loadConfig(configFile);
@@ -669,6 +780,16 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
           res2.end('read error');
         }
       };
+      // 媒体路由（CSS url()/<video> 引用，带不了鉴权请求头）：认 URL 上的
+      // ?t= token，外部页面猜不到 token 就读不走图库媒体、也做不了存在性探测
+      if (req.method === 'GET' && (url.pathname.startsWith('/bg/file/')
+        || url.pathname.startsWith('/bg/folder/file/') || url.pathname.startsWith('/bg/transcode/file/'))) {
+        const q = url.searchParams.get('t');
+        if (!token || (req.headers['x-zcodepro-token'] !== token && q !== token)) {
+          json(res, 401, { ok: false, error: 'unauthorized' });
+          return;
+        }
+      }
       if (req.method === 'GET' && url.pathname.startsWith('/bg/file/')) {
         const dec = decodeName(url.pathname.slice('/bg/file/'.length));
         if (dec === null) { json(res, 400, { ok: false, error: '非法文件名编码' }); return; }
@@ -681,12 +802,9 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         const qDir = url.searchParams.get('dir');
         let dir;
         if (qDir) {
-          // 本路由免鉴权（CSS url() 带不了头），dir 只认用户配置过的目录
-          //（全局文件夹 + 各分区目录）——否则任意外部页面可读本机任意目录的媒体文件
-          const cfgB = loadConfig(configFile).theme.bg;
-          const allowed = [cfgB.folder,
-            cfgB.regions?.left?.folder, cfgB.regions?.center?.folder, cfgB.regions?.right?.folder].filter(Boolean);
-          if (qDir.length > 4096 || !isAbsolute(qDir) || !allowed.includes(qDir)) {
+          // dir 只认用户配置过的目录（全局文件夹 + 各分区目录），
+          // 判定与 /bg/folder/list 共用 bgFolderDirAllowed
+          if (!bgFolderDirAllowed(loadConfig(configFile).theme.bg, qDir)) {
             json(res, 400, { ok: false, error: 'dir 参数无效或未配置' });
             return;
           }
@@ -712,7 +830,8 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         serveBgFile(dec, transcodeDir(dataRoot), res);
         return;
       }
-      if (token && req.headers['x-zcodepro-token'] !== token) {
+      // 空 token 视为配置错误直接拒绝（fail-closed），别放成免鉴权
+      if (!token || req.headers['x-zcodepro-token'] !== token) {
         json(res, 401, { ok: false, error: 'unauthorized' });
         return;
       }
@@ -727,132 +846,139 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
       }
       if (req.method === 'POST' && url.pathname === '/config') {
         const body = await readBody(req);
-        const current = loadConfig(configFile);
-        if (configUnreadable) {
-          json(res, 500, { ok: false, code: 'config-unreadable', error: 'zcodepro.json 读取失败或已损坏，拒绝写回以免清空配置；请先修复该文件' });
-          return;
-        }
-        if (body && typeof body === 'object' && typeof body.proxy === 'string') {
-          const v = body.proxy.trim();
-          if (v === '') current.proxy = '';
-          else if (/^https?:\/\/\S+:\d+$/.test(v) && v.length <= 300) current.proxy = v;
-          else {
-            json(res, 400, { ok: false, code: 'proxy-invalid', error: '代理地址需形如 http://127.0.0.1:7890，或留空清除' });
+        // 整段读改写（loadConfig→改→saveConfig）放进跨进程锁内同步执行，
+        // 防止两个写入方各拿旧快照写回、互相覆盖整份配置
+        await withConfigLock(configFile, () => {
+          const current = loadConfig(configFile);
+          if (configUnreadable) {
+            json(res, 500, { ok: false, code: 'config-unreadable', error: 'zcodepro.json 读取失败或已损坏，拒绝写回以免清空配置；请先修复该文件' });
             return;
           }
-          activeProxyUrl = current.proxy;
-        }
-        if (body && typeof body === 'object' && body.proxyScopes && typeof body.proxyScopes === 'object') {
-          // 代理生效范围按单项提交（每个开关只改自己那项），即时生效
-          for (const k of ['plugins', 'deps', 'sync']) {
-            if (typeof body.proxyScopes[k] === 'boolean') current.proxyScopes[k] = body.proxyScopes[k];
-          }
-          activeProxyScopes = { ...current.proxyScopes };
-        }
-        if (body && typeof body === 'object' && typeof body.devMode === 'boolean') {
-          current.devMode = body.devMode;
-        }
-        if (body && typeof body === 'object' && body.features && typeof body.features === 'object') {
-          // 会话名锁定开关的每次变化都落日志：它被意外关闭两次（页面里是关、
-          // 配置文件是开，来源不明），有记录才能查到是谁改的
-          if (typeof body.features.titleLock === 'boolean' && body.features.titleLock !== (loadConfig(configFile).features.titleLock !== false)) {
-            titleGenLog(dataRoot, `titleLock ${body.features.titleLock ? 'on' : 'off'}（此前为 ${!body.features.titleLock ? 'on' : 'off'}）`);
-          }
-          applyFeaturesPartial(current.features, body.features);
-        }
-        if (body && typeof body === 'object' && typeof body.idleReclaimMinutes === 'number' && Number.isFinite(body.idleReclaimMinutes)) {
-          current.idleReclaimMinutes = Math.min(1440, Math.max(1, Math.round(body.idleReclaimMinutes)));
-        }
-        if (body && typeof body === 'object' && typeof body.idleReclaimStartupMinutes === 'number' && Number.isFinite(body.idleReclaimStartupMinutes)) {
-          current.idleReclaimStartupMinutes = Math.min(1440, Math.max(0, Math.round(body.idleReclaimStartupMinutes)));
-        }
-        if (body && typeof body === 'object' && body.styles && typeof body.styles === 'object') {
-          current.styles = applyStylesPartial(current.styles, body.styles);
-        }
-        // 会话快捷切换的键位（设置 → 快捷键里修改）：键名固定，值限单个字母或数字
-        if (body && typeof body === 'object' && body.shortcuts && typeof body.shortcuts === 'object') {
-          const patch = {};
-          for (const k of ['switchLast', 'switchPrev', 'switchNext', 'switchRecent', 'switchAttention']) {
-            const v = body.shortcuts[k];
-            if (typeof v === 'string' && /^[a-z0-9]$/.test(v)) patch[k] = v;
-          }
-          current.shortcuts = { ...(current.shortcuts || {}), ...patch };
-        }
-        // 状态栏统计（设置 → 样式 → 状态栏）：items（任务统计项）与
-        // turnItems（每轮统计项）两个清单各自整表覆盖，谁在请求里就更新谁；
-        // id 白名单 + 去重保序，未知项丢弃
-        if (body && typeof body === 'object' && body.statusBar && typeof body.statusBar === 'object') {
-          const next = { ...(current.statusBar || {}) };
-          if (Array.isArray(body.statusBar.items)) {
-            const valid = new Set(['ctx', 'tokRate', 'questions', 'todayTokens', 'totalTokens', 'tasks']);
-            const seen = new Set();
-            const items = [];
-            for (const it of body.statusBar.items) {
-              if (!it || !valid.has(it.id) || seen.has(it.id)) continue;
-              seen.add(it.id);
-              items.push({ id: it.id, on: it.on !== false });
+          if (body && typeof body === 'object' && typeof body.proxy === 'string') {
+            const v = body.proxy.trim();
+            if (v === '') current.proxy = '';
+            else if (/^https?:\/\/\S+:\d+$/.test(v) && v.length <= 300) current.proxy = v;
+            else {
+              json(res, 400, { ok: false, code: 'proxy-invalid', error: '代理地址需形如 http://127.0.0.1:7890，或留空清除' });
+              return;
             }
-            next.items = items;
+            activeProxyUrl = current.proxy;
           }
-          if (Array.isArray(body.statusBar.turnItems)) {
-            const turnValid = new Set(['turnIn', 'turnOut', 'turnCache']);
-            const tseen = new Set();
-            const turnItems = [];
-            for (const it of body.statusBar.turnItems) {
-              if (!it || !turnValid.has(it.id) || tseen.has(it.id)) continue;
-              tseen.add(it.id);
-              turnItems.push({ id: it.id, on: it.on !== false });
+          if (body && typeof body === 'object' && body.proxyScopes && typeof body.proxyScopes === 'object') {
+            // 代理生效范围按单项提交（每个开关只改自己那项），即时生效
+            for (const k of ['plugins', 'deps', 'sync']) {
+              if (typeof body.proxyScopes[k] === 'boolean') current.proxyScopes[k] = body.proxyScopes[k];
             }
-            next.turnItems = turnItems;
+            activeProxyScopes = { ...current.proxyScopes };
           }
-          current.statusBar = next;
-        }
-        // 主题（设置 → 样式 → 颜色/背景图）：按字段合并，白名单校验在
-        // mergeThemeConfig；library 的 file 与 folder 的目录可能指向已不存在的
-        // 目标（图已删/目录移走/同步后缺失），注入层按“取不到 = 无背景”降级
-        if (body && typeof body === 'object' && body.theme && typeof body.theme === 'object') {
-          const bt = body.theme;
-          const cur = current.theme;
-          const next = {
-            skin: bt.skin !== undefined ? bt.skin : cur.skin,
-            custom: bt.custom !== undefined ? bt.custom : cur.custom,
-            bg: {
-              mode: bt.bg && bt.bg.mode !== undefined ? bt.bg.mode : cur.bg.mode,
-              file: bt.bg && bt.bg.file !== undefined ? bt.bg.file : cur.bg.file,
-              folder: bt.bg && bt.bg.folder !== undefined ? bt.bg.folder : cur.bg.folder,
-              folderRandom: bt.bg && bt.bg.folderRandom !== undefined ? bt.bg.folderRandom : cur.bg.folderRandom,
-              url: bt.bg && bt.bg.url !== undefined ? bt.bg.url : cur.bg.url,
-              intervalMin: bt.bg && bt.bg.intervalMin !== undefined ? bt.bg.intervalMin : cur.bg.intervalMin,
-              fit: bt.bg && bt.bg.fit !== undefined ? bt.bg.fit : cur.bg.fit,
-              maskOpacity: bt.bg && bt.bg.maskOpacity !== undefined ? bt.bg.maskOpacity : cur.bg.maskOpacity,
-              blurPx: bt.bg && bt.bg.blurPx !== undefined ? bt.bg.blurPx : cur.bg.blurPx,
-              panelOpacity: bt.bg && bt.bg.panelOpacity !== undefined ? bt.bg.panelOpacity : cur.bg.panelOpacity,
-              transition: bt.bg && bt.bg.transition !== undefined ? bt.bg.transition : cur.bg.transition,
-              fpsCap: bt.bg && bt.bg.fpsCap !== undefined ? bt.bg.fpsCap : cur.bg.fpsCap,
-              videoVolume: bt.bg && bt.bg.videoVolume !== undefined ? bt.bg.videoVolume : cur.bg.videoVolume,
-              playbackRate: bt.bg && bt.bg.playbackRate !== undefined ? bt.bg.playbackRate : cur.bg.playbackRate,
-              pauseOnHidden: bt.bg && bt.bg.pauseOnHidden !== undefined ? bt.bg.pauseOnHidden : cur.bg.pauseOnHidden,
-              pauseOnBlur: bt.bg && bt.bg.pauseOnBlur !== undefined ? bt.bg.pauseOnBlur : cur.bg.pauseOnBlur,
-              pauseOnBattery: bt.bg && bt.bg.pauseOnBattery !== undefined ? bt.bg.pauseOnBattery : cur.bg.pauseOnBattery,
-              dialogFrost: bt.bg && bt.bg.dialogFrost !== undefined ? bt.bg.dialogFrost : cur.bg.dialogFrost,
-              regions: bt.bg && bt.bg.regions !== undefined ? bt.bg.regions : cur.bg.regions,
-            },
-          };
-          current.theme = mergeThemeConfig(next);
-        }
-        if (body && typeof body === 'object' && body.titleGen && typeof body.titleGen === 'object') {
-          current.titleGen = mergeTitleGenConfig({ ...current.titleGen, ...body.titleGen });
-        }
-        // 一次性迁移标记（如别名迁移弹窗的“暂不迁移”）：按项合并，只接受布尔值
-        if (body && typeof body === 'object' && body.migrations && typeof body.migrations === 'object') {
-          const patch = {};
-          for (const [k, v] of Object.entries(body.migrations)) {
-            if (typeof v === 'boolean') patch[k] = v;
+          if (body && typeof body === 'object' && typeof body.devMode === 'boolean') {
+            current.devMode = body.devMode;
           }
-          current.migrations = { ...(current.migrations || {}), ...patch };
-        }
-        saveConfig(configFile, current);
-        json(res, 200, { ok: true, config: current });
+          if (body && typeof body === 'object' && body.features && typeof body.features === 'object') {
+            // 会话名锁定开关的每次变化都落日志：它被意外关闭两次（页面里是关、
+            // 配置文件是开，来源不明），有记录才能查到是谁改的
+            if (typeof body.features.titleLock === 'boolean' && body.features.titleLock !== (loadConfig(configFile).features.titleLock !== false)) {
+              titleGenLog(dataRoot, `titleLock ${body.features.titleLock ? 'on' : 'off'}（此前为 ${!body.features.titleLock ? 'on' : 'off'}）`);
+            }
+            applyFeaturesPartial(current.features, body.features);
+          }
+          if (body && typeof body === 'object' && typeof body.idleReclaimMinutes === 'number' && Number.isFinite(body.idleReclaimMinutes)) {
+            current.idleReclaimMinutes = Math.min(1440, Math.max(1, Math.round(body.idleReclaimMinutes)));
+          }
+          if (body && typeof body === 'object' && typeof body.idleReclaimStartupMinutes === 'number' && Number.isFinite(body.idleReclaimStartupMinutes)) {
+            current.idleReclaimStartupMinutes = Math.min(1440, Math.max(0, Math.round(body.idleReclaimStartupMinutes)));
+          }
+          if (body && typeof body === 'object' && body.styles && typeof body.styles === 'object') {
+            current.styles = applyStylesPartial(current.styles, body.styles);
+          }
+          // 会话快捷切换的键位（设置 → 快捷键里修改）：键名固定，值限单个字母或数字
+          if (body && typeof body === 'object' && body.shortcuts && typeof body.shortcuts === 'object') {
+            const patch = {};
+            for (const k of ['switchLast', 'switchPrev', 'switchNext', 'switchRecent', 'switchAttention']) {
+              const v = body.shortcuts[k];
+              if (typeof v === 'string' && /^[a-z0-9]$/.test(v)) patch[k] = v;
+            }
+            current.shortcuts = { ...(current.shortcuts || {}), ...patch };
+          }
+          // 状态栏统计（设置 → 样式 → 状态栏）：items（任务统计项）与
+          // turnItems（每轮统计项）两个清单各自整表覆盖，谁在请求里就更新谁；
+          // id 白名单 + 去重保序，未知项丢弃
+          if (body && typeof body === 'object' && body.statusBar && typeof body.statusBar === 'object') {
+            const next = { ...(current.statusBar || {}) };
+            if (Array.isArray(body.statusBar.items)) {
+              const valid = new Set(['ctx', 'tokRate', 'questions', 'todayTokens', 'totalTokens', 'tasks']);
+              const seen = new Set();
+              const items = [];
+              for (const it of body.statusBar.items) {
+                if (!it || !valid.has(it.id) || seen.has(it.id)) continue;
+                seen.add(it.id);
+                items.push({ id: it.id, on: it.on !== false });
+              }
+              next.items = items;
+            }
+            if (Array.isArray(body.statusBar.turnItems)) {
+              const turnValid = new Set(['turnIn', 'turnOut', 'turnCache']);
+              const tseen = new Set();
+              const turnItems = [];
+              for (const it of body.statusBar.turnItems) {
+                if (!it || !turnValid.has(it.id) || tseen.has(it.id)) continue;
+                tseen.add(it.id);
+                turnItems.push({ id: it.id, on: it.on !== false });
+              }
+              next.turnItems = turnItems;
+            }
+            current.statusBar = next;
+          }
+          // 主题（设置 → 样式 → 颜色/背景图）：按字段合并，白名单校验在
+          // mergeThemeConfig；library 的 file 与 folder 的目录可能指向已不存在的
+          // 目标（图已删/目录移走/同步后缺失），注入层按“取不到 = 无背景”降级
+          if (body && typeof body === 'object' && body.theme && typeof body.theme === 'object') {
+            const bt = body.theme;
+            const cur = current.theme;
+            const next = {
+              skin: bt.skin !== undefined ? bt.skin : cur.skin,
+              custom: bt.custom !== undefined ? bt.custom : cur.custom,
+              bg: {
+                mode: bt.bg && bt.bg.mode !== undefined ? bt.bg.mode : cur.bg.mode,
+                file: bt.bg && bt.bg.file !== undefined ? bt.bg.file : cur.bg.file,
+                folder: bt.bg && bt.bg.folder !== undefined ? bt.bg.folder : cur.bg.folder,
+                folderRandom: bt.bg && bt.bg.folderRandom !== undefined ? bt.bg.folderRandom : cur.bg.folderRandom,
+                url: bt.bg && bt.bg.url !== undefined ? bt.bg.url : cur.bg.url,
+                intervalMin: bt.bg && bt.bg.intervalMin !== undefined ? bt.bg.intervalMin : cur.bg.intervalMin,
+                fit: bt.bg && bt.bg.fit !== undefined ? bt.bg.fit : cur.bg.fit,
+                maskOpacity: bt.bg && bt.bg.maskOpacity !== undefined ? bt.bg.maskOpacity : cur.bg.maskOpacity,
+                blurPx: bt.bg && bt.bg.blurPx !== undefined ? bt.bg.blurPx : cur.bg.blurPx,
+                panelOpacity: bt.bg && bt.bg.panelOpacity !== undefined ? bt.bg.panelOpacity : cur.bg.panelOpacity,
+                transition: bt.bg && bt.bg.transition !== undefined ? bt.bg.transition : cur.bg.transition,
+                fpsCap: bt.bg && bt.bg.fpsCap !== undefined ? bt.bg.fpsCap : cur.bg.fpsCap,
+                videoVolume: bt.bg && bt.bg.videoVolume !== undefined ? bt.bg.videoVolume : cur.bg.videoVolume,
+                playbackRate: bt.bg && bt.bg.playbackRate !== undefined ? bt.bg.playbackRate : cur.bg.playbackRate,
+                pauseOnHidden: bt.bg && bt.bg.pauseOnHidden !== undefined ? bt.bg.pauseOnHidden : cur.bg.pauseOnHidden,
+                pauseOnBlur: bt.bg && bt.bg.pauseOnBlur !== undefined ? bt.bg.pauseOnBlur : cur.bg.pauseOnBlur,
+                pauseOnBattery: bt.bg && bt.bg.pauseOnBattery !== undefined ? bt.bg.pauseOnBattery : cur.bg.pauseOnBattery,
+                dialogFrost: bt.bg && bt.bg.dialogFrost !== undefined ? bt.bg.dialogFrost : cur.bg.dialogFrost,
+                regions: bt.bg && bt.bg.regions !== undefined ? bt.bg.regions : cur.bg.regions,
+              },
+            };
+            current.theme = mergeThemeConfig(next);
+          }
+          if (body && typeof body === 'object' && body.titleGen && typeof body.titleGen === 'object') {
+            current.titleGen = mergeTitleGenConfig({ ...current.titleGen, ...body.titleGen });
+          }
+          // 一次性迁移标记（如别名迁移弹窗的“暂不迁移”）：按项合并，只接受布尔值
+          if (body && typeof body === 'object' && body.migrations && typeof body.migrations === 'object') {
+            const patch = {};
+            for (const [k, v] of Object.entries(body.migrations)) {
+              if (typeof v === 'boolean') patch[k] = v;
+            }
+            current.migrations = { ...(current.migrations || {}), ...patch };
+          }
+          if (!saveConfig(configFile, current)) {
+            json(res, 500, { ok: false, code: 'config-unreadable', error: 'zcodepro.json 读取失败或已损坏，保存中止（请先修好配置文件）' });
+            return;
+          }
+          json(res, 200, { ok: true, config: current });
+        });
         return;
       }
       // —— ZCode CLI 行为配置（设置 → 行为 → ZCode CLI）：读写 ~/.zcode/cli/config.json
@@ -899,7 +1025,7 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         json(res, 200, zcodeConfigSnapshot(zcodeDataRoot()));
         return;
       }
-      // —— 主题背景图库：列表 / base64 上传 / 删除（取文件见上方免 token 的 /bg/file）——
+      // —— 主题背景图库：列表 / base64 上传 / 删除（取文件见上方的 /bg/file，URL 带 ?t= token）——
       if (req.method === 'GET' && url.pathname === '/bg') {
         json(res, 200, { ok: true, files: listBgFiles(dataRoot), maxCount: BG_MAX_COUNT });
         return;
@@ -938,7 +1064,8 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         }
         try {
           mkdirSync(dir, { recursive: true });
-          const tmp = join(dir, name + '.tmp');
+          // 临时名带 pid+随机：两个写者（上传/同步下载）撞同一文件名时不共用一个 .tmp
+          const tmp = join(dir, `${name}.${process.pid}.${Date.now().toString(36)}.tmp`);
           writeFileSync(tmp, buf);
           renameOrReplace(tmp, join(dir, name));
         } catch (errBg) {
@@ -1073,20 +1200,23 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
           const vf = `fps=${fps},scale=min(1920\\,iw):min(1920\\,ih):force_original_aspect_ratio=decrease`;
           let child;
           try {
-            child = spawn('ffmpeg', ['-y', '-i', src, '-vf', vf, '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '23', '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart', tmp], { stdio: 'ignore' });
+            child = spawn('ffmpeg', ['-y', '-i', src, '-vf', vf, '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '23', '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart', tmp], { stdio: 'ignore', windowsHide: true });
+            transcodeChildren.add(child);
           } catch (errSpawn) {
             transcodeJobs.delete(key); // 同步抛错也把名额放掉
             throw errSpawn;
           }
           child.on('exit', (code) => {
             transcodeJobs.delete(key);
+            transcodeChildren.delete(child);
             try {
               if (code === 0) renameOrReplace(tmp, out); // renameOrReplace 扛得住 Windows 文件占用
               else rmSync(tmp, { force: true });
             } catch { /* 缓存目录写失败：下次再试 */ }
           });
-          child.on('error', () => { transcodeJobs.delete(key); });
-          const killTimer = setTimeout(() => { try { child.kill(); } catch { /* 已退出 */ } }, 30 * 60 * 1000);
+          child.on('error', () => { transcodeJobs.delete(key); transcodeChildren.delete(child); });
+          // 看门狗直接 SIGKILL（与 jobRun 一致）：ffmpeg 不退则 exit 不触发、转码名额泄漏
+          const killTimer = setTimeout(() => { try { child.kill('SIGKILL'); } catch { /* 已退出 */ } }, 30 * 60 * 1000);
           child.on('exit', () => clearTimeout(killTimer));
         }
         json(res, 200, { ok: true, key, ready: false });
@@ -1122,9 +1252,14 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         return;
       }
       if (req.method === 'GET' && url.pathname === '/bg/folder/list') {
-        // dir 查询参数：分区背景列自己目录时传入；缺省列全局设置的目录
+        // dir 查询参数：分区背景列自己目录时传入；缺省列全局设置的目录。
+        // dir 只认用户配置过的目录（与取文件路由同一判定），不合法与文件路由同款报错
         const qDir = url.searchParams.get('dir');
-        const dir = (qDir && qDir.length <= 4096) ? qDir : loadConfig(configFile).theme.bg.folder;
+        if (qDir && !bgFolderDirAllowed(loadConfig(configFile).theme.bg, qDir)) {
+          json(res, 400, { ok: false, error: 'dir 参数无效或未配置' });
+          return;
+        }
+        const dir = qDir || loadConfig(configFile).theme.bg.folder;
         if (!dir || !existsSync(dir)) { json(res, 200, { ok: true, files: [], missing: true, dir: dir || '' }); return; }
         try {
           const r = listFolderBg(dir);
@@ -1208,7 +1343,7 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
       }
       if (req.method === 'POST' && url.pathname === '/project/alias') {
         const body = await readBody(req);
-        json(res, ...setAlias(body, configFile));
+        json(res, ...(await setAlias(body, configFile)));
         return;
       }
       if (req.method === 'POST' && url.pathname === '/project/relocate') {
@@ -1223,8 +1358,9 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         json(res, 200, { ok: true, ...(await pickFolderSystem(start, title)) });
         return;
       }
-      // 会话拖动排序持久化：scope = workspace（置顶/项目列表，重盖 updated_at）
-      // 或 group-members（分组会话，重写 members.sort_order）
+      // 会话拖动排序持久化：hint = 拖动落点所在的列表（project/pinned/section，
+      // 缺省按数据判定），旧注入包的 scope（workspace/group-members）回退认作 hint；
+      // 工作区列表重盖 updated_at，分组会话重写 members.sort_order
       if (req.method === 'POST' && url.pathname === '/task-order') {
         const body = await readBody(req);
         const ordered = Array.isArray(body?.ordered) ? body.ordered.filter((k) => typeof k === 'string') : [];
@@ -1232,13 +1368,7 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
           json(res, 400, { ok: false, code: 'invalid-request', error: 'ordered 不能为空' });
           return;
         }
-        let result;
-        if (body.scope === 'workspace') result = await reorderWorkspaceTasks(dataRoot, ordered);
-        else if (body.scope === 'group-members') result = await reorderGroupMembers(dataRoot, ordered);
-        else {
-          json(res, 400, { ok: false, code: 'invalid-request', error: '无效的 scope' });
-          return;
-        }
+        const result = await reorderTasks(dataRoot, ordered, body.hint ?? body.scope);
         if (result.error) {
           json(res, 400, { ok: false, code: result.code, error: result.error });
           return;
@@ -1274,29 +1404,36 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
       if (req.method === 'POST' && url.pathname === '/title-gen') {
         const body = await readBody(req);
         if (body && typeof body === 'object' && body.titleGen && typeof body.titleGen === 'object') {
-          const current = loadConfig(configFile);
-          const next = { ...current.titleGen, ...body.titleGen };
-          // 选了列表内供应商：同步解析并保存其地址/密钥/协议副本——供应商日后
-          // 被删，这份副本仍可直连（界面标注“已删除”并展开字段）；
-          // 跟随会话不存副本（每次调用时按该会话实时解析）
-          const providerId = (next.provider || '').trim();
-          if (providerId && providerId !== 'session') {
-            const found = listTitleGenProviders().find((p) => p.id === providerId);
-            if (found) {
-              next.baseUrl = found.baseUrl;
-              next.apiKey = found.apiKey;
-              next.format = found.format;
-            }
-            // 找不到（手输 id 或已删）：保留原有副本字段不动
-          } else if (providerId === 'session') {
+          // 读改写（loadConfig→改→saveConfig）放进跨进程锁内同步执行，
+          // 防止与别的写入方互相覆盖整份配置
+          await withConfigLock(configFile, () => {
+            const current = loadConfig(configFile);
+            const next = { ...current.titleGen, ...body.titleGen };
+            // 选了列表内供应商：同步解析并保存其地址/密钥/协议副本——供应商日后
+            // 被删，这份副本仍可直连（界面标注“已删除”并展开字段）；
             // 跟随会话不存副本（每次调用时按该会话实时解析）
-            next.baseUrl = '';
-            next.apiKey = '';
-            next.format = '';
-          }
-          current.titleGen = mergeTitleGenConfig(next);
-          saveConfig(configFile, current);
-          json(res, 200, { ok: true, titleGen: current.titleGen });
+            const providerId = (next.provider || '').trim();
+            if (providerId && providerId !== 'session') {
+              const found = listTitleGenProviders().find((p) => p.id === providerId);
+              if (found) {
+                next.baseUrl = found.baseUrl;
+                next.apiKey = found.apiKey;
+                next.format = found.format;
+              }
+              // 找不到（手输 id 或已删）：保留原有副本字段不动
+            } else if (providerId === 'session') {
+              // 跟随会话不存副本（每次调用时按该会话实时解析）
+              next.baseUrl = '';
+              next.apiKey = '';
+              next.format = '';
+            }
+            current.titleGen = mergeTitleGenConfig(next);
+            if (!saveConfig(configFile, current)) {
+              json(res, 500, { ok: false, code: 'config-unreadable', error: 'zcodepro.json 读取失败或已损坏，保存中止（请先修好配置文件）' });
+              return;
+            }
+            json(res, 200, { ok: true, titleGen: current.titleGen });
+          });
           return;
         }
         json(res, 400, { ok: false, code: 'invalid-request', error: 'body 需包含 titleGen 对象' });
@@ -1396,17 +1533,23 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
       }
       // —— zcode-vision 插件（图片视觉代理）：设置弹窗“视觉代理”标签页读写 ————
       if (req.method === 'GET' && url.pathname === '/vision') {
-        const file = defaultVisionFile();
+        const file = visionFile;
         let parsed = readJsonFile(file);
         // 装了 zcode-pro 默认启用识图卡片（插件纯安装默认关，纯文本展示）：
         // 只补从未写过的配置，用户显式设过 cardUi（含 false）不覆盖
         if (parsed && typeof parsed === 'object' && !('cardUi' in parsed)) {
-          parsed = { ...parsed, cardUi: true };
-          try {
-            const tmp = file + '.tmp';
-            writeFileSync(tmp, JSON.stringify(parsed, null, 2) + '\n', 'utf-8');
-            renameSync(tmp, file);
-          } catch { /* 补写失败下次再试，不阻塞读取 */ }
+          // 写前重读一次拿最新值合并：与插件侧的模板升级等写方并发时，
+          // 拿读取时的旧快照整份写回会把对方刚写的键盖掉
+          const fresh = readJsonFile(file);
+          const base = (fresh && typeof fresh === 'object') ? fresh : parsed;
+          if (!('cardUi' in base)) {
+            const merged = { ...base, cardUi: true };
+            try {
+              const tmp = `${file}.${process.pid}.${Date.now().toString(36)}.tmp`; // 防多写者撕裂
+              writeFileSync(tmp, JSON.stringify(merged, null, 2) + '\n', { encoding: 'utf-8', mode: 0o600 });
+              renameSync(tmp, file);
+            } catch { /* 补写失败下次再试，不阻塞读取 */ }
+          }
         }
         if (parsed === null && existsSync(file)) {
           json(res, 500, { ok: false, code: 'vision-read', error: 'zcode-vision.json 不是合法 JSON' });
@@ -1423,15 +1566,15 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
           return;
         }
         try {
-          const file = defaultVisionFile();
+          const file = visionFile;
           // 与磁盘旧配置合并（本块曾两次被并发改动覆盖回全量覆盖）：前端按自己
           // 的字段重建整份配置，直接覆盖会丢插件新增、面板还不认识的键
           //（cardSandboxBudget/cardUi/interceptMode 等）
           const merged = { ...(readJsonFile(file) || {}), ...cfg };
           // forceIntercept 为 null = 面板选了「自动」：从磁盘配置删掉该键，恢复插件缺省联动
           if (cfg.forceIntercept === null) delete merged.forceIntercept;
-          const tmp = file + '.tmp';
-          writeFileSync(tmp, JSON.stringify(merged, null, 2) + '\n', 'utf-8');
+          const tmp = `${file}.${process.pid}.${Date.now().toString(36)}.tmp`; // 防多写者撕裂
+          writeFileSync(tmp, JSON.stringify(merged, null, 2) + '\n', { encoding: 'utf-8', mode: 0o600 });
           renameSync(tmp, file);
         } catch (err2) {
           json(res, 500, { ok: false, code: 'vision-write', error: '写入 zcode-vision.json 失败: ' + (err2?.message || err2) });
@@ -1651,9 +1794,15 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
           return;
         } else if (body && 'interval' in body) {
           try {
-            const cfg = readHeadroomConfig(file);
-            cfg.powerWatchInterval = clampInt(body.interval, 10, 3600, cfg.powerWatchInterval);
-            writeHeadroomConfig(file, cfg);
+            // 只改 powerWatchInterval 一个键：readHeadroomConfig 会把非规范值归一
+            // 成默认值（插件侧是宽松读法），整份写回会把 backend 之类的本机值打回默认。
+            // 套配置锁：与同步导入、setHeadroomUsage 等自家写方互斥（插件侧写方走
+            // 它自己的生命周期锁，两边共存仍留极小窗口，写回本身是原子改名兜底）
+            await withConfigLock(file, () => {
+              const cfg = readJsonFile(file) || {};
+              cfg.powerWatchInterval = clampInt(body.interval, 10, 3600, Number(cfg.powerWatchInterval) || 60);
+              writeHeadroomConfig(file, cfg);
+            });
           } catch (err) {
             json(res, 500, { ok: false, code: 'headroom-write', error: '写入 headroom.json 失败: ' + (err?.message || err) });
             return;
@@ -1676,8 +1825,10 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         // 源码目录（有 package.json 与 esbuild）先构建，安装副本没有构建环境则跳过
         let built = false;
         const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
-        const esbuildBin = [join(repoRoot, 'node_modules', 'esbuild', 'bin', 'esbuild'),
-          join(repoRoot, 'node_modules', 'esbuild', 'bin', 'esbuild.exe')]
+        // Windows 上优先 esbuild.exe：无扩展名的 bin/esbuild 是 JS 垫片，spawnSync 跑不起来
+        const esbuildNames = process.platform === 'win32' ? ['esbuild.exe', 'esbuild'] : ['esbuild', 'esbuild.exe'];
+        const esbuildBin = esbuildNames
+          .map((n) => join(repoRoot, 'node_modules', 'esbuild', 'bin', n))
           .find((p) => existsSync(p)) || '';
         if (esbuildBin) {
           try {
@@ -1698,7 +1849,10 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
             });
             child.unref();
           } catch { /* 拉不起来就只能等下次手动重启 */ }
-          setTimeout(() => process.exit(0), 250);
+          setTimeout(() => {
+            try { dispose(); } catch { /* ignore */ } // 收掉残留 ffmpeg 子进程，防孤儿与新实例抢写缓存
+            process.exit(0);
+          }, 250);
         }, 150);
         return;
       }
@@ -1779,22 +1933,29 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
       }
       if (req.method === 'POST' && url.pathname === '/sync') {
         const body = await readBody(req);
-        const current = loadConfig(configFile);
-        // 表单（类型/URL/登录/密码）与同步内容开关分开提交：表单全量替换，开关只改单项
-        if (body && typeof body === 'object' && body.sync && typeof body.sync === 'object') {
-          const v = validateSyncForm(body.sync);
-          if (v.error) {
-            json(res, 400, { ok: false, code: 'sync-invalid', error: v.error });
+        // 读改写（loadConfig→改→saveConfig）放进跨进程锁内同步执行，
+        // 防止与别的写入方互相覆盖整份配置
+        await withConfigLock(configFile, () => {
+          const current = loadConfig(configFile);
+          // 表单（类型/URL/登录/密码）与同步内容开关分开提交：表单全量替换，开关只改单项
+          if (body && typeof body === 'object' && body.sync && typeof body.sync === 'object') {
+            const v = validateSyncForm(body.sync);
+            if (v.error) {
+              json(res, 400, { ok: false, code: 'sync-invalid', error: v.error });
+              return;
+            }
+            Object.assign(current.sync, v.sync);
+          }
+          if (body && typeof body === 'object' && body.include && typeof body.include === 'object') {
+            if (typeof body.include.zcodepro === 'boolean') current.sync.include.zcodepro = body.include.zcodepro;
+            if (typeof body.include.model === 'boolean') current.sync.include.model = body.include.model;
+          }
+          if (!saveConfig(configFile, current)) {
+            json(res, 500, { ok: false, code: 'config-unreadable', error: 'zcodepro.json 读取失败或已损坏，保存中止（请先修好配置文件）' });
             return;
           }
-          Object.assign(current.sync, v.sync);
-        }
-        if (body && typeof body === 'object' && body.include && typeof body.include === 'object') {
-          if (typeof body.include.zcodepro === 'boolean') current.sync.include.zcodepro = body.include.zcodepro;
-          if (typeof body.include.model === 'boolean') current.sync.include.model = body.include.model;
-        }
-        saveConfig(configFile, current);
-        json(res, 200, { ok: true, sync: current.sync });
+          json(res, 200, { ok: true, sync: current.sync });
+        });
         return;
       }
       if (req.method === 'POST' && url.pathname === '/sync/run') {
@@ -1804,8 +1965,12 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
           json(res, 400, { ok: false, code: 'invalid-request', error: 'direction 只能是 push 或 pull' });
           return;
         }
-        const config = loadConfig(configFile);
-        const r = await runSettingsSync({ direction, dataRoot, configFile, config, proxyUrl: proxyUrlFor('sync') });
+        // 同 direction 的并发触发共用同一次执行结果（见 enqueueSyncRun），
+        // 不同 direction 串行排队
+        const r = await enqueueSyncRun(direction, async () => {
+          const cfg = loadConfig(configFile);
+          return runSettingsSync({ direction, dataRoot, configFile, config: cfg, proxyUrl: proxyUrlFor('sync') });
+        });
         if (r.error) {
           json(res, r.status || 500, { ok: false, code: r.code || 'sync-run', error: r.error });
           return;
@@ -1839,6 +2004,10 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
           json(res, 400, { ok: false, code: 'sync-not-configured', error: '请先填写 WebDAV URL 并保存' });
           return;
         }
+        if (!webdavHttpSchemeOk(sync.url)) {
+          json(res, 400, { ok: false, code: 'sync-not-configured', error: '公网 WebDAV 地址需改用 https（http 明文传输登录名和密码）；内网或回环地址可继续用 http' });
+          return;
+        }
         const r = await listSyncVersions(sync, proxyUrlFor('sync'));
         if (r.error) {
           json(res, r.status || 500, { ok: false, code: r.code || 'sync-request', error: r.error });
@@ -1866,6 +2035,10 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
           json(res, 400, { ok: false, code: 'sync-not-configured', error: '请先填写 WebDAV URL 并保存' });
           return;
         }
+        if (!webdavHttpSchemeOk(sync.url)) {
+          json(res, 400, { ok: false, code: 'sync-not-configured', error: '公网 WebDAV 地址需改用 https（http 明文传输登录名和密码）；内网或回环地址可继续用 http' });
+          return;
+        }
         const remoteMissing = () => json(res, 404, { ok: false, code: 'sync-remote-missing', error: `云端文件 ${file} 不存在（可能已被删除）` });
         if (action === 'apply') {
           const remote = await fetchSyncNamedDoc(sync, proxyUrlFor('sync'), file);
@@ -1880,6 +2053,10 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
           const kind = file.startsWith('model') ? 'model' : 'zcodepro';
           sync.lastPullAt = Date.now();
           const r = applySyncDocs({ docs: { [kind]: remote.doc.data }, dataRoot, configFile, config, sync });
+          if (r && r.error) {
+            json(res, r.status || 500, { ok: false, code: r.code, error: r.error });
+            return;
+          }
           json(res, 200, { ok: true, applied: r.applied, sync: loadConfig(configFile).sync });
           return;
         }
@@ -1928,7 +2105,8 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
           return;
         }
         try {
-          writeFileSync(target, r.body, 'utf8');
+          writeFileSync(target, r.body, { encoding: 'utf8', mode: 0o600 }); // 导出内容含明文 apiKey，限制本人读写
+          try { chmodSync(target, 0o600); } catch { /* 覆盖同名旧文件时 mode 不生效，补一次 */ }
         } catch (err) {
           json(res, 500, { ok: false, code: 'sync-export', error: `写入 ${target} 失败: ${err?.message || err}` });
           return;
@@ -1958,13 +2136,19 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         return;
       }
       if (req.method === 'GET' && url.pathname === '/plugins/status') {
-        await ensureZcodePluginsMarketplace();
-        // 有更新任务在执行或排队时跳过这里的节流同步（任务本身会同步市场并刷新
-        // 时间戳），避免两处同时跑 marketplace update
-        if (!pluginsUpdateJob && Date.now() - lastMarketplaceSync > 30 * 60 * 1000) {
-          await ensureZcodePluginsCloneFresh();
-          await runZcodeCli(['plugins', 'marketplace', 'update', ZCODE_PLUGINS_MARKETPLACE], 60000);
-          lastMarketplaceSync = Date.now();
+        // 市场同步与更新任务共用同一条串行队列，不能绕过它：两处同时 clone/pull
+        // 同一个市场目录会互相删对方的中间目录（ENOENT/坏目录）。
+        // 有更新任务在跑/排队时整个跳过（任务自身会做市场同步并刷新时间戳），
+        // 状态页轮询不排队等待、不能被长任务挂住；检查与入队在同一同步段内完成
+        if (!pluginsUpdateJobs.size) {
+          await runPluginsQueued(async () => {
+            await ensureZcodePluginsMarketplace();
+            if (Date.now() - lastMarketplaceSync > 30 * 60 * 1000) {
+              await ensureZcodePluginsCloneFresh();
+              await runZcodeCli(['plugins', 'marketplace', 'update', ZCODE_PLUGINS_MARKETPLACE], 60000);
+              lastMarketplaceSync = Date.now();
+            }
+          });
         }
         const status = pluginUpdateStatus();
         if (!status) {
@@ -1982,7 +2166,9 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
       }
       json(res, 404, { ok: false, error: 'not found' });
     } catch (err) {
-      json(res, 500, { ok: false, error: String(err?.message || err) });
+      // 完整错误只进日志；响应里的消息抹掉主目录前缀，别把本机路径结构带出去
+      console.error('[zcodepro] 路由处理出错:', err);
+      json(res, 500, { ok: false, error: String(err?.message || err).split(homedir()).join('~') });
     }
   });
 
@@ -2005,17 +2191,17 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
       // 启动即补视觉配置缺省键：装了 zcode-pro ⇒ cardUi=true（识图卡片开，缺省
       // 才补、显式设过不动，规则同 GET /vision），不必等用户打开视觉设置页
       try {
-        const vFile = defaultVisionFile();
+        const vFile = visionFile;
         const vParsed = readJsonFile(vFile);
         if (vParsed && typeof vParsed === 'object' && !('cardUi' in vParsed)) {
           vParsed.cardUi = true;
-          const vTmp = vFile + '.tmp';
-          writeFileSync(vTmp, JSON.stringify(vParsed, null, 2) + '\n', 'utf-8');
+          const vTmp = `${vFile}.${process.pid}.${Date.now().toString(36)}.tmp`; // 防多写者共用同一 .tmp 撕裂
+          writeFileSync(vTmp, JSON.stringify(vParsed, null, 2) + '\n', { encoding: 'utf-8', mode: 0o600 }); // 文件里有明文 apiKey，限制本人读写
           renameSync(vTmp, vFile);
         }
       } catch { /* 无配置或不可写不影响启动 */ }
       // 服务就绪即安排 headroom 代理兜底（内部延迟 5 秒执行，避开启动高峰）
-      server.listen(port, '127.0.0.1', () => { ensureHeadroomAtStartup(); resolveStarted(server); });
+      server.listen(port, '127.0.0.1', () => { ensureHeadroomAtStartup(state); resolveStarted(server); });
     };
     tryListen();
   });
@@ -2033,9 +2219,24 @@ let tasksCountCache = 0; // 任务总数缓存（/stats/usage 高频轮询，60 
 const usageFileCache = new Map(); // 文件名 → { mtime, size, recs: [{at, ts, ms, in, out, cacheRead, session}] }
 // 测试缝：覆盖 rollout 记录目录（scripts/test-usage-stats.mjs 用假数据跑真实聚合）
 let rolloutDirOverride = '';
+// 记录合并结果缓存：文件签名（名称+mtime+size）没变就直接复用上次合并好的记录
+let rolloutSig = '';
+let rolloutRecsCache = null;
+// 聚合结果缓存：同文件签名 + 同查询参数（含本地日期）直接复用，
+// /stats/usage 2 秒轮询不用每次全量重聚合十万级记录
+let statsResultCache = { sig: '', key: '', result: null };
 // 供启动器热替换前调用：旧模块实例被 ESM 模块表永久持有，清掉大块缓存省内存
 export function dispose() {
   usageFileCache.clear();
+  rolloutRecsCache = null; // 合并后的全量记录数组（可达十万级），不留
+  rolloutSig = '';
+  statsResultCache = { sig: '', key: '', result: null };
+  // 残留的 ffmpeg 转码子进程一并收掉（退出/交接时调用）：孤儿进程会与新实例
+  // 并发写同一个 .tmp.mp4 写坏缓存且不再重建；杀掉只会丢半截临时文件，重启后重建
+  for (const child of transcodeChildren) {
+    try { child.kill(); } catch { /* 已退出 */ }
+  }
+  transcodeChildren.clear();
 }
 // 解析一段 rollout 文本为记录；completeBytes = 已完整解析的整行字节数
 //（末行若是不完整 JSON（写入中途）不计入，调用方据此决定偏移推进量）
@@ -2097,19 +2298,31 @@ function parseRolloutLines(text) {
 }
 
 function rolloutRecords() {
-  const dir = rolloutDirOverride || join(homedir(), '.zcode', 'cli', 'rollout');
+  const dir = rolloutDirOverride || join(resolveDataRootDir(), 'cli', 'rollout'); // 官方 rollout 目录跟数据根迁移
   let names = [];
-  try { names = readdirSync(dir).filter((n) => n.startsWith('model-io-') && n.endsWith('.jsonl')); } catch { return []; }
+  try { names = readdirSync(dir).filter((n) => n.startsWith('model-io-') && n.endsWith('.jsonl')); } catch {
+    // 读目录失败（杀软/权限抖动）时旧签名作废：否则空记录算出的 0 值结果会
+    // 连着旧签名进缓存，目录恢复后文件没变就一直命中 0
+    rolloutSig = '';
+    rolloutRecsCache = null;
+    return [];
+  }
   // 缓存条目随文件淘汰：会话记录滚动删除后残留条目不再增长（虽小但是纯泄漏）
   const nameSet = new Set(names); // Set 判定：文件数上千时 names.includes 是 O(F²)
   for (const k of usageFileCache.keys()) {
     if (!nameSet.has(k)) usageFileCache.delete(k);
   }
   const recs = [];
+  // 先取各文件 stat 并算签名：签名没变直接复用上次合并好的记录。shortcut:
+  // 同一毫秒内改写成相同字节数检测不到，实际不会发生，如遇到可把签名换成内容哈希
+  const stats = [];
   for (const name of names) {
+    try { stats.push([name, statSync(join(dir, name))]); } catch { /* 读不到的文件跳过 */ }
+  }
+  const sig = stats.map(([name, st]) => `${name}:${st.mtimeMs}:${st.size}`).join('|');
+  if (sig === rolloutSig && rolloutRecsCache) return rolloutRecsCache;
+  for (const [name, st] of stats) {
     const full = join(dir, name);
-    let st;
-    try { st = statSync(full); } catch { continue; }
     const cached = usageFileCache.get(name);
     if (cached && cached.mtime === st.mtimeMs && cached.size === st.size) {
       for (const r of cached.recs) recs.push(r); // 不用展开语法：单文件 13 万条会 RangeError
@@ -2149,6 +2362,8 @@ function rolloutRecords() {
     usageFileCache.set(name, { mtime: st.mtimeMs, size: parsedBytes, recs: parsed });
     for (const r of parsed) recs.push(r);
   }
+  rolloutSig = sig;
+  rolloutRecsCache = recs;
   return recs;
 }
 
@@ -2159,6 +2374,12 @@ function collectUsageStats(sessionId, wantTurns = true) {
   wantTurns = wantTurns && !!sessionId;
   const today = new Date();
   const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  // 记录没变（文件签名相同）+ 查询口径没变时直接复用上次聚合结果：锚定速率是
+  // 记录的纯函数（锚 = 最新完成时刻，不随请求时刻移动），跨午夜才要重算"今日"
+  const cacheKey = `${sessionId || ''}|${wantTurns ? 1 : 0}|${todayKey}`;
+  if (statsResultCache.sig === rolloutSig && statsResultCache.key === cacheKey && statsResultCache.result) {
+    return statsResultCache.result;
+  }
   const global = { todayTokens: 0, todayOut: 0, totalTokens: 0, totalOut: 0, tasks: 0, records: recs.length };
   // 每轮用量按本地 HH:mm 分桶（回答末尾的显示时间与之匹配）；
   // 本地记录只留最近几轮，注入侧只给能对上时间的回答显示
@@ -2175,6 +2396,7 @@ function collectUsageStats(sessionId, wantTurns = true) {
   for (const r of recs) {
     if (Number.isFinite(r.ts) && (!sessionId || r.session === sessionId)) anchor = Math.max(anchor, r.ts);
   }
+  const anchorFuture = anchor > Date.now(); // 未来时间戳：钳制值依赖请求时刻，结果不能缓存
   anchor = Math.min(anchor, Date.now()); // 未来时间戳（时钟回拨等）别把锚拉到未来
   let rateTotal = 0;
   let rateOut = 0;
@@ -2182,8 +2404,13 @@ function collectUsageStats(sessionId, wantTurns = true) {
     const total = r.in + r.out;
     global.totalTokens += total;
     global.totalOut += r.out;
-    const day = String(r.at || '').slice(0, 10);
-    if (day === todayKey) { global.todayTokens += total; global.todayOut += r.out; }
+    // 按本地日期归"今日"：r.at 是 ISO/UTC 串，直接取前 10 位是 UTC 日期，
+    // 本地凌晨（UTC+8 的 0-8 点）完成的调用会被算进昨天
+    if (Number.isFinite(r.ts)) {
+      const rd = new Date(r.ts);
+      const day = `${rd.getFullYear()}-${String(rd.getMonth() + 1).padStart(2, '0')}-${String(rd.getDate()).padStart(2, '0')}`;
+      if (day === todayKey) { global.todayTokens += total; global.todayOut += r.out; }
+    }
     const end = r.ts;
     if (Number.isFinite(end) && (!sessionId || r.session === sessionId)) {
       const dur = Math.max(r.ms || 0, 1); // 无耗时字段的旧记录按 1ms 点事件计
@@ -2203,8 +2430,8 @@ function collectUsageStats(sessionId, wantTurns = true) {
     const t = r.ts;
     if (!Number.isFinite(t)) continue;
     const d = new Date(t);
-    // 键带日期（月-日 时:分）：注入侧按回答行的时间文本（今天/昨天/10-21 三种
-    // 形态）解析出同款键精确绑定，数值不随记录滚动移位
+    // 桶键 = 本地"月-日 时:分"；注入侧不读这个键（按 ts 区间归属到回答行），
+    // 键只用于同分钟的调用并桶
     const hm = (d.getMonth() + 1) + '-' + d.getDate() + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
     const bucket = byMinute.get(hm) || { hm, in: 0, out: 0, cacheRead: 0, ts: t };
     bucket.in += r.in;
@@ -2217,7 +2444,9 @@ function collectUsageStats(sessionId, wantTurns = true) {
   const perSec = (x) => Math.round((x / (winMs / 1000)) * 10) / 10;
   global.rate60 = { total: perSec(rateTotal), out: perSec(rateOut) };
   const recentTurns = [...byMinute.values()].sort((a, b) => b.ts - a.ts).slice(0, 60);
-  return { global, recentTurns };
+  const out = { global, recentTurns };
+  if (!anchorFuture) statsResultCache = { sig: rolloutSig, key: cacheKey, result: out };
+  return out;
 }
 
 function readJsonFile(p) {
@@ -2304,6 +2533,30 @@ function mergeSyncConfig(saved) {
   };
 }
 
+// WebDAV 地址的协议判定：http 明文会把 Basic 登录名和密码原样传出去，
+// http 只放行回环与内网地址（内网 NAS 常用 http），公网主机必须 https
+function webdavHttpSchemeOk(raw) {
+  const url = typeof raw === 'string' ? raw.trim() : '';
+  if (!/^https?:\/\//i.test(url)) return false;
+  if (/^https:/i.test(url)) return true;
+  let host = '';
+  try { host = new URL(url).hostname.toLowerCase(); } catch { return false; }
+  host = host.replace(/^\[|\]$/g, ''); // URL.hostname 对 IPv6 地址带方括号
+  if (host === 'localhost' || host === '::1') return true;
+  // IPv6 字面量不走下面的域名规则（不含点，会被误判成内网主机名）：
+  // 只放行链路本地（fe80::/10）与 ULA（fc00::/7）内网段，公网 v6 仍要 https
+  // （按 RFC 5952 规范写法匹配首段，缩写首段的极端写法不认）
+  if (host.includes(':')) return /^(fe[89ab][0-9a-f]|f[cd][0-9a-f]{2}):/i.test(host);
+  // 单标签主机名（无点，如 mynas）与 .local/.lan/.internal 后缀的域名按内网 NAS
+  // 处理放行 http；其余域名型主机要求 https
+  if (!host.includes('.') || /\.(local|lan|internal)$/.test(host)) return true;
+  const m = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(host);
+  if (!m) return false;
+  const a = Number(m[1]);
+  const b = Number(m[2]);
+  return a === 127 || a === 10 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168);
+}
+
 // POST /sync 表单校验：url/login/password/dir 全量替换（dir 缺省时不动已有值）。
 // URL 必填，指向 WebDAV 服务器（可含路径前缀）；dir 为其下的上传目录，可多级；
 // historyLimit 可选（缺省时不动已有值），0–100 的整数
@@ -2314,6 +2567,7 @@ function validateSyncForm(raw) {
   if (!url) return { error: '请先填写 URL（如 https://dav.jianguoyun.com/dav/）' };
   if (!/^https?:\/\/\S+$/.test(url)) return { error: 'URL 需为 WebDAV 服务器地址，如 https://dav.example.com/dav/' };
   if (url.length > 500) return { error: 'URL 过长（最多 500 字符）' };
+  if (!webdavHttpSchemeOk(url)) return { error: '公网地址需用 https（http 明文传输登录名和密码）；内网或回环地址（如 http://192.168.1.5:5005）可继续用 http' };
   if (login.length > 300 || password.length > 300) return { error: '登录名或密码过长（最多 300 字符）' };
   const out = { type: 'webdav', url, login, password };
   if (typeof raw.dir === 'string') {
@@ -2433,7 +2687,8 @@ async function syncBgPull({ sync, proxyUrl, dataRoot }) {
     if (!name) continue; // 云端的异常文件名条目不镜像
     const l = localByName.get(name);
     if (l && l.size === f.size) continue;
-    const tmp = join(dir, name + '.tmp');
+    // 临时名带 pid+随机：与上传路径撞同一文件名时不共用一个 .tmp
+    const tmp = join(dir, `${name}.${process.pid}.${Date.now().toString(36)}.tmp`);
     const get = await webdavRequest({ method: 'GET', url: syncBgFileUrl(sync, name), login: sync.login, password: sync.password, proxyUrl, timeoutMs: 120000, downloadFile: tmp });
     const bad = !get.ok || get.httpCode < 200 || get.httpCode >= 300;
     if (bad) {
@@ -2453,8 +2708,8 @@ async function syncBgPull({ sync, proxyUrl, dataRoot }) {
 }
 
 // 信封校验：云端文件必须是 { app: 'zcode-pro', kind, format, data } 且组别与文件名
-// 前缀一致；4MB 上限挡住异常大文件
-function parseSyncEnvelope(body, kind, label) {
+// 前缀一致；4MB 上限挡住异常大文件。导出供回归测试直接喂坏信封
+export function parseSyncEnvelope(body, kind, label) {
   if (body.length > 4 * 1024 * 1024) {
     return { error: `云端 ${label} 超过 4MB，已拒绝应用`, code: 'sync-remote-invalid', status: 400 };
   }
@@ -2462,6 +2717,10 @@ function parseSyncEnvelope(body, kind, label) {
   try { doc = JSON.parse(body); } catch { /* 落到统一报错 */ }
   if (!doc || typeof doc !== 'object' || doc.app !== 'zcode-pro' || doc.kind !== kind || !doc.data || typeof doc.data !== 'object') {
     return { error: `云端 ${label} 不是 zcode-pro 的同步数据（可能被其他内容占用），请删除该文件或换一个目录`, code: 'sync-remote-invalid', status: 409 };
+  }
+  // format 超出认识范围（更新版本的 zcode-pro 写入的新格式）：不导入，提示升级客户端
+  if (doc.format !== 1) {
+    return { error: `云端 ${label} 是更新版本的 zcode-pro 写入的数据，当前客户端版本过旧，请升级 zcode-pro 后再同步`, code: 'sync-remote-invalid', status: 400 };
   }
   return { doc };
 }
@@ -2491,10 +2750,37 @@ async function fetchSyncNamedDoc(sync, proxyUrl, fileName) {
   return parseSyncEnvelope(r.body, kind, fileName);
 }
 
+// —— /sync/run 单飞 ————————————————————————————————————
+// 同 direction 的并发触发共用同一个 promise（去重），不同 direction 串行排队：
+// 两轮同步并发跑会互相清掉对方刚上传的历史版本。在途（排队 + 执行）期间计入
+// 忙碌标志，启动器热替换据此延后——同步中途换进程同样会互删历史版本
+let syncRunJobs = new Map(); // direction → 在跑或排队的 promise
+let syncRunQueue = Promise.resolve();
+
+function enqueueSyncRun(direction, fn) {
+  const inflight = syncRunJobs.get(direction);
+  if (inflight) return inflight;
+  const prev = syncRunQueue;
+  const promise = (async () => {
+    await prev;
+    try {
+      return await fn();
+    } finally {
+      syncRunJobs.delete(direction);
+    }
+  })();
+  syncRunQueue = promise.then(() => undefined, () => undefined);
+  syncRunJobs.set(direction, promise);
+  return trackBusy(promise);
+}
+
 async function runSettingsSync({ direction, dataRoot, configFile, config, proxyUrl }) {
   const sync = config.sync;
   if (!sync.url || !/^https?:\/\/\S+$/.test(sync.url)) {
     return { code: 'sync-not-configured', status: 400, error: '请先填写 WebDAV URL 并保存' };
+  }
+  if (!webdavHttpSchemeOk(sync.url)) {
+    return { code: 'sync-not-configured', status: 400, error: '公网 WebDAV 地址需改用 https（http 明文传输登录名和密码）；内网或回环地址可继续用 http' };
   }
   if (!sync.include.zcodepro && !sync.include.model) {
     return { code: 'sync-not-configured', status: 400, error: '请至少选择一项同步内容' };
@@ -2504,10 +2790,17 @@ async function runSettingsSync({ direction, dataRoot, configFile, config, proxyU
     : runSyncPull({ dataRoot, configFile, config, sync, proxyUrl });
 }
 
-// headroom.json 里值得同步/应用的判定：providers 注册非空才算有效——
-// 空对象或空注册不上传也不覆盖，免得把别台机器拉回无映射状态（401）
+// headroom.json 里值得同步/应用的判定：providers 每条注册都得带路由必需的
+// id/upstream/format/keyHash 才算有效——空对象、空注册或残缺条目（如只写个 id
+// 的测试夹具）不上传也不覆盖，免得把别台机器拉回无映射状态（请求 502）
 function validHeadroomDoc(hr) {
-  return !!hr && typeof hr === 'object' && !Array.isArray(hr) && Array.isArray(hr.providers) && hr.providers.length > 0;
+  return !!hr && typeof hr === 'object' && !Array.isArray(hr)
+    && Array.isArray(hr.providers) && hr.providers.length > 0
+    && hr.providers.every((p) => !!p && typeof p === 'object'
+      && typeof p.id === 'string' && p.id !== ''
+      && typeof p.upstream === 'string' && p.upstream !== ''
+      && (p.format === 'anthropic' || p.format === 'openai')
+      && typeof p.keyHash === 'string' && p.keyHash !== '');
 }
 
 // 上传：每组独立一个云端文件（zcodepro.json / model.json，始终最新一版），勾选几组
@@ -2522,6 +2815,11 @@ async function runSyncPush({ dataRoot, configFile, config, sync, proxyUrl }) {
   if (sync.include.zcodepro) {
     // sync（本机的同步配置与凭据）、version（本机 helper 版本）与 aliases 不外发
     const { sync: _s, version: _v, aliases: _a, ...rest } = config;
+    // titleGen.apiKey 是模型凭据，与 sync 一样只留本机（设置页文案：凭据不参与同步）
+    if (rest.titleGen && typeof rest.titleGen === 'object') {
+      const { apiKey: _k, ...tg } = rest.titleGen;
+      rest.titleGen = tg;
+    }
     docs.zcodepro = rest;
   }
   if (sync.include.model) {
@@ -2586,10 +2884,12 @@ async function runSyncPush({ dataRoot, configFile, config, sync, proxyUrl }) {
   }
   sync.lastPushAt = Date.now();
   // 同步是分钟级网络流程：写回前重读配置、只合并本次时间戳，
-  // 别把期间用户在设置弹窗的修改用这份旧快照盖掉
-  const freshPush = loadConfig(configFile);
-  freshPush.sync = { ...freshPush.sync, lastPushAt: sync.lastPushAt };
-  saveConfig(configFile, freshPush);
+  // 别把期间用户在设置弹窗的修改用这份旧快照盖掉；读改写放进跨进程锁内同步执行
+  await withConfigLock(configFile, () => {
+    const freshPush = loadConfig(configFile);
+    freshPush.sync = { ...freshPush.sync, lastPushAt: sync.lastPushAt };
+    if (!saveConfig(configFile, freshPush)) console.error('[zcodepro] lastPushAt 写回被拒（zcodepro.json 损坏），上传本身已成功');
+  });
   // 上传成功后清理超出保留个数的旧历史版本（best-effort，失败不影响上传结果）
   const pruned = await pruneSyncHistory(sync, proxyUrl, keep);
   // 背景图库镜像上传（勾了 zcodepro 组才传；设置文档已传走，图库失败单独报错，重试幂等）
@@ -2641,25 +2941,33 @@ export function applySyncDocs({ docs, dataRoot, configFile, config, sync }) {
     try { if (existsSync(p)) copyFileSync(p, p + '.zcodepro-backup'); } catch { /* 备份失败不阻塞 */ }
   };
   const atomicWrite = (p, obj) => {
-    const tmp = p + '.zcodepro-tmp';
-    writeFileSync(tmp, JSON.stringify(obj, null, 2) + '\n', 'utf8');
+    const tmp = `${p}.${process.pid}.${Date.now().toString(36)}.tmp`; // 防多写者共用同一 .tmp 撕裂
+    writeFileSync(tmp, JSON.stringify(obj, null, 2) + '\n', { encoding: 'utf8', mode: 0o600 });
     renameSync(tmp, p);
   };
 
   if (docs.zcodepro) {
     const rz = docs.zcodepro;
-    const next = loadConfig(configFile);
-    applyFeaturesPartial(next.features, rz.features);
-    next.styles = applyStylesPartial(next.styles, rz.styles);
-    // 别名保持本机的原样：云端备份里的别名可能出自其他机器（路径在本机无效），
-    // 且 3.16.1 起别名功能已停用，不再导入
-    if (typeof rz.proxy === 'string') {
-      const v = rz.proxy.trim();
-      if (v === '' || /^https?:\/\/\S+:\d+$/.test(v)) next.proxy = v;
-    }
-    next.sync = { ...next.sync, lastPullAt: sync.lastPullAt }; // 保留本机 sync 配置与凭据，只记本次拉取时间
-    backupFile(configFile);
-    saveConfig(configFile, next);
+    // 整段 zcodepro.json 读改写放进跨进程锁内同步执行（applySyncDocs 是同步
+    // 调用点，用同步等锁变体），防止与别的写入方互相覆盖整份配置
+    const rzErr = withConfigLockSync(configFile, () => {
+      const next = loadConfig(configFile);
+      applyFeaturesPartial(next.features, rz.features);
+      next.styles = applyStylesPartial(next.styles, rz.styles);
+      // 别名保持本机的原样：云端备份里的别名可能出自其他机器（路径在本机无效），
+      // 且 3.16.1 起别名功能已停用，不再导入
+      if (typeof rz.proxy === 'string') {
+        const v = rz.proxy.trim();
+        if (v === '' || /^https?:\/\/\S+:\d+$/.test(v)) next.proxy = v;
+      }
+      next.sync = { ...next.sync, lastPullAt: sync.lastPullAt }; // 保留本机 sync 配置与凭据，只记本次拉取时间
+      backupFile(configFile);
+      if (!saveConfig(configFile, next)) {
+        return { error: 'zcodepro.json 读取失败或已损坏，导入中止（请先修好配置文件）', code: 'config-unreadable', status: 500 };
+      }
+      return null;
+    });
+    if (rzErr) return rzErr;
     applied.push('zcodepro');
   }
   if (docs.model) {
@@ -2677,19 +2985,28 @@ export function applySyncDocs({ docs, dataRoot, configFile, config, sync }) {
       atomicWrite(pcFile, pc);
     }
     // headroom.json 只在云端文档带有效注册时才覆盖（旧版云端文档没有该字段、
-    // 或 providers 为空，都不动本机，免得清掉已有映射）；instances（实例端口表）
-    // 与 router（监听端口）是本机运行状态，云端的一律不用，保留本机的
+    // 或 providers 为空/残缺，都不动本机，免得清掉已有映射）；instances（实例端口表）
+    // 与 router（监听端口）是本机运行状态，云端的一律不用，保留本机的。
+    // 路径跟随 dataRoot（与同组其他文件一致）：defaultHeadroomFile() 按 HOME 定位，
+    // 测试跑进真配置会把用户的路由表整个写坏
     const hr = docs.model.headroom;
     if (validHeadroomDoc(hr)) {
-      const hrFile = defaultHeadroomFile();
-      const localHr = readJsonFile(hrFile);
-      const { instances: _remoteInst, router: _remoteRouter, ...hrRest } = hr;
-      const keepLocal = (localHr && typeof localHr === 'object') ? localHr : {};
-      const nextHr = { ...hrRest };
-      if (keepLocal.instances) nextHr.instances = keepLocal.instances;
-      if (keepLocal.router) nextHr.router = keepLocal.router;
-      backupFile(hrFile);
-      atomicWrite(hrFile, nextHr);
+      const hrFile = join(dataRoot, 'headroom.json');
+      // 云端文档里带的三个设置键也剥掉：kompressBackend/powerSaveCpu/powerWatchInterval
+      // 是本机设置，云端的赢会把 B 机器的压缩设备决策改成 A 机器的
+      const { instances: _remoteInst, router: _remoteRouter, kompressBackend: _rKb, powerSaveCpu: _rPs, powerWatchInterval: _rWi, ...hrRest } = hr;
+      // 读改写整段持 headroom.json 文件锁（与面板 interval 写入、setHeadroomUsage 互斥），
+      // 锁内重读最新基线合并：以本机现有键为底、云端注册覆盖 providers，
+      // instances/router 与三个本机设置键保留本机值
+      withConfigLockSync(hrFile, () => {
+        const fresh = readJsonFile(hrFile);
+        const base = (fresh && typeof fresh === 'object') ? fresh : {};
+        const merged = { ...base, ...hrRest };
+        if (base.instances) merged.instances = base.instances;
+        if (base.router) merged.router = base.router;
+        backupFile(hrFile);
+        atomicWrite(hrFile, merged);
+      });
       // 让路由立刻吃到新映射、缺的实例补起来（路由器本身每请求重读配置，
       // 只有新上游的实例需要这一步），失败不影响同步结果
       runHeadroomHook(['ensure'], 20000).catch(() => { /* 尽力而为 */ });
@@ -2699,9 +3016,12 @@ export function applySyncDocs({ docs, dataRoot, configFile, config, sync }) {
   // 没动 zcodepro.json 时，lastPullAt 也要写入配置文件（动了则已随 next 一起保存）。
   // 写回前重读配置、只合并时间戳：别用旧快照盖掉同步期间用户的修改
   if (!applied.includes('zcodepro')) {
-    const freshPull = loadConfig(configFile);
-    freshPull.sync = { ...freshPull.sync, lastPullAt: sync.lastPullAt };
-    saveConfig(configFile, freshPull);
+    // lastPullAt 读改写同样在跨进程锁内同步完成
+    withConfigLockSync(configFile, () => {
+      const freshPull = loadConfig(configFile);
+      freshPull.sync = { ...freshPull.sync, lastPullAt: sync.lastPullAt };
+      if (!saveConfig(configFile, freshPull)) console.error('[zcodepro] lastPullAt 写回被拒（zcodepro.json 损坏）');
+    });
   }
   return { applied };
 }
@@ -2727,7 +3047,9 @@ async function runSyncTest({ sync, proxyUrl }) {
     });
     return { ok, resp };
   };
-  const baseDir = syncBaseDir(sync);
+  // PROPFIND 的集合地址统一带尾斜杠（图库列表 syncBgListRemote 同款）：
+  // 会给目录地址回 301 的网盘不认无斜杠写法，会报“HTTP 301”
+  const baseDir = syncBaseDir(sync) + '/';
   // ① 只要拿到响应且不是凭据问题就算连通（404/409 = 目录还没建，交给第②步处理）
   const connect = await probe('connect', () => webdavRequest({ method: 'PROPFIND', url: baseDir, ...auth, timeoutMs: 20000, headers: ['Depth: 0'] }));
   if (!connect.ok && connect.resp.ok && (connect.resp.httpCode === 404 || connect.resp.httpCode === 409)) {
@@ -2763,7 +3085,7 @@ async function runSyncTest({ sync, proxyUrl }) {
 // PROPFIND 云端同步目录，列出全部备份版本（固定名 + 带时间戳的历史）：
 // 按修改时间从新到旧（时间缺失的按文件名排后）；目录还不存在视为空列表
 async function listSyncVersions(sync, proxyUrl) {
-  const r = await webdavRequest({ method: 'PROPFIND', url: syncBaseDir(sync), login: sync.login, password: sync.password, proxyUrl, timeoutMs: 30000, headers: ['Depth: 1'] });
+  const r = await webdavRequest({ method: 'PROPFIND', url: syncBaseDir(sync) + '/', login: sync.login, password: sync.password, proxyUrl, timeoutMs: 30000, headers: ['Depth: 1'] });
   if (!r.ok) return { error: r.error, code: 'sync-request', status: 502 };
   if (r.httpCode === 404 || r.httpCode === 409) return { files: [] };
   if (r.httpCode < 200 || r.httpCode >= 300) return { error: webdavHttpText(r.httpCode), code: 'sync-request', status: 502 };
@@ -2807,40 +3129,6 @@ async function pruneSyncHistory(sync, proxyUrl, keep) {
   return removed;
 }
 
-// 别名表清洗（同步下载用）：只收 路径字符串 → 短字符串 的条目，数量限幅
-function sanitizeAliases(raw) {
-  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
-  const out = {};
-  let n = 0;
-  for (const [k, v] of Object.entries(raw)) {
-    if (typeof k !== 'string' || k.length > 500 || k.includes('\0')) continue;
-    if (typeof v !== 'string' || v.length > 200 || /[\r\n\0]/.test(v)) continue;
-    out[k] = v;
-    if (++n >= 2000) break;
-  }
-  return out;
-}
-
-// 别名表合并（同步上传/下载共用）：取两边的并集，配过别名的条目优先——同一路径
-// 两边都配了别名时用本机的；只有一边配过时保留配过的那个。所以在一台机器上清除
-// 别名后，只要别的机器还配着，下次同步还会把这条带回来，两边都清掉才会真正消失。
-// 导出以便测试脚本直接驱动。
-export function mergeAliases(localRaw, remoteRaw) {
-  const out = {};
-  const put = (k, v) => {
-    if (typeof k !== 'string' || k.length > 500 || k.includes('\0')) return;
-    if (typeof v !== 'string' || !v || v.length > 200 || /[\r\n\0]/.test(v)) return;
-    out[k] = v;
-  };
-  const entries = (raw) => (raw && typeof raw === 'object' && !Array.isArray(raw)) ? Object.entries(raw) : [];
-  for (const [k, v] of entries(remoteRaw)) put(k, v);
-  for (const [k, v] of entries(localRaw)) {
-    // 本机配过的覆盖云端同路径条目；本机是空值（视为没配过）时不覆盖，云端配过的留下
-    if (v) put(k, v);
-  }
-  return out;
-}
-
 // features 部分更新（POST /config 与同步下载共用）：只收已知开关的布尔值
 function applyFeaturesPartial(base, partial) {
   const out = (base && typeof base === 'object') ? base : {};
@@ -2848,9 +3136,9 @@ function applyFeaturesPartial(base, partial) {
   const known = new Set(Object.keys(defaultConfig().features));
   for (const key of Object.keys(partial)) {
     // 布尔特性一律可存（新特性未列入 defaultConfig 时不能被丢弃），
-    // 非布尔值只在已知键内接受
+    // 非布尔值只在已知键内、且与默认值同类型时接受——防垃圾类型进配置
     if (typeof partial[key] === 'boolean') out[key] = partial[key];
-    else if (known.has(key)) out[key] = partial[key];
+    else if (known.has(key) && typeof partial[key] === typeof defaultConfig().features[key]) out[key] = partial[key];
   }
   return out;
 }
@@ -2928,30 +3216,36 @@ function scanIdleBusyLinux(paths) {
   for (const pid of pids) {
     try {
       if (readFileSync(`/proc/${pid}/comm`, 'utf8').trim() !== 'zcode-cli') continue;
-      cliPidByCwd.set(readlinkSync(`/proc/${pid}/cwd`), pid);
+      const cwd = readlinkSync(`/proc/${pid}/cwd`);
+      // 同一工作区可以开多个会话进程：记列表别后写覆盖先写——漏扫一个会话的
+      // 子进程会把跑着命令的项目判成空闲
+      const arr = cliPidByCwd.get(cwd);
+      if (arr) arr.push(pid); else cliPidByCwd.set(cwd, [pid]);
     } catch { /* 进程退出/权限：跳过 */ }
   }
   const busy = new Set();
-  for (const [cwd, pid] of cliPidByCwd) {
+  for (const [cwd, cliPids] of cliPidByCwd) {
     const wantedPaths = wantedByCwd.get(cwd);
     if (!wantedPaths) continue;
-    let children = '';
-    try { children = readFileSync(`/proc/${pid}/task/${pid}/children`, 'utf8'); }
-    catch { continue; }
-    for (const childPidStr of children.split(/\s+/)) {
-      const childPid = Number(childPidStr);
-      if (!Number.isFinite(childPid)) continue;
-      let cmdline = '';
-      let zombie = false;
-      try {
-        cmdline = normCmdline(readFileSync(`/proc/${childPid}/cmdline`, 'utf8').replace(/\0/g, ' ').trim());
-        const stat = readFileSync(`/proc/${childPid}/stat`, 'utf8');
-        zombie = /\) Z /.test(stat);
-      } catch { continue; }
-      if (zombie) continue;
-      if (!cmdline || !isInfraCmdline(cmdline)) {
-        for (const wp of wantedPaths) busy.add(wp); // 认不出的进程宁可误判为忙，也不回收可能在跑命令的项目
-        break;
+    for (const pid of cliPids) {
+      let children = '';
+      try { children = readFileSync(`/proc/${pid}/task/${pid}/children`, 'utf8'); }
+      catch { continue; }
+      for (const childPidStr of children.split(/\s+/)) {
+        const childPid = Number(childPidStr);
+        if (!Number.isFinite(childPid)) continue;
+        let cmdline = '';
+        let zombie = false;
+        try {
+          cmdline = normCmdline(readFileSync(`/proc/${childPid}/cmdline`, 'utf8').replace(/\0/g, ' ').trim());
+          const stat = readFileSync(`/proc/${childPid}/stat`, 'utf8');
+          zombie = /\) Z /.test(stat);
+        } catch { continue; }
+        if (zombie) continue;
+        if (!cmdline || !isInfraCmdline(cmdline)) {
+          for (const wp of wantedPaths) busy.add(wp); // 认不出的进程宁可误判为忙，也不回收可能在跑命令的项目
+          break;
+        }
       }
     }
   }
@@ -2982,8 +3276,11 @@ async function scanIdleBusyDarwin(paths) {
   const busy = new Set();
   for (const cli of clis) {
     const lsof = await runCmd('lsof', ['-a', '-p', String(cli.pid), '-d', 'cwd', '-Fn', '-w']);
+    // 与注释的约定一致：任一 CLI 的工作目录取不到就整轮放弃（scan=false）——
+    // lsof 缺失/被限权/进程行取不到 cwd 时都不能把项目判成空闲
+    if (lsof.err) return SCAN_OFF;
     const cwd = (lsof.stdout.match(/^n(.+)$/m) || [])[1];
-    if (!cwd) continue; // 进程多半刚退出：跳过即可，它已不可能挂着命令
+    if (!cwd) return SCAN_OFF;
     const wantedPaths = wantedByCwd.get(cwd);
     if (!wantedPaths) continue;
     for (const child of procs) {
@@ -3003,8 +3300,10 @@ async function scanIdleBusyDarwin(paths) {
 // 查任务索引反查工作区；认不出且无会话 ID 的活动子进程无法归属 → 全部请求判忙（保守）。
 // 路径比较忽略大小写与分隔符差异
 async function scanIdleBusyWindows(paths, dataRoot) {
+  // 输出编码固定 UTF-8（同 pickFolder.mjs）：默认走 OEM 代码页（中文系统 936），
+  // 按 UTF-8 解码不只乱码，GBK 尾字节 0x5C 还会被当转义符让 JSON.parse 抛错
   const ps = await runCmd('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command',
-    'Get-CimInstance Win32_Process | Select-Object ProcessId,ParentProcessId,Name,CommandLine | ConvertTo-Json -Compress'], 30000);
+    '[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Get-CimInstance Win32_Process | Select-Object ProcessId,ParentProcessId,Name,CommandLine | ConvertTo-Json -Compress'], 30000);
   if (ps.err || !ps.stdout.trim()) return SCAN_OFF;
   let list;
   try {
@@ -3050,9 +3349,11 @@ export async function classifyIdleBusyWindows(procs, paths, lookupTaskWs) {
       if (child.ppid !== cli.pid) continue;
       if (isInfraCmdline(child.cmdline)) continue;
       if (!child.cmdline) { unattributed = true; continue; }
-      // 会话 id 有 sess_ 与 session_ 两种前缀（新版应用为 session_）；匹配不到
-      // 会走 unattributed 全量判忙——新形式命令挂着时空闲回收会整体停摆
-      const sess = child.cmdline.match(/(?:sess|session)_[A-Za-z0-9-]+/);
+      // 会话 id 有 sess_ 与 session_ 两种前缀（新版应用为 session_）；字符集与
+      // 路由校验的 id 白名单一致（含 . 和 _）——字符类偏窄会在这些字符处截断成
+      // 前缀，撞上别的真实 task_id 会把错误项目判忙。匹配不到会走 unattributed
+      // 全量判忙——新形式命令挂着时空闲回收会整体停摆
+      const sess = child.cmdline.match(/(?:sess|session)_[A-Za-z0-9._-]+/);
       if (sess) await markByTask(sess[0]);
       else unattributed = true; // 用户进程但无会话线索：归属不到具体项目
     }
@@ -3146,7 +3447,7 @@ const TITLE_GEN_DEFAULT_PROMPTS = {
 // 界面语言：桌面设置（v2/setting.json 的 localePreference）为 en-US / zh-CN 时
 // 直接采用；system 或未设置时按系统环境语言判断（中文环境 → 中文，其余 → 英文）
 function titleGenLocale() {
-  const s = readJsonFile(join(homedir(), '.zcode', 'v2', 'setting.json'));
+  const s = readJsonFile(join(resolveDataRootDir(), 'v2', 'setting.json')); // 官方 v2 配置跟数据根迁移（同 startHelper 的 settingsFile）
   const pref = String((s && s.localePreference) || '').toLowerCase();
   if (pref.startsWith('en')) return 'en';
   if (pref.startsWith('zh')) return 'zh';
@@ -3168,7 +3469,7 @@ const TITLE_GEN_TIMEOUT_MS = 60000; // 单次模型调用超时（与官方起�
 // providerFamilyConnectionSelections）读当前登录的连接方式（kind 含
 // individual → 个人、team → 团队），读不到时退回“个人/团队”
 function codingPlanKindByFamily() {
-  const s = readJsonFile(join(homedir(), '.zcode', 'v2', 'setting.json'));
+  const s = readJsonFile(join(resolveDataRootDir(), 'v2', 'setting.json')); // 官方 v2 配置跟数据根迁移
   const sel = (s && s.providerFamilyConnectionSelections && typeof s.providerFamilyConnectionSelections === 'object')
     ? s.providerFamilyConnectionSelections : {};
   const out = {};
@@ -3218,7 +3519,7 @@ export function listTitleGenProviders() {
   const byId = new Map();
   const planKinds = codingPlanKindByFamily();
   // 注册表读一次，供下方各条目的协议判定兜底复用（文件不存在时为空数组）
-  const headroomProviders = (readJsonFile(join(homedir(), '.zcode', 'headroom.json')) || {}).providers || [];
+  const headroomProviders = (readJsonFile(defaultHeadroomFile()) || {}).providers || [];
   const add = (id, { name, aliases = [], kind, baseUrl, apiKey, models = [] }) => {
     baseUrl = typeof baseUrl === 'string' ? baseUrl.trim() : '';
     apiKey = typeof apiKey === 'string' ? apiKey.trim() : '';
@@ -3244,9 +3545,9 @@ export function listTitleGenProviders() {
     out.push(entry);
   };
 
-  const v2 = readJsonFile(join(homedir(), '.zcode', 'v2', 'config.json'));
+  const v2 = readJsonFile(join(resolveDataRootDir(), 'v2', 'config.json')); // 官方 v2 配置跟数据根迁移
   const providers = (v2 && typeof v2.provider === 'object' && v2.provider) || {};
-  const rulesDoc = readJsonFile(join(homedir(), '.zcode', 'v2', 'provider_config.json'));
+  const rulesDoc = readJsonFile(join(resolveDataRootDir(), 'v2', 'provider_config.json'));
   const rules = (rulesDoc && rulesDoc.config?.providerConfigRules?.providerRules) || [];
   const ruleById = new Map(rules.filter((r) => r && typeof r.providerId === 'string').map((r) => [r.providerId, r]));
   // 同一 id 在两张表的字段并起来（provider 表优先：地址/密钥以桌面实际在用的为准）
@@ -3371,13 +3672,16 @@ export async function writeGeneratedTitle(dataRoot, configFile, sessId, title, {
     }
   }
   if (store === '') {
-    try {
-      const c = loadConfig(configFile);
-      c.titleGen.customWritten = { ...(c.titleGen.customWritten || {}), [sessId]: { title, at: Date.now() } };
-      saveConfig(configFile, c);
-    } catch (err) {
-      titleGenLog(dataRoot, `customWritten-save-error sess=${sessId.slice(0, 13)} err=${err?.message || err}`);
-    }
+    // 跨进程锁内同步读改写，防止与别的写入方互相覆盖整份配置
+    await withConfigLock(configFile, () => {
+      try {
+        const c = loadConfig(configFile);
+        c.titleGen.customWritten = { ...(c.titleGen.customWritten || {}), [sessId]: { title, at: Date.now() } };
+        if (!saveConfig(configFile, c)) throw new Error('zcodepro.json 损坏，写入被拒');
+      } catch (err) {
+        titleGenLog(dataRoot, `customWritten-save-error sess=${sessId.slice(0, 13)} err=${err?.message || err}`);
+      }
+    });
   }
   return { written, store };
 }
@@ -3509,6 +3813,7 @@ export async function exchangeAccountProjectToken(family, dataRoot) {
   const issueCtrl = new AbortController();
   const issueTimer = setTimeout(() => issueCtrl.abort(), 20000);
   let issueResp;
+  let issue;
   try {
     issueResp = await fetch(`${origin}${keysUrl}/${encodeURIComponent(apiKeyId)}/access_tokens`, {
       method: 'POST',
@@ -3516,8 +3821,9 @@ export async function exchangeAccountProjectToken(family, dataRoot) {
       headers: { 'content-type': 'application/json', authorization: `Bearer ${loginToken}` },
       body: JSON.stringify({ clientType: 'zcode', clientVersion: VERSION }),
     });
+    // 响应体读取也放超时保护内（与 api() 同款）：管理接口回完头拖着不发体会永久挂起
+    issue = await issueResp.json().catch(() => null);
   } finally { clearTimeout(issueTimer); }
-  const issue = await issueResp.json().catch(() => null);
   const issueData = (issue && [200, 0, '200', '0'].includes(issue.code)) ? issue.data : null;
   if (!issueData) throw new Error(`签发项目 token 失败（${issueResp.status}）`);
   // enable 语义与官方一致：旧版接口不回该字段（实测回的是同义的 enabled），
@@ -3632,7 +3938,9 @@ export function validateVisionConfig(raw) {
   if (!Array.isArray(raw.chain) || raw.chain.some((n) => typeof n !== 'string')) return [null, 'chain 必须是代理名数组'];
   if (!Array.isArray(raw.proxies)) return [null, 'proxies 必须是数组'];
   const cfg = {
-    enabled: raw.enabled !== false,
+    // enabled 同 cardUi：显式给值才写键，缺省保持磁盘原值（否则磁盘上显式
+    // false 会被一次省略 enabled 的保存覆盖回 true）
+    ...(raw.enabled !== undefined ? { enabled: raw.enabled !== false } : {}),
     chainMode: raw.chainMode,
     chain: raw.chain.map((s) => s.trim()).filter(Boolean),
     proxies: [],
@@ -3735,8 +4043,10 @@ export function validateRtkWhitelist(raw) {
 // （钩子视为未自定义）；文件头带注释说明格式，方便用户直接编辑。
 function writeRtkState(dir, { mode, whitelist }) {
   mkdirSync(dir, { recursive: true });
+  // 临时名带 pid+随机：钩子进程与面板并发写这两个文件时不共用一个 .tmp
+  const pidTmp = (f) => `${f}.${process.pid}.${Date.now().toString(36)}.tmp`;
   const modeFile = join(dir, 'mode');
-  const tmp = modeFile + '.tmp';
+  const tmp = pidTmp(modeFile);
   writeFileSync(tmp, mode, 'utf8');
   renameSync(tmp, modeFile);
   const wlFile = join(dir, 'whitelist');
@@ -3744,7 +4054,7 @@ function writeRtkState(dir, { mode, whitelist }) {
     try { unlinkSync(wlFile); } catch { /* 不存在即目标状态 */ }
     return;
   }
-  const wlTmp = wlFile + '.tmp';
+  const wlTmp = pidTmp(wlFile);
   writeFileSync(wlTmp, '# rtk 白名单（不压缩直接放行）：每行 name 或 git:name（git 子命令）。删除本文件即恢复默认。\n'
     + whitelist.join('\n') + '\n', 'utf8');
   renameSync(wlTmp, wlFile);
@@ -3867,16 +4177,20 @@ function startRtkUpgrade() {
       j.output += `下载 ${info.assetName}…\n`;
       const archPath = join(dir, info.assetName);
       await downloadToFile(j, info.assetUrl, archPath, 600000);
-      // sha256 校验（checksums.txt 与本机摘要工具；失败即中止，不替换）
-      if (info.sumsUrl) {
+      // sha256 校验（checksums.txt 与本机摘要工具；失败即中止，不替换）。
+      // Release 没有 checksums.txt：无从校验，直接中止升级，绝不替换未经校验的二进制
+      if (!info.sumsUrl) throw new Error('Release 缺少 checksums.txt，无法校验下载文件，已中止升级');
+      {
         const sumPath = join(dir, 'checksums.txt');
         await downloadToFile(j, info.sumsUrl, sumPath, 30000);
         const want = readFileSync(sumPath, 'utf8').split('\n')
           .find((l) => l.trim().endsWith(info.assetName))?.trim().split(/\s+/)[0];
         let got = '';
         if (WIN) {
+          // 路径包进单引号（内部 ' 写成 ''）：双引号里 $、反引号会被当变量/子表达式求值
+          const safeArch = String(archPath).replace(/'/g, "''");
           const local = await execCapture('powershell.exe',
-            ['-NoProfile', '-Command', `(Get-FileHash -Algorithm SHA256 -LiteralPath "${archPath}").Hash`], 60000);
+            ['-NoProfile', '-Command', `(Get-FileHash -Algorithm SHA256 -LiteralPath '${safeArch}').Hash`], 60000);
           got = (/[0-9a-fA-F]{64}/.exec(local.output || '') || [''])[0];
         } else {
           const sumCmd = process.platform === 'darwin' ? 'shasum' : 'sha256sum';
@@ -3904,6 +4218,9 @@ function startRtkUpgrade() {
       if (!WIN) chmodSync(newBin, 0o755);
       const v = await binVersionOf(newBin);
       if (!v) throw new Error('新版本无法运行（--version 无输出）');
+      // 试运行有约 10 秒窗口：期间被取消就别再替换二进制（否则状态显示
+      // 已取消又显示升级成功，自相矛盾）
+      if (j.canceled) throw new Error('canceled');
       // 放置：全新安装建目录直接放；已有旧文件则原子替换（先挪走，失败可回滚）
       if (freshInstall) mkdirSync(dirname(bin), { recursive: true });
       const backup = bin + '.rtk-old';
@@ -3946,20 +4263,39 @@ function startRtkUpgrade() {
 // 把目录追加进用户级 PATH（HKCU\Environment，Windows）：保持原值类型不展开（REG_EXPAND_SZ
 // 里的 %VAR% 引用原样保留），已含该目录则不动。不广播环境变更——运行中的进程读不到，
 // 重启 ZCode 后新会话生效（rtk 钩子按固定清单找 rtk，不受 PATH 影响）。
+// 注册表读写走 PowerShell 而不是 reg.exe：reg 的输出按系统代码页编码（中文 Windows
+// 是 GBK），Node 按 UTF-8 解码会把中文条目弄乱，原样写回就把用户 PATH 写坏了；
+// PowerShell 经 .NET 读写值本身不做编码转换，只有控制台输出要固定 UTF-8（同 pickFolder.mjs）。
 async function ensureUserPathEntry(dir) {
-  const q = await execCapture('reg', ['query', 'HKCU\\Environment', '/v', 'PATH'], 15000);
-  if (!q.ok) {
-    const add = await execCapture('reg', ['add', 'HKCU\\Environment', '/v', 'PATH', '/t', 'REG_EXPAND_SZ', '/d', `%USERPROFILE%\\.local\\bin`, '/f'], 15000);
-    return add.ok;
+  const psRead = [
+    '[Console]::OutputEncoding = [System.Text.Encoding]::UTF8',
+    "$k = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Environment', $false)",
+    "if ($null -eq $k -or -not ($k.GetValueNames() -contains 'PATH')) { exit 2 }",
+    "$v = $k.GetValue('PATH', $null, [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames)",
+    "[Console]::Out.Write([string]($k.GetValueKind('PATH')) + [char]10 + [string]$v)",
+  ].join('; ');
+  const q = await execCapture('powershell.exe', ['-NoProfile', '-Command', psRead], 15000);
+  // 值缺失才新建；读取本身出错一律不动用户 PATH（不能把整份值覆盖没了）
+  let kind = 'String';
+  let next = dir; // 缺失分支写调用方给的目录，别写死别的路径
+  if (q.code !== 2) {
+    if (!q.ok) return false;
+    const nl = q.output.indexOf('\n');
+    const curKind = (nl < 0 ? q.output : q.output.slice(0, nl)).trim();
+    if (curKind !== 'String' && curKind !== 'ExpandString') return false; // REG_SZ/REG_EXPAND_SZ 之外的类型不认识，不动它
+    const cur = (nl < 0 ? '' : q.output.slice(nl + 1)).trim();
+    const norm = (s) => s.replace(/[/\\]+/g, '\\').replace(/\\+$/, '').toLowerCase();
+    const expanded = cur.replaceAll('%USERPROFILE%', homedir());
+    if (expanded.split(';').some((p) => p && norm(p) === norm(dir))) return true;
+    kind = curKind;
+    next = cur ? `${cur};${dir}` : dir;
   }
-  const m = /PATH\s+(REG_SZ|REG_EXPAND_SZ)\s+(.*)/i.exec(q.output.replace(/\r?\n/g, ' ').trim());
-  if (!m) return false;
-  const cur = m[2].trim();
-  const norm = (s) => s.replace(/[/\\]+/g, '\\').replace(/\\+$/, '').toLowerCase();
-  const expanded = cur.replaceAll('%USERPROFILE%', homedir());
-  if (expanded.split(';').some((p) => p && norm(p) === norm(dir))) return true;
-  const next = cur ? `${cur};${dir}` : dir;
-  const r = await execCapture('reg', ['add', 'HKCU\\Environment', '/v', 'PATH', '/t', m[1], '/d', next, '/f'], 15000);
+  // 值包进单引号（内部 ' 写成 ''）：$、反引号、$( ) 都不会被当变量/子表达式求值
+  const psWrite = [
+    "$k = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey('Environment')",
+    `$k.SetValue('PATH', '${next.replace(/'/g, "''")}', [Microsoft.Win32.RegistryValueKind]::${kind})`,
+  ].join('; ');
+  const r = await execCapture('powershell.exe', ['-NoProfile', '-Command', psWrite], 15000);
   return r.ok;
 }
 
@@ -4014,8 +4350,8 @@ export function writeHeadroomConfig(file, cfg) {
   for (const k of ['kompressBackend', 'powerSaveCpu', 'powerWatchInterval']) {
     if (cfg[k] !== undefined) out[k] = cfg[k];
   }
-  const tmp = file + '.tmp';
-  writeFileSync(tmp, JSON.stringify(out, null, 2) + '\n', 'utf8');
+  const tmp = `${file}.${process.pid}.${Date.now().toString(36)}.tmp`; // 防多写者共用同一 .tmp 撕裂
+  writeFileSync(tmp, JSON.stringify(out, null, 2) + '\n', { encoding: 'utf8', mode: 0o600 }); // 配置含供应商凭据，限制本人读写
   renameSync(tmp, file);
 }
 
@@ -4119,18 +4455,31 @@ async function downloadToFile(j, url, dest, timeoutMs = 600000) {
   if (!res.ok || !res.body) throw new Error(`下载失败 HTTP ${res.status}`);
   const total = Number(res.headers.get('content-length')) || 0;
   const out = createWriteStream(dest);
+  // 写盘错误必须有人接（磁盘满/杀软锁文件）：无人订阅的 error 事件直接崩进程，
+  // 挂在 drain 等待上时还会永久不返回、升级任务卡死
+  let outErr = null;
+  out.on('error', (e) => { outErr = e; });
   let got = 0;
   let lastPct = -1;
   try {
     for await (const chunk of res.body) {
       if (j.canceled) throw new Error('canceled');
-      if (!out.write(chunk)) await new Promise((r) => out.once('drain', r));
+      if (outErr) throw outErr;
+      if (!out.write(chunk)) {
+        await new Promise((r) => {
+          const done = () => { out.off('drain', done); out.off('error', done); r(); };
+          out.once('drain', done);
+          out.once('error', done); // 出错也解除等待，别永久挂起
+        });
+        if (outErr) throw outErr;
+      }
       got += chunk.length;
       if (total > 0) {
         const pct = Math.floor((got / total) * 100);
         if (pct >= lastPct + 5) { lastPct = pct; j.output += `下载中 ${pct}%\n`; }
       }
     }
+    if (outErr) throw outErr;
     await new Promise((resolve, reject) => { out.end(resolve); out.once('error', reject); });
   } catch (err) {
     try { out.destroy(); } catch { /* ignore */ }
@@ -4327,10 +4676,10 @@ async function runHeadroomHook(args, timeoutMs = 30000) {
 // 旧版 headroom 插件的钩子只匹配 startup，代理不会自动启动（要等用户新建会话或
 // 手动重启）。helper 就绪后延迟几秒补一次 ensure：动作幂等（已在跑秒回），新版
 // 插件侧还带跨进程锁；失败一律静默——没装 headroom 插件/本体的环境不能打扰启动。
-let headroomStartupEnsureFired = false;
-function ensureHeadroomAtStartup() {
-  if (headroomStartupEnsureFired) return;
-  headroomStartupEnsureFired = true;
+function ensureHeadroomAtStartup(state = {}) {
+  // 标志挂 state（跨热替换实例共享）：放模块级时每次热替换都重置，兜底 ensure 会重复排队
+  if (state.headroomEnsureFired) return;
+  state.headroomEnsureFired = true;
   const timer = setTimeout(() => {
     runHeadroomHook(['ensure'], 20000).catch(() => { /* 兜底失败不影响启动 */ });
   }, 5000);
@@ -4400,12 +4749,17 @@ export function headroomUsageScan(dataRoot) {
 // 切换启用状态：enable=false 时 127.0.0.1 条目 → 直连（并记录）；enable=true 时按
 // 记录把直连条目切回代理。改写前各留 .zcodepro-backup 备份，与同步导入同款。
 export function setHeadroomUsage(dataRoot, configFile, enable) {
+  // 同步调用点用同步等锁变体：整段读改写在跨进程锁内完成，防止与别的写入方互相覆盖
+  return withConfigLockSync(configFile, () => setHeadroomUsageLocked(dataRoot, configFile, enable));
+}
+
+function setHeadroomUsageLocked(dataRoot, configFile, enable) {
   const backupFile = (p) => {
     try { if (existsSync(p)) copyFileSync(p, p + '.zcodepro-backup'); } catch { /* 备份失败不阻塞 */ }
   };
   const atomicWrite = (p, obj) => {
-    const tmp = p + '.zcodepro-tmp';
-    writeFileSync(tmp, JSON.stringify(obj, null, 2) + '\n', 'utf8');
+    const tmp = `${p}.${process.pid}.${Date.now().toString(36)}.tmp`; // 防多写者共用同一 .tmp 撕裂
+    writeFileSync(tmp, JSON.stringify(obj, null, 2) + '\n', { encoding: 'utf8', mode: 0o600 });
     renameSync(tmp, p);
   };
   const v2File = join(dataRoot, 'v2', 'config.json');
@@ -4457,7 +4811,9 @@ export function setHeadroomUsage(dataRoot, configFile, enable) {
     if (touched) { backupFile(pcFile); atomicWrite(pcFile, pc); }
   }
   config.headroomRoutes = routes;
-  saveConfig(configFile, config);
+  if (!saveConfig(configFile, config)) {
+    return { ok: false, code: 'config-unreadable', error: 'zcodepro.json 读取失败或已损坏，保存中止（请先修好配置文件）' };
+  }
   return { ok: true, changed };
 }
 
@@ -4627,16 +4983,32 @@ export async function ensureZcodePluginsMarketplace() {
 
 // /plugins/update 并发控制：启动自动更新、打开设置弹窗时的自动触发、手动按钮、
 // 各插件面板的单插件操作都打到这个端点，而 CLI 同时改同一个插件目录会互相破坏。
-// 同目标（全量或同一插件名）的并发请求共用同一次执行结果；
-// 不同目标的请求排队串行，后到的等前一个结束再跑
-let pluginsUpdateJob = null; // { only, promise }：正在执行或排队的任务
+// 按目标键（全量 = 空键，或同一插件名）去重：同目标的并发请求共用同一次执行结果，
+// 不同目标各占一个槽位互不顶掉、排队串行，后到的等前一个结束再跑
+let pluginsUpdateJobs = new Map(); // only 键 → 在跑或排队的任务 promise
+// 一般后台任务在途标志（市场克隆/刷新、WebDAV 同步）：排队 + 执行期间 +1，跑完 -1
+let busyBackground = 0;
 // 后台任务占用标志：启动器热替换前查询，有任务在跑就延后换——新模块实例
-// 不继承任务锁，立刻换会跟旧实例拉起的子进程（插件更新/转码等）并发。
+// 不继承任务锁，立刻换会跟旧实例拉起的子进程（插件更新/同步/转码等）并发互删中间文件。
 // 升级任务对象完成后变量不置回 null（只把 running 置 false），必须看 running
 export function busyJobs() {
-  return !!(pluginsUpdateJob || (headroomUpgradeJob && headroomUpgradeJob.running) || (rtkUpgradeJob && rtkUpgradeJob.running) || transcodeJobs.size);
+  return !!(pluginsUpdateJobs.size || busyBackground || (headroomUpgradeJob && headroomUpgradeJob.running) || (rtkUpgradeJob && rtkUpgradeJob.running) || transcodeJobs.size);
 }
 let pluginsUpdateQueue = Promise.resolve();
+
+// 任务在途（排队 + 执行）期间计入忙碌标志，跑完清掉，热替换据此延后
+function trackBusy(promise) {
+  busyBackground += 1;
+  promise.then(() => { busyBackground -= 1; }, () => { busyBackground -= 1; });
+  return promise;
+}
+
+// 把一步市场操作排进串行队列（状态页的节流同步用）：与更新任务互斥执行
+function runPluginsQueued(fn) {
+  const promise = pluginsUpdateQueue.then(() => fn());
+  pluginsUpdateQueue = promise.then(() => undefined, () => undefined);
+  return trackBusy(promise);
+}
 
 async function runPluginsUpdateJob(body) {
   // name 指定时只处理该插件：已装且有更新则更新，未装则安装（各插件面板的单插件操作）
@@ -4682,18 +5054,21 @@ async function runPluginsUpdateJob(body) {
 
 function enqueuePluginsUpdate(body) {
   const only = typeof body?.name === 'string' && body.name.trim() ? body.name.trim() : null;
-  if (pluginsUpdateJob && pluginsUpdateJob.only === only) return pluginsUpdateJob.promise;
+  // 按 only 键去重：单个槽位会被后到的不同目标顶掉，被顶掉的任务随后会重复跑
+  const key = only || '';
+  const inflight = pluginsUpdateJobs.get(key);
+  if (inflight) return inflight;
   const prev = pluginsUpdateQueue;
   const promise = (async () => {
     await prev;
     try {
       return await runPluginsUpdateJob(body);
     } finally {
-      if (pluginsUpdateJob && pluginsUpdateJob.promise === promise) pluginsUpdateJob = null;
+      pluginsUpdateJobs.delete(key); // 同键去重保证此刻槽里就是自己，不用再比对
     }
   })();
   pluginsUpdateQueue = promise.then(() => undefined, () => undefined);
-  pluginsUpdateJob = { only, promise };
+  pluginsUpdateJobs.set(key, promise);
   return promise;
 }
 
@@ -4723,9 +5098,13 @@ export function writeAgents(body, agentsFile) {
     } else if (empty) {
       return [200, { ok: true, content: '' }];
     }
-    const tmp = agentsFile + '.zcodepro-tmp';
+    // 改名目标取真实路径：直接 rename 到 agentsFile 会把符号链接本身替换成
+    // 普通文件（dotfiles 管理的链接会丢）
+    let real = agentsFile;
+    try { real = realpathSync(agentsFile); } catch { /* 文件还不存在：直接写原路径 */ }
+    const tmp = `${real}.${process.pid}.${Date.now().toString(36)}.tmp`; // 防多写者共用同一 .tmp 撕裂
     writeFileSync(tmp, body.content, 'utf8');
-    renameSync(tmp, agentsFile);
+    renameSync(tmp, real);
   } catch (err) {
     return [500, { ok: false, code: 'agents-write', error: '写入 AGENTS.md 失败: ' + (err?.message || err) }];
   }
@@ -4846,7 +5225,12 @@ export function openWithDefaultApp(rawPath) {
       const child = spawn('rundll32.exe', ['url.dll,FileProtocolHandler', p], { detached: true, stdio: 'ignore', windowsHide: true });
       child.on('spawn', () => finish(null));
       child.on('error', () => {
-        const viaCmd = spawn('cmd.exe', [`/d /s /c start "" "${p}"`], { windowsVerbatimArguments: true, detached: true, stdio: 'ignore', windowsHide: true });
+        // cmd 兜底里路径不能直接拼进命令行（%VAR% 会被展开改写命令结构）：
+        // 走环境变量传入，% 的展开是单遍、变量值不会被二次扫描
+        const viaCmd = spawn('cmd.exe', ['/d /s /c start "" "%ZP_OPEN%"'], {
+          env: { ...process.env, ZP_OPEN: p },
+          windowsVerbatimArguments: true, detached: true, stdio: 'ignore', windowsHide: true,
+        });
         viaCmd.on('spawn', () => finish(null));
         viaCmd.on('error', finish);
       });
@@ -4856,7 +5240,7 @@ export function openWithDefaultApp(rawPath) {
 
 // 设置/清除项目自定义别名（纯渲染层，不动磁盘与任何 ZCode 数据）。
 // alias 传空字符串/null 即清除该项目条目。
-export function setAlias(body, configFile) {
+export async function setAlias(body, configFile) {
   const raw = typeof body?.path === 'string' ? body.path.trim() : '';
   // 先校验再 resolve：resolve 会把相对路径悄悄变绝对，绕过校验
   if (!raw || !isAbsolute(raw)) return [400, { ok: false, error: '无效的项目路径' }];
@@ -4866,16 +5250,21 @@ export function setAlias(body, configFile) {
     if (name.length > 100) return [400, { ok: false, error: '别名过长（最多 100 字符）', code: 'name-too-long' }];
     if (/[\r\n\0]/.test(name)) return [400, { ok: false, error: '别名不能包含换行等控制字符', code: 'name-invalid-chars' }];
   }
-  const config = loadConfig(configFile);
-  if (!config.aliases || typeof config.aliases !== 'object') config.aliases = {};
-  if (name) config.aliases[path] = name;
-  else delete config.aliases[path];
-  try {
-    saveConfig(configFile, config);
-  } catch (err) {
-    return [500, { ok: false, code: 'config-save', error: '保存配置失败: ' + (err?.message || err) }];
-  }
-  return [200, { ok: true, path, alias: name, aliases: config.aliases }];
+  // 读改写放进跨进程锁内同步执行，防止与别的写入方互相覆盖整份配置
+  return withConfigLock(configFile, () => {
+    const config = loadConfig(configFile);
+    if (!config.aliases || typeof config.aliases !== 'object') config.aliases = {};
+    if (name) config.aliases[path] = name;
+    else delete config.aliases[path];
+    try {
+      if (!saveConfig(configFile, config)) {
+        return [500, { ok: false, code: 'config-unreadable', error: 'zcodepro.json 读取失败或已损坏，保存中止（请先修好配置文件）' }];
+      }
+    } catch (err) {
+      return [500, { ok: false, code: 'config-save', error: '保存配置失败: ' + (err?.message || err) }];
+    }
+    return [200, { ok: true, path, alias: name, aliases: config.aliases }];
+  });
 }
 
 function invalidProjectName(name) {
@@ -4923,11 +5312,11 @@ export async function relocateProject(body, dataRoot) {
     }
   }
 
-  // setting.json 路径引用同步（recentProjects / lastWorkspaceSession / webRemoteControl…）
+  // setting.json 路径引用同步（recentProjects / lastWorkspaceSession / webRemoteControl…）；
+  // 写回前比对 mtime 的重算逻辑在 remapSettingsPathsAtomic 里
   const settingsFile = join(dataRoot, 'v2', 'setting.json');
   try {
-    const settings = readSettings(settingsFile);
-    writeSettingsAtomic(settingsFile, remapSettingsPaths(settings, oldPath, newPath));
+    remapSettingsPathsAtomic(settingsFile, oldPath, newPath);
   } catch (err) {
     return [500, { ok: false, error: '更新 setting.json 失败: ' + (err?.message || err) }];
   }
@@ -4938,8 +5327,7 @@ export async function relocateProject(body, dataRoot) {
       await remapTaskIndexPaths(dataRoot, oldPath, newPath);
     } catch (err) {
       try {
-        const cur = readSettings(settingsFile);
-        writeSettingsAtomic(settingsFile, remapSettingsPaths(cur, newPath, oldPath));
+        remapSettingsPathsAtomic(settingsFile, newPath, oldPath);
       } catch { /* 回滚失败：setting.json.zcodepro-backup 仍有兜底 */ }
       return [500, {
         ok: false,
@@ -4949,16 +5337,19 @@ export async function relocateProject(body, dataRoot) {
     }
   }
 
-  // 别名随迁（仅渲染层数据，失败不影响结果）
+  // 别名随迁（仅渲染层数据，失败不影响结果）；读改写放进跨进程锁内同步执行，
+  // 防止与别的写入方互相覆盖整份配置
   try {
-    const config = loadConfig(join(dataRoot, 'zcodepro.json'));
-    const aliases = config.aliases || {};
-    if (Object.prototype.hasOwnProperty.call(aliases, oldPath)) {
-      const v = aliases[oldPath];
-      delete aliases[oldPath];
-      aliases[newPath] = v;
-      saveConfig(join(dataRoot, 'zcodepro.json'), config);
-    }
+    await withConfigLock(join(dataRoot, 'zcodepro.json'), () => {
+      const config = loadConfig(join(dataRoot, 'zcodepro.json'));
+      const aliases = config.aliases || {};
+      if (Object.prototype.hasOwnProperty.call(aliases, oldPath)) {
+        const v = aliases[oldPath];
+        delete aliases[oldPath];
+        aliases[newPath] = v;
+        saveConfig(join(dataRoot, 'zcodepro.json'), config);
+      }
+    });
   } catch { /* ignore */ }
 
   return [200, {

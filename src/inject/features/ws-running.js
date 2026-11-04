@@ -124,8 +124,10 @@ let wsWithRows = new Set();    // 最近一次扫描时仍有会话行在 DOM �
 // 应用内部服务对象（含 zcodeTaskService.releaseWorkspacePreparation）：从 React
 // fiber 树上找持有它的组件（file-menu.js 同款取 fiber 的思路），找到后缓存
 let servicesRef = null;
+let servicesMissAt = 0; // 找不到服务也记时刻：fiber 全遍历（上限 6 万节点）代价高，60 秒内不重走
 export function findServices() {
   if (servicesRef) return servicesRef;
+  if (servicesMissAt && Date.now() - servicesMissAt < 60_000) return null;
   try {
     const rootEl = document.getElementById('root');
     const containerKey = rootEl && Object.keys(rootEl).find((k) => k.startsWith('__reactContainer$'));
@@ -154,8 +156,10 @@ export function findServices() {
     };
     visit(rootEl[containerKey]);
     if (found) servicesRef = found;
+    else servicesMissAt = Date.now();
     return found;
   } catch {
+    servicesMissAt = Date.now();
     return null;
   }
 }
@@ -356,7 +360,12 @@ function sectionHeads() {
     const btn = sv.closest('button');
     if (btn) heads.push(btn);
   }
-  for (const h3 of document.querySelectorAll('h3')) heads.push(h3);
+  for (const h3 of document.querySelectorAll('h3')) {
+    // 聊天正文里的 markdown 标题不是分区头：不排除会把转圈图标插进聊天内容
+    //（顺带省掉流式渲染期新标题节点的解析与强制布局开销）
+    if (h3.closest('main')) continue;
+    heads.push(h3);
+  }
   return heads.map((head) => {
     const cached = headInfoCache.get(head);
     if (cached) return { head, cont: cached.cont, kind: cached.kind };
@@ -375,7 +384,7 @@ function sectionHeads() {
 const SEC_SPIN_CLASS = 'zcodepro-ws-sec-spin';
 
 // 全局权威扫描：listActiveTaskIds 遍历侧栏全部项目（/projects-v2 提供路径，
-// 尾斜杠两种形式各查一次），任一非终态会话即“有任务在跑”。10 秒节流缓存；
+// 尾斜杠两种形式各查一次），任一非终态会话即“有任务在跑”。30 秒节流缓存；
 // 接口不可用（≤3.15.x）时无缓存，分区头退回 DOM 检测
 let anyActiveCache = { at: 0, value: null, busy: false };
 // 活跃按分区归属：task = “任务”分区（非项目工作区），project = “项目”分区，
@@ -390,12 +399,13 @@ let activeProjectPaths = new Set();
 let authActiveByWs = new Map();
 // 周期复查：缓存到期就无条件重扫（不看当前值）——只在 true 时扫会有两个缺口：
 // 空闲后新任务启动无人触发（折叠分区头不亮）；任务结束但数据库完成状态尚未
-// 写入的过渡窗口里旧值一直被沿用。每 10 秒全量一次，扫描本身是内存级过滤
+// 写入的过渡窗口里旧值一直被沿用。每 30 秒全量一次，扫描本身是内存级过滤
 setInterval(() => {
-  if (!anyActiveCache.busy && Date.now() - anyActiveCache.at >= 10_000) globalAnyActive();
-}, 10_000);
+  if (document.hidden || !enabled) return; // 后台/功能关闭不扫，回前台下一轮补上
+  if (!anyActiveCache.busy && Date.now() - anyActiveCache.at >= 30_000) globalAnyActive();
+}, 30_000);
 function globalAnyActive() {
-  if (anyActiveCache.value !== null && Date.now() - anyActiveCache.at < 10_000) return anyActiveCache.value;
+  if (anyActiveCache.value !== null && Date.now() - anyActiveCache.at < 30_000) return anyActiveCache.value;
   if (anyActiveCache.busy) return anyActiveCache.value === true;
   anyActiveCache.busy = true;
   sectionActive.task = false;
@@ -444,10 +454,15 @@ function globalAnyActive() {
           }
           projectPaths.set(proj.name, names);
         }
-        for (const base of scanPaths) {
-          const a = await ts.listActiveTaskIds({ workspacePath: base });
-          const b = await ts.listActiveTaskIds({ workspacePath: base + '/' });
-          const ids = [...(Array.isArray(a) ? a : []), ...(Array.isArray(b) ? b : [])].map(String);
+        // 各工作区并行查（串行 await 在几十个工作区时要跑数秒）：每区两种尾斜杠各查一次
+        const pairs = await Promise.all([...scanPaths].map(async (base) => {
+          const [a, b] = await Promise.all([
+            ts.listActiveTaskIds({ workspacePath: base }),
+            ts.listActiveTaskIds({ workspacePath: base + '/' }),
+          ]);
+          return [base, [...(Array.isArray(a) ? a : []), ...(Array.isArray(b) ? b : [])].map(String)];
+        }));
+        for (const [base, ids] of pairs) {
           if (!ids.length) continue;
           byKindByPath.set(base, ids);
           const kind = projPaths.has(base) ? 'project' : 'task';
@@ -558,7 +573,7 @@ function applySectionSpin() {
       const list = head.nextElementSibling;
       expanded = !list || list.offsetHeight > 0;
     }
-    if (!kind) return; // 折叠后解析不到归属且无缓存：跳过（不动现有图标）
+    if (!kind) continue; // 折叠后解析不到归属且无缓存：跳过这个分区头（不动现有图标），继续处理其余分区头
     // 已置顶标题（h3）单独看 pinned scope，不复用 task 的
     const scoped = head.tagName === 'H3' ? sectionActive.pinned
       : kind === 'project' ? sectionActive.project : sectionActive.task;

@@ -16,9 +16,12 @@ let enabled = true;   // 配置开关（features.pinnedCollapse !== false）
 let syncTimer = 0;
 
 // 已置顶标题的识别不依赖文案（跟随界面语言）：h3 的下一个兄弟是含任务行的
-// 列表容器——3.15.x 是 UL，3.16.1 起是 DIV，不限定标签
+// 列表容器——3.15.x 是 UL，3.16.1 起是 DIV，不限定标签。
+// 聊天正文里的 markdown 标题也是 h3（ws-running.js 的 sectionHeads 同款排除），
+// 不排除会把折叠开关插进聊天内容
 function findPinnedHeader() {
   for (const h3 of document.querySelectorAll('h3')) {
+    if (h3.closest('main')) continue;
     const list = h3.nextElementSibling;
     if (list && list.querySelector('li[data-task-item-key]')) return h3;
   }
@@ -69,8 +72,13 @@ function apply() {
     return true;
   }
   h3.classList.add(HEAD_CLASS);
-  // 整行可点（与“项目”分区头一致）；开关禁用后旧监听变空转，无需摘除
-  h3.addEventListener('click', () => { if (enabled) toggle(); });
+  // 整行可点（与“项目”分区头一致）；开关禁用后旧监听变空转，无需摘除。
+  // dataset 防重：React 清掉注入的按钮后本函数重跑，监听器叠加会让一次点击
+  // 触发多次折叠切换
+  if (!h3.dataset.zcodeproPinHead) {
+    h3.dataset.zcodeproPinHead = '1';
+    h3.addEventListener('click', () => { if (enabled) toggle(); });
+  }
   const btn = h('button', {
     type: 'button',
     class: 'zcodepro-pin-chevron',

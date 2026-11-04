@@ -5,7 +5,7 @@
 // 3. 连接 CDP，向所有页面注入增强脚本（新文档自动注入 + 已加载页面立即注入）
 // 4. 启动本地辅助 HTTP 服务并常驻，CDP 断开时自动重连
 import { spawn, execSync, spawnSync } from 'node:child_process';
-import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, statSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, realpathSync, renameSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomBytes } from 'node:crypto';
@@ -44,7 +44,8 @@ function usage() {
   --helper-port <端口>   本地辅助服务端口 (默认 47889)
   --zcode-path <路径>    ZCode 可执行文件路径
   --inject-only          只注入已运行的实例（要求其带调试端口），不启动新实例
-  --verbose              输出详细日志
+  --no-launch            同 --inject-only
+  --verbose, -v          输出详细日志
   -h, --help             显示帮助
 
 子命令:
@@ -58,15 +59,26 @@ function usage() {
   ZCODEPRO_CDP_PORT       CDP 端口
   ZCODEPRO_HELPER_PORT    辅助服务端口
   ZCODE_DATA_BASE_DIR    ZCode 数据根目录（与 ZCode 自身语义一致）
+  ZCODEPRO_DEV           设为 1 开启开发模式（设置弹窗出现“调试”标签页）
+  RTK_DIR                rtk 插件状态目录（默认 ~/.zcode-rtk）
 `;
 }
 
 function parseArgs(argv) {
-  const out = { cdpPort: 0, helperPort: 0, zcodePath: '', injectOnly: false, verbose: false, help: false };
+  const out = { cdpPort: 0, helperPort: 0, zcodePath: '', injectOnly: false, verbose: false, help: false, bad: false };
+  const portArg = (name, raw) => {
+    const n = Number(raw);
+    if (!raw || !Number.isInteger(n) || n < 1 || n > 65535) {
+      console.error(`${name} 需要 1-65535 的端口数字，收到: ${raw}`);
+      out.bad = true;
+      return 0;
+    }
+    return n;
+  };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
-    if (a === '--cdp-port') out.cdpPort = Number(argv[++i]);
-    else if (a === '--helper-port') out.helperPort = Number(argv[++i]);
+    if (a === '--cdp-port') out.cdpPort = portArg('--cdp-port', argv[++i]);
+    else if (a === '--helper-port') out.helperPort = portArg('--helper-port', argv[++i]);
     else if (a === '--zcode-path') out.zcodePath = argv[++i];
     else if (a === '--inject-only' || a === '--no-launch') out.injectOnly = true;
     else if (a === '--verbose' || a === '-v') out.verbose = true;
@@ -74,7 +86,7 @@ function parseArgs(argv) {
     else if (a === 'setup') out.setup = true;
     else if (a === '--uninstall') out.setupUninstall = true;
     else if (a === '--desktop') out.setupDesktop = true;
-    else { console.error('未知参数: ' + a); out.help = true; }
+    else { console.error('未知参数: ' + a); out.help = true; out.bad = true; }
   }
   out.cdpPort = out.cdpPort || Number(process.env.ZCODEPRO_CDP_PORT) || 9333;
   out.helperPort = out.helperPort || Number(process.env.ZCODEPRO_HELPER_PORT) || 47889;
@@ -108,7 +120,8 @@ function winLog(line) {
         if (existsSync(file) && statSync(file).size > 512 * 1024) renameSync(file, `${file}.old`);
       } catch { /* ignore */ }
     }
-    appendFileSync(file, `[${new Date().toISOString()}] ${line}\n`);
+    // 行尾 \r\n：Windows 记事本对纯 \n 的老日志显示成一行（winLog 只在 win32 写文件）
+    appendFileSync(file, `[${new Date().toISOString()}] ${line}\r\n`);
   } catch { /* ignore */ }
 }
 
@@ -122,8 +135,13 @@ async function cdpAlive(port) {
 function zcodeAppProcessExists() {
   try {
     if (process.platform === 'win32') {
-      execSync('tasklist /FI "IMAGENAME eq ZCode.exe" /NH | find /I "ZCode.exe"', { stdio: 'ignore' });
-      return true;
+      // 不用 find 管道只看命中：要拿到 PID 列才能排除自己（启动器以 ELECTRON_RUN_AS_NODE
+      // 跑在 ZCode.exe 镜像下时进程名同为 ZCode.exe，不排除会恒判“已在运行”）
+      const out = execSync('tasklist /FI "IMAGENAME eq ZCode.exe" /NH', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+      return out.split(/\r?\n/).some((line) => {
+        const m = /^\S+\s+(\d+)/.exec(line.trim());
+        return !!m && Number(m[1]) !== process.pid;
+      });
     }
     const out = execSync('pgrep -x zcode 2>/dev/null || true', { encoding: 'utf8' });
     const pids = out.split('\n').map((s) => s.trim()).filter((s) => /^\d+$/.test(s));
@@ -143,6 +161,11 @@ function launchZcode(exe, cdpPort, verbose) {
     detached: true,
     stdio: 'ignore',
     env,
+  });
+  // spawn 失败（可执行文件损坏/无权限等）走 error 事件：不监听会变成未处理错误把启动器炸掉
+  child.on('error', (err) => {
+    winLog('启动 ZCode 失败: ' + err.message);
+    console.error('[zcodepro] 启动 ZCode 失败: ' + err.message);
   });
   child.unref();
   if (verbose) console.log(`[zcodepro] 已启动 ZCode (pid=${child.pid})，调试端口 ${cdpPort}`);
@@ -166,18 +189,135 @@ const SANDBOX_STYLE_SCRIPT = `(() => {
   (document.head || document.documentElement).append(s);
 })();`;
 
-async function buildInjectSource(token, helperPort, features, zcodeVersion) {
+// file:// 页面的注入范围：只放行 ZCode 安装目录下的页面，防止含 helper token 的
+// 引导脚本进任意本地 HTML。允许的前缀有三个来源：启动 exe 所在目录；exe 真实
+// 路径所在目录（经符号链接启动时应用 UI 走真实路径）；macOS 应用包的
+// Contents/Resources（exe 在 Contents/MacOS 里、UI 在 Resources 里，不同目录）。
+// 前缀归一成 file URL 的 pathname 形式做比较（盘符路径补前导 /、反斜杠换 /），
+// exe 路径带盘符（Windows）时大小写不敏感。
+// 取舍：从源码目录直接跑的 ZCode（dev 布局）不在这些前缀下会失去注入，届时再加配置。
+function installDirFromExe(exePath) {
+  const prefixes = [];
+  const add = (dir) => {
+    const norm = /^[A-Za-z]:[\\/]/.test(dir) ? '/' + dir.replace(/\\/g, '/') : dir;
+    if (!prefixes.includes(norm)) prefixes.push(norm);
+  };
+  const dir = dirname(resolve(exePath));
+  add(dir);
+  try { add(dirname(realpathSync(exePath))); } catch { /* 路径不可解析就只用字面前缀 */ }
+  for (let d = dir, i = 0; i < 4; i++) {
+    if (/\.app$/i.test(d)) { add(join(d, 'Contents', 'Resources')); break; }
+    const up = dirname(d);
+    if (up === d) break;
+    d = up;
+  }
+  // macOS 的 APFS 默认大小写不敏感，前缀比较同样放宽大小写
+  return { prefixes, ci: process.platform === 'darwin' || prefixes.some((p) => /^\/[A-Za-z]:/.test(p)) };
+}
+
+// file:// 路径归一（宿主侧与页面侧护栏同一算法）：decodeURI 不解码 %2f/%5c，
+// 也不折叠 .. 段，先把 %2f/%5c（大小写不敏感）与字面反斜杠统一成 /，再做词法段
+// 折叠（消掉 . 与 .. 段，等价 path.posix.normalize；页面侧是注入字符串，用原生
+// JS 实现同一套，不引依赖），否则 ..%5c..%5c 之类编码分隔符能绕过前缀匹配
+function normFileUrlPath(p) {
+  const s = String(p).replace(/%2f/gi, '/').replace(/%5c/gi, '/').replace(/\\/g, '/');
+  const abs = s.startsWith('/');
+  const out = [];
+  for (const seg of s.split('/')) {
+    if (!seg || seg === '.') continue;
+    if (seg === '..') {
+      if (out.length && out[out.length - 1] !== '..') out.pop();
+      else if (!abs) out.push('..'); // 相对路径回溯段保留，语义同 path.posix.normalize
+      continue;
+    }
+    out.push(seg);
+  }
+  return (abs ? '/' : '') + out.join('/');
+}
+
+// file:// URL 是否落在任一安装目录前缀下：与页面侧护栏同款比较，比较前先解码
+// URL 路径（页面侧是 decodeURI(location.pathname)）并按 normFileUrlPath 归一。
+// URL 解析失败按不放行处理；
+// 路径里孤立的 % 会让 decodeURI 抛错，这时退回原始路径比较——前缀不含 % 时仍能匹配
+function fileUrlUnderInstall(fileUrl, installDir) {
+  let p;
+  try {
+    const raw = new URL(fileUrl).pathname;
+    try { p = decodeURI(raw); } catch { p = raw; }
+  } catch { return false; }
+  p = normFileUrlPath(p);
+  if (installDir.ci) p = p.toLowerCase();
+  return installDir.prefixes.some((raw) => {
+    const pre = installDir.ci ? raw.toLowerCase() : raw;
+    return p === pre || p.indexOf(pre.endsWith('/') ? pre : pre + '/') === 0;
+  });
+}
+
+// 可注入判定：引导脚本内含 helper 鉴权 token，只能进 ZCode 应用自身的页面。
+// 规则：http(s) 只放行本机回环地址；file:// 只放行 ZCode 安装目录下的页面
+//（应用 UI 在 <安装目录>/resources/app.asar/ 里）；拦截外部网页与
+// data/blob/view-source/about 子文档，沙箱页同样不带 token；应用自有协议
+// 维持放行。refreshInjectScripts 重注册时目标可能已导航离开应用页，需重跑同款判定
+export function isInjectableAppPage(url, installDir) {
+  const u = String(url || '');
+  if (/^zcode-sandbox:\/\//i.test(u)) return false;
+  if (/^https?:\/\//i.test(u) && !/^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?(\/|$|\?|#)/i.test(u)) return false;
+  if (/^(data|blob|view-source|about):/i.test(u)) return false;
+  // file: 不带双斜杠的形态（file:/etc/…）也要过前缀校验，别落到末尾的放行
+  if (/^file:/i.test(u)) return fileUrlUnderInstall(u, installDir);
+  return true;
+}
+
+// token 护栏做成运行时自检：attach 时判定 URL 挡不住“空白初页 → 导航去沙箱/外网”
+// 的目标（引导脚本会随 addScript 落进该会话之后的每个文档）。每文档执行时看真实
+// href，沙箱/外链页面整段跳过，token 不出应用页；空白文档也跳过（真应用文档会
+// 以自己的 URL 再触发一次钩子）。file:// 只放行 ZCode 安装目录下的页面（应用 UI
+// 在 <安装目录>/resources/app.asar/ 里，必须继续放行），否则含 token 的引导脚本
+// 会进任意本地 HTML。护栏是注入进页面的字符串，安装目录前缀（含符号链接真实
+// 路径与 macOS 应用包 Resources，见 installDirFromExe）在宿主侧构造时写进下面的
+// 字符串；页面侧比较前先 decodeURI(location.pathname) 并按 normFileUrlPath 同款
+// 算法归一（编码分隔符与 .. 段折叠，两侧行为必须一致），exe 路径带盘符
+//（Windows）时大小写不敏感
+export function buildGuard(installDir) {
+  return `if ((function () {
+  var h = location.href;
+  if (/^(zcode-sandbox|about|data|blob|view-source):/i.test(h)) return false;
+  if (/^https?:\\/\\//i.test(h)) return /^https?:\\/\\/(127\\.0\\.0\\.1|localhost)(:\\d+)?(\\/|$|\\?|#)/i.test(h);
+  if (/^file:\\/\\//i.test(h)) {
+    var raw = location.pathname, p;
+    try { p = decodeURI(raw); } catch (e) { p = raw; }
+    p = p.replace(/%2f/gi, '/').replace(/%5c/gi, '/').replace(/\\\\/g, '/');
+    var abs = p.charAt(0) === '/', segs = p.split('/'), out = [], j, seg;
+    for (j = 0; j < segs.length; j++) {
+      seg = segs[j];
+      if (seg === '' || seg === '.') continue;
+      if (seg === '..') {
+        if (out.length && out[out.length - 1] !== '..') out.pop();
+        else if (!abs) out.push('..');
+        continue;
+      }
+      out.push(seg);
+    }
+    p = (abs ? '/' : '') + out.join('/');
+    var pres = ${JSON.stringify(installDir.prefixes)};
+    ${installDir.ci ? 'p = p.toLowerCase();' : ''}
+    for (var i = 0; i < pres.length; i++) {
+      var pre = ${installDir.ci ? 'pres[i].toLowerCase()' : 'pres[i]'};
+      if (p === pre || p.indexOf(pre.endsWith('/') ? pre : pre + '/') === 0) return true;
+    }
+    return false;
+  }
+  return true;
+})()) {`;
+}
+
+async function buildInjectSource(token, helperPort, features, zcodeVersion, installDir) {
   if (!existsSync(INJECT_BUNDLE)) {
     throw new Error('缺少注入脚本 dist/inject.js，请先运行 npm run build');
   }
   const bundle = readFileSync(INJECT_BUNDLE, 'utf8');
   const bootstrap = `window.__ZCODEPRO__={helperUrl:'http://127.0.0.1:${helperPort}',token:${JSON.stringify(token)},features:${JSON.stringify(features)},zcodeVersion:${JSON.stringify(zcodeVersion || '')}};`;
-  // token 护栏做成运行时自检：attach 时判定 URL 挡不住“空白初页 → 导航去沙箱/外网”
-  // 的目标（引导脚本会随 addScript 落进该会话之后的每个文档）。每文档执行时看真实
-  // href，沙箱/外链页面整段跳过，token 不出应用页；空白文档也跳过（真应用文档会
-  // 以自己的 URL 再触发一次钩子）
-  const guard = 'if (!/^(zcode-sandbox|about|data|blob|view-source):/i.test(location.href) && !(/^https?:\\/\\//i.test(location.href) && !/^https?:\\/\\/(127\\.0\\.0\\.1|localhost)(:\\d+)?(\\/|$|\\?|#)/i.test(location.href))) {';
-  return guard + bootstrap + '\n' + bundle + '\n}';
+  return buildGuard(installDir) + bootstrap + '\n' + bundle + '\n}';
 }
 
 export async function run(argv) {
@@ -187,12 +327,14 @@ export async function run(argv) {
     return;
   }
   const args = parseArgs(argv);
-  if (args.help) { console.log(usage()); return; }
+  // 参数错误按失败退出（脚本调用方靠退出码判断）；单纯 --help 仍退出码 0
+  if (args.help) { console.log(usage()); process.exitCode = args.bad ? 1 : 0; return; }
   // setup 不依赖 ZCode 运行（装快捷方式等本机集成），先于 ZCode 定位处理
   if (args.setup || args.setupUninstall || args.setupDesktop) {
     if (!args.setup && (args.setupUninstall || args.setupDesktop)) {
       console.error('未知用法: --uninstall / --desktop 仅可与 setup 连用');
       console.log(usage());
+      process.exitCode = 1;
       return;
     }
     await runSetup({ uninstall: args.setupUninstall, desktop: args.setupDesktop });
@@ -211,6 +353,7 @@ export async function run(argv) {
     }
     throw err;
   }
+  const installDir = installDirFromExe(exe); // file:// 页面注入范围（见 installDirFromExe 注释）
   winLog(`启动: ZCode=${exe}, CDP 端口 ${args.cdpPort}`);
   const zcodeVersion = readZcodeVersion(exe);
   if (args.verbose) console.log(`[zcodepro] ZCode 版本: ${zcodeVersion || '未知（app.asar 读取失败）'}`);
@@ -253,24 +396,22 @@ export async function run(argv) {
 
   // 3. 连接 CDP 并注入（断线自动重连）
   const injectedTargets = new Map(); // targetId -> sessionId
-  const scriptIds = new Map(); // targetId -> 新文档脚本 identifier 数组（含没删掉的旧注册）
+  const scriptIds = new Map(); // targetId -> 新文档脚本 identifier 集合（含没删掉的旧注册）
+  // identifier 记录逐个增删（追加去重，删除只动命中的那个）：同一 target 一轮
+  // 连接内可能二次 attached（跨进程导航、渲染进程切换），refresh 的 remove/add
+  // 之间 handleAttach 也可能合进新注册——整组覆盖会把没删掉或刚合进来的
+  // identifier 冲掉，那份注册就永远删不掉，页面每次刷新多跑一份注入包
+  const noteScriptId = (targetId, id) => {
+    const ids = scriptIds.get(targetId) || new Set();
+    ids.add(id);
+    scriptIds.set(targetId, ids);
+  };
   let registeredSource = ''; // 已注册的注入包（内容没变不重复注册）
   let refreshPending = false; // 有页面重注册失败待重试：期间 handleAttach 不推进已注册标记
   let lastRefreshError = ''; // 重注册错误日志按内容去重
   let refreshSkip = 0; // 失败后的退避周期数：单页持续失败时别每 3 秒全量重试
   let lastTriedSource = null; // 上次尝试重注册的包：包又变了就立即重试，不受退避限制
   let stopping = false;
-
-  // 可注入判定：引导脚本内含 helper 鉴权 token，只能进 ZCode 应用自身的页面。
-  // 规则：放行非 http(s)（file://、应用自有协议）与本机回环地址，拦截其余外部
-  // 网页与非 http 协议子文档（data/blob/view-source/about），沙箱页同样不带
-  // token。refreshInjectScripts 重注册时目标可能已导航离开应用页，需重跑同款判定
-  function isInjectableAppPage(url) {
-    const u = String(url || '');
-    if (/^zcode-sandbox:\/\//i.test(u)) return false;
-    if (/^https?:\/\//i.test(u) && !/^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?(\/|$|\?|#)/i.test(u)) return false;
-    return !/^(data|blob|view-source|about):/i.test(u);
-  }
 
   let healthRes;
   try {
@@ -282,7 +423,9 @@ export async function run(argv) {
     process.exit(1);
   }
   // 注入包按 mtime+size 缓存：npm run build 之后不用重启启动器——已打开页面
-  // 下次“调试-重新加载”、新页面首次注入都直接吃新构建的包
+  // 下次“调试-重新加载”、新页面首次注入都直接吃新构建的包。
+  // shortcut: 同一毫秒内改写成相同字节数的内容检测不到，构建产物几乎不会出现，
+  // 如真遇到可把缓存键换成内容哈希
   const injectCache = { mtime: 0, size: 0, source: '' };
   async function getInjectSource() {
     let mtime = -1;
@@ -291,7 +434,16 @@ export async function run(argv) {
     // 包内容没变直接用缓存（mtime+size 双键防粗粒度文件系统漏检）；
     // 构建间隙文件暂时缺失也沿用旧包
     if (injectCache.source && (mtime < 0 || (mtime === injectCache.mtime && size === injectCache.size))) return injectCache.source;
-    injectCache.source = await buildInjectSource(token, args.helperPort, healthRes.features || {}, zcodeVersion);
+    const built = await buildInjectSource(token, args.helperPort, healthRes.features || {}, zcodeVersion, installDir);
+    // 读取前后各 stat 一次对比：esbuild 正在写文件时可能读到半截包，
+    // 半截内容不能进缓存（会一直被 mtime+size 命中），沿用旧包等下一轮
+    let torn = true;
+    try { const st2 = statSync(INJECT_BUNDLE); torn = st2.mtimeMs !== mtime || st2.size !== size; } catch { /* 读取中被删也算撕裂 */ }
+    if (torn) {
+      if (injectCache.source) return injectCache.source;
+      throw new Error('dist/inject.js 正在写入，本轮跳过');
+    }
+    injectCache.source = built;
     injectCache.mtime = mtime;
     injectCache.size = size;
     return injectCache.source;
@@ -335,7 +487,7 @@ export async function run(argv) {
       if (targetInfo?.type !== 'page') return;
       // 安全护栏：只注入应用自身页面（判定规则集中在 isInjectableAppPage，
       // 重注册时会再跑一遍）
-      if (!isInjectableAppPage(pageUrl)) {
+      if (!isInjectableAppPage(pageUrl, installDir)) {
         log('跳过外部页面注入（防止 token 泄露）: ' + pageUrl.slice(0, 120));
         return;
       }
@@ -350,7 +502,7 @@ export async function run(argv) {
       try {
         await conn.send('Page.enable', {}, sessionId);
         const added = await conn.send('Page.addScriptToEvaluateOnNewDocument', { source, runImmediately: true }, sessionId);
-        if (added && added.identifier) scriptIds.set(targetId, [added.identifier]);
+        if (added && added.identifier) noteScriptId(targetId, added.identifier);
         const res = await conn.send('Runtime.evaluate', { expression: source, silent: true }, sessionId);
         if (res?.exceptionDetails) log('注入执行异常: ' + String(res.exceptionDetails.exception?.description || '').slice(0, 200));
         // 只有首个页面（没有旧页面挂着旧包）、拿到的仍是当前包、且没有待重试的
@@ -399,8 +551,8 @@ export async function run(argv) {
   console.log('[zcodepro] 已连接 CDP 并开始注入。保持本进程运行以维持增强；Ctrl+C 退出（不影响 ZCode）。');
   winLog('已连接 CDP 并开始注入');
 
-  process.on('SIGINT', () => { stopping = true; try { conn.close(); } catch {} server.close(); process.exit(0); });
-  process.on('SIGTERM', () => { stopping = true; try { conn.close(); } catch {} server.close(); process.exit(0); });
+  process.on('SIGINT', () => { stopping = true; try { conn.close(); } catch {} try { helperMod.dispose?.(); } catch {} server.close(); process.exit(0); });
+  process.on('SIGTERM', () => { stopping = true; try { conn.close(); } catch {} try { helperMod.dispose?.(); } catch {} server.close(); process.exit(0); });
 
   // dist/inject.js 变更后把各页面的新文档脚本换成新包：已打开页面不打断，
   // 下次“调试-重新加载”即跑新代码（新页面首次注入本来就是新包）
@@ -420,12 +572,16 @@ export async function run(argv) {
     lastTriedSource = source;
     let want = 0;
     let ok = 0;
+    let done = true;
+    // 整轮时间预算：多页半死（每次 send 各带 30 秒超时）时别把重连检测拖后几十秒
+    const deadline = Date.now() + 20_000;
     for (const [targetId, sessionId] of injectedTargets) {
+      if (Date.now() > deadline) { done = false; break; } // 没轮到的页面留在旧包，下轮续
       // 目标可能在注入后导航去外部页面/沙箱：重注册前重跑同款可注入判定，
       // 否则含 token 的脚本串会注册进外部页面的会话（执行层虽有护栏兜底）
       try {
         const href = await conn.send('Runtime.evaluate', { expression: 'location.href', returnByValue: true, silent: true }, sessionId);
-        if (!isInjectableAppPage(String((href && href.result && href.result.value) || ''))) {
+        if (!isInjectableAppPage(String((href && href.result && href.result.value) || ''), installDir)) {
           // 踢出前尽力移除已注册脚本：别把带 token 的注册留在外部页面的会话里
           for (const id of scriptIds.get(targetId) || []) {
             try { await conn.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: id }, sessionId); } catch { /* ignore */ }
@@ -442,24 +598,26 @@ export async function run(argv) {
         continue;
       }
       want++;
-      // 旧注册逐个移除，没删掉的留 identifier 下轮继续删：删失败不能连累
-      // add，否则该页没有新文档脚本，增强静默消失
-      const oldIds = scriptIds.get(targetId) || [];
-      const keep = [];
+      // 旧注册逐个移除：只把移除成功的 identifier 从记录里删掉，没删掉的留下轮
+      // 继续删。遍历的是快照——remove/add 之间的 await 里 handleAttach 可能合进
+      // 新注册，新注册不能当旧的删。删失败不能连累 add，否则该页没有新文档脚本，
+      // 增强静默消失
+      const oldIds = [...(scriptIds.get(targetId) || [])];
       for (const id of oldIds) {
-        try { await conn.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: id }, sessionId); }
-        catch { keep.push(id); }
+        try {
+          await conn.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: id }, sessionId);
+          scriptIds.get(targetId)?.delete(id);
+        } catch { /* 删失败留记录，下轮继续删 */ }
       }
       try {
         // runImmediately: false——只对下次新文档生效，不碰当前页面（用户按需刷新）
         const added = await conn.send('Page.addScriptToEvaluateOnNewDocument', { source, runImmediately: false }, sessionId);
-        if (added && added.identifier) keep.push(added.identifier);
+        if (added && added.identifier) noteScriptId(targetId, added.identifier);
         ok++;
       } catch { /* 页面已关闭/会话失效：重连后 handleAttach 会重新注册 */ }
-      scriptIds.set(targetId, keep);
     }
-    // 全部成功才推进已注册标记：有失败就保留旧值，下一轮继续重试
-    if (ok === want) {
+    // 全部成功才推进已注册标记：有失败或中途超预算就保留旧值，下一轮继续重试
+    if (done && ok === want) {
       registeredSource = source;
       refreshPending = false;
       lastRefreshError = '';
@@ -494,6 +652,9 @@ export async function run(argv) {
     try {
       const mod = await import('./helper.mjs?mtime=' + sig);
       if (typeof mod.startHelper !== 'function') throw new Error('helper.mjs 没有导出 startHelper');
+      // import 让出过事件循环，期间旧服务可能刚接到请求起了后台任务（转码等）：
+      // 关旧服务前补查一次。检查与关闭之间没有 await，不会再有新任务挤进来
+      if (helperMod && typeof helperMod.busyJobs === 'function' && helperMod.busyJobs()) return;
       try { helperMod.dispose?.(); } catch { /* ignore */ } // 旧实例被 ESM 缓存持有，清大块缓存省内存
       // 不等优雅关闭：渲染进程的 keep-alive/在途请求（每 2 秒轮询）会让 close
       // 回调迟迟不来，直接掐掉存量连接。热替换是开发场景，容忍个别请求中断
@@ -540,6 +701,7 @@ export async function run(argv) {
     if (!(await cdpAlive(args.cdpPort))) {
       console.log('[zcodepro] ZCode 已退出，zcodepro 一并退出。');
       winLog('ZCode 已退出，zcodepro 一并退出');
+      try { helperMod.dispose?.(); } catch { /* ignore */ } // 收掉残留 ffmpeg 子进程
       server.close();
       process.exit(0);
     }

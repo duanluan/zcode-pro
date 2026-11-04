@@ -6,7 +6,7 @@
 //   先记下会话键，菜单出现后克隆官方菜单项样式插入。
 // 生成成功即更新侧栏行并刷新标题锁定表（同 title-gen.js）；手动动作失败弹提示
 //（不再静默）。入口各有开关、素材轮数可调，都在“自动重命名”tab 下。
-import { rpc, getConfig, itemsOf, itemText, closeRadixMenu, t } from '../core.js';
+import { rpc, getConfig, itemsOf, itemText, closeRadixMenu, t, errText } from '../core.js';
 import { showToast } from '../ui.js';
 import { setRowTitle, refreshPinnedTitles } from './title-lock.js';
 
@@ -38,7 +38,7 @@ async function runAutoRename(key) {
       void refreshPinnedTitles();
       showToast(L.autoRenameDone + res.title, 'success');
     } else {
-      showToast((res && res.error) || L.failed, 'error');
+      showToast(errText(res) || L.failed, 'error');
     }
   } finally {
     runningKeys.delete(key);

@@ -6,7 +6,7 @@
 //   不用宿主 openInFileManager——其在 Linux/Windows 的实现只是 shell.openPath，即用默认应用打开）。
 // 路径获取（按序尝试）：触发器 title（文件 chip 右键场景，message.tsx 写入绝对路径）→
 // 触发器/菜单的 React fiber props（OpenSplitButton 场景 target/fileLink/row.path）。
-import { t, closeRadixMenu, itemsOf, itemText, rpc } from '../core.js';
+import { t, closeRadixMenu, itemsOf, itemText, rpc, errText } from '../core.js';
 import { getConfig } from '../core.js';
 import { showToast } from '../ui.js';
 
@@ -132,7 +132,11 @@ export function handleFileMenu(content) {
     // 打开失败（路径不存在等）弹 toast 报错，不再无声无息
     const fire = (endpoint, label) => {
       rpc(endpoint, { method: 'POST', body: { path } })
-        .then((r) => { if (r && r.ok === false) showToast(`${label}失败：${r.error || '未知错误'}`, 'error'); })
+        .then((r) => {
+          if (r && r.ok === false) {
+            showToast(L.fileActionFailed.replaceAll('{label}', label).replaceAll('{err}', errText(r) || L.unknownError), 'error');
+          }
+        })
         .catch(() => { /* 网络异常时 helper 多半未运行，此时菜单不会注入，静默 */ });
     };
     // “默认应用打开”锚在编辑器列表末尾（无可用编辑器时即“未找到可用 App”禁用项）之上；

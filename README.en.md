@@ -10,40 +10,40 @@ ZCode Pro is an enhancement pack for the ZCode desktop app: a wallpaper engine (
 
 ## ✨ Features
 
-Grouped by where each feature lives in the settings window: the category column is the tab, entries with `·` (e.g. "Behavior · Global prompt") are sub-tabs, in the same order as the screenshots in the Settings section below.
+Grouped by topic: the category column is a settings tab, entries with `·` (e.g. "Behavior · Global prompt") are sub-tabs (the table and screenshots are ordered by topic, not necessarily by their order in the dialog).
 
 | Category | Feature | Description |
 | --- | --- | --- |
 | Features | Project menu actions (open folder / copy path) | Project "More" menu: open the project directory in the file manager, or copy its path |
-| | ~~Custom project alias~~ (retired) | Show a custom name for a project in the sidebar; UI-only, revert anytime; renaming is built into ZCode ≥ 3.16.1 (project menu "Edit project") — the feature disables itself there and offers to migrate existing aliases |
+| | ~~Custom alias~~ (retired) | Show a custom name for a project in the sidebar; UI-only, revert anytime; renaming is built into ZCode ≥ 3.16.1 (project menu "Edit project") — the feature disables itself there and offers to migrate existing aliases |
 | | ~~Switch project folder~~ (retired) | Point a project at another folder; sidebar, tabs and task history follow. Stop running tasks before switching; historical checkpoints still reference the original path; retired on ZCode ≥ 3.16.1, where a project can hold multiple directories natively |
-| | Session drag ordering | Reorder sessions in Pinned, Projects and Groups; persists across refreshes |
+| | Sidebar session drag ordering | Reorder sessions in Pinned, Projects and Groups; persists across refreshes |
 | | Session quick switch | `alt+z` toggles between the current and the last session; hold `alt` and press `x` (up) / `c` (down) to pick from recent sessions (10 shown initially, pressing `c` at the bottom loads 5 more), `alt+e` opens the last 10 directly, `alt+r` opens running / finished-but-unseen tasks; arrow keys also move the highlight, press `Enter` or click a row to switch; the five trigger keys are customizable in Settings → Shortcuts |
 | | Keep renamed session titles | Sessions you renamed keep their custom title; auto-generated titles no longer overwrite it in the sidebar |
 | | Collapsible Pinned section | The sidebar "Pinned" header collapses/expands its task list; the state is remembered |
 | | File menu actions | Adds "Open with default app" and "Reveal in file manager" to file links in chat |
 | | Copy image | Right-click an image in chat or the enlarged preview to copy it to the clipboard |
-| | Plugin card sandbox reclaim | Releases the oldest plugin-card sandboxes once the cap is hit (the one being viewed goes last), so new cards keep opening after the 64-slot pool fills up; released cards come back when their session is reopened (cap adjustable via the sandboxReclaimBudget config file key) |
-| | Plugin card auto-retry | Auto-clicks "Reload" on cards that failed the 64-slot cap, so they recover as soon as a slot frees up |
-| | Running indicator while collapsed | While any session is running, collapsed projects and the "Tasks" / "Pinned" section headers show the same loader the running task row uses; it disappears when all finish |
+| | Plugin card sandbox reclaim | Releases the oldest plugin-card sandboxes once the cap is hit (the one being viewed goes last), so new cards keep opening after the 64-slot pool fills up; released cards come back when their session is reopened (reclaim trigger threshold adjustable via the sandboxReclaimBudget config file key, default 60; the 64-slot cap is fixed) |
+| | Plugin card auto-retry | Auto-clicks "Reload" on cards that hit the 64-slot cap, so they recover as soon as a slot frees up |
+| | Running indicator when collapsed | While any session is running, collapsed projects and the "Tasks" / "Pinned" section headers show the same loader the running task row uses; it disappears when all finish |
 | | Plugin panels on the new tab page | The built-in "new tab page" only lists built-in panels and recommended official plugins; this adds cards for third-party marketplace plugin panels (headroom, rtk, …) that open in the side pane |
-| | Copy table | Adds a "Copy table" button to the table toolbar in answers: writes rich text to the clipboard so Excel / rich-text editors paste it as a real table (cells split, no borders or background colors); plain-text targets get tab-separated values |
+| | Copy table | Adds a "Copy table" button to the table toolbar in answers: writes rich text to the clipboard so Excel / rich-text editors paste it as a real table (with separate cells, no borders or background colors); plain-text targets get tab-separated values |
 | | Session ID links | Session IDs (`sess_` / `session_`) in questions and answers render as task names; click to switch to that session, hover for the raw ID; IDs in code blocks are left as-is |
-| | Plugin updates | Check and update zcode-plugins marketplace plugins in one click, optional auto-update on startup |
-| Shortcuts | Shortcut customization | Rebind the five session quick switch trigger keys (`alt+z` / `x` / `c` / `e` / `r` by default) one by one: click "Modify" and press a new key (letters/digits only, conflicts rejected); reset all to defaults in one click |
-| Behavior · ZCode CLI | ZCode CLI | Skill listing check: counts the full listing against the injection budget, warns when it degrades to names only and suggests a budget; configure the skill system, listing budget, extra skill directories and feature switches; workspace memory stays in the official settings under Settings → Agent capabilities → Memory; changes apply to new sessions |
+| | Auto-update | Check and update zcode-plugins marketplace plugins in one click, optional auto-update on startup |
+| Shortcuts | Shortcut customization | Rebind the five session quick switch trigger keys (`alt+z` / `x` / `c` / `e` / `r` by default) one by one: click "Change" and press a new key (a single letter or digit only, conflicts rejected); reset all to defaults in one click |
+| Behavior · ZCode CLI | ZCode CLI | Skill listing check: counts the full listing against the listing budget, warns when it degrades to names and file paths only and suggests a budget; configure the skill system, listing budget, extra skill directories and feature switches; workspace memory stays in the official settings under Settings → Agent capabilities → Memory; changes apply to new sessions |
 | Behavior · Global prompt | Global prompt | Edit default instructions shared by all projects; applies to new sessions |
-| Behavior · Auto rename | Auto rename | When a new session starts answering, generates the task name with a provider and prompt you choose (following the current session and glm-5.3-flash by default; every question sent before the first answer counts), saved as a manual rename the built-in auto title never overrides; provider, model and prompt are editable in settings, with a test button; a hover button on task rows and a context-menu entry under "Rename task" rename manually from the recent Q&A, with entry switches and the round count in settings |
+| Behavior · Auto rename | Auto rename | When a new session starts answering, generates the task name with a provider and prompt you choose (provider follows the current session, model defaults to glm-5.3-flash; every question sent before the first answer counts), saved as a manual rename the built-in auto title never overrides; provider, model and prompt are editable in settings, with a test button; a hover button on task rows and a context-menu entry under "Rename task" rename manually from the recent Q&A, with toggles for each entry point and the round count in settings |
 | Appearance · Styles | Sidebar menu in the top bar | Turns "New task / Search / Automations / Plugin store" into icon buttons in the top navigation bar, highlighted while its view is open|
 | | Font adjustment | Custom UI font (all interface text except the terminal), question font and answer font |
 | | Sidebar spacing | Fine-tune sidebar project spacing and task spacing |
 | | UI style adjustments | Fine-tune paragraph spacing, content width, line heights, list/quote/table spacing and cell padding; focusing an input highlights the affected areas |
-| Appearance · Status bar | Status bar statistics | Shows statistics at the bottom-right of the input box and at the end of each answer: recent output tokens/s (60-second window, holds the last rate after an answer ends), context usage (color-shifts when high), questions asked, today/total tokens and task count, mostly from official data; reorder or hide each item under Settings → Appearance → Status bar |
-| | Per-turn token usage | Shows that turn's in/out tokens and cache hit rate after the time in each answer's action row (local records keep only a recent window; older answers stay unlabelled) |
-| Appearance · Theme | UI skins | Eleven famous editor theme palettes (Dracula / Nord / Tokyo Night / Catppuccin / Gruvbox / One Dark / Solarized / Rosé Pine / Everforest / Night Owl / Kanagawa), auto-matching ZCode's light / dark mode; plus a custom theme: pick 5 colors each for light and dark to derive the whole palette, |
-| Appearance · Background | Background image | Window-wide background from four sources: none / local library (upload many, pick the active one, delete freely) / folder (read in place, rotate on a timer, random or by filename) / URL (refresh on a timer for random-image APIs); three sliders — mask opacity (image fading toward the theme background color), image blur, panel opacity (the left, center and right panes); the panes reveal the background while menus and dialogs stay opaque; the library uploads with the zcode-pro WebDAV sync group (overwrite, no history versions) |
+| Appearance · Status bar | Status bar statistics | Shows statistics at the bottom-right of the input box and at the end of each answer: recent output tokens/s (60-second window, holds the last rate after an answer ends), context usage (changes color when high), questions asked, today/total tokens and task count, mostly from official data; reorder or hide each item under Settings → Appearance → Status bar. Rate and per-turn usage are scoped to the session's own records; subagent calls live in separate session records and are not counted |
+| | Per-turn token usage | Shows that turn's in/out tokens and cache hit rate, shown after the timestamp in each answer's action row (local records keep only a recent window; older answers stay unlabeled) |
+| Appearance · Theme | Skins | Eleven well-known editor theme palettes (Dracula / Nord / Tokyo Night / Catppuccin / Gruvbox / One Dark / Solarized / Rosé Pine / Everforest / Night Owl / Kanagawa), auto-matching ZCode's light / dark mode; plus a custom theme: pick 5 colors each for light and dark to derive the whole palette, with live preview |
+| Appearance · Wallpaper | Wallpaper | Window-wide background from five sources: none / local library (upload many, pick the active one, delete freely) / folder (read in place, rotate on a timer, random or by filename) / URL (refresh on a timer for random-image APIs) / web page (sandboxed iframe behind the UI); the left, center and right panes can each get their own background (static images only, fit and mask settable per pane, or follow the global settings); three sliders — mask opacity (image fading toward the theme background color), image blur, panel opacity — plus transition style, video volume/playback rate/FPS cap and pause conditions; the settings window is frosted over the wallpaper by default (can be turned off on that page), menus stay opaque; the library uploads with the zcode-pro WebDAV sync group (overwrite, no history versions) |
 | Performance | Idle project memory reclaim | Projects unused for a while with no running tasks release their memory automatically, and unused ones are reclaimed once after startup; sessions are untouched and reload when reopened (durations adjustable) |
-| Proxy | Software proxy | Set an HTTP proxy for plugin updates/installs and tool upgrades, with connectivity test |
+| Proxy | Software proxy | Set an HTTP proxy for plugin updates/installs and tool upgrades (WebDAV sync can optionally use it, off by default), with connectivity test |
 | Sync | Settings sync | Manually back up ZCode Pro settings and model settings to WebDAV, or restore them on a new computer; transfers only on click |
 | Vision | Vision proxy | Automatically hand images to vision models for recognition when the main model cannot see them, and feed the descriptions to the main model; visual chain editor (zcode-vision plugin) |
 | Headroom | Headroom | Manage compression device, power-save switching and proxy status; check and upgrade the headroom program (headroom plugin) |
@@ -59,7 +59,7 @@ Right-click the settings button (gear) at the bottom of the ZCode sidebar to ope
 | --- | --- | --- |
 | <img src="docs/settings/01-features.png" width="280"> | <img src="docs/settings/02-shortcuts.png" width="280"> | <img src="docs/settings/03-behavior-global-prompt.png" width="280"> |
 
-| Behavior · Task title prompt | Appearance · Styles | Appearance · Status bar |
+| Behavior · Auto rename | Appearance · Styles | Appearance · Status bar |
 | --- | --- | --- |
 | <img src="docs/settings/04-behavior-task-title.png" width="280"> | <img src="docs/settings/05-style-tweaks.png" width="280"> | <img src="docs/settings/06-style-status-bar.png" width="280"> |
 
@@ -75,7 +75,7 @@ Right-click the settings button (gear) at the bottom of the ZCode sidebar to ope
 
 ## 📦 Installation
 
-> **Version match**: for ZCode ≥ 3.16.1 use **zcode-pro 1.1.0** (latest npm / PyPI / AUR release); for ZCode ≤ 3.15.x use **zcode-pro 0.20.3** (the previous release, still available).
+> **Version match**: for ZCode ≥ 3.16.1 use **zcode-pro 1.1.0 or newer** (the latest is 1.6.1); for ZCode 3.15.x and earlier use **zcode-pro 0.20.3** (the previous release, still available).
 
 Once installed, launch ZCode via the "ZCode Pro" shortcut in your app menu / Start menu, or the `zcode-pro` command in a terminal — the enhancements are enabled automatically in this mode; launching ZCode through its original entry does not load them. After launching, right-click the settings button at the bottom of the ZCode sidebar to open the ZCode Pro settings window.
 
@@ -86,9 +86,11 @@ At runtime the Node runtime bundled with ZCode is preferred; if ZCode cannot be 
 ```bash
 # Option 1: install/uninstall via npm
 npm install -g zcode-pro
+zcode-pro setup --uninstall  # undo shortcuts first (if you created them)
 npm uninstall -g zcode-pro
 # Option 2: install/uninstall via pip
 pip install zcode-pro
+zcode-pro setup --uninstall  # undo shortcuts first (if you created them)
 pip uninstall zcode-pro
 
 # Launch via the command
@@ -146,7 +148,7 @@ If you previously installed via `install.sh`, run `./scripts/install.sh --uninst
 
 ### 🚀 Run without installing
 
-No standalone Node.js required: the runtime bundled with ZCode is preferred and used even without a system Node; works whether ZCode is installed in the default or a custom directory (auto-detected, falling back to the registry).
+No standalone Node.js required: the runtime bundled with ZCode is preferred and used even without a system Node; works whether ZCode is installed in the default directory or a custom one (auto-detected, falling back to the registry).
 
 ```bash
 git clone https://github.com/duanluan/zcode-pro.git && cd zcode-pro
@@ -161,6 +163,12 @@ bin\zcode-pro.cmd
 bin\zcode-pro.cmd setup
 ```
 
+## 🔒 Security notes
+
+- The launcher starts ZCode with `--remote-debugging-port` (9333 by default) so the enhancement scripts can be injected. That debug port has no authentication: any local process (including other OS users) that connects to it can run arbitrary scripts inside ZCode pages. Use this on a personal machine only; `--cdp-port <port>` or the ZCODEPRO_CDP_PORT environment variable changes the port (stops casual scanning, not a determined local attacker).
+- The local service listens on 127.0.0.1:47889 only, and every API call requires a random token; direct media links (wallpapers etc.) carry the same token, so external web pages cannot read your media library.
+- The WebDAV password and the Auto rename API key are stored in plaintext in local config files (file permissions limited to the current user) and stay local during sync; custom model provider API keys are uploaded with the model-settings group to your own WebDAV (which is what syncing model configs requires).
+
 ## 📖 Reference
 
 Command-line options (see `zcode-pro --help` for all):
@@ -173,8 +181,9 @@ Command-line options (see `zcode-pro --help` for all):
 | `--inject-only` | Attach to a running instance only; do not launch a new one |
 | `--verbose` | Verbose logging |
 | `setup [--desktop] [--uninstall]` | Install/undo local shortcuts (`--desktop` also adds a desktop one) |
+| `wallpaper <op>` | Wallpaper CLI: list / set / rotate / params / upload / delete (see `wallpaper -h`) |
 
-Each option can also be overridden with a `ZCODEPRO_*` environment variable.
+Only `--cdp-port`, `--helper-port` and `--zcode-path` also have a `ZCODEPRO_*` environment variable (`ZCODEPRO_CDP_PORT`, `ZCODEPRO_HELPER_PORT`, `ZCODEPRO_ZCODE_PATH`); the command-line option wins.
 
 Configuration and data locations:
 
@@ -192,7 +201,7 @@ After uninstalling, just start ZCode from the official entry; no system cleanup 
 
 ## 🔌 Plugin recommendation
 
-[duanluan/zcode-plugins](https://github.com/duanluan/zcode-plugins) is a companion plugin marketplace for ZCode: AI code review, request compression and command-output compression plugins that save tokens. To install: ZCode → Plugin Marketplace → "Add" (top right) → Add plugin marketplace, and enter `duanluan/zcode-plugins`. Installed plugins can be checked and updated from ZCode Pro settings.
+[duanluan/zcode-plugins](https://github.com/duanluan/zcode-plugins) is a companion plugin store for ZCode, with AI code review, request compression and command-output compression plugins that save tokens. To install: ZCode → Plugin Marketplace → "Add" (top right) → Add plugin store, and enter `duanluan/zcode-plugins`. Installed plugins can be checked and updated from ZCode Pro settings.
 
 ## 💬 Community
 

@@ -9,6 +9,29 @@ import { errText } from '../core.js';
 
 let installed = false;
 let dragKey = null; // 拖动源会话键（dragstart 记录，dragend 清除）
+let lastOverRow = null; // 上一次预览的目标行与方向：都没变就不动 DOM
+let lastOverBefore = false;
+let moveRaf = 0; // 预览移动合并进 rAF：每帧最多动一次 DOM
+let pendingMove = null; // 待执行的预览移动 { row, before }
+
+// 落实一次预览移动（查源行 + insertBefore 都放在这里，dragover 只登记不写 DOM）
+function applyMove() {
+  const mv = pendingMove;
+  pendingMove = null;
+  if (!mv || !dragKey) return;
+  const list = mv.row.parentElement;
+  if (!list) return;
+  const src = [...list.querySelectorAll('[data-task-item-key]')]
+    .find((el) => el.getAttribute('data-task-item-key') === dragKey);
+  if (src && src !== mv.row) {
+    mv.row.parentNode.insertBefore(src, mv.before ? mv.row : mv.row.nextSibling);
+  }
+}
+function scheduleMove(row, before) {
+  pendingMove = { row, before };
+  if (moveRaf) return;
+  moveRaf = requestAnimationFrame(() => { moveRaf = 0; applyMove(); });
+}
 
 export function startTaskOrderWatcher() {
   if (installed || typeof document === 'undefined') return;
@@ -20,7 +43,12 @@ export function startTaskOrderWatcher() {
     dragKey = row ? row.getAttribute('data-task-item-key') : null;
   }, true);
 
-  document.addEventListener('dragend', () => { dragKey = null; }, true);
+  document.addEventListener('dragend', () => {
+    dragKey = null;
+    lastOverRow = null;
+    pendingMove = null;
+    if (moveRaf) { cancelAnimationFrame(moveRaf); moveRaf = 0; }
+  }, true);
 
   // 拖拽经过会话行时允许落下（应用自身未必 preventDefault），并做实时预览
   document.addEventListener('dragover', (e) => {
@@ -29,18 +57,21 @@ export function startTaskOrderWatcher() {
     if (!row || row.getAttribute('data-task-item-key') === dragKey) return;
     e.preventDefault();
     if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
-    // 实时预览：把拖动行移动到目标行前/后（拖动期间 React 不重渲染；写入数据库后刷新重建）
+    // 实时预览：把拖动行移动到目标行前/后（拖动期间 React 不重渲染；写入数据库后刷新重建）。
+    // 方向每次按行的当前几何算（自己挪过 DOM 后行位置会变，缓存会算错），
+    // 但目标行与方向都没变就不登记移动——dragover 每秒几十次，逐次查源行并
+    // insertBefore 会读写交错抖动；真正移动合并进 rAF 每帧最多一次
     const rect = row.getBoundingClientRect();
     const before = e.clientY < rect.top + rect.height / 2;
-    const src = [...row.parentElement.querySelectorAll('[data-task-item-key]')]
-      .find((el) => el.getAttribute('data-task-item-key') === dragKey);
-    if (src && src !== row) {
-      row.parentNode.insertBefore(src, before ? row : row.nextSibling);
-    }
+    if (row === lastOverRow && before === lastOverBefore) return;
+    lastOverRow = row;
+    lastOverBefore = before;
+    scheduleMove(row, before);
   }, true);
 
   document.addEventListener('drop', (e) => {
     if (!dragKey) return;
+    applyMove(); // 还没落地的预览移动先做掉，下面读到的顺序才是用户看到的顺序
     const row = e.target.closest && e.target.closest('[data-task-item-key]');
     const list = row ? row.parentElement : null;
     if (!list) return;
@@ -49,12 +80,18 @@ export function startTaskOrderWatcher() {
     e.preventDefault();
     e.stopPropagation();
     dragKey = null;
-    void persistOrder(rows.map((el) => el.getAttribute('data-task-item-key')));
+    // 列表种类取自落点行的容器：项目分区（section[data-project-id]）内是工作区
+    // 列表；带其他 section 的是分组/任务分区容器；没有 section 的是"已置顶"列表
+    //（可跨工作区）。不要按"键里工作区数量"猜——分组可能全在同一工作区，置顶
+    // 也可能跨工作区，两个方向都会猜错
+    const hint = row.closest('section[data-project-id]') ? 'project'
+      : row.closest('section') ? 'section' : 'pinned';
+    void persistOrder(rows.map((el) => el.getAttribute('data-task-item-key')), hint);
   }, true);
 }
 
 let persisting = false;
-async function persistOrder(ordered) {
+async function persistOrder(ordered, hint) {
   if (persisting) return;
   persisting = true;
   try {
@@ -62,10 +99,7 @@ async function persistOrder(ordered) {
     if (config.features && config.features.taskOrder === false) return;
     ensureStyle();
     const L = t();
-    // 同一工作区的列表 → workspace 作用域（置顶/项目列表）；跨工作区 → 分组成员作用域
-    const workspaces = new Set(ordered.map((k) => k.slice(0, k.lastIndexOf(':'))));
-    const scope = workspaces.size === 1 ? 'workspace' : 'group-members';
-    const res = await rpc('/task-order', { method: 'POST', body: { scope, ordered } });
+    const res = await rpc('/task-order', { method: 'POST', body: { hint, ordered } });
     if (res && res.ok) {
       showToast(L.taskOrderSaved, 'success');
       setTimeout(() => location.reload(), 600);

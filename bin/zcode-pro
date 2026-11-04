@@ -5,7 +5,20 @@ set -e
 
 # 解析符号链接得到脚本真实路径（如 /usr/bin/zcode-pro → /usr/lib/zcode-pro/bin/zcode-pro），
 # 否则经 symlink 调用时 $0 目录不是安装目录，找不到 cli.mjs。
-SELF=$(readlink -f -- "$0" 2>/dev/null || printf '%s' "$0")
+# readlink -f 不是 POSIX（旧 macOS/BSD 没有），解析不了就逐级跟符号链接；
+# 连 readlink 都没有时保持原路径（与旧行为一致）
+SELF=$0
+_zp_n=0
+while [ -L "$SELF" ]; do
+  # 符号链接成环（如 A→B→A）时靠次数上限退出，避免死循环
+  _zp_n=$((_zp_n + 1))
+  [ "$_zp_n" -le 40 ] || break
+  _zp_link=$(readlink -- "$SELF" 2>/dev/null) || break
+  case "$_zp_link" in
+    /*) SELF=$_zp_link ;;
+    *) SELF=$(dirname -- "$SELF")/$_zp_link ;;
+  esac
+done
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$SELF")" && pwd)
 APP_DIR=$(dirname -- "$SCRIPT_DIR")
 ENTRY="$APP_DIR/cli.mjs"
@@ -40,13 +53,19 @@ find_zcode_binary() {
 
 # 优先用 ZCode 内置的 Node 运行时（版本恒与 ZCode 匹配，含 node:sqlite/全局 WebSocket），
 # 避免系统 node 过旧（<22.5 缺 node:sqlite、<22 缺全局 WebSocket）时启动失败；
-# 找不到 ZCode 可执行文件时才退回系统 node。
-ZCODE_BIN=$(find_zcode_binary) || {
+# 找不到 ZCode 可执行文件、或运行时预检跑不起来时退回系统 node。
+ZCODE_BIN=$(find_zcode_binary) || ZCODE_BIN=
+# 运行时预检（与 zcode-pro.cmd、zcode_pro/cli.py 同款）：PATH 等来源找到的可执行
+# 文件可能不完整（缺 resources/ICU 数据等），以 Node 模式跑不起来就回退系统 node
+if [ -n "$ZCODE_BIN" ]; then
+  ELECTRON_RUN_AS_NODE=1 "$ZCODE_BIN" -e "process.exit(0)" >/dev/null 2>&1 || ZCODE_BIN=
+fi
+if [ -z "$ZCODE_BIN" ]; then
   if command -v node >/dev/null 2>&1; then
     exec node --no-warnings "$ENTRY" "$@"
   fi
   echo "[zcodepro] 未找到 node，也未找到 ZCode 可执行文件。请安装 Node.js >= 22 或设置 ZCODEPRO_ZCODE_PATH。" >&2
   exit 1
-}
+fi
 # 用 ZCode 内置的 Node 运行时执行启动器（ELECTRON_RUN_AS_NODE 使其表现为纯 Node）
 ELECTRON_RUN_AS_NODE=1 exec "$ZCODE_BIN" --no-warnings "$ENTRY" "$@"
