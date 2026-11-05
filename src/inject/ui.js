@@ -819,6 +819,14 @@ export function ensureStyle() {
     /* 折叠项目运行提示：folder 图标让位给 loader（loader 由脚本插入，
        folder 可能被 React 随时重建，靠类选择器统一隐藏，后代写法兼容包装层） */
     span.zcodepro-ws-running svg:not(.zcodepro-ws-loader) { display: none !important; }
+    /* 子代理运行提示（subagent-icon.js）：折叠项目 folder 让位给机器人/终端，
+       loader 在转时（zcodepro-ws-loader）优先显示，不跟机器人互相藏 */
+    span.zcodepro-subagent-on svg:not(.zcodepro-subagent-icon):not(.zcodepro-terminal-icon):not(.zcodepro-ws-loader) { display: none !important; }
+    /* 未读圆点让位机器人：原点隐藏，行尾复制品常显（不跟悬浮操作图标一起隐藏） */
+    li.zcodepro-subagent-unread-moved [data-unread-indicator] { display: none !important; }
+    .zcodepro-subagent-unread-tail { display: inline-flex; align-items: center; align-self: center; }
+    /* 项目蓝色未读徽标忽略错误行：项目里未读全是错误态（红点）时不亮蓝徽标 */
+    .zcodepro-unread-error-only [data-workspace-unread-indicator] { display: none !important; }
     /* 无感探查期间盖在项目行上的冻结克隆：固定定位、不响应指针 */
     .zcodepro-ws-frozen {
       position: fixed;

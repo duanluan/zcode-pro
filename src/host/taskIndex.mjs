@@ -317,6 +317,140 @@ export async function listTaskStatuses(dataRoot, ids) {
   }
 }
 
+// 批量查会话最近活动时间：id → time_updated（毫秒，查不到记 0）。子代理运行状态
+// 的新鲜度校验用——应用的 running 记录崩溃/重启后不清理（实测残留数月的僵死记录），
+// 子代理运行时消息不断写入会话库，长时间无动静的按僵死处理（subagent-icon.js）
+export async function listSessionsActivity(dataRoot, ids) {
+  const out = {};
+  const wanted = [...new Set((ids || []).map(String).filter(Boolean))];
+  if (!wanted.length) return out;
+  const dbFile = join(dataRoot, 'cli', 'db', 'db.sqlite');
+  if (!existsSync(dbFile)) return out;
+  const driver = await loadDriver();
+  if (!driver) return out;
+  const esc = (v) => "'" + String(v).replace(/'/g, "''") + "'";
+  const inList = wanted.map((id) => esc(id)).join(', ');
+  try {
+    let rows;
+    if (driver.kind === 'node') {
+      const db = new driver.DatabaseSync(dbFile, { readOnly: true });
+      try { rows = db.prepare(`SELECT id, time_updated FROM session WHERE id IN (${inList})`).all(); } finally { db.close(); }
+    } else {
+      const agg = runCli(dbFile,
+        `SELECT coalesce(json_group_array(json_object('id', id, 'time_updated', time_updated)), '[]') FROM session WHERE id IN (${inList});`);
+      rows = JSON.parse(agg.stdout.trim() || '[]');
+    }
+    for (const r of rows) out[String(r.id)] = Number(r.time_updated) || 0;
+    return out;
+  } catch {
+    return out; // 读取失败按无活动处理（调用方视为僵死，不亮图标）
+  }
+}
+
+// 指定会话的子代理会话及最近活动时间（含嵌套子代理，根归属到最初的那个会话）：
+// [{ id, root, at }]。子代理判活以这里写入会话库的活动时间为准——应用的运行记录两头都
+// 不可靠：长跑子代理会被误记为失败/结束（实测 48 分钟、60 分钟的都在跑着时被
+// 记 end），崩溃残留的又永远挂"运行中"（subagent-icon.js）
+export async function listSubagentChildrenActivity(dataRoot, ids) {
+  const out = [];
+  const wanted = [...new Set((ids || []).map(String).filter(Boolean))];
+  if (!wanted.length) return out;
+  const dbFile = join(dataRoot, 'cli', 'db', 'db.sqlite');
+  if (!existsSync(dbFile)) return out;
+  const driver = await loadDriver();
+  if (!driver) return out;
+  const esc = (v) => "'" + String(v).replace(/'/g, "''") + "'";
+  const inList = wanted.map((id) => esc(id)).join(', ');
+  const sql = `WITH RECURSIVE fam(id, root) AS (
+    SELECT id, parent_id FROM session WHERE parent_id IN (${inList})
+    UNION
+    SELECT s.id, f.root FROM session s JOIN fam f ON s.parent_id = f.id
+  ) SELECT fam.root AS root, s.id AS id, s.time_updated AS at
+    FROM session s JOIN fam ON s.id = fam.id
+    WHERE s.task_type = 'subagent_child'`;
+  try {
+    let rows;
+    if (driver.kind === 'node') {
+      const db = new driver.DatabaseSync(dbFile, { readOnly: true });
+      try { rows = db.prepare(sql).all(); } finally { db.close(); }
+    } else {
+      const agg = runCli(dbFile,
+        `SELECT coalesce(json_group_array(json_object('root', root, 'id', id, 'at', at)), '[]') FROM (${sql});`);
+      rows = JSON.parse(agg.stdout.trim() || '[]');
+    }
+    for (const r of rows) out.push({ id: String(r.id), root: String(r.root), at: Number(r.at) || 0 });
+    return out;
+  } catch {
+    return out;
+  }
+}
+
+
+// 某工作区的任务会话 id（最近更新在前，7 天内有动静的取 30 个）：折叠项目行扫
+// 项目里"真未读"的任务数（未读但排除错误态）：项目行蓝色未读徽标的判据——
+// 错误态任务行显示的是红色错误点（应用图标优先级 错误>未读），它的未读不该再
+// 把项目徽标点亮成蓝色（subagent-icon.js）
+export async function listProjectsUnread(dataRoot, projectIds) {
+  const out = {};
+  const wanted = [...new Set((projectIds || []).map(String).filter(Boolean))];
+  if (!wanted.length) return out;
+  const dbFile = taskIndexPath(dataRoot);
+  if (!existsSync(dbFile)) return out;
+  const driver = await loadDriver();
+  if (!driver) return out;
+  const esc = (v) => "'" + String(v).replace(/'/g, "''") + "'";
+  const inList = wanted.map((id) => esc(id)).join(', ');
+  const sql = `SELECT project_id, sum(CASE WHEN task_status = 'error' THEN 0 ELSE 1 END) AS n
+    FROM tasks WHERE project_id IN (${inList}) AND unread_at IS NOT NULL
+      AND deleted = 0 AND coalesce(cli_deleted, 0) = 0
+    GROUP BY project_id`;
+  try {
+    let rows;
+    if (driver.kind === 'node') {
+      const db = new driver.DatabaseSync(dbFile, { readOnly: true });
+      try { rows = db.prepare(sql).all(); } finally { db.close(); }
+    } else {
+      const agg = runCli(dbFile,
+        `SELECT coalesce(json_group_array(json_object('project_id', project_id, 'n', n)), '[]') FROM (${sql});`);
+      rows = JSON.parse(agg.stdout.trim() || '[]');
+    }
+    for (const r of rows) out[String(r.project_id)] = Number(r.n) || 0;
+    return out;
+  } catch {
+    return null; // 读取失败返回 null，调用方不干预徽标
+  }
+}
+
+// 子代理运行状态的候选清单——行折叠后会话 id 不在 DOM 里，只能从任务索引反查。
+// 7 天窗：长跑子代理的父会话最晚在派出子代理那一趟被写过，超过 7 天的会话里
+// 还挂着子代理的实测都是僵死记录（shortcut: 超长后台子代理会漏，等用户反馈再放宽）
+export async function listWorkspaceTaskIds(dataRoot, wsPath) {
+  const dbFile = taskIndexPath(dataRoot);
+  if (!existsSync(dbFile)) return [];
+  const driver = await loadDriver();
+  if (!driver) return [];
+  const esc = (v) => "'" + String(v).replace(/'/g, "''") + "'";
+  // 任务行的工作区路径可能带尾分隔符（实测两种都有），两侧都归一后比较
+  const target = esc(String(wsPath || '').replace(/[\\/]+$/, ''));
+  const where = `rtrim(rtrim(workspace_path, '/'), char(92)) = ${target}`;
+  const since = Date.now() - 7 * 86400_000;
+  const sql = `SELECT task_id FROM tasks WHERE ${where} AND deleted = 0 AND updated_at >= ${since} ORDER BY updated_at DESC LIMIT 30`;
+  try {
+    let rows;
+    if (driver.kind === 'node') {
+      const db = new driver.DatabaseSync(dbFile, { readOnly: true });
+      try { rows = db.prepare(sql).all(); } finally { db.close(); }
+    } else {
+      const agg = runCli(dbFile,
+        `SELECT coalesce(json_group_array(json_object('task_id', task_id)), '[]') FROM (${sql});`);
+      rows = JSON.parse(agg.stdout.trim() || '[]');
+    }
+    return rows.map((r) => String(r.task_id)).filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
 // 状态栏统计用：任务总数（未删除的会话行）
 export async function countTasks(dataRoot) {
   const dbFile = taskIndexPath(dataRoot);

@@ -95,7 +95,7 @@ function setRunningIcon(holder, on) {
 
 // 行首图标容器（旋转图标的挂点）：
 // 旧结构：行.firstElementChild 里的 span；新结构：virtual-project-toggle 的首个 span（folder 图标容器）
-function iconHolderOf(row) {
+export function iconHolderOf(row) {
   if (row.hasAttribute && row.hasAttribute('data-project-id')) {
     const toggle = row.querySelector('[data-testid="virtual-project-toggle"]');
     return toggle ? toggle.querySelector(':scope > span') : null;
@@ -205,7 +205,7 @@ function workspaceOf(key) {
   return i > 0 ? key.slice(0, i) : key;
 }
 
-function wsHead(row) {
+export function wsHead(row) {
   // 旧结构行容器自身带 aria-expanded；新结构在 virtual-project-toggle 按钮上
   return row.matches('[aria-expanded]') ? row : row.querySelector('[aria-expanded]');
 }

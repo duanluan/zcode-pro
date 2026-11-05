@@ -9,7 +9,7 @@
       __defProp(target, name, { get: all[name], enumerable: true });
   };
 
-  // src/inject/core.js
+  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/core.js
   function liveBoot() {
     return typeof window !== "undefined" && window.__ZCODEPRO__ || BOOT;
   }
@@ -167,7 +167,7 @@
   }
   var BOOT, HELPER_URL, configCache, configInflight, configGen, DEFAULT_SHORTCUTS, STATUS_SESSION_IDS, STATUS_GLOBAL_IDS, DEFAULT_TURN_ITEMS, DEFAULT_STATUS_ITEMS, newSidebarCached, zh, en, cachedSystemLocale, zhCache, errEn;
   var init_core = __esm({
-    "src/inject/core.js"() {
+    "../../../../../../../var/tmp/zcodepro-build3/src/inject/core.js"() {
       BOOT = typeof window !== "undefined" ? window.__ZCODEPRO__ || {} : {};
       HELPER_URL = BOOT.helperUrl || "http://127.0.0.1:47889";
       configCache = { value: null, at: 0 };
@@ -400,6 +400,10 @@
         autoRenameDone: "\u5DF2\u91CD\u547D\u540D\uFF1A",
         featureWsRunning: "\u6298\u53E0\u65F6\u4EFB\u52A1\u8FD0\u884C\u4E2D\u63D0\u793A",
         featureWsRunningDesc: "\u6709\u4F1A\u8BDD\u8FD0\u884C\u65F6\uFF0C\u6298\u53E0\u7684\u9879\u76EE\u4E0E\u4EFB\u52A1\u5206\u533A\u5934\u663E\u793A\u52A0\u8F7D\u56FE\u6807\uFF0C\u5168\u90E8\u7ED3\u675F\u6D88\u5931\u3002",
+        featureSubagentIcon: "\u5B50\u4EE3\u7406\u8FD0\u884C\u4E2D\u63D0\u793A",
+        featureSubagentIconDesc: "\u540E\u53F0\u5B50\u4EE3\u7406\u5728\u8DD1\u663E\u673A\u5668\u4EBA\u3001\u540E\u53F0\u7EC8\u7AEF\u547D\u4EE4\u5728\u8DD1\u663E\u7EC8\u7AEF\u56FE\u6807\uFF08\u540C\u65F6\u5728\u8DD1\u673A\u5668\u4EBA\u4F18\u5148\uFF09\uFF1B\u672A\u8BFB\u5706\u70B9\u8BA9\u4F4D\u5230\u884C\u5C3E\u5E38\u663E\uFF1B\u4F1A\u8BDD\u8FD0\u884C\u4E2D\u59CB\u7EC8\u663E\u793A\u8F6C\u5708\u56FE\u6807\uFF1B\u9879\u76EE\u672A\u8BFB\u5FBD\u6807\u5FFD\u7565\u9519\u8BEF\u884C\u3002",
+        subagentRobotTip: "\u5B50\u4EE3\u7406\u8FD0\u884C\u4E2D",
+        subagentTermTip: "\u540E\u53F0\u547D\u4EE4\u8FD0\u884C\u4E2D",
         tabPerformance: "\u6027\u80FD",
         perfDesc: "ZCode \u4E3A\u6BCF\u4E2A\u6253\u5F00\u8FC7\u7684\u9879\u76EE\u5E38\u9A7B\u4E00\u4E2A\u4F1A\u8BDD\u8FDB\u7A0B\uFF0C\u5E94\u7528\u81EA\u8EAB\u4E0D\u4F1A\u56DE\u6536\uFF0C\u9879\u76EE\u591A\u4E86\u5185\u5B58\u5360\u7528\u5C31\u9AD8\u3002\u5F00\u542F\u540E\uFF0C\u957F\u65F6\u95F4\u672A\u4F7F\u7528\u4E14\u6CA1\u6709\u4EFB\u52A1\u5728\u8DD1\u7684\u9879\u76EE\u4F1A\u88AB\u81EA\u52A8\u91CA\u653E\uFF1A\u4F1A\u8BDD\u8BB0\u5F55\u4E0D\u53D7\u5F71\u54CD\uFF0C\u518D\u6B21\u6253\u5F00\u65F6\u81EA\u52A8\u6062\u590D\uFF0C\u4EC5\u9996\u6B21\u56DE\u590D\u6709\u51E0\u79D2\u7B49\u5F85\u3002\u6B63\u5728\u4F7F\u7528\u7684\u9879\u76EE\u3001\u8FD0\u884C\u4E2D\u7684\u4F1A\u8BDD\u4E0E\u540E\u53F0\u547D\u4EE4\u3001\u5B9A\u65F6\u4EFB\u52A1\u90FD\u4E0D\u4F1A\u88AB\u56DE\u6536\u3002\u540E\u53F0\u547D\u4EE4\u68C0\u6D4B\u4F9D\u8D56\u7CFB\u7EDF\u8FDB\u7A0B\u4FE1\u606F\uFF08Linux / macOS / Windows \u5404\u8D70\u7CFB\u7EDF\u81EA\u5E26\u5DE5\u5177\uFF09\uFF0C\u68C0\u6D4B\u4E0D\u53EF\u7528\u65F6\u529F\u80FD\u81EA\u52A8\u505C\u7528\u3002",
         featureIdleReclaim: "\u7A7A\u95F2\u9879\u76EE\u5185\u5B58\u56DE\u6536",
@@ -985,6 +989,10 @@
         autoRenameDone: "Renamed: ",
         featureWsRunning: "Running indicator when collapsed",
         featureWsRunningDesc: "Collapsed project and task headers show a loader while sessions run.",
+        featureSubagentIcon: "Subagent running indicator",
+        featureSubagentIconDesc: "Task rows show a robot icon while subagents run and a terminal icon while background commands run (robot wins when both); the unread dot moves to the row end; running sessions always show a spinner; project unread badges ignore error rows.",
+        subagentRobotTip: "Subagents running",
+        subagentTermTip: "Background commands running",
         tabPerformance: "Performance",
         perfDesc: "ZCode keeps a session process resident for every project you have opened and never reclaims it, so memory grows with projects. When enabled, projects unused for a while with nothing running release their memory automatically: sessions are untouched and reload when reopened, with a few seconds' wait on the first reply. The project in use, running sessions, background commands and scheduled tasks are never reclaimed. Background-command detection reads system process info via built-in tools (Linux / macOS / Windows); when unavailable, the feature disables itself.",
         featureIdleReclaim: "Idle project memory reclaim",
@@ -1460,7 +1468,7 @@
     }
   });
 
-  // src/inject/ui.js
+  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/ui.js
   function showToast(text, kind = "info") {
     document.getElementById("__zcodepro_toast__")?.remove();
     clearTimeout(toastTimer);
@@ -2270,6 +2278,14 @@
     /* \u6298\u53E0\u9879\u76EE\u8FD0\u884C\u63D0\u793A\uFF1Afolder \u56FE\u6807\u8BA9\u4F4D\u7ED9 loader\uFF08loader \u7531\u811A\u672C\u63D2\u5165\uFF0C
        folder \u53EF\u80FD\u88AB React \u968F\u65F6\u91CD\u5EFA\uFF0C\u9760\u7C7B\u9009\u62E9\u5668\u7EDF\u4E00\u9690\u85CF\uFF0C\u540E\u4EE3\u5199\u6CD5\u517C\u5BB9\u5305\u88C5\u5C42\uFF09 */
     span.zcodepro-ws-running svg:not(.zcodepro-ws-loader) { display: none !important; }
+    /* \u5B50\u4EE3\u7406\u8FD0\u884C\u63D0\u793A\uFF08subagent-icon.js\uFF09\uFF1A\u6298\u53E0\u9879\u76EE folder \u8BA9\u4F4D\u7ED9\u673A\u5668\u4EBA/\u7EC8\u7AEF\uFF0C
+       loader \u5728\u8F6C\u65F6\uFF08zcodepro-ws-loader\uFF09\u4F18\u5148\u663E\u793A\uFF0C\u4E0D\u8DDF\u673A\u5668\u4EBA\u4E92\u76F8\u85CF */
+    span.zcodepro-subagent-on svg:not(.zcodepro-subagent-icon):not(.zcodepro-terminal-icon):not(.zcodepro-ws-loader) { display: none !important; }
+    /* \u672A\u8BFB\u5706\u70B9\u8BA9\u4F4D\u673A\u5668\u4EBA\uFF1A\u539F\u70B9\u9690\u85CF\uFF0C\u884C\u5C3E\u590D\u5236\u54C1\u5E38\u663E\uFF08\u4E0D\u8DDF\u60AC\u6D6E\u64CD\u4F5C\u56FE\u6807\u4E00\u8D77\u9690\u85CF\uFF09 */
+    li.zcodepro-subagent-unread-moved [data-unread-indicator] { display: none !important; }
+    .zcodepro-subagent-unread-tail { display: inline-flex; align-items: center; align-self: center; }
+    /* \u9879\u76EE\u84DD\u8272\u672A\u8BFB\u5FBD\u6807\u5FFD\u7565\u9519\u8BEF\u884C\uFF1A\u9879\u76EE\u91CC\u672A\u8BFB\u5168\u662F\u9519\u8BEF\u6001\uFF08\u7EA2\u70B9\uFF09\u65F6\u4E0D\u4EAE\u84DD\u5FBD\u6807 */
+    .zcodepro-unread-error-only [data-workspace-unread-indicator] { display: none !important; }
     /* \u65E0\u611F\u63A2\u67E5\u671F\u95F4\u76D6\u5728\u9879\u76EE\u884C\u4E0A\u7684\u51BB\u7ED3\u514B\u9686\uFF1A\u56FA\u5B9A\u5B9A\u4F4D\u3001\u4E0D\u54CD\u5E94\u6307\u9488 */
     .zcodepro-ws-frozen {
       position: fixed;
@@ -2390,7 +2406,7 @@
   }
   var toastTimer, TOAST_KINDS, overlayClass, overlayClassBare, contentClass, dialogStack;
   var init_ui = __esm({
-    "src/inject/ui.js"() {
+    "../../../../../../../var/tmp/zcodepro-build3/src/inject/ui.js"() {
       init_core();
       toastTimer = null;
       TOAST_KINDS = {
@@ -2406,7 +2422,7 @@
     }
   });
 
-  // src/inject/features/ws-rows.js
+  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/ws-rows.js
   function projectRowSelector() {
     return isNewProjectSidebar() ? NEW_ROW_SEL : OLD_ROW_SEL;
   }
@@ -2446,7 +2462,7 @@
   }
   var norm2, NEW_ROW_SEL, OLD_ROW_SEL, pathByProjectId;
   var init_ws_rows = __esm({
-    "src/inject/features/ws-rows.js"() {
+    "../../../../../../../var/tmp/zcodepro-build3/src/inject/features/ws-rows.js"() {
       init_core();
       norm2 = (p) => String(p || "").replace(/[\\/]+$/, "");
       NEW_ROW_SEL = "section[data-project-id]";
@@ -2455,7 +2471,7 @@
     }
   });
 
-  // src/inject/features/ws-running.js
+  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/ws-running.js
   function findWsRow(ws) {
     return findProjectRow(ws);
   }
@@ -3128,7 +3144,7 @@
   }
   var installed2, enabled2, SCAN_DEBOUNCE_MS, SCAN_FALLBACK_MS, PEEK_FIRST_MS, PEEK_REPEAT_MS, PEEK_SETTLE_MS, PEEK_MAX_MS, PEEK_UNMOUNT_WAIT_MS, CONFIG_POLL_MIN_MS, CONFIG_POLL_MAX_MS, TASK_SEL, WS_SEL, LOADER_FALLBACK_PATHS, runningByWs, peekTimers, activePeeks, peekedWs, wsWithRows, servicesRef, servicesMissAt, synthClick, headInfoCache, PROJECT_HEAD_TEXTS, TASK_HEAD_TEXTS, SEC_SPIN_CLASS, anyActiveCache, sectionActive, activeProjectPaths, authActiveByWs, peekChain, PEEK_EXEMPT_CLASS, cssAttr, TOUCH_WINDOW_MS, wsTouchAt, pollMs, scanDebounce;
   var init_ws_running = __esm({
-    "src/inject/features/ws-running.js"() {
+    "../../../../../../../var/tmp/zcodepro-build3/src/inject/features/ws-running.js"() {
       init_core();
       init_ws_rows();
       installed2 = false;
@@ -3189,7 +3205,7 @@
     }
   });
 
-  // src/inject/features/session-switch.js
+  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/session-switch.js
   var session_switch_exports = {};
   __export(session_switch_exports, {
     startSessionSwitch: () => startSessionSwitch,
@@ -3584,7 +3600,7 @@
   }
   var MRU_LIMIT, SCAN_DEBOUNCE_MS2, SCAN_FALLBACK_MS2, INITIAL_COUNT, PAGE_SIZE, UNSEEN_LIMIT, mru, current, titles, popupEl, popupList, aliasesCache, highlight, scanDebounce2, popupMode, visibleCount, unseen, lastRunKeys, hotkeys, featureOn, idOf, rowSel2, inTaskRow, openPopupInflight;
   var init_session_switch = __esm({
-    "src/inject/features/session-switch.js"() {
+    "../../../../../../../var/tmp/zcodepro-build3/src/inject/features/session-switch.js"() {
       init_core();
       init_ui();
       init_ws_rows();
@@ -3619,14 +3635,14 @@
     }
   });
 
-  // src/inject/index.js
+  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/index.js
   init_core();
 
-  // src/inject/features/project-menu.js
+  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/project-menu.js
   init_core();
   init_ui();
 
-  // src/inject/features/copy-path.js
+  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/copy-path.js
   init_core();
   init_ui();
   async function appendCopyPathItem(menu, anchorItem, project) {
@@ -3698,7 +3714,7 @@
     return svg;
   }
 
-  // src/inject/features/alias.js
+  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/alias.js
   init_core();
   init_ui();
   var norm = (p) => String(p || "").replace(/[\\/]+$/, "");
@@ -3899,7 +3915,7 @@
     });
   }
 
-  // src/inject/features/relocate-dialog.js
+  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/relocate-dialog.js
   init_core();
   init_ui();
   function appendRelocateItem(menu, anchorItem, project) {
@@ -4066,7 +4082,7 @@
     });
   }
 
-  // src/inject/features/open-folder.js
+  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/open-folder.js
   init_core();
   function appendOpenFolderItem(menu, anchorItem, project) {
     if (menu.querySelector('[data-zcodepro-item="open-folder"]')) return;
@@ -4109,7 +4125,7 @@
     return svg;
   }
 
-  // src/inject/features/project-menu.js
+  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/project-menu.js
   var REMOVE_TEXTS = ["\u79FB\u9664", "Remove"];
   function extractPathFromTestId2(testid) {
     let m = testid.match(/[-:=,|](\/.+)$/);
@@ -4327,7 +4343,7 @@
     })();
   }
 
-  // src/inject/features/file-menu.js
+  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/file-menu.js
   init_core();
   init_core();
   init_ui();
@@ -4465,7 +4481,7 @@
     })();
   }
 
-  // src/inject/features/image-menu.js
+  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/image-menu.js
   init_core();
   init_ui();
   var MIN_SIZE = 48;
@@ -4656,10 +4672,10 @@
   function startImageMenu() {
     if (typeof window === "undefined") return;
     if (typeof navigator.clipboard?.write !== "function" || typeof window.ClipboardItem === "undefined") return;
-    let enabled14 = true;
+    let enabled15 = true;
     const refresh = () => {
       void getConfig().then((c) => {
-        enabled14 = !(c.features && c.features.imageCopy === false);
+        enabled15 = !(c.features && c.features.imageCopy === false);
       });
     };
     refresh();
@@ -4668,16 +4684,16 @@
       const img = copyTargetOf(e.target, e.clientX, e.clientY);
       if (!img) return;
       e.preventDefault();
-      if (enabled14) showMenu(e.clientX, e.clientY, img);
+      if (enabled15) showMenu(e.clientX, e.clientY, img);
       refresh();
     }, true);
   }
 
-  // src/inject/features/settings-dialog.js
+  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/settings-dialog.js
   init_core();
   init_ui();
 
-  // src/inject/provider-fields.js
+  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/provider-fields.js
   init_core();
   var PROVIDER_FIELD_CLS = "h-8 w-full rounded-lg border border-border bg-input px-2.5 text-ui-sm text-foreground outline-none transition-shadow placeholder:text-foreground-subtle focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40";
   function comboField(current2, options, onChange, { disabled = false, placeholder = "", staleLabel = t().manualInput, emptyLabel = "" } = {}) {
@@ -4728,7 +4744,7 @@
     return v === "" || v !== "session" && !providers.some((p) => p.id === v);
   }
 
-  // src/inject/features/alias-migration.js
+  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/alias-migration.js
   init_core();
   init_ui();
   init_ws_rows();
@@ -4737,7 +4753,7 @@
   function waitFor(getter, timeoutMs, step) {
     const start = Date.now();
     return new Promise((resolve, reject) => {
-      const tick6 = () => {
+      const tick7 = () => {
         let v = null;
         try {
           v = getter();
@@ -4751,9 +4767,9 @@
           reject(new Error(step));
           return;
         }
-        setTimeout(tick6, 120);
+        setTimeout(tick7, 120);
       };
-      tick6();
+      tick7();
     });
   }
   function setReactInputValue(input, value) {
@@ -5177,7 +5193,7 @@
     })();
   }
 
-  // src/inject/features/styles.js
+  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/styles.js
   init_core();
   var STYLE_DEFAULTS = {
     rowGap: 20,
@@ -5448,7 +5464,7 @@
     if (hlEl) hlEl.textContent = "";
   }
 
-  // src/inject/features/theme.js
+  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/theme.js
   init_core();
   var mediaAuth = () => "t=" + encodeURIComponent(liveBoot().token || "");
   var SC = (light, dark, lightA, darkA) => ({ light, dark, lightA, darkA });
@@ -6262,9 +6278,9 @@
         clearWallpaper();
         return;
       }
-      const tick6 = () => showFile(files[nextIdx(files.length)], "folder");
-      wpTickFn = tick6;
-      tick6();
+      const tick7 = () => showFile(files[nextIdx(files.length)], "folder");
+      wpTickFn = tick7;
+      tick7();
       armRotateTimer(bg);
       return;
     }
@@ -6359,8 +6375,8 @@
         clearInterval(st.timer);
         st.timer = null;
       }
-      const setState = (image, tick6) => {
-        regionState[region] = { sig, image, tick: tick6, timer: null, interval: 0 };
+      const setState = (image, tick7) => {
+        regionState[region] = { sig, image, tick: tick7, timer: null, interval: 0 };
         if (image) addRule(region, image);
       };
       const drop = () => {
@@ -6463,7 +6479,7 @@
     }
   }
 
-  // src/inject/features/settings-dialog.js
+  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/settings-dialog.js
   function openExternal(url) {
     try {
       void window.zcode.openExternal(url);
@@ -6548,7 +6564,7 @@
       setState(L.upgradeFound.replaceAll("{v}", res.latest || ""));
       btn.textContent = L.upgradeNow;
     };
-    const tick6 = async () => {
+    const tick7 = async () => {
       const res = await rpc(endpoint + "/upgrade");
       if (!res.ok) {
         stopPoll();
@@ -6588,9 +6604,9 @@
       btn.textContent = L.upgradeStop;
       setState(L.upgradeRunning);
       timer = setInterval(() => {
-        void tick6();
+        void tick7();
       }, 1500);
-      void tick6();
+      void tick7();
     };
     void (async () => {
       const res = await rpc(endpoint + "/upgrade");
@@ -6837,6 +6853,11 @@
             settingRow(L.featureWsRunning, L.featureWsRunningDesc, f.wsRunningSpin !== false, async () => {
               const next = !(f.wsRunningSpin !== false);
               if (await setFeature("wsRunningSpin", next)) f.wsRunningSpin = next;
+              refreshRows();
+            }),
+            settingRow(L.featureSubagentIcon, L.featureSubagentIconDesc, f.subagentIcon !== false, async () => {
+              const next = !(f.subagentIcon !== false);
+              if (await setFeature("subagentIcon", next)) f.subagentIcon = next;
               refreshRows();
             }),
             settingRow(L.featureNewtabPanels, L.featureNewtabPanelsDesc, f.newtabPanels !== false, async () => {
@@ -10309,7 +10330,7 @@
     });
   }
 
-  // src/inject/features/settings-entry.js
+  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/settings-entry.js
   var SETTINGS_BUTTON_TESTID = "task-settings-button";
   function handleSettingsContextmenu(e) {
     const target = e.target;
@@ -10324,7 +10345,7 @@
     document.addEventListener("contextmenu", handleSettingsContextmenu, true);
   }
 
-  // src/inject/features/task-order.js
+  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/task-order.js
   init_core();
   init_ui();
   init_core();
@@ -10419,10 +10440,10 @@
     }
   }
 
-  // src/inject/index.js
+  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/index.js
   init_session_switch();
 
-  // src/inject/features/newtab-panels.js
+  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/newtab-panels.js
   init_core();
   init_ui();
   var GRID_HINTS = ["\u8FD0\u884C\u547D\u4EE4\u548C\u67E5\u770B\u8F93\u51FA", "Run commands and view output"];
@@ -10616,7 +10637,7 @@
     setInterval(tryInject, 5e3);
   }
 
-  // src/inject/features/status-bar.js
+  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/status-bar.js
   init_core();
   init_ui();
   var enabled4 = true;
@@ -10945,7 +10966,7 @@
     }).observe(document.body, { childList: true, subtree: true });
   }
 
-  // src/inject/features/turn-usage.js
+  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/turn-usage.js
   init_core();
   var enabled5 = true;
   var recentTurns = [];
@@ -11154,7 +11175,7 @@
     });
   }
 
-  // src/inject/features/title-lock.js
+  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/title-lock.js
   init_core();
   var TASK_SEL2 = "[data-task-item-key]";
   var SCAN_DEBOUNCE_MS3 = 150;
@@ -11306,9 +11327,9 @@
   var mapRefreshTimer = 0;
   function refreshMapSoon() {
     if (mapRefreshTimer) return;
-    const tick6 = () => {
+    const tick7 = () => {
       if (document.hidden) {
-        mapRefreshTimer = setTimeout(tick6, 1e4);
+        mapRefreshTimer = setTimeout(tick7, 1e4);
         return;
       }
       mapRefreshTimer = 0;
@@ -11316,7 +11337,7 @@
         if (m) scan4();
       });
     };
-    mapRefreshTimer = setTimeout(tick6, MAP_REFRESH_MS);
+    mapRefreshTimer = setTimeout(tick7, MAP_REFRESH_MS);
   }
   var editingKey = null;
   var bootDelay = 0;
@@ -11420,7 +11441,7 @@
     });
   }
 
-  // src/inject/features/title-gen.js
+  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/title-gen.js
   init_core();
   var CONV2 = '[class*="@md/conversation"]';
   var USER_ROW = '[class*="user-row"]';
@@ -11591,7 +11612,7 @@
     });
   }
 
-  // src/inject/features/auto-rename.js
+  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/auto-rename.js
   init_core();
   init_ui();
   var TASK_SEL4 = "[data-task-item-key]";
@@ -11646,11 +11667,11 @@
   async function injectHoverButtons() {
     const cfg = await getConfig();
     if (!cfg || !cfg.titleGen) return;
-    const enabled14 = cfg.titleGen.hoverBtn !== false;
+    const enabled15 = cfg.titleGen.hoverBtn !== false;
     const L = t();
     for (const area of document.querySelectorAll(ACTIONS_SEL)) {
       const existing = area.querySelector('[data-zcodepro-item="auto-rename"]');
-      if (!enabled14) {
+      if (!enabled15) {
         existing?.remove();
         continue;
       }
@@ -11737,10 +11758,415 @@
     window.addEventListener("zcodepro:config-changed", schedule);
   }
 
-  // src/inject/index.js
+  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/index.js
   init_ws_running();
 
-  // src/inject/features/idle-reclaim.js
+  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/subagent-icon.js
+  init_core();
+  init_ws_running();
+  init_ws_rows();
+  var installed6 = false;
+  var enabled7 = true;
+  var POLL_MS = 2e4;
+  var ACTIVITY_FRESH_MS = 60 * 6e4;
+  var WS_CANDIDATES_TTL_MS = 5 * 6e4;
+  var APPLY_DEBOUNCE_MS = 300;
+  var CALL_TIMEOUT_MS = 6e3;
+  var TICK_GUARD_MS = 3e4;
+  var TASK_SEL5 = "[data-task-item-key]";
+  var ROBOT_CLASS = "zcodepro-subagent-icon";
+  var TERMINAL_CLASS = "zcodepro-terminal-icon";
+  var ROBOT_ON_CLASS = "zcodepro-subagent-on";
+  var UNREAD_MOVED_CLASS = "zcodepro-subagent-unread-moved";
+  var UNREAD_TAIL_CLASS = "zcodepro-subagent-unread-tail";
+  var UNREAD_IGNORE_CLASS = "zcodepro-unread-error-only";
+  var BUSY_LOADER_CLASS = "zcodepro-busy-loader";
+  var BOT_FALLBACK = [
+    ["path", { d: "M12 8V4H8" }],
+    ["rect", { width: "16", height: "12", x: "4", y: "8", rx: "2" }],
+    ["path", { d: "M2 14h2" }],
+    ["path", { d: "M20 14h2" }],
+    ["path", { d: "M15 13v2" }],
+    ["path", { d: "M9 13v2" }]
+  ];
+  function makeBotSvg(baseClass) {
+    const ns = "http://www.w3.org/2000/svg";
+    const proto = document.querySelector(`svg.lucide-bot:not(.${ROBOT_CLASS})`);
+    if (proto) {
+      const clone = proto.cloneNode(true);
+      const orig = proto.getAttribute("class") || "";
+      const keep = orig.split(/\s+/).filter((c) => /^(size-|text-)/.test(c)).join(" ");
+      clone.setAttribute("class", ((keep || baseClass || "size-4") + " " + ROBOT_CLASS).trim());
+      clone.setAttribute("title", t().subagentRobotTip);
+      return clone;
+    }
+    const svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor");
+    svg.setAttribute("stroke-width", "2");
+    svg.setAttribute("stroke-linecap", "round");
+    svg.setAttribute("stroke-linejoin", "round");
+    svg.setAttribute("class", ((baseClass || "size-4") + " " + ROBOT_CLASS).trim());
+    svg.setAttribute("title", t().subagentRobotTip);
+    for (const [tag, attrs] of BOT_FALLBACK) {
+      const el = document.createElementNS(ns, tag);
+      for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+      svg.append(el);
+    }
+    return svg;
+  }
+  function rowIconSlot(row) {
+    return row.firstElementChild && row.firstElementChild.querySelector(":scope > span[aria-hidden]");
+  }
+  var LOADER_FALLBACK_PATHS2 = [
+    "M12 2v4",
+    "m16.2 7.8 2.9-2.9",
+    "M18 12h4",
+    "m19.8 16.2-2.9 2.9",
+    "M12 18v4",
+    "m7.8 19.8-2.9-2.9",
+    "M6 12H2",
+    "m4.2 7.8 2.9-2.9"
+  ];
+  var TERMINAL_FALLBACK = [
+    ["path", { d: "m4 17 6-6-6-6" }],
+    ["path", { d: "M12 19h8" }]
+  ];
+  function makeTerminalIcon() {
+    const ns = "http://www.w3.org/2000/svg";
+    const proto = document.querySelector(`svg.lucide-terminal:not(.${TERMINAL_CLASS}), svg.lucide-square-terminal:not(.${TERMINAL_CLASS})`);
+    if (proto) {
+      const clone = proto.cloneNode(true);
+      const orig = proto.getAttribute("class") || "";
+      const keep = orig.split(/\s+/).filter((c) => /^(size-|text-)/.test(c)).join(" ");
+      clone.setAttribute("class", ((keep || "size-4 text-foreground-subtle") + " " + TERMINAL_CLASS).trim());
+      clone.setAttribute("title", t().subagentTermTip);
+      return clone;
+    }
+    const svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor");
+    svg.setAttribute("stroke-width", "2");
+    svg.setAttribute("stroke-linecap", "round");
+    svg.setAttribute("stroke-linejoin", "round");
+    svg.setAttribute("class", `size-4 text-foreground-subtle ${TERMINAL_CLASS}`);
+    svg.setAttribute("title", t().subagentTermTip);
+    for (const [tag, attrs] of TERMINAL_FALLBACK) {
+      const el = document.createElementNS(ns, tag);
+      for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+      svg.append(el);
+    }
+    return svg;
+  }
+  function makeBusyLoader() {
+    const ns = "http://www.w3.org/2000/svg";
+    const proto = document.querySelector(`svg.lucide-loader:not(.${BUSY_LOADER_CLASS})`);
+    if (proto) {
+      const clone = proto.cloneNode(true);
+      const orig = proto.getAttribute("class") || "";
+      const keep = orig.split(/\s+/).filter((c) => /^(size-|text-)/.test(c)).join(" ");
+      clone.setAttribute("class", ((keep || "size-4 text-foreground-subtle") + ` animate-spin ${BUSY_LOADER_CLASS}`).trim());
+      return clone;
+    }
+    const svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor");
+    svg.setAttribute("stroke-width", "2");
+    svg.setAttribute("stroke-linecap", "round");
+    svg.setAttribute("stroke-linejoin", "round");
+    svg.setAttribute("class", `size-4 text-foreground-subtle animate-spin ${BUSY_LOADER_CLASS}`);
+    for (const d of LOADER_FALLBACK_PATHS2) {
+      const path = document.createElementNS(ns, "path");
+      path.setAttribute("d", d);
+      svg.append(path);
+    }
+    return svg;
+  }
+  function updateRow(row, sub, busy, term) {
+    const slot = rowIconSlot(row);
+    if (!slot) return;
+    const unread = !!slot.querySelector("[data-unread-indicator]");
+    const hasBlocking = [...slot.children].some(
+      (c) => !c.classList.contains(ROBOT_CLASS) && !c.classList.contains(BUSY_LOADER_CLASS) && !c.classList.contains(TERMINAL_CLASS) && !c.hasAttribute("data-unread-indicator")
+    );
+    const hidden = slot.classList.contains("hidden") || slot.classList.contains("invisible");
+    const ok = !hasBlocking && !hidden;
+    const wantLoader = ok && busy && unread;
+    const wantRobot = ok && sub && !busy;
+    const wantTerm = ok && term && !busy && !wantRobot;
+    const curRobot = slot.querySelector(`:scope > svg.${ROBOT_CLASS}`);
+    if (wantRobot && !curRobot) slot.append(makeBotSvg("size-4 text-foreground-subtle"));
+    else if (!wantRobot && curRobot) curRobot.remove();
+    const curTerm = slot.querySelector(`:scope > svg.${TERMINAL_CLASS}`);
+    if (wantTerm && !curTerm) slot.append(makeTerminalIcon());
+    else if (!wantTerm && curTerm) curTerm.remove();
+    const curLoader = slot.querySelector(`:scope > svg.${BUSY_LOADER_CLASS}`);
+    if (wantLoader && !curLoader) slot.append(makeBusyLoader());
+    else if (!wantLoader && curLoader) curLoader.remove();
+    const moveUnread = (wantRobot || wantLoader || wantTerm) && unread;
+    row.classList.toggle(UNREAD_MOVED_CLASS, moveUnread);
+    let tail = row.querySelector(`:scope > .${UNREAD_TAIL_CLASS}`);
+    if (moveUnread) {
+      if (!tail) {
+        tail = document.createElement("span");
+        tail.className = UNREAD_TAIL_CLASS;
+        tail.setAttribute("aria-hidden", "true");
+        const dot = document.createElement("span");
+        dot.className = "size-[7px] rounded-full bg-icon-blue";
+        tail.append(dot);
+      }
+      row.insertBefore(tail, row.querySelector(":scope > [data-task-row-actions]") || null);
+    } else if (tail) {
+      tail.remove();
+    }
+  }
+  function setProjectIcon(row, robotOn, termOn) {
+    const icon2 = iconHolderOf(row);
+    if (!icon2) return;
+    const loaderSpins = icon2.classList.contains("zcodepro-ws-running") || !!icon2.querySelector(":scope > svg.zcodepro-ws-loader");
+    const wantRobot = robotOn && !loaderSpins;
+    const wantTerm = termOn && !loaderSpins && !wantRobot;
+    icon2.classList.toggle(ROBOT_ON_CLASS, wantRobot || wantTerm);
+    const curRobot = icon2.querySelector(`:scope > svg.${ROBOT_CLASS}`);
+    if (wantRobot && !curRobot) icon2.append(makeBotSvg());
+    else if (!wantRobot && curRobot) curRobot.remove();
+    const curTerm = icon2.querySelector(`:scope > svg.${TERMINAL_CLASS}`);
+    if (wantTerm && !curTerm) icon2.append(makeTerminalIcon());
+    else if (!wantTerm && curTerm) curTerm.remove();
+  }
+  var ticking = false;
+  var liveSessions = /* @__PURE__ */ new Set();
+  var liveByWs = /* @__PURE__ */ new Set();
+  var busySessions = /* @__PURE__ */ new Set();
+  var liveTermSessions = /* @__PURE__ */ new Set();
+  var liveTermByWs = /* @__PURE__ */ new Set();
+  var projectTrueUnread = /* @__PURE__ */ new Map();
+  var wsCandidatesCache = /* @__PURE__ */ new Map();
+  var projRootsCache = { at: 0, map: null };
+  function normWs(v) {
+    return String(v || "").replace(/[\\/]+$/, "");
+  }
+  function withTimeout(p, ms, fallback) {
+    const guarded = Promise.resolve(p).catch(() => fallback);
+    return Promise.race([guarded, new Promise((resolve) => setTimeout(() => resolve(fallback), ms))]);
+  }
+  async function projRoots() {
+    if (projRootsCache.map && Date.now() - projRootsCache.at < WS_CANDIDATES_TTL_MS) return projRootsCache.map;
+    const res = await withTimeout(rpc("/projects-v2"), CALL_TIMEOUT_MS, null);
+    const map = /* @__PURE__ */ new Map();
+    if (res && res.ok && res.available !== false && Array.isArray(res.projects)) {
+      for (const proj of res.projects) {
+        const id = String(proj.id || "");
+        const paths = (proj.roots || []).map((r) => String(r.path || "")).filter(Boolean);
+        if (id && paths.length) map.set(id, paths);
+      }
+    }
+    projRootsCache = { at: Date.now(), map };
+    return map;
+  }
+  function projectPathsOf(row, roots) {
+    const id = row.getAttribute && row.getAttribute("data-project-id");
+    const byId = id && roots && roots.get(id);
+    if (byId && byId.length) return byId;
+    const p = rowPath(row);
+    return p ? [p] : [];
+  }
+  async function wsCandidates(ws) {
+    const c = wsCandidatesCache.get(ws);
+    if (c && Date.now() - c.at < WS_CANDIDATES_TTL_MS) return c.ids;
+    const res = await withTimeout(rpc("/workspace-sessions?path=" + encodeURIComponent(ws)), CALL_TIMEOUT_MS, null);
+    const ids = res && res.ok && Array.isArray(res.ids) ? res.ids : [];
+    wsCandidatesCache.set(ws, { at: Date.now(), ids });
+    return ids;
+  }
+  async function tick3() {
+    if (!enabled7 || document.hidden || ticking) return;
+    ticking = true;
+    const guard = setTimeout(() => {
+      ticking = false;
+    }, TICK_GUARD_MS);
+    try {
+      const services = findServices();
+      const ag = services && services.zcodeAgentService;
+      if (!ag) return;
+      const candidates = /* @__PURE__ */ new Map();
+      for (const el of document.querySelectorAll(TASK_SEL5)) {
+        const key = el.getAttribute("data-task-item-key") || "";
+        const cut = key.lastIndexOf(":");
+        if (cut > 1) candidates.set(key.slice(cut + 1), key.slice(0, cut));
+      }
+      const roots = await projRoots();
+      const collapsedRows = projectRows().filter((row) => {
+        const head = wsHead(row);
+        return !!head && head.getAttribute("aria-expanded") === "false";
+      });
+      const wsPaths = collapsedRows.flatMap((row) => projectPathsOf(row, roots));
+      const wsLists = await Promise.all(wsPaths.map((p) => wsCandidates(p)));
+      wsLists.forEach((ids, i) => {
+        for (const id of ids) {
+          if (!candidates.has(id)) candidates.set(id, wsPaths[i]);
+        }
+      });
+      const childRes = await withTimeout(
+        rpc("/subagent-children?ids=" + encodeURIComponent([...candidates.keys()].join(","))),
+        CALL_TIMEOUT_MS,
+        null
+      );
+      const rootsWithKids = new Set((childRes && childRes.children || []).map((c) => c.root));
+      const endedLists = await Promise.all([...candidates].filter(([sid]) => rootsWithKids.has(sid)).map(async ([sid, ws]) => {
+        const r = await withTimeout(
+          ag.listSessionSubagents({ workspacePath: ws, sessionId: sid, endedLimit: 20 }),
+          CALL_TIMEOUT_MS,
+          null
+        );
+        return r && r.ended && r.ended.items || [];
+      }));
+      const endedAt = /* @__PURE__ */ new Map();
+      for (const items2 of endedLists) {
+        for (const e of items2) {
+          const id = e && e.childSessionId;
+          if (id) endedAt.set(id, Math.max(endedAt.get(id) || 0, Number(e.endedAt) || 0));
+        }
+      }
+      const now = Date.now();
+      const live = /* @__PURE__ */ new Set();
+      const liveWs = /* @__PURE__ */ new Set();
+      for (const c of childRes && childRes.children || []) {
+        const at = Number(c.at) || 0;
+        if (!(at > 0 && now - at <= ACTIVITY_FRESH_MS)) continue;
+        const end = endedAt.get(c.id) || 0;
+        if (end && end >= at) continue;
+        live.add(c.root);
+        const ws = candidates.get(c.root);
+        if (ws) liveWs.add(normWs(ws));
+      }
+      liveSessions = live;
+      liveByWs = liveWs;
+      const ts = services && services.zcodeTaskService;
+      const busy = /* @__PURE__ */ new Set();
+      if (ts && typeof ts.listActiveTaskIds === "function") {
+        const needBusyWs = /* @__PURE__ */ new Set();
+        for (const el of document.querySelectorAll(TASK_SEL5)) {
+          const key = el.getAttribute("data-task-item-key") || "";
+          const cut = key.lastIndexOf(":");
+          const sid = cut > 1 ? key.slice(cut + 1) : "";
+          const slot = rowIconSlot(el);
+          const unread = slot && slot.querySelector("[data-unread-indicator]");
+          if (live.has(sid) || unread) needBusyWs.add(normWs(key.slice(0, cut)));
+        }
+        await Promise.all([...needBusyWs].flatMap((ws) => [ws, ws + "/"].map(async (w) => {
+          const r = await withTimeout(ts.listActiveTaskIds({ workspacePath: w }), CALL_TIMEOUT_MS, null);
+          if (Array.isArray(r)) for (const id of r) busy.add(String(id));
+        })));
+      }
+      busySessions = busy;
+      const term = /* @__PURE__ */ new Set();
+      const termWs = /* @__PURE__ */ new Set();
+      const bbRes = await withTimeout(rpc("/background-bash"), CALL_TIMEOUT_MS, null);
+      for (const j of bbRes && bbRes.jobs || []) {
+        const sid = j && j.sessionId;
+        if (!sid || !candidates.has(sid)) continue;
+        term.add(sid);
+        const ws = candidates.get(sid);
+        if (ws) termWs.add(normWs(ws));
+      }
+      liveTermSessions = term;
+      liveTermByWs = termWs;
+      const projIds = [...new Set(projectRows().map((r) => r.getAttribute("data-project-id")).filter(Boolean))];
+      if (projIds.length) {
+        const pu = await withTimeout(
+          rpc("/project-unread?ids=" + encodeURIComponent(projIds.join(","))),
+          CALL_TIMEOUT_MS,
+          null
+        );
+        if (pu && pu.ok && pu.unread) projectTrueUnread = new Map(Object.entries(pu.unread));
+      }
+      apply2();
+    } finally {
+      clearTimeout(guard);
+      ticking = false;
+    }
+  }
+  function apply2() {
+    for (const el of document.querySelectorAll(TASK_SEL5)) {
+      const key = el.getAttribute("data-task-item-key") || "";
+      const cut = key.lastIndexOf(":");
+      const sid = cut > 1 ? key.slice(cut + 1) : "";
+      updateRow(el, enabled7 && liveSessions.has(sid), busySessions.has(sid), enabled7 && liveTermSessions.has(sid));
+    }
+    const roots = projRootsCache.map;
+    for (const row of projectRows()) {
+      const head = wsHead(row);
+      const collapsed = !!head && head.getAttribute("aria-expanded") === "false";
+      const paths = projectPathsOf(row, roots);
+      setProjectIcon(
+        row,
+        enabled7 && collapsed && paths.some((p) => liveByWs.has(normWs(p))),
+        enabled7 && collapsed && paths.some((p) => liveTermByWs.has(normWs(p)))
+      );
+      const pid = row.getAttribute("data-project-id");
+      row.classList.toggle(UNREAD_IGNORE_CLASS, enabled7 && pid !== null && projectTrueUnread.get(pid) === 0);
+    }
+  }
+  async function refreshConfig2() {
+    try {
+      const cfg = await getConfig();
+      const next = !!(cfg && cfg.features && cfg.features.subagentIcon !== false);
+      if (next !== enabled7) {
+        enabled7 = next;
+        apply2();
+      }
+    } catch {
+    }
+  }
+  var applyDebounce = 0;
+  var tickThrottle = 0;
+  function startSubagentIcon() {
+    if (installed6 || typeof document === "undefined") return;
+    installed6 = true;
+    void refreshConfig2();
+    void tick3();
+    setInterval(() => {
+      void refreshConfig2();
+      void tick3();
+    }, POLL_MS);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) {
+        void refreshConfig2();
+        void tick3();
+      }
+    });
+    const observer2 = new MutationObserver((muts) => {
+      let rowHit = false;
+      let rowAdded = false;
+      for (const m of muts) {
+        if (m.type !== "childList") continue;
+        const t2 = m.target instanceof Element ? m.target : null;
+        const added = [...m.addedNodes].filter((n) => n instanceof Element);
+        if (added.some((n) => n.matches(TASK_SEL5) || n.querySelector(TASK_SEL5))) rowAdded = true;
+        const touched = t2 && t2.closest(TASK_SEL5) || added.some((n) => n.matches(TASK_SEL5) || n.querySelector(TASK_SEL5)) || [...m.removedNodes].some((n) => n instanceof Element && (n.matches(TASK_SEL5) || n.querySelector(TASK_SEL5)));
+        if (touched) rowHit = true;
+      }
+      if (rowAdded) apply2();
+      if (rowHit && !tickThrottle) {
+        tickThrottle = setTimeout(() => {
+          tickThrottle = 0;
+          void tick3();
+        }, 5e3);
+      }
+      if (applyDebounce) return;
+      applyDebounce = setTimeout(() => {
+        applyDebounce = 0;
+        apply2();
+      }, APPLY_DEBOUNCE_MS);
+    });
+    observer2.observe(document.body, { childList: true, subtree: true });
+  }
+
+  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/idle-reclaim.js
   init_core();
   init_ws_running();
   var CHECK_MS = 3e4;
@@ -11751,7 +12177,7 @@
   var scanDisabledLogged = false;
   var bootAt = Date.now();
   var startupSweepDone = false;
-  var enabled7 = true;
+  var enabled8 = true;
   var normP = (v) => String(v || "").replace(/[\\/]+$/, "");
   async function sidebarWorkspaces() {
     const out = /* @__PURE__ */ new Set();
@@ -11803,14 +12229,14 @@
     await reclaim(ws);
     blockUntil.set(ws, Date.now() + cooldownMs);
   }
-  async function tick3() {
-    if (!enabled7) {
+  async function tick4() {
+    if (!enabled8) {
       idleSince.clear();
       return;
     }
     const cfg = await getConfig();
-    enabled7 = !cfg.features || cfg.features.idleReclaim !== false;
-    if (!enabled7) {
+    enabled8 = !cfg.features || cfg.features.idleReclaim !== false;
+    if (!enabled8) {
       idleSince.clear();
       return;
     }
@@ -11871,20 +12297,20 @@
   function startIdleReclaim() {
     window.addEventListener("zcodepro:config-changed", () => {
       void getConfig(true).then((cfg) => {
-        enabled7 = !cfg.features || cfg.features.idleReclaim !== false;
-        if (!enabled7) idleSince.clear();
+        enabled8 = !cfg.features || cfg.features.idleReclaim !== false;
+        if (!enabled8) idleSince.clear();
       }).catch(() => {
       });
     });
     const loop = () => {
-      tick3().catch(() => {
+      tick4().catch(() => {
       });
     };
     loop();
     setInterval(loop, CHECK_MS);
   }
 
-  // src/inject/features/sandbox-reclaim.js
+  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/sandbox-reclaim.js
   init_core();
   var CHECK_MS2 = 3e4;
   var MIN_BUDGET = 8;
@@ -11916,7 +12342,7 @@
   }
   var cooldown = /* @__PURE__ */ new Map();
   var disabledLogged = false;
-  var enabled8 = true;
+  var enabled9 = true;
   function onPortsMessage(e) {
     const d = e.data;
     if (!d || d.type !== "zcode:plugin-sandbox-ports" || typeof d.sandboxId !== "string") return;
@@ -11933,14 +12359,14 @@
     if (!root.getClientRects().length) return false;
     return Number(getComputedStyle(root).opacity) > 0.5;
   }
-  async function tick4() {
-    if (!enabled8) {
+  async function tick5() {
+    if (!enabled9) {
       seen.clear();
       return;
     }
     const cfg = await getConfig();
-    enabled8 = !cfg.features || cfg.features.sandboxReclaim !== false;
-    if (!enabled8) {
+    enabled9 = !cfg.features || cfg.features.sandboxReclaim !== false;
+    if (!enabled9) {
       seen.clear();
       return;
     }
@@ -11997,20 +12423,20 @@
     window.addEventListener("message", onPortsMessage);
     window.addEventListener("zcodepro:config-changed", () => {
       void getConfig(true).then((cfg) => {
-        enabled8 = !cfg.features || cfg.features.sandboxReclaim !== false;
-        if (!enabled8) seen.clear();
+        enabled9 = !cfg.features || cfg.features.sandboxReclaim !== false;
+        if (!enabled9) seen.clear();
       }).catch(() => {
       });
     });
     const loop = () => {
-      tick4().catch(() => {
+      tick5().catch(() => {
       });
     };
     loop();
     setInterval(loop, CHECK_MS2);
   }
 
-  // src/inject/features/plugin-card-retry.js
+  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/plugin-card-retry.js
   init_core();
   var SCAN_MS = 15e3;
   var CLICK_INTERVAL_MS = 3e4;
@@ -12034,7 +12460,7 @@
     }
     return out;
   }
-  async function tick5() {
+  async function tick6() {
     const cfg = await getConfig();
     if ((cfg.features || {}).pluginCardRetry === false) return;
     const now = Date.now();
@@ -12048,12 +12474,12 @@
   }
   function startPluginCardRetry() {
     setInterval(() => {
-      tick5().catch(() => {
+      tick6().catch(() => {
       });
     }, SCAN_MS);
   }
 
-  // src/inject/features/toolbar-icons.js
+  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/toolbar-icons.js
   init_core();
   init_ui();
   var HIDE_CLASS = "zcodepro-tb-hidden";
@@ -12061,7 +12487,7 @@
   var SCAN_FALLBACK_MS5 = 5e3;
   var ROW_SEL = "[data-task-item-key]";
   var MENU_SEL = '[data-testid="task-new-button"], [data-testid="automations-open"], [data-testid="plugin-store-sidebar-open"], [data-testid="sidebar-search-open"], [data-slot="command"], [data-testid="desktop-top-nav-back"]';
-  var enabled9 = true;
+  var enabled10 = true;
   var rowEl = null;
   var origs = null;
   var syncTimer = 0;
@@ -12204,7 +12630,7 @@
     return scroll.getBoundingClientRect().width < NARROW_SIDEBAR_PX;
   }
   function sync() {
-    if (!enabled9) return;
+    if (!enabled10) return;
     const parts = findParts();
     if (!parts) {
       if (rowEl) rowEl.style.display = "none";
@@ -12264,18 +12690,18 @@
       origs = null;
     }
   }
-  async function refreshConfig2() {
+  async function refreshConfig3() {
     const cfg = await getConfig(true).catch(() => null);
-    enabled9 = !cfg || !cfg.features || cfg.features.toolbarIcons !== false;
-    if (enabled9) sync();
+    enabled10 = !cfg || !cfg.features || cfg.features.toolbarIcons !== false;
+    if (enabled10) sync();
     else teardown();
   }
   function startToolbarIcons() {
     ensureStyle();
     window.addEventListener("zcodepro:config-changed", () => {
-      void refreshConfig2();
+      void refreshConfig3();
     });
-    void refreshConfig2();
+    void refreshConfig3();
     new MutationObserver((muts) => {
       if (relevantMutations(muts)) scheduleSync();
     }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "aria-pressed"] });
@@ -12287,7 +12713,7 @@
     });
   }
 
-  // src/inject/features/pinned-collapse.js
+  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/pinned-collapse.js
   init_core();
   init_ui();
   var COLLAPSED_CLASS = "zcodepro-pin-collapsed";
@@ -12295,7 +12721,7 @@
   var STORE_KEY = "zcodepro:pinned-collapsed";
   var SYNC_DEBOUNCE_MS2 = 300;
   var SCAN_FALLBACK_MS6 = 5e3;
-  var enabled10 = true;
+  var enabled11 = true;
   var syncTimer2 = 0;
   function findPinnedHeader() {
     for (const h3 of document.querySelectorAll("h3")) {
@@ -12338,9 +12764,9 @@
       localStorage.setItem(STORE_KEY, isCollapsed() ? "0" : "1");
     } catch {
     }
-    apply2();
+    apply3();
   }
-  function apply2() {
+  function apply3() {
     const h3 = findPinnedHeader();
     if (!h3) return false;
     const sect = h3.parentElement;
@@ -12355,7 +12781,7 @@
     if (!h3.dataset.zcodeproPinHead) {
       h3.dataset.zcodeproPinHead = "1";
       h3.addEventListener("click", () => {
-        if (enabled10) toggle();
+        if (enabled11) toggle();
       });
     }
     const btn = h("button", {
@@ -12365,7 +12791,7 @@
       "aria-expanded": collapsed ? "false" : "true",
       onClick: (e) => {
         e.stopPropagation();
-        if (enabled10) toggle();
+        if (enabled11) toggle();
       }
     });
     btn.append(chevronSvg());
@@ -12373,7 +12799,7 @@
     return true;
   }
   function sync2() {
-    if (enabled10) apply2();
+    if (enabled11) apply3();
   }
   function scheduleSync2() {
     if (syncTimer2) return;
@@ -12400,18 +12826,18 @@
       h3.parentElement?.classList.remove(COLLAPSED_CLASS);
     }
   }
-  async function refreshConfig3() {
+  async function refreshConfig4() {
     const cfg = await getConfig(true).catch(() => null);
-    enabled10 = !cfg || !cfg.features || cfg.features.pinnedCollapse !== false;
-    if (enabled10) sync2();
+    enabled11 = !cfg || !cfg.features || cfg.features.pinnedCollapse !== false;
+    if (enabled11) sync2();
     else teardown2();
   }
   function startPinnedCollapse() {
     ensureStyle();
     window.addEventListener("zcodepro:config-changed", () => {
-      void refreshConfig3();
+      void refreshConfig4();
     });
-    void refreshConfig3();
+    void refreshConfig4();
     new MutationObserver((muts) => {
       if (relevantMutations2(muts)) scheduleSync2();
     }).observe(document.body, { childList: true, subtree: true });
@@ -12423,11 +12849,11 @@
     });
   }
 
-  // src/inject/features/table-copy.js
+  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/table-copy.js
   init_ui();
   init_core();
-  var installed6 = false;
-  var enabled11 = true;
+  var installed7 = false;
+  var enabled12 = true;
   function cleanTable(table) {
     const clone = table.cloneNode(false);
     const walk = (src, dst) => {
@@ -12518,8 +12944,8 @@
     return btn;
   }
   function startTableCopy() {
-    if (installed6 || typeof document === "undefined") return;
-    installed6 = true;
+    if (installed7 || typeof document === "undefined") return;
+    installed7 = true;
     ensureStyle();
     const tableOf = (bar) => {
       let scope = bar.parentElement;
@@ -12544,12 +12970,12 @@
     };
     scan6();
     void getConfig().then((cfg) => {
-      enabled11 = cfg.features ? cfg.features.tableCopy !== false : true;
+      enabled12 = cfg.features ? cfg.features.tableCopy !== false : true;
     }).catch(() => {
     });
     window.addEventListener("zcodepro:config-changed", () => {
       void getConfig(true).then((cfg) => {
-        enabled11 = cfg.features ? cfg.features.tableCopy !== false : true;
+        enabled12 = cfg.features ? cfg.features.tableCopy !== false : true;
       }).catch(() => {
       });
     });
@@ -12558,7 +12984,7 @@
       if (scanTimer2) return;
       scanTimer2 = setTimeout(() => {
         scanTimer2 = 0;
-        if (enabled11) scan6();
+        if (enabled12) scan6();
       }, 300);
     };
     const maybeTable = (muts) => {
@@ -12571,12 +12997,12 @@
       return false;
     };
     const observer2 = new MutationObserver((muts) => {
-      if (enabled11 && maybeTable(muts)) scheduleScan4();
+      if (enabled12 && maybeTable(muts)) scheduleScan4();
     });
     observer2.observe(document.body, { childList: true, subtree: true });
   }
 
-  // src/inject/features/session-link.js
+  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/session-link.js
   init_core();
   init_ui();
   var CONV3 = '[class*="@md/conversation"]';
@@ -12590,8 +13016,8 @@
     }
     return out;
   }
-  var installed7 = false;
-  var enabled12 = true;
+  var installed8 = false;
+  var enabled13 = true;
   var titleCache = /* @__PURE__ */ new Map();
   var TITLE_CACHE_MAX = 500;
   var pendingIds = /* @__PURE__ */ new Set();
@@ -12696,14 +13122,14 @@
   }
   function setEnabled(cfg) {
     const next = cfg.features ? cfg.features.sessionLink !== false : true;
-    if (enabled12 && !next) unwrapAll();
-    enabled12 = next;
+    if (enabled13 && !next) unwrapAll();
+    enabled13 = next;
     if (next) scan5();
   }
   var inConv = (el) => !!(el && el.closest && el.closest(CONV3));
   function startSessionLink() {
-    if (installed7 || typeof document === "undefined") return;
-    installed7 = true;
+    if (installed8 || typeof document === "undefined") return;
+    installed8 = true;
     ensureStyle();
     void getConfig().then(setEnabled).catch(() => {
     });
@@ -12718,11 +13144,11 @@
       for (const m of muts) {
         if (m.type === "characterData") {
           doneNodes.delete(m.target);
-          if (enabled12 && inConv(m.target.parentElement)) texts.push(m.target);
+          if (enabled13 && inConv(m.target.parentElement)) texts.push(m.target);
           continue;
         }
         for (const n of m.addedNodes) {
-          if (!enabled12) continue;
+          if (!enabled13) continue;
           if (n.nodeType === Node.TEXT_NODE) {
             if (inConv(n.parentElement)) texts.push(n);
             continue;
@@ -12735,7 +13161,7 @@
           if (inConv(n) && !n.closest(SKIP_SEL)) walkTexts(n, texts);
         }
       }
-      if (!enabled12) return;
+      if (!enabled13) return;
       if (structural) {
         scan5();
         return;
@@ -12746,7 +13172,7 @@
     }).observe(document.body, { childList: true, subtree: true, characterData: true });
     document.addEventListener("click", (e) => {
       const span = e.target instanceof Element && e.target.closest("[data-zcodepro-sess]");
-      if (!span || !enabled12) return;
+      if (!span || !enabled13) return;
       e.preventDefault();
       e.stopPropagation();
       const id = span.getAttribute("data-zcodepro-sess") || "";
@@ -12758,10 +13184,10 @@
     });
   }
 
-  // src/inject/features/composer-provider.js
+  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/composer-provider.js
   init_core();
-  var installed8 = false;
-  var enabled13 = true;
+  var installed9 = false;
+  var enabled14 = true;
   var TRIGGER_SEL = '[data-testid="chat-model-select-trigger"]';
   function labelParts(label) {
     const text = (label || "").trim();
@@ -12792,12 +13218,12 @@
     if (node && node.nodeType === 3 && !node.nextSibling) node.nodeValue = text;
     else el.textContent = text;
   }
-  function apply3() {
+  function apply4() {
     for (const btn of document.querySelectorAll(TRIGGER_SEL)) {
       const parts = labelParts(btn.getAttribute("aria-label") || "");
       if (!parts) continue;
       const holders = holdersOf(btn, parts.model);
-      if (enabled13) {
+      if (enabled14) {
         if (!parts.provider || !holders.length) continue;
         const target = `${parts.provider} / ${parts.model}`;
         for (const el of holders) {
@@ -12817,8 +13243,8 @@
     }
   }
   function startComposerProvider() {
-    if (installed8 || typeof document === "undefined") return;
-    installed8 = true;
+    if (installed9 || typeof document === "undefined") return;
+    installed9 = true;
     const COMPOSER_SEL = '[data-composer-layout], [data-composer-leading-actions], [data-composer-leading-content], [data-testid="chat-model-select-trigger"]';
     const relevant2 = (muts) => {
       for (const m of muts) {
@@ -12837,24 +13263,24 @@
     };
     const schedule = () => {
       clearTimeout(schedule.t);
-      schedule.t = setTimeout(apply3, 120);
+      schedule.t = setTimeout(apply4, 120);
     };
     void getConfig().then((cfg) => {
-      enabled13 = cfg.features ? cfg.features.composerProvider !== false : true;
+      enabled14 = cfg.features ? cfg.features.composerProvider !== false : true;
     }).catch(() => {
     });
     window.addEventListener("zcodepro:config-changed", () => {
       void getConfig(true).then((cfg) => {
         const next = cfg.features ? cfg.features.composerProvider !== false : true;
-        if (next !== enabled13) {
-          enabled13 = next;
-          apply3();
+        if (next !== enabled14) {
+          enabled14 = next;
+          apply4();
         }
       }).catch(() => {
       });
     });
     const observer2 = new MutationObserver((muts) => {
-      if (enabled13 && relevant2(muts)) schedule();
+      if (enabled14 && relevant2(muts)) schedule();
     });
     observer2.observe(document.body, {
       childList: true,
@@ -12864,10 +13290,10 @@
       attributeFilter: ["aria-label", "data-model-current-value"]
       // 这两个只有应用会写，不认 title，避免自己改 title 叫醒自己
     });
-    apply3();
+    apply4();
   }
 
-  // src/inject/features/plugin-updates.js
+  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/plugin-updates.js
   init_core();
   init_ui();
   var NOTIFIED_KEY = "zcodepro-plugin-updates-notified";
@@ -12897,7 +13323,7 @@
     showToast(L.pluginsUpdatesAvailable.replaceAll("{n}", String(status.updates.length)), "info");
   }
 
-  // src/inject/index.js
+  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/index.js
   init_ui();
   (function zcodeproInject() {
     if (typeof window === "undefined") return;
@@ -12983,6 +13409,10 @@
       }
       try {
         startWsRunningSpin();
+      } catch {
+      }
+      try {
+        startSubagentIcon();
       } catch {
       }
       try {

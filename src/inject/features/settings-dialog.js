@@ -409,6 +409,11 @@ export function openSettingsDialog() {
             if (await setFeature('wsRunningSpin', next)) f.wsRunningSpin = next;
             refreshRows();
           }),
+          settingRow(L.featureSubagentIcon, L.featureSubagentIconDesc, f.subagentIcon !== false, async () => {
+            const next = !(f.subagentIcon !== false);
+            if (await setFeature('subagentIcon', next)) f.subagentIcon = next;
+            refreshRows();
+          }),
           settingRow(L.featureNewtabPanels, L.featureNewtabPanelsDesc, f.newtabPanels !== false, async () => {
             const next = !(f.newtabPanels !== false);
             if (await setFeature('newtabPanels', next)) f.newtabPanels = next;

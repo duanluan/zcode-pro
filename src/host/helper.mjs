@@ -11,7 +11,7 @@ import { basename, delimiter, dirname, isAbsolute, join, resolve, sep } from 'no
 import { homedir, tmpdir, userInfo } from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { readSettings, remapSettingsPathsAtomic, isProjectOpenInTabs } from './settings.mjs';
-import { taskIndexPath, probeTaskIndexWritable, remapTaskIndexPaths, taskIndexDriverAvailable, listOverriddenTitles, listTaskWorkspaceMap, listTaskStatuses, setTaskTitleIfNotOverridden, setCustomSessionTitle, isTaskTitleOverridden, reconcileCustomTitles, getTaskProviderModel, listVirtualProjects, countTasks, readRecentQa } from './taskIndex.mjs';
+import { taskIndexPath, probeTaskIndexWritable, remapTaskIndexPaths, taskIndexDriverAvailable, listOverriddenTitles, listTaskWorkspaceMap, listTaskStatuses, listSessionsActivity, listSubagentChildrenActivity, listProjectsUnread, listWorkspaceTaskIds, setTaskTitleIfNotOverridden, setCustomSessionTitle, isTaskTitleOverridden, reconcileCustomTitles, getTaskProviderModel, listVirtualProjects, countTasks, readRecentQa } from './taskIndex.mjs';
 import { pickFolderSystem } from './pickFolder.mjs';
 import { reorderTasks } from './taskOrder.mjs';
 import { webdavRequest, webdavPutWithMkcol, webdavHttpText, parseWebdavListing, findCurl } from './webdav.mjs';
@@ -301,6 +301,7 @@ export function defaultConfig() {
       sessionSwitch: true,     // 会话快捷切换（alt+z 上次会话；按住 alt x/c 弹窗导航，类 alt+tab）
       titleLock: true,        // 会话名锁定：手动重命名过的会话不被运行时推送的自动标题覆盖（侧栏钉回索引库中的名字）
       wsRunningSpin: true,     // 折叠项目运行提示：折叠后其中仍有会话运行时项目图标旋转
+      subagentIcon: true,      // 子代理运行提示：任务行空闲图标位与折叠项目图标显示机器人（subagent-icon.js）
       idleReclaim: true,       // 空闲项目内存回收：长时间无活动的项目释放其会话进程（时长 idleReclaimMinutes）
       toolbarIcons: true,      // 侧栏菜单并入顶栏：新建任务/搜索/自动化/插件市场收成顶栏图标按钮（原菜单隐藏，点击转发）
       pinnedCollapse: true,    // 已置顶分区可折叠：标题可点折叠/展开任务列表（状态记 localStorage）
@@ -1329,6 +1330,45 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         json(res, 200, statuses !== null
           ? { ok: true, available: true, statuses }
           : { ok: true, available: false, statuses: {} });
+        return;
+      }
+      if (req.method === 'GET' && url.pathname === '/sessions-activity') {
+        // 子会话最近活动时间（毫秒）：子代理 running 记录的新鲜度校验，
+        // 长时间没动静的僵死记录不亮机器人（subagent-icon.js）
+        const ids = (url.searchParams.get('ids') || '')
+          .split(',').map((s) => s.trim()).filter(Boolean).slice(0, 300);
+        const activity = ids.length ? await listSessionsActivity(dataRoot, ids) : {};
+        json(res, 200, { ok: true, activity });
+        return;
+      }
+      if (req.method === 'GET' && url.pathname === '/workspace-sessions') {
+        // 某工作区的任务会话 id（任务索引反查）：折叠项目行扫子代理运行状态的候选清单
+        const path = url.searchParams.get('path') || '';
+        const ids = path ? await listWorkspaceTaskIds(dataRoot, path) : [];
+        json(res, 200, { ok: true, ids });
+        return;
+      }
+      if (req.method === 'GET' && url.pathname === '/subagent-children') {
+        // 会话的子代理子会话及最近活动时间（含嵌套）：子代理判活的主信号——
+        // 应用的运行记录会把还在跑的长跑子代理误记为结束（subagent-icon.js）
+        const ids = (url.searchParams.get('ids') || '')
+          .split(',').map((s) => s.trim()).filter(Boolean).slice(0, 300);
+        const children = ids.length ? await listSubagentChildrenActivity(dataRoot, ids) : [];
+        json(res, 200, { ok: true, children });
+        return;
+      }
+      if (req.method === 'GET' && url.pathname === '/background-bash') {
+        // 后台 bash 任务在跑清单（进程握着的日志文件反查会话）：终端图标的信号，
+        // 纯文件系统扫描，不拉会话快照（快照会 resume 会话，见 scanBackgroundBash）
+        json(res, 200, scanBackgroundBash());
+        return;
+      }
+      if (req.method === 'GET' && url.pathname === '/project-unread') {
+        // 项目"真未读"任务数（排除错误态）：项目行蓝色未读徽标忽略红色错误行
+        const ids = (url.searchParams.get('ids') || '')
+          .split(',').map((s) => s.trim()).filter(Boolean).slice(0, 100);
+        const unread = ids.length ? await listProjectsUnread(dataRoot, ids) : {};
+        json(res, 200, unread === null ? { ok: false } : { ok: true, unread });
         return;
       }
       if (req.method === 'GET' && url.pathname === '/projects') {
@@ -3207,6 +3247,55 @@ export async function scanIdleBusy(paths, dataRoot) {
 }
 
 // Linux：直接读取 /proc（comm 定位 CLI、cwd 定位项目、task/<pid>/children 拿子进程）
+// 后台 bash 任务扫描：运行中的任务进程把 /tmp/zcode-bash-*/<会话id>/call_*-stdout.log
+// 握在 stdout/stderr 上（实测 fd/1、fd/2），日志路径就带会话 id——按"有进程握着
+// 该文件"判定在跑，纯文件系统读取，不惊动会话进程。不能走会话快照：快照会把
+// 会话 resume 起来，逐会话轮询快照曾造成整夜 6600 次/小时 resume、内存暴涨。
+// 返回 { ok, jobs: [{ sessionId, jobId }] }；平台不支持（无 /proc 且无 lsof）时 ok=false
+export function scanBackgroundBash(tmpDir = '/tmp', procDir = '/proc') {
+  let files;
+  try {
+    files = new Map(); // 日志绝对路径 → { sessionId, jobId }
+    for (const d of readdirSync(tmpDir)) {
+      if (!d.startsWith('zcode-bash-')) continue;
+      let sessDirs;
+      try { sessDirs = readdirSync(join(tmpDir, d)); } catch { continue; }
+      for (const sess of sessDirs) {
+        if (!/^sess/.test(sess)) continue;
+        let names;
+        try { names = readdirSync(join(tmpDir, d, sess)); } catch { continue; }
+        for (const n of names) {
+          const m = n.match(/^call_(.+)-stdout\.log$/);
+          if (m) files.set(join(tmpDir, d, sess, n), { sessionId: sess, jobId: m[1] });
+        }
+      }
+    }
+  } catch { return { ok: false, jobs: [] }; }
+  if (!files.size) return { ok: true, jobs: [] };
+  const hit = new Map(); // 文件 → 记录（同一任务的 stdout/stderr 两个 fd 去重）
+  try {
+    // Linux：/proc/*/fd/{1,2} 的符号链接命中即在跑
+    for (const p of readdirSync(procDir)) {
+      if (!/^\d+$/.test(p)) continue;
+      for (const fd of ['1', '2']) {
+        let target;
+        try { target = readlinkSync(join(procDir, p, 'fd', fd)); } catch { continue; }
+        const rec = files.get(target);
+        if (rec) hit.set(target, rec);
+      }
+    }
+  } catch {
+    // 无 /proc（macOS）：lsof -t 判文件是否被占用
+    for (const f of files.keys()) {
+      let r;
+      try { r = spawnSync('lsof', ['-t', '--', f], { encoding: 'utf8', timeout: 3000 }); } catch { return { ok: false, jobs: [] }; }
+      if (r.error) return { ok: false, jobs: [] };
+      if ((r.stdout || '').trim()) hit.set(f, files.get(f));
+    }
+  }
+  return { ok: true, jobs: [...hit.values()] };
+}
+
 function scanIdleBusyLinux(paths) {
   let pids;
   try { pids = readdirSync('/proc').filter((d) => /^\d+$/.test(d)); }

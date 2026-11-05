@@ -17,6 +17,7 @@ import { startTitleLock } from './features/title-lock.js';
 import { startTitleGen } from './features/title-gen.js';
 import { startAutoRename, handleTaskRowMenu } from './features/auto-rename.js';
 import { startWsRunningSpin } from './features/ws-running.js';
+import { startSubagentIcon } from './features/subagent-icon.js';
 import { startIdleReclaim } from './features/idle-reclaim.js';
 import { startSandboxReclaim } from './features/sandbox-reclaim.js';
 import { startPluginCardRetry } from './features/plugin-card-retry.js';
@@ -80,6 +81,7 @@ import { ensureStyle } from './ui.js';
     try { startAutoRename(); } catch { /* ignore */ }
     try { startImageMenu(); } catch { /* ignore */ }
     try { startWsRunningSpin(); } catch { /* ignore */ }
+    try { startSubagentIcon(); } catch { /* ignore */ }
     try { startIdleReclaim(); } catch { /* ignore */ }
     try { startSandboxReclaim(); } catch { /* ignore */ }
     try { startPluginCardRetry(); } catch { /* ignore */ }
