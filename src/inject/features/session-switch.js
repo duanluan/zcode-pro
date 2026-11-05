@@ -446,14 +446,17 @@ export function startSessionSwitch() {
       await openPopup('attention');
       return;
     }
-    // e 只负责打开（初始显示最近 10 条，c 可继续加载更早的）；已开着或正在
-    // 打开时不动作。只在 mru 为空（连当前会话都没有，如停在新建任务页）才
-    // 提示——首次仅开着当前会话时照常打开，列表里就是它这一条
+    // e 打开最近 10 条（c 可继续加载更早的）。attention 弹窗（r）开着时切到
+    // 最近列表（关掉重开，与 r 在 mru 弹窗开着时的行为对称）；mru 已开着则
+    // 不动作。只在 mru 为空（连当前会话都没有，如停在新建任务页）才提示——
+    // 首次仅开着当前会话时照常打开，列表里就是它这一条
     if (k === hotkeys.switchRecent) {
-      if (!e.repeat && !popupEl && !openPopupInflight) {
-        if (!mru.length) { showToast(t().switcherEmpty, 'warning'); return; }
-        await openPopup('mru');
-      }
+      if (e.repeat) return;
+      if (openPopupInflight) await openPopupInflight;
+      if (popupEl && popupMode !== 'attention') return;
+      if (!mru.length) { showToast(t().switcherEmpty, 'warning'); return; }
+      if (popupEl) closePopup(false);
+      await openPopup('mru');
       return;
     }
     // x/c：弹窗已开着（含 attention 模式）直接在当前列表移动——attention 的

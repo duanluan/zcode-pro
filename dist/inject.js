@@ -3556,13 +3556,15 @@
           return;
         }
         if (k === hotkeys.switchRecent) {
-          if (!e.repeat && !popupEl && !openPopupInflight) {
-            if (!mru.length) {
-              showToast(t().switcherEmpty, "warning");
-              return;
-            }
-            await openPopup("mru");
+          if (e.repeat) return;
+          if (openPopupInflight) await openPopupInflight;
+          if (popupEl && popupMode !== "attention") return;
+          if (!mru.length) {
+            showToast(t().switcherEmpty, "warning");
+            return;
           }
+          if (popupEl) closePopup(false);
+          await openPopup("mru");
           return;
         }
         if (openPopupInflight) {
