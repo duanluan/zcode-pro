@@ -385,8 +385,139 @@ export async function listSubagentChildrenActivity(dataRoot, ids) {
   }
 }
 
+// 状态栏统计用：会话 → trace_id。父子会话（含子代理）共享同一 trace，
+// 状态栏据此把子代理的模型调用算进父会话的输出速率
+export async function listSessionsTrace(dataRoot, ids) {
+  const out = {};
+  const wanted = [...new Set((ids || []).map(String).filter(Boolean))];
+  if (!wanted.length) return out;
+  const dbFile = join(dataRoot, 'cli', 'db', 'db.sqlite');
+  if (!existsSync(dbFile)) return out;
+  const driver = await loadDriver();
+  if (!driver) return out;
+  const esc = (v) => "'" + String(v).replace(/'/g, "''") + "'";
+  const inList = wanted.map((id) => esc(id)).join(', ');
+  try {
+    let rows;
+    if (driver.kind === 'node') {
+      const db = new driver.DatabaseSync(dbFile, { readOnly: true });
+      try { rows = db.prepare(`SELECT id, trace_id FROM session WHERE id IN (${inList})`).all(); } finally { db.close(); }
+    } else {
+      const agg = runCli(dbFile,
+        `SELECT coalesce(json_group_array(json_object('id', id, 'trace_id', trace_id)), '[]') FROM session WHERE id IN (${inList});`);
+      rows = JSON.parse(agg.stdout.trim() || '[]');
+    }
+    for (const r of rows) out[String(r.id)] = String(r.trace_id || '');
+    return out;
+  } catch {
+    return out; // 读取失败按无 trace 处理（速率退化为只算本会话）
+  }
+}
 
-// 某工作区的任务会话 id（最近更新在前，7 天内有动静的取 30 个）：折叠项目行扫
+// 官方口径的每轮用量（Token 调试同源数据与公式）：主轮请求逐条返回 + 会话汇总。
+// TPS = 输出 ÷（耗时 − 首 token 时机）= 官方“Output tokens ÷ 首个输出 token 到
+// 请求结束的秒数”；命中率 = 缓存读 ÷ 输入（输入含缓存读，官方同语义）。
+// query_source 只算 main_turn：起名等辅助小调用不进主轮统计（官方同款口径）。
+// treeTrace 给出时 summary.tps 按会话树（本会话+同 trace 子代理）的最近请求算
+// 60 秒窗净生成速率（窗口锚定最近一笔完成，锚不随请求时刻移动）
+export async function listSessionModelUsage(dataRoot, sessionId, treeTrace = '') {
+  const empty = { rounds: [], summary: { requests: 0, totalIn: 0, totalOut: 0, totalCacheRead: 0, hitRate: null, tps: null } };
+  const sid = String(sessionId || '');
+  if (!sid) return empty;
+  const dbFile = join(dataRoot, 'cli', 'db', 'db.sqlite');
+  if (!existsSync(dbFile)) return empty;
+  const driver = await loadDriver();
+  if (!driver) return empty;
+  const esc = (v) => "'" + String(v).replace(/'/g, "''") + "'";
+  const sql = `SELECT completed_at, duration_ms, time_to_first_token_ms, input_tokens, output_tokens,`
+    + ` reasoning_tokens, cache_read_input_tokens, cache_creation_input_tokens, computed_total_tokens`
+    + ` FROM model_usage WHERE session_id = ${esc(sid)} AND query_source = 'main_turn'`
+    + ` AND status = 'completed' AND completed_at IS NOT NULL ORDER BY completed_at ASC`;
+  try {
+    let rows;
+    if (driver.kind === 'node') {
+      const db = new driver.DatabaseSync(dbFile, { readOnly: true });
+      try { rows = db.prepare(sql).all(); } finally { db.close(); }
+    } else {
+      const agg = runCli(dbFile,
+        `SELECT coalesce(json_group_array(json_object('completed_at', completed_at, 'duration_ms', duration_ms,`
+        + ` 'time_to_first_token_ms', time_to_first_token_ms, 'input_tokens', input_tokens, 'output_tokens', output_tokens,`
+        + ` 'reasoning_tokens', reasoning_tokens, 'cache_read_input_tokens', cache_read_input_tokens,`
+        + ` 'cache_creation_input_tokens', cache_creation_input_tokens, 'computed_total_tokens', computed_total_tokens)), '[]')`
+        + ` FROM (${sql});`);
+      rows = JSON.parse(agg.stdout.trim() || '[]');
+    }
+    const num = (v) => Number(v) || 0;
+    // 净生成时长 = 耗时 − 首 token 时机。两种情形按全程（耗时）算生成时长：
+    // 1. 非流式/整段返回：首 token 时机贴着结束（实测只差 20-30ms），扣出来是
+    //    毫秒级会把速率顶到几万 tok/s（首 token 占耗时 8 成以上即判定）；
+    // 2. 首 token 时机缺失（部分供应商不回传，如 glm-5.3 占近三成）：排除掉会
+    //    让整段速率消失。只有耗时也没有时留 null
+    const genMsOf = (dur, ttft) => (dur > 0 ? (ttft > 0 && ttft < dur * 0.8 ? dur - ttft : dur) : null);
+    const rounds = rows.map((r, i) => {
+      const inp = num(r.input_tokens);
+      const cacheRead = num(r.cache_read_input_tokens);
+      const ttft = num(r.time_to_first_token_ms);
+      const dur = num(r.duration_ms);
+      const genMs = genMsOf(dur, ttft);
+      const out = num(r.output_tokens);
+      return {
+        idx: i + 1,
+        at: num(r.completed_at),
+        in: inp,
+        out,
+        total: num(r.computed_total_tokens),
+        reasoning: num(r.reasoning_tokens),
+        cacheRead,
+        cacheWrite: num(r.cache_creation_input_tokens),
+        hitRate: inp > 0 ? cacheRead / inp : null,
+        genMs,
+        tps: genMs ? out / (genMs / 1000) : null,
+      };
+    });
+    const summary = { requests: rounds.length, totalIn: 0, totalOut: 0, totalCacheRead: 0, hitRate: null };
+    for (const r of rounds) {
+      summary.totalIn += r.in;
+      summary.totalOut += r.out;
+      summary.totalCacheRead += r.cacheRead;
+    }
+    summary.hitRate = summary.totalIn > 0 ? summary.totalCacheRead / summary.totalIn : null;
+    // 会话树最近请求的净生成速率：单独一条查询（trace 索引），取最近 30 笔里落在
+    // “最近完成时刻前 60 秒”的请求，Σ输出 ÷ Σ净生成秒数；没有可用行留 null
+    summary.tps = null;
+    try {
+      const tSql = `SELECT output_tokens, duration_ms, time_to_first_token_ms, completed_at FROM model_usage`
+        + ` WHERE (session_id = ${esc(sid)}${treeTrace ? ` OR trace_id = ${esc(treeTrace)}` : ''})`
+        + ` AND query_source = 'main_turn' AND status = 'completed' AND completed_at IS NOT NULL`
+        + ` ORDER BY completed_at DESC LIMIT 30`;
+      let tRows;
+      if (driver.kind === 'node') {
+        const db = new driver.DatabaseSync(dbFile, { readOnly: true });
+        try { tRows = db.prepare(tSql).all(); } finally { db.close(); }
+      } else {
+        const agg = runCli(dbFile,
+          `SELECT coalesce(json_group_array(json_object('output_tokens', output_tokens, 'duration_ms', duration_ms,`
+          + ` 'time_to_first_token_ms', time_to_first_token_ms, 'completed_at', completed_at)), '[]') FROM (${tSql});`);
+        tRows = JSON.parse(agg.stdout.trim() || '[]');
+      }
+      if (tRows.length) {
+        const anchorT = num(tRows[0].completed_at);
+        let outSum = 0;
+        let genSum = 0;
+        for (const r of tRows) {
+          if (num(r.completed_at) < anchorT - 60_000) break;
+          const genMs = genMsOf(num(r.duration_ms), num(r.time_to_first_token_ms));
+          if (genMs) { outSum += num(r.output_tokens); genSum += genMs; }
+        }
+        if (genSum > 0) summary.tps = outSum / (genSum / 1000);
+      }
+    } catch { /* 速率取不到留 null，其它汇总不受影响 */ }
+    return { rounds, summary };
+  } catch {
+    return empty; // 读取失败按无数据处理（每轮标注与状态栏项自然隐藏）
+  }
+}
+
 // 项目里"真未读"的任务数（未读但排除错误态）：项目行蓝色未读徽标的判据——
 // 错误态任务行显示的是红色错误点（应用图标优先级 错误>未读），它的未读不该再
 // 把项目徽标点亮成蓝色（subagent-icon.js）
@@ -421,6 +552,7 @@ export async function listProjectsUnread(dataRoot, projectIds) {
   }
 }
 
+// 某工作区的任务会话 id（最近更新在前，7 天内有动静的取 30 个）：折叠项目行扫
 // 子代理运行状态的候选清单——行折叠后会话 id 不在 DOM 里，只能从任务索引反查。
 // 7 天窗：长跑子代理的父会话最晚在派出子代理那一趟被写过，超过 7 天的会话里
 // 还挂着子代理的实测都是僵死记录（shortcut: 超长后台子代理会漏，等用户反馈再放宽）

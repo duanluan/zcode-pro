@@ -11,7 +11,7 @@ import { basename, delimiter, dirname, isAbsolute, join, resolve, sep } from 'no
 import { homedir, tmpdir, userInfo } from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { readSettings, remapSettingsPathsAtomic, isProjectOpenInTabs } from './settings.mjs';
-import { taskIndexPath, probeTaskIndexWritable, remapTaskIndexPaths, taskIndexDriverAvailable, listOverriddenTitles, listTaskWorkspaceMap, listTaskStatuses, listSessionsActivity, listSubagentChildrenActivity, listProjectsUnread, listWorkspaceTaskIds, setTaskTitleIfNotOverridden, setCustomSessionTitle, isTaskTitleOverridden, reconcileCustomTitles, getTaskProviderModel, listVirtualProjects, countTasks, readRecentQa } from './taskIndex.mjs';
+import { taskIndexPath, probeTaskIndexWritable, remapTaskIndexPaths, taskIndexDriverAvailable, listOverriddenTitles, listTaskWorkspaceMap, listTaskStatuses, listSessionsActivity, listSessionsTrace, listSessionModelUsage, listSubagentChildrenActivity, listProjectsUnread, listWorkspaceTaskIds, setTaskTitleIfNotOverridden, setCustomSessionTitle, isTaskTitleOverridden, reconcileCustomTitles, getTaskProviderModel, listVirtualProjects, countTasks, readRecentQa } from './taskIndex.mjs';
 import { pickFolderSystem } from './pickFolder.mjs';
 import { reorderTasks } from './taskOrder.mjs';
 import { webdavRequest, webdavPutWithMkcol, webdavHttpText, parseWebdavListing, findCurl } from './webdav.mjs';
@@ -2165,14 +2165,26 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         const sessionId = /^(?:sess|session)_[A-Za-z0-9._-]+$/.test(rawSid) ? rawSid : '';
         // turns=0 跳过分钟桶聚合（状态栏只读 global，不白建每轮桶）
         const wantTurns = url.searchParams.get('turns') !== '0';
-        const { global, recentTurns } = collectUsageStats(sessionId, wantTurns);
+        // 会话树 trace：速率把同树子代理的调用算进来
+        const treeTrace = sessionId ? await sessionTrace(dataRoot, sessionId) : '';
+        const { global, recentTurns } = collectUsageStats(sessionId, wantTurns, treeTrace);
+        // 官方口径的会话汇总（主轮请求/累计输入输出/平均命中/树口径净生成速率）：状态栏会话组用
+        const mu = sessionId ? await listSessionModelUsage(dataRoot, sessionId, treeTrace) : null;
         // 任务总数 60 秒缓存：状态栏每 2 秒请求一次，不必每次开关 SQLite
         if (Date.now() - tasksCountAt > 60_000) {
           tasksCountAt = Date.now();
           tasksCountCache = await countTasks(dataRoot);
         }
         global.tasks = tasksCountCache;
-        json(res, 200, { ok: true, global, recentTurns });
+        json(res, 200, { ok: true, global, recentTurns, ...(mu ? { sessionSummary: mu.summary } : {}) });
+        return;
+      }
+      // —— 每轮用量（turn-usage.js）：官方 model_usage 同源的主轮请求明细 ——
+      if (req.method === 'GET' && url.pathname === '/stats/turns') {
+        const rawSid = url.searchParams.get('session') || '';
+        const sessionId = /^(?:sess|session)_[A-Za-z0-9._-]+$/.test(rawSid) ? rawSid : '';
+        const mu = await listSessionModelUsage(dataRoot, sessionId);
+        json(res, 200, { ok: true, rounds: mu.rounds, summary: mu.summary });
         return;
       }
       if (req.method === 'GET' && url.pathname === '/plugins/status') {
@@ -2256,9 +2268,19 @@ let tasksCountCache = 0; // 任务总数缓存（/stats/usage 高频轮询，60 
 // ~/.zcode/cli/rollout/model-io-*.jsonl 每行一次模型调用；usage 字段有两种键风格
 // （协议 camelCase 与原始 snake_case），两种都解析。文件小（个位数、每会话一个），
 // 按 mtime+size 缓存只重读变过的文件；聚合结果含按日分桶（本地时区）供“今日”用
-const usageFileCache = new Map(); // 文件名 → { mtime, size, recs: [{at, ts, ms, in, out, cacheRead, session}] }
+const usageFileCache = new Map(); // 文件名 → { mtime, size, ino, goneAt, recs: [{at, ts, ms, in, out, cacheRead, session, trace}] }
 // 测试缝：覆盖 rollout 记录目录（scripts/test-usage-stats.mjs 用假数据跑真实聚合）
 let rolloutDirOverride = '';
+// 被滚动删除的会话文件，其解析记录在缓存里的保留时长
+const ROLLOUT_KEEP_MS = 2 * 3600_000;
+// 测试用：换目录即作废全部缓存，假数据与真实记录不混算
+export function setRolloutDirForTest(dir) {
+  rolloutDirOverride = dir || '';
+  usageFileCache.clear();
+  rolloutRecsCache = null;
+  rolloutSig = '';
+  statsResultCache = { sig: '', key: '', result: null };
+}
 // 记录合并结果缓存：文件签名（名称+mtime+size）没变就直接复用上次合并好的记录
 let rolloutSig = '';
 let rolloutRecsCache = null;
@@ -2329,6 +2351,7 @@ function parseRolloutLines(text) {
         in: input, out: output,
         cacheRead,
         session: String(d.sessionId || ''),
+        trace: String(d.traceId || ''), // 会话树（父会话+子代理）共享同一 trace
       });
     }
     consumed += isTail ? Buffer.byteLength(line, 'utf8') : lineBytes;
@@ -2347,10 +2370,17 @@ function rolloutRecords() {
     rolloutRecsCache = null;
     return [];
   }
-  // 缓存条目随文件淘汰：会话记录滚动删除后残留条目不再增长（虽小但是纯泄漏）
+  // 官方会滚动删除会话文件（运行中的会话也会被删了重建，窗口期数据不断档），
+  // 被删文件的解析记录在缓存里再留 ROLLOUT_KEEP_MS：速率停在最后的值而不是归零，
+  // 累计数也不缩水；超时才淘汰，别让长跑进程无限积压（受控泄漏）
   const nameSet = new Set(names); // Set 判定：文件数上千时 names.includes 是 O(F²)
-  for (const k of usageFileCache.keys()) {
-    if (!nameSet.has(k)) usageFileCache.delete(k);
+  for (const [k, v] of usageFileCache) {
+    if (nameSet.has(k)) { v.goneAt = 0; continue; }
+    if (!v.goneAt) { v.goneAt = Date.now(); continue; }
+    if (Date.now() - v.goneAt > ROLLOUT_KEEP_MS) {
+      usageFileCache.delete(k);
+      rolloutSig = ''; // 记录变少了：作废合并缓存，强制重建
+    }
   }
   const recs = [];
   // 先取各文件 stat 并算签名：签名没变直接复用上次合并好的记录。shortcut:
@@ -2364,14 +2394,16 @@ function rolloutRecords() {
   for (const [name, st] of stats) {
     const full = join(dir, name);
     const cached = usageFileCache.get(name);
-    if (cached && cached.mtime === st.mtimeMs && cached.size === st.size) {
+    if (cached && cached.mtime === st.mtimeMs && cached.size === st.size && cached.ino === st.ino) {
       for (const r of cached.recs) recs.push(r); // 不用展开语法：单文件 13 万条会 RangeError
       continue;
     }
     // 追加式增量解析：jsonl 只追加（流式输出期间当前会话文件持续增长，整文件
     // 重读重解析一次可达数十毫秒）。从上次已完整解析的偏移续读新增部分；末行
-    // 若是写入中途的半行会被丢弃且偏移不推进，下次变化时重读该行
-    if (cached && st.size > cached.size && st.mtimeMs >= cached.mtimeMs) {
+    // 若是写入中途的半行会被丢弃且偏移不推进，下次变化时重读该行。
+    // inode 也要求一致：文件被滚动删除后同名重建，旧偏移对不上新内容，
+    // 续读会把半截 JSON 当坏行丢掉（实测运行中的会话也会被删了重建）
+    if (cached && st.size > cached.size && st.mtimeMs >= cached.mtimeMs && cached.ino === st.ino) {
       const fd = openSync(full, 'r');
       let tail = '';
       try {
@@ -2383,6 +2415,7 @@ function rolloutRecords() {
       usageFileCache.set(name, {
         mtime: st.mtimeMs,
         size: cached.size + completeBytes,
+        ino: st.ino,
         recs: cached.recs.concat(added),
       });
       for (const r of cached.recs) recs.push(r);
@@ -2399,15 +2432,35 @@ function rolloutRecords() {
       // 同样只把已完整解析的字节数记为偏移
       parsedBytes = Math.min(r.completeBytes, Buffer.byteLength(text, 'utf8'));
     } catch { /* 文件读失败跳过 */ }
-    usageFileCache.set(name, { mtime: st.mtimeMs, size: parsedBytes, recs: parsed });
+    // 同名重建（inode 变了）：旧记录并进来——那是该会话真实发生过的调用；
+    // 同 inode 的全量重读（截断等）仍整体替换
+    const prior = cached && cached.ino !== st.ino ? cached.recs : [];
+    usageFileCache.set(name, { mtime: st.mtimeMs, size: parsedBytes, ino: st.ino, recs: prior.concat(parsed) });
+    for (const r of prior) recs.push(r);
     for (const r of parsed) recs.push(r);
+  }
+  // 已被滚动删除的文件：保留窗内的解析记录继续参与聚合
+  for (const [k, v] of usageFileCache) {
+    if (nameSet.has(k)) continue;
+    for (const r of v.recs) recs.push(r);
   }
   rolloutSig = sig;
   rolloutRecsCache = recs;
   return recs;
 }
 
-function collectUsageStats(sessionId, wantTurns = true) {
+// 会话 → trace_id（官方 db.sqlite 的 session 表，父子会话树共享同一 trace）：
+// 命中即缓存（会话的 trace 写入后不变）；查不到不缓存，下轮再试
+const traceBySession = new Map();
+async function sessionTrace(dataRoot, sessionId) {
+  if (traceBySession.has(sessionId)) return traceBySession.get(sessionId);
+  const m = await listSessionsTrace(dataRoot, [sessionId]);
+  const trace = m[sessionId] || '';
+  if (trace) traceBySession.set(sessionId, trace);
+  return trace;
+}
+
+export function collectUsageStats(sessionId, wantTurns = true, treeTrace = '') {
   const recs = rolloutRecords();
   // 分钟桶只服务每轮统计（turn-usage 带 session 拉取），状态栏请求带 turns=0
   // 跳过：省掉全记录分桶与 60 桶序列化（大记录集下每请求几十毫秒）
@@ -2416,7 +2469,7 @@ function collectUsageStats(sessionId, wantTurns = true) {
   const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   // 记录没变（文件签名相同）+ 查询口径没变时直接复用上次聚合结果：锚定速率是
   // 记录的纯函数（锚 = 最新完成时刻，不随请求时刻移动），跨午夜才要重算"今日"
-  const cacheKey = `${sessionId || ''}|${wantTurns ? 1 : 0}|${todayKey}`;
+  const cacheKey = `${sessionId || ''}|${wantTurns ? 1 : 0}|${treeTrace}|${todayKey}`;
   if (statsResultCache.sig === rolloutSig && statsResultCache.key === cacheKey && statsResultCache.result) {
     return statsResultCache.result;
   }
@@ -2427,14 +2480,18 @@ function collectUsageStats(sessionId, wantTurns = true) {
   // 最近 60 秒速率（状态栏 tokRate 项）：token 按调用耗时摊到时间轴（完成
   // 时刻往前 durationMs 一段），按窗口重叠比例折算，长调用完成瞬间不会出现
   // 假尖峰。窗口以该口径最新一条记录的完成时刻为锚、往前 60 秒——回答结束
-  // 后锚不再移动，速率自然停在最后的值：不衰减归零，也不依赖进程内状态
-  //（重启/热替换后显示一致）；有新调用完成锚前移、数值刷新。
-  // 统计范围：带 ?session= 只算该会话，不带则全局；与每轮桶不同，辅助小调用
-  // 也计入（它们是真实消耗）
+  // 后锚不再移动，速率自然停在最后的值：不衰减归零；有新调用完成锚前移、
+  // 数值刷新。文件被官方滚动删除后靠保留窗内的缓存记录维持显示
+  //（shortcut: 重启/热替换后只剩存活文件的记录，全删完速率归零，等官方出持久数据源再换）。
+  // 统计范围：带 ?session= 按会话树算——本会话 + 同 trace 的子代理会话
+  //（子代理的模型调用是这个会话真实发生的输出，只算本会话 id 会让派了
+  // 子代理的会话速率归零），treeTrace 查不到时退化为只算本会话；
+  // 不带 ?session= 则全局。与每轮桶不同，辅助小调用也计入（它们是真实消耗）
+  const inTree = (r) => !sessionId || r.session === sessionId || (!!treeTrace && r.trace === treeTrace);
   const winMs = 60_000;
   let anchor = 0;
   for (const r of recs) {
-    if (Number.isFinite(r.ts) && (!sessionId || r.session === sessionId)) anchor = Math.max(anchor, r.ts);
+    if (Number.isFinite(r.ts) && inTree(r)) anchor = Math.max(anchor, r.ts);
   }
   const anchorFuture = anchor > Date.now(); // 未来时间戳：钳制值依赖请求时刻，结果不能缓存
   anchor = Math.min(anchor, Date.now()); // 未来时间戳（时钟回拨等）别把锚拉到未来
@@ -2452,7 +2509,7 @@ function collectUsageStats(sessionId, wantTurns = true) {
       if (day === todayKey) { global.todayTokens += total; global.todayOut += r.out; }
     }
     const end = r.ts;
-    if (Number.isFinite(end) && (!sessionId || r.session === sessionId)) {
+    if (Number.isFinite(end) && inTree(r)) {
       const dur = Math.max(r.ms || 0, 1); // 无耗时字段的旧记录按 1ms 点事件计
       const overlap = Math.min(end, anchor) - Math.max(end - dur, anchor - winMs);
       if (overlap > 0) {

@@ -1,7 +1,8 @@
 // 用量聚合回归测试：用假 rollout 记录跑真实的 /stats/usage 聚合逻辑。
 // 零依赖，node scripts/test-usage-stats.mjs（或 npm test）直接跑，全绿退出码 0。
 // 覆盖：速率摊算（窗口重叠、长调用摊回真实速率、无耗时点事件）、锚定不衰减
-//（回答结束后停在最后的值）、删新留旧回退、新调用刷新、数据清空归零、
+//（回答结束后停在最后的值）、官方滚动删除后记录保留不断档、新调用刷新、
+// 重启后只剩存活文件的记录、会话树归属（子代理调用算进父会话）、
 // turns=0 跳过分钟桶、会话 id 白名单降级全局、无记录会话为 0、
 // 今日分桶按本地日期、半行不计入、zcodepro.json 跨进程写锁的悬挂接管与
 // 释放保护、sanitizeBgName 文件名守卫。
@@ -9,7 +10,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { startHelper, withConfigLock, sanitizeBgName } from '../src/host/helper.mjs';
+import { startHelper, withConfigLock, sanitizeBgName, collectUsageStats, setRolloutDirForTest } from '../src/host/helper.mjs';
 
 const root = mkdtempSync(join(tmpdir(), 'zcodepro-usage-test-'));
 const rollout = join(root, 'rollout');
@@ -121,21 +122,28 @@ writeFileSync(truncFile, tRecA + '\n');
 const vTrunc2 = (await get('/stats/usage?session=sess_trunc')).global.rate60;
 assert(vTrunc2.total === 3.3 && vTrunc2.out === 1.7, `截断后按剩余记录重算 ${JSON.stringify(vTrunc2)}`);
 
-// 最近的记录被删（滚动清理）：回退到剩下最近一条的速率，不归零
+// 文件被删（官方滚动清理会删运行中会话的文件）：保留窗内记录不断档，
+// 速率停在最后的值——修复前这里会回退到旧速率，运行中的会话就"明明在跑却没有速率"
 rmSync(join(rollout, 'model-io-sess_test-a.jsonl'));
 const v3 = (await get('/stats/usage?session=sess_test')).global.rate60;
-assert(v3.total === 16.7 && v3.out === 6.7, `删新留旧回退到旧速率 ${JSON.stringify(v3)}`);
+assert(v3.total === 25 && v3.out === 8.3, `文件被滚动删除后速率不断档 ${JSON.stringify(v3)}`);
 
-// 新调用完成：锚前移、数值刷新
+// 新调用完成：锚前移、数值刷新。同名重建的新旧记录并存，旧记录按窗口重叠摊算
+//（45 秒前完成的调用在新锚 60 秒窗内还剩 20 秒重叠：1500×2/3=1000 摊进总量）
 writeFileSync(join(rollout, 'model-io-sess_test-a.jsonl'), rec(5_000, 10_000, 2000, 600, 'sess_test') + '\n');
 const v4 = (await get('/stats/usage?session=sess_test')).global.rate60;
-assert(v4.total === 43.3 && v4.out === 10, `新调用刷新速率 ${JSON.stringify(v4)}`);
+assert(v4.total === 60 && v4.out === 15.6, `新调用刷新速率（含旧记录窗口重叠）${JSON.stringify(v4)}`);
 
-// 数据全没了：归零
+// 文件全删：保留窗内仍不断档
 rmSync(join(rollout, 'model-io-sess_test-a.jsonl'));
 rmSync(join(rollout, 'model-io-sess_test-b.jsonl'));
 const v5 = (await get('/stats/usage?session=sess_test')).global.rate60;
-assert(v5.total === 0 && v5.out === 0, `数据清空归零 ${JSON.stringify(v5)}`);
+assert(v5.total === 60 && v5.out === 15.6, `文件全删后保留窗内不断档 ${JSON.stringify(v5)}`);
+
+// 进程重启（缓存清空）后只剩存活文件的记录：全删完 → 归零
+setRolloutDirForTest(rollout);
+const v6 = (await get('/stats/usage?session=sess_test')).global.rate60;
+assert(v6.total === 0 && v6.out === 0, `重启后无存活文件则归零 ${JSON.stringify(v6)}`);
 
 // 媒体路由鉴权与校验（媒体元素带不了鉴权请求头，认 URL 上的 ?t= token）
 const mediaGet = (p) => fetch(`http://127.0.0.1:${port}${p}`).then((r) => r.status);
@@ -239,6 +247,47 @@ const nameTable = [
 for (const [input, want] of nameTable) {
   assert(sanitizeBgName(input) === want,
     `sanitizeBgName(${JSON.stringify(input)}) === ${JSON.stringify(want)}（实际 ${JSON.stringify(sanitizeBgName(input))}）`);
+}
+
+// —— 会话树归属：子代理的模型调用算进父会话速率（记录带父子共享的 traceId）——
+// 直接调聚合函数注入会话树 trace（HTTP 路径的 trace 来自官方库 session 表）
+const TR = 'trace-tree';
+writeFileSync(join(rollout, 'model-io-sess_tparent.jsonl'), rec(10_000, 5_000, 1000, 120, 'sess_tparent', { traceId: TR }) + '\n');
+writeFileSync(join(rollout, 'model-io-sess_subagent_agent_t.jsonl'), rec(5_000, 5_000, 1000, 60, 'sess_subagent_agent_t', { traceId: TR }) + '\n');
+const tree = collectUsageStats('sess_tparent', false, TR).global.rate60;
+assert(tree.out === 3 && tree.total === 36.3, `子代理调用算进父会话（期望 3/36.3，实得 ${tree.out}/${tree.total}）`);
+const solo = collectUsageStats('sess_tparent', false, '').global.rate60;
+assert(solo.out === 2 && solo.total === 18.7, `拿不到 trace 时只算本会话（期望 2/18.7，实得 ${solo.out}/${solo.total}）`);
+
+// —— 官方口径每轮用量（model_usage 假库）：TPS/命中率按 Token 调试同款公式 ——
+try {
+  const { DatabaseSync } = await import('node:sqlite');
+  mkdirSync(join(root, 'cli', 'db'), { recursive: true });
+  const db = new DatabaseSync(join(root, 'cli', 'db', 'db.sqlite'));
+  db.exec('CREATE TABLE model_usage (session_id TEXT, query_source TEXT, status TEXT, completed_at INTEGER,'
+    + ' duration_ms INTEGER, time_to_first_token_ms INTEGER, input_tokens INTEGER, output_tokens INTEGER,'
+    + ' reasoning_tokens INTEGER, cache_read_input_tokens INTEGER, cache_creation_input_tokens INTEGER, computed_total_tokens INTEGER)');
+  const ins = db.prepare('INSERT INTO model_usage VALUES (?,?,?,?,?,?,?,?,?,?,?,?)');
+  ins.run('sess_mu', 'main_turn', 'completed', 1000, 10_000, 2_000, 1000, 80, 0, 900, 50, 1080);
+  ins.run('sess_mu', 'main_turn', 'completed', 2000, 5_000, null, 2000, 100, 0, 1900, 0, 2100);
+  ins.run('sess_mu', 'title_gen', 'completed', 3000, 1_000, 100, 500, 10, 0, 0, 0, 510); // 辅助调用不计
+  // 非流式/整段返回的请求：首 token 时机贴着结束（只差 25ms），速率按全程算，
+  // 不能让 25ms 的净生成时长把速率顶到几万 tok/s
+  ins.run('sess_nostream', 'main_turn', 'completed', 5000, 26_760, 26_735, 2000, 961, 0, 0, 0, 2961);
+  db.close();
+  const mu = await get('/stats/turns?session=sess_mu');
+  assert(mu.rounds.length === 2, `辅助调用不进主轮（期望 2 条，实得 ${mu.rounds.length}）`);
+  assert(mu.rounds[0].tps === 10 && mu.rounds[0].hitRate === 0.9, `TPS/命中率按官方公式（实得 ${mu.rounds[0].tps}/${mu.rounds[0].hitRate}）`);
+  assert(mu.rounds[1].tps === 20, '无首 token 时机按全程算速率（100 输出 ÷ 5 秒）');
+  assert(mu.summary.requests === 2 && mu.summary.totalIn === 3000 && mu.summary.totalOut === 180, `汇总正确（实得 ${JSON.stringify(mu.summary)}）`);
+  assert(Math.round(mu.summary.tps * 10) === 138, `汇总速率=窗口内 Σ输出 ÷ Σ生成秒数（180 ÷ 13，实得 ${mu.summary.tps}）`);
+  const usage = await get('/stats/usage?turns=0&session=sess_mu');
+  assert(usage.sessionSummary && usage.sessionSummary.requests === 2, 'stats/usage 携带会话汇总');
+  const ns = await get('/stats/turns?session=sess_nostream');
+  assert(Math.round(ns.rounds[0].tps * 10) === 359 && ns.summary.tps === ns.rounds[0].tps,
+    `首 token 贴着结束的请求按全程算速率（期望 35.9，实得 ${ns.rounds[0].tps}）`);
+} catch (err) {
+  assert(false, 'model_usage 假库测试装配失败: ' + (err && err.message));
 }
 
 rmSync(root, { recursive: true, force: true });

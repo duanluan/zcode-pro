@@ -301,9 +301,9 @@ function makeTurnBundle() {
     'document', 't', 'isZhLocale', 'icon', 'tick',
     [
       'let enabled = true;',
-      'let recentTurns = [];',
+      'let rounds = [];',
       "let lastSid = '';",
-      "let turnCfg = [{ id: 'turnIn', on: true }, { id: 'turnOut', on: true }, { id: 'turnCache', on: true }];",
+      "let turnCfg = [{ id: 'turnIn', on: true }, { id: 'turnOut', on: true }, { id: 'turnTps', on: true }, { id: 'turnCache', on: true }];",
       fmtSrc,
       rowTimeTsSrc,
       findRowsSrc,
@@ -312,8 +312,8 @@ function makeTurnBundle() {
       scanSrc,
       'return { scan, fmt, rowTimeTs, findRows, currentSessionId,',
       '  setEnabled: (v) => { enabled = v; },',
-      '  setRecentTurns: (r) => { recentTurns = r; },',
-      '  getRecentTurns: () => recentTurns,',
+      '  setRounds: (r) => { rounds = r; },',
+      '  getRounds: () => rounds,',
       '  setTurnCfg: (c) => { turnCfg = c; } };',
     ].join('\n')
   );
@@ -324,7 +324,7 @@ function makeTurnBundle() {
 
 const zhState = { zh: true };
 const tickState = { calls: 0 };
-const tStub = () => ({ sbLabelIn: 'IN', sbLabelOut: 'OUT', sbLabelCache: 'CACHE', turnUsageTitle: 'TURN' });
+const tStub = () => ({ sbLabelIn: 'IN', sbLabelOut: 'OUT', sbLabelTps: 'TPS', sbLabelCache: 'CACHE', turnUsageTitle: 'TURN' });
 const iconStub = (name) => '<' + name + '/>';
 const tickStub = () => { tickState.calls++; };
 
@@ -448,7 +448,7 @@ run('scan', () => {
     d.setHours(h, m, 0, 0);
     return d.getTime();
   };
-  const bucket = (ts, inTok, outTok, cacheRead = 0) => ({ ts, in: inTok, out: outTok, cacheRead });
+  const bucket = (at, inTok, outTok, cacheRead = 0) => ({ at, in: inTok, out: outTok, cacheRead, genMs: 0, tpsOut: 0 });
   const spansOf = (row) => row.querySelectorAll('[data-zcodepro-turn-span]');
   const htmlOf = (row) => spansOf(row).map((s) => s.innerHTML).join('');
 
@@ -469,7 +469,7 @@ run('scan', () => {
     bucket(dayTs(0, 10, 20), 303, 33, 0),     // 归 10:20 行
     bucket(dayTs(0, 10, 45), 404, 44, 0),     // 最后一条之后：全归 10:20 行
   ];
-  bun.setRecentTurns(baseBuckets);
+  bun.setRounds(baseBuckets);
   bun.scan();
 
   assert(spansOf(row1).length === 1 && spansOf(row2).length === 1 && spansOf(row3).length === 1, '每个有用量的行注入一段标注');
@@ -484,7 +484,7 @@ run('scan', () => {
   assert(!h1.includes('100万') && !h2.includes('100万') && !h3.includes('100万'), '比最早行还早的桶不归属任何行');
 
   // 重扫：进行中的轮数值增长，旧标注被替换
-  bun.setRecentTurns(baseBuckets.map((b) => (b.ts === dayTs(0, 10, 45) ? bucket(b.ts, 404, 144, 0) : b)));
+  bun.setRounds(baseBuckets.map((b) => (b.at === dayTs(0, 10, 45) ? bucket(b.at, 404, 144, 0) : b)));
   bun.scan();
   assert(spansOf(row3).length === 1, '重扫后每行只留一段标注');
   assert(htmlOf(row3).includes('OUT</em>177'), '重扫后数值更新（33+144）');
@@ -514,23 +514,34 @@ run('scan', () => {
   // in+out 全为 0 的行不注入（哪怕有缓存读）
   const zrow = makeRow('10:00');
   fdoc.roots = [taskA, zrow];
-  bun.setRecentTurns([bucket(dayTs(0, 10, 3), 0, 0, 9)]);
+  bun.setRounds([bucket(dayTs(0, 10, 3), 0, 0, 9)]);
   bun.scan();
   assert(spansOf(zrow).length === 0 && zrow.getAttribute('data-zcodepro-turn') == null, 'in+out 全为 0 的行不注入');
 
   // 命中率 100% 也保留两位小数（长上下文会话普遍 99%+，取整会全显示 100%）
   const crow = makeRow('10:00');
   fdoc.roots = [taskA, crow];
-  bun.setRecentTurns([bucket(dayTs(0, 10, 3), 1000, 1, 1000)]);
+  bun.setRounds([bucket(dayTs(0, 10, 3), 1000, 1, 1000)]);
   bun.scan();
   assert(htmlOf(crow).includes('CACHE</em>100.00%'), '命中率 100% 显示 100.00%');
+
+  // TPS 段：输出 ÷ 净生成秒数（官方口径）；一轮多请求按总输出/总净生成时长
+  const trow = makeRow('10:00');
+  fdoc.roots = [taskA, trow];
+  bun.setTurnCfg([{ id: 'turnIn', on: true }, { id: 'turnOut', on: true }, { id: 'turnTps', on: true }, { id: 'turnCache', on: true }]);
+  bun.setRounds([{ at: dayTs(0, 10, 3), in: 1000, out: 100, cacheRead: 0, genMs: 2000, tpsOut: 100 }]);
+  bun.scan();
+  assert(htmlOf(trow).includes('OUT</em>50 tok/s'), '输出速度段按官方公式渲染（100 输出 ÷ 2 秒）');
+  bun.setRounds([{ at: dayTs(0, 10, 3), in: 1000, out: 100, cacheRead: 0, genMs: 0, tpsOut: 0 }]);
+  bun.scan();
+  assert(!htmlOf(trow).includes('tok/s'), '无净生成时长时不渲染输出速度段');
 
   // 同日约束：昨天的行不吞今天的调用
   const y1 = makeRow('昨天 10:00');
   const y2 = makeRow('昨天 10:20');
   fdoc.roots = [taskA, y1, y2];
   bun.scan();
-  bun.setRecentTurns([
+  bun.setRounds([
     bucket(dayTs(-1, 10, 5), 111, 1, 0),    // 昨天：正常归属
     bucket(dayTs(-1, 10, 30), 222, 2, 0),   // 昨天：归 10:20 行
     bucket(dayTs(0, 0, 30), 77777, 3, 0),   // 今天 00:30：跨天丢弃
@@ -547,7 +558,7 @@ run('scan', () => {
   bun.scan();
   assert(spansOf(y1).length === 0 && spansOf(y2).length === 0, '切换会话后先清不注（旧会话的桶不带过来）');
   assert(tickState.calls === tickBefore + 1, '切换会话后立即补拉一次数据');
-  assert(bun.getRecentTurns().length === 0, '切换会话后桶清空');
+  assert(bun.getRounds().length === 0, '切换会话后桶清空');
 });
 
 // 5. currentSessionId：选中行优先，无选中回退最后一行；只认 :sess/:session 键

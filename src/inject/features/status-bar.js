@@ -46,9 +46,13 @@ let lastRenderedHtml = null; // renderBar 去重：内容没变不重写 DOM
 
 // —— 工具 ——
 
-// 选中会话的 id：只认 bg-selected 行（不走 turn-usage 的“侧栏最新一行”回退——
-// 那会让新建会话视图顶着别的会话数据）；无选中返回空串
+// 选中会话的 id：优先读会话面板自身的 data-session-id（官方属性，跟着对话视图
+// 走——侧栏项目折叠后选中行会从 DOM 卸载，只认行会让整组会话项消失），
+// 再回退 bg-selected 行；都没有返回空串
 function selectedSessionId() {
+  const pane = document.querySelector('[data-session-id]');
+  const pid = pane ? pane.getAttribute('data-session-id') : '';
+  if (pid && /^(?:sess|session)_/.test(pid)) return pid;
   // 交给选择器引擎找选中行（比全表扫 className 快，语义相同）
   const row = document.querySelector('[data-task-item-key].bg-selected');
   const key = row ? row.getAttribute('data-task-item-key') : '';
@@ -169,12 +173,14 @@ const GLOBAL_GROUP = new Set(['todayTokens', 'totalTokens', 'tasks']);
 
 // 各统计项的 lucide 图标（12px 内联，描边风格与官方一致）
 const SB_ICONS = {
-  tokRate: '<path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/>',
+  tokRate: '<path d="m12 11 4-4"/><path d="M3.34 16a10 10 0 1 1 17.32 0"/>',
   ctx: '<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>',
   asks: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
   today: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
   total: '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>',
   tasks: '<rect x="3" y="5" width="6" height="6" rx="1"/><path d="m3 17 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/>',
+  inOut: '<path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/>',
+  hit: '<path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a2 2 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a2 2 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>',
   coins: '<circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><path d="m16.71 13.88.7.71-2.82 2.82"/>',
 };
 const sbIcon = (name) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="zcodepro-sb-icon">${SB_ICONS[name]}</svg>`;
@@ -211,18 +217,19 @@ function itemContent(id, L) {
     case 'tokRate': {
       const sid = selectedSessionId();
       if (!sid) return null; // 无选中会话不显示
-      // 显示优先级：生成中的实时估算（usage 缺失/长调用期间唯一动得起来的信号）
-      // > 真实锚定值（该会话数据就是取自它）> 最近一次估算（usage 缺失的会话答完后）
-      const streaming = streamEst && Date.now() - streamEst.at < 6000;
-      const r = (g && g.rate60 && statsSid === sid) ? g.rate60 : null;
+      // 官方净生成口径：本会话树（含子代理）最近 60 秒窗内主轮请求的
+      // Σ输出 ÷ Σ净生成秒数（与 Token 调试/每轮标注同款公式）；usage 全缺
+      //（供应商不回传 token）才用文本增长估算兜底——估算按 2 字符/token 折算，
+      // 实测虚高 2-4 倍，有真实数据时绝不能让它抢显示
+      const s = (lastStats && statsSid === sid) ? lastStats.sessionSummary : null;
+      const tps = s && s.tps != null ? s.tps : null;
       const est = streamEst ? streamEst.value : null;
-      const useEst = !!streaming || !(r && r.out > 0);
-      const shown = useEst ? est : r.out;
+      const shown = tps != null ? tps : est;
       if (shown == null) return null;
       const zh = isZhLocale();
-      const estMark = useEst && est != null ? '≈' : '';
-      const detail = r
-        ? `${L.sbLabelOut} ${r.out.toLocaleString()} tok/s · ${zh ? '总量' : 'total'} ${r.total.toLocaleString()} tok/s`
+      const estMark = tps == null && est != null ? '≈' : '';
+      const detail = tps != null
+        ? `${L.sbLabelOut} ${tps.toLocaleString()} tok/s${zh ? '（官方净生成口径，本会话树）' : ' (net generation, session tree)'}`
         : (zh ? '无 usage 数据，按文本增长估算' : 'no usage data, estimated from text growth');
       return {
         html: sbIcon('tokRate') + label(L.sbLabelOut) + `<b>${estMark}${fmtNum(Math.round(shown * 10) / 10)} tok/s</b>`,
@@ -244,10 +251,23 @@ function itemContent(id, L) {
       return null; // 官方窗口数据不在（视图切换间隙等）时该项隐藏
     }
     case 'questions': {
-      // 官方“对话问题导航”的真实计数（当前会话的问题总数）
-      const nav = document.querySelector('[data-testid="v4-turn-navigator"]');
-      const n = nav ? Number(nav.getAttribute('data-item-count')) : 0;
-      return n > 0 ? { html: sbIcon('asks') + label(L.sbLabelQuestions) + String(n), title: L.sbItemQuestions } : null;
+      // 主轮请求数：官方 model_usage 口径（与 Token 调试的“主轮请求”同源）
+      const s = (lastStats && statsSid === selectedSessionId()) ? lastStats.sessionSummary : null;
+      return s && s.requests > 0 ? { html: sbIcon('asks') + label(L.sbLabelQuestions) + String(s.requests), title: L.sbItemQuestions } : null;
+    }
+    case 'inOut': {
+      const s = (lastStats && statsSid === selectedSessionId()) ? lastStats.sessionSummary : null;
+      return s && s.totalIn + s.totalOut > 0 ? {
+        html: sbIcon('inOut') + label(L.sbLabelInOut) + `${fmtNum(s.totalIn)}/${fmtNum(s.totalOut)}`,
+        title: `${L.sbItemInOut}${isZhLocale() ? '：' : ': '}${s.totalIn.toLocaleString()} / ${s.totalOut.toLocaleString()}`,
+      } : null;
+    }
+    case 'avgHit': {
+      const s = (lastStats && statsSid === selectedSessionId()) ? lastStats.sessionSummary : null;
+      return s && s.hitRate != null ? {
+        html: sbIcon('hit') + label(L.sbLabelHit) + `${(s.hitRate * 100).toFixed(2)}%`,
+        title: `${L.sbItemHit}${isZhLocale() ? '：' : ': '}${(s.hitRate * 100).toFixed(2)}%`,
+      } : null;
     }
     case 'todayTokens': {
       const n = (official && official.todayTokens != null) ? official.todayTokens : (g ? g.todayTokens : 0);
@@ -287,7 +307,7 @@ function renderBar() {
   // 新建会话视图（无选中会话）下方是官方的功能按钮区，不能往下压：上下对称
   // 留 7px；普通会话视图下方是窗口底的官方留白，压进去贴底（同为约 7px）。
   // 按选中会话判定视图（按钮区与状态条不在同一父容器，兄弟判断不可用）
-  const hasSession = !!document.querySelector('[data-task-item-key].bg-selected');
+  const hasSession = !!selectedSessionId();
   barEl.style.marginBottom = hasSession ? '-14px' : '0';
   barEl.style.paddingBottom = hasSession ? '0' : '7px';
   const L = t();

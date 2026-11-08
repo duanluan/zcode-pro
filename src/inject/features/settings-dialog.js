@@ -835,7 +835,7 @@ export function openSettingsDialog() {
       const sbList = h('div', { class: 'divide-y divide-border rounded-xl border border-border' });
       const sbGlobalList = h('div', { class: 'divide-y divide-border rounded-xl border border-border' });
       // 每轮统计节（输入/输出/缓存，只开关不排序——显示顺序固定）
-      const TURN_NAMES = { turnIn: 'sbLabelIn', turnOut: 'sbLabelOut', turnCache: 'sbLabelCache' };
+      const TURN_NAMES = { turnIn: 'sbLabelIn', turnOut: 'sbLabelOut', turnTps: 'sbLabelTps', turnCache: 'sbLabelCache' };
       const turnItems = () => {
         const saved = config.statusBar && Array.isArray(config.statusBar.turnItems) ? config.statusBar.turnItems : null;
         if (!saved) return DEFAULT_TURN_ITEMS.map((x) => ({ ...x }));

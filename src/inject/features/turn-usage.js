@@ -1,16 +1,17 @@
 // 每轮回答的 token 用量：在回答末尾操作按钮（复制/赞/踩/分叉/钩子）行的时间
-// 后面追加“竖线 + 输入/输出/缓存”标注（段顺序与显隐可在设置里调）。
-// 数据来自本地模型调用记录（helper 按本地分钟分桶），按“本条提问到下一条
-// 提问”的区间归属到回答行；本地记录只保留最近一段，覆盖不到的旧回答不标注。
+// 后面追加“竖线 + 输入/输出/TPS/缓存”标注（段顺序与显隐可在设置里调）。
+// 数据来自官方 model_usage（Token 调试同源，含首 token 时机），按“本条提问到
+// 下一条提问”的区间归属到回答行；只统计主轮请求，辅助小调用不计。
 import { t, rpc, getConfig, isZhLocale } from '../core.js';
 
 let enabled = true;
-let recentTurns = []; // [{hm, in, out, cacheRead, ts}] 按时间倒序
+let rounds = []; // 官方主轮请求 [{idx, at, in, out, cacheRead, genMs, tps…}] 按完成时间升序
 let scanTimer = 0;
-// 三段（输入/输出/缓存）的显隐与顺序：设置 → 样式 → 状态栏 → 每轮统计
+// 四段（输入/输出/TPS/缓存）的显隐与顺序：设置 → 样式 → 状态栏 → 每轮统计
 let turnCfg = [
   { id: 'turnIn', on: true },
   { id: 'turnOut', on: true },
+  { id: 'turnTps', on: true },
   { id: 'turnCache', on: true },
 ];
 const refreshTurnItems = () => {
@@ -27,10 +28,12 @@ const refreshTurnItems = () => {
 // 与状态栏同款的小图标（上/下箭头、层叠缓存）
 const ICONS = {
   up: '<path d="m5 12 7-7 7 7"/><path d="M12 19V5"/>',
-  down: '<path d="M12 5v14"/><path d="m19 12-7 7-7-7"/>',
   cache: '<path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>',
+  // 与状态栏“输出”同款（gauge）：计数段与速度段共用
+  // 墨迹在 24 格视图里垂直居中且不出框（旧字形 U 弧画到框底，描边被裁看着偏下）
+  out: '<path d="m12 11 4-4"/><path d="M3.34 16a10 10 0 1 1 17.32 0"/>',
 };
-const icon = (name) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;vertical-align:-1.5px;opacity:.6">${ICONS[name]}</svg>`;
+const icon = (name) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;opacity:.6">${ICONS[name]}</svg>`;
 
 // 与状态栏同款：中文用 万/亿，其它语言 k/M 缩写
 function fmt(n) {
@@ -67,10 +70,14 @@ function findRows() {
   return rows;
 }
 
-// 当前会话 id：优先选中行，无选中行（新建任务视图等）回退侧栏最新一行。
-// 只认 :sess/:session 形态的键，其它任务键返回空串；
-// 状态栏用自己的严格版（selectedSessionId，不回退）
+// 当前会话 id：优先读会话面板自身的 data-session-id（官方属性，跟着对话视图
+// 走——侧栏项目折叠后选中行会卸载，只认行会让每轮标注整组消失），
+// 再回退选中行/侧栏最新一行。只认 :sess/:session 形态的键；
+// 状态栏用自己的严格版（selectedSessionId，不回退侧栏最新一行）
 export function currentSessionId() {
+  const pane = document.querySelector('[data-session-id]');
+  const pid = pane ? pane.getAttribute('data-session-id') : '';
+  if (pid && /^(?:sess|session)_/.test(pid)) return pid;
   const rows = [...document.querySelectorAll('[data-task-item-key]')];
   const cur = rows.find((e) => (e.className + '').includes('bg-selected')) || rows[rows.length - 1];
   const key = cur ? cur.getAttribute('data-task-item-key') : '';
@@ -85,6 +92,8 @@ function injectRow(row, bucket) {
   // 保留两位小数：长上下文会话命中率普遍 99%+，取整会全部显示 100% 失真
   const cachePct = bucket.in > 0 && bucket.cacheRead > 0
     ? (bucket.cacheRead / bucket.in * 100).toFixed(2) : '';
+  // TPS = 输出 ÷ 净生成秒数（官方口径）；一轮多个请求按总输出/总净生成时长
+  const tps = bucket.genMs > 0 ? bucket.tpsOut / (bucket.genMs / 1000) : null;
   const group = (html) => `<span style="display:inline-flex;align-items:center;gap:2px">${html}</span>`;
   const em = (text) => `<em style="font-style:normal;opacity:.75">${text}</em>`;
   const DOT = '<span style="opacity:.45">·</span>'; // 与状态栏同款分隔
@@ -94,7 +103,8 @@ function injectRow(row, bucket) {
   for (const s of turnCfg) {
     if (!s.on) continue;
     if (s.id === 'turnIn') sections.push(group(icon('up') + em(L.sbLabelIn) + fmt(bucket.in)));
-    else if (s.id === 'turnOut') sections.push(group(icon('down') + em(L.sbLabelOut) + fmt(bucket.out)));
+    else if (s.id === 'turnOut') sections.push(group(icon('out') + em(L.sbLabelOut) + fmt(bucket.out)));
+    else if (s.id === 'turnTps' && tps != null) sections.push(group(icon('out') + em(L.sbLabelOut) + (Math.round(tps * 10) / 10) + ' tok/s'));
     else if (s.id === 'turnCache' && cachePct) sections.push(group(icon('cache') + em(L.sbLabelCache) + cachePct + '%'));
   }
   const old = row.querySelector('[data-zcodepro-turn-span]');
@@ -120,6 +130,7 @@ function injectRow(row, bucket) {
   el.style.marginLeft = '10px'; // 与左侧时间拉开
   el.innerHTML = html;
   el.title = `${L.turnUsageTitle}${isZhLocale() ? '：' : ': '}${L.sbLabelIn} ${bucket.in.toLocaleString()} / ${L.sbLabelOut} ${bucket.out.toLocaleString()}`
+    + (tps != null ? ` / ${L.sbLabelOut} ${Math.round(tps * 10) / 10} tok/s` : '')
     + (bucket.cacheRead > 0 ? ` / ${L.sbLabelCache} ${bucket.cacheRead.toLocaleString()}` : '');
   row.dataset.zcodeproTurn = '1';
   row.append(el); // 追加在按钮行末尾（时间之后）
@@ -164,33 +175,34 @@ function scan() {
   const sid = currentSessionId();
   if (sid !== lastSid) {
     lastSid = sid;
-    recentTurns = [];
+    rounds = [];
     for (const r of rows) clearRow(r.row);
     void tick();
     return;
   }
-  if (document.hidden || !recentTurns.length) {
+  if (document.hidden || !rounds.length) {
     for (const r of rows) clearRow(r.row);
     return;
   }
   // 区间归属：每条回答拥有“自己的提问时刻 ≤ 桶完成时刻 < 下一条提问时刻”
   // 的全部调用（一轮可能跨多个分钟）；最后一条收到其后所有桶（进行中的轮）。
   // 行集是虚拟列表的可见窗口，同一条回答的邻居行在场时归属稳定
-  const agg = rows.map(() => ({ in: 0, out: 0, cacheRead: 0 }));
+  const agg = rows.map(() => ({ in: 0, out: 0, cacheRead: 0, tpsOut: 0, genMs: 0 }));
   const dayOf = (t) => { const d = new Date(t); return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); };
-  for (const b of recentTurns) {
+  for (const b of rounds) {
     let owner = -1;
     for (let i = 0; i < rows.length; i++) {
-      if (rows[i].ts <= b.ts) owner = i;
+      if (rows[i].ts <= b.at) owner = i;
       else break;
     }
     if (owner < 0) continue; // 比窗口里最早的行还早：不属于可见任何一条
-    // 同日约束：跨天的桶不归属（昨天的旧行不吞今天的调用——今天的提问
+    // 同日约束：跨天的请求不归属（昨天的旧行不吞今天的调用——今天的提问
     // 行可能只是不在当前虚拟列表窗口里）
-    if (dayOf(rows[owner].ts) !== dayOf(b.ts)) continue;
+    if (dayOf(rows[owner].ts) !== dayOf(b.at)) continue;
     agg[owner].in += b.in;
     agg[owner].out += b.out;
     agg[owner].cacheRead += b.cacheRead;
+    if (b.genMs) { agg[owner].tpsOut += b.out; agg[owner].genMs += b.genMs; }
   }
   for (let i = 0; i < rows.length; i++) {
     if (agg[i].in + agg[i].out > 0) injectRow(rows[i].row, agg[i]);
@@ -203,13 +215,13 @@ async function tick() {
   if (!enabled || document.hidden) return;
   const sid = currentSessionId();
   const seq = ++tickSeq;
-  const res = await rpc('/stats/usage' + (sid ? '?session=' + encodeURIComponent(sid) : '')).catch(() => null);
-  if (res && res.ok && Array.isArray(res.recentTurns)) {
-    // 乱序的在途响应不采纳，且取数期间换了会话就丢弃（旧会话的桶
+  const res = await rpc('/stats/turns' + (sid ? '?session=' + encodeURIComponent(sid) : '')).catch(() => null);
+  if (res && res.ok && Array.isArray(res.rounds)) {
+    // 乱序的在途响应不采纳，且取数期间换了会话就丢弃（旧会话的请求
     // 不能安到新视图的回答行上）——与 status-bar 的 tickSeq 守卫同款
     if (seq !== tickSeq || sid !== currentSessionId()) return;
-    // 同分钟桶随时间增长，全量替换
-    recentTurns = res.recentTurns;
+    // 官方明细随请求完成增长，全量替换
+    rounds = res.rounds;
     scan();
   }
 }

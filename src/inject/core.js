@@ -67,22 +67,25 @@ export const DEFAULT_SHORTCUTS = {
 
 // 状态栏任务统计项的两个组：会话级跟随当前会话，全局级始终显示；
 // 设置里两节各自排序，保存时归一化为会话组在前（状态栏两组间一道竖线）
-export const STATUS_SESSION_IDS = new Set(['ctx', 'questions', 'tokRate']);
+export const STATUS_SESSION_IDS = new Set(['ctx', 'questions', 'tokRate', 'inOut', 'avgHit']);
 export const STATUS_GLOBAL_IDS = new Set(['todayTokens', 'totalTokens', 'tasks']);
 
 // 状态栏统计项的默认清单（顺序即默认显示顺序）；设置 → 外观 → 状态栏里
 // 可调顺序与显隐，配置存在 config.statusBar.items（整表覆盖）
-// 每轮回答统计项（turn-usage.js）：回答末尾标注的三段，各自可显隐（顺序固定）
+// 每轮回答统计项（turn-usage.js）：回答末尾标注的四段，各自可显隐（顺序固定）
 export const DEFAULT_TURN_ITEMS = [
   { id: 'turnIn', on: true },      // 输入
   { id: 'turnOut', on: true },     // 输出
+  { id: 'turnTps', on: true },     // TPS（输出 ÷ 净生成秒数，官方口径）
   { id: 'turnCache', on: true },   // 缓存命中率
 ];
 
 export const DEFAULT_STATUS_ITEMS = [
   { id: 'tokRate', on: true },        // 最近输出 tokens/s（60 秒窗口，本会话）
+  { id: 'avgHit', on: true },        // 平均缓存命中率（本会话）
+  { id: 'inOut', on: true },         // 累计输入/输出（本会话主轮请求）
   { id: 'ctx', on: true },            // 上下文占用
-  { id: 'questions', on: true },     // 提问次数
+  { id: 'questions', on: true },     // 主请求数（官方 model_usage 口径）
   { id: 'todayTokens', on: true },    // 今日 token（今天的会话记录完整，数据准确）
   { id: 'totalTokens', on: true },    // 累计 token（官方使用统计，全历史）
   { id: 'tasks', on: true },         // 任务总数
@@ -443,7 +446,9 @@ const zh = {
   tableCopied: '表格已复制',
   sbItemCtx: '上下文占用',
   sbItemTokRate: '最近输出 tokens/s',
-  sbItemQuestions: '提问次数',
+  sbItemQuestions: '主请求数（本会话）',
+  sbItemInOut: '累计输入/输出（本会话主轮请求）',
+  sbItemHit: '平均缓存命中率（本会话）',
   sbMaster: '启用统计',
   sbMasterDesc: '总开关：关闭后输入框右下角的统计行与每轮回答的用量标注一起停用。',
   sbGroupSession: '会话统计（跟随当前会话）',
@@ -452,8 +457,11 @@ const zh = {
   sbLabelIn: '输入',
   sbLabelOut: '输出',
   sbLabelCache: '缓存',
+  sbLabelTps: '输出 tok/s',
+  sbLabelInOut: '输入/输出',
+  sbLabelHit: '平均命中',
   turnUsageTitle: '本轮 token',
-  sbLabelQuestions: '提问',
+  sbLabelQuestions: '主请求数',
   sbItemTodayTokens: '今日 token',
   sbItemTasks: '任务总数',
   sbLabelCtx: '上下文',
@@ -1033,7 +1041,9 @@ const en = {
   tableCopied: 'Table copied',
   sbItemCtx: 'Context usage',
   sbItemTokRate: 'Recent output tokens/s',
-  sbItemQuestions: 'Questions asked',
+  sbItemQuestions: 'Main requests (this session)',
+  sbItemInOut: 'Total input/output (main requests, this session)',
+  sbItemHit: 'Average cache hit rate (this session)',
   sbMaster: 'Enable statistics',
   sbMasterDesc: 'Master switch: turning this off disables both the input-box statistics and per-turn labels.',
   sbGroupSession: 'Session statistics (follows the current session)',
@@ -1042,8 +1052,11 @@ const en = {
   sbLabelIn: 'in',
   sbLabelOut: 'out',
   sbLabelCache: 'cache',
+  sbLabelTps: 'out tok/s',
+  sbLabelInOut: 'in/out',
+  sbLabelHit: 'avg hit',
   turnUsageTitle: 'Turn tokens',
-  sbLabelQuestions: 'asks',
+  sbLabelQuestions: 'reqs',
   sbItemTodayTokens: 'Tokens today',
   sbItemTasks: 'Tasks',
   sbLabelCtx: 'ctx',
