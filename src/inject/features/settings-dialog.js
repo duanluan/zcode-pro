@@ -2260,7 +2260,15 @@ export function openSettingsDialog() {
       // 默认单级链与 zcode-vision 插件 DEFAULT_CONFIG 保持一致：session（跟随会话供应商、
       // 模型留空=会话当前模型）。需要兜底级可手动加 GLM 订阅直连。
       // 赠送额度级 trust-build 暂不进默认：ZCode 网关不放行无人值守调用（ADR-0002）。
-      const VISION_DEFAULT_PROMPT = '请详细描述这张图片的全部内容。若是界面或图表截图，请先把所有错误、警告、异常状态逐字引用出来（含完整原文），再描述整体布局、文字与关键数据。';
+      const VISION_DEFAULT_PROMPT_ZH = '请详细描述这张图片的全部内容。若是界面或图表截图，请先把所有错误、警告、异常状态逐字引用出来（含完整原文），再描述整体布局、文字与关键数据。';
+      const VISION_DEFAULT_PROMPT_EN = 'Describe the entire content of this image in detail. If it is a UI or chart screenshot, first quote every error, warning, and abnormal state verbatim (including the full text), then describe the overall layout, text, and key data.';
+      const VISION_DEFAULT_PROMPT = isZhLocale() ? VISION_DEFAULT_PROMPT_ZH : VISION_DEFAULT_PROMPT_EN;
+      // 已保存的配置里如果是内置默认提示词（旧版固定中文），按当前语言重新取：
+      // 否则切到英文后老配置仍然发中文提示词。用户自己改过的提示词不动。
+      const isBuiltinVisionPrompt = (p) => {
+        const text = String(p || '').trim();
+        return text === VISION_DEFAULT_PROMPT_ZH || text === VISION_DEFAULT_PROMPT_EN;
+      };
       const VISION_DEFAULT_CFG = {
         enabled: true,
         chainMode: 'fallback',
@@ -2278,6 +2286,11 @@ export function openSettingsDialog() {
       let visionCfg = visionRes.ok && visionRes.config && typeof visionRes.config === 'object'
         ? structuredClone(visionRes.config)
         : null;
+      if (visionCfg && Array.isArray(visionCfg.proxies)) {
+        for (const proxy of visionCfg.proxies) {
+          if (isBuiltinVisionPrompt(proxy.prompt)) proxy.prompt = VISION_DEFAULT_PROMPT;
+        }
+      }
       // 自动初始化只试一次（每次打开弹窗）：写盘失败回退手动“添加代理”卡
       let visionAutoInitTried = false;
       let visionSaveTimer = null;
