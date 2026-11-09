@@ -7,7 +7,9 @@ import { rpc, t, getConfig } from '../core.js';
 import { ensureStyle, showToast } from '../ui.js';
 
 const CONV = '[class*="@md/conversation"]';
-const SKIP_SEL = 'pre, code, a, button, input, textarea, select, [data-zcodepro-sess]';
+// contenteditable 也要跳过：行内编辑用的是 Lexical 托管 DOM，改它里面的文本节点会被
+// Lexical 删掉再插回，两边来回触发会让页面卡死（消息里带会话 ID 时必现）
+const SKIP_SEL = 'pre, code, a, button, input, textarea, select, [contenteditable], [data-zcodepro-sess]';
 // 会话 id：sess_ 与 session_ 两种前缀（新版应用为 session_），尾字符必须是
 // 字母数字（防止把 "session_xxx-" 里说明文字的连字符吞进来）
 const SESS_RE = /(?<![A-Za-z0-9_])(?:session|sess)_[A-Za-z0-9][A-Za-z0-9_-]*[A-Za-z0-9]/g;
