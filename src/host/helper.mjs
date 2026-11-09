@@ -18,7 +18,7 @@ import { webdavRequest, webdavPutWithMkcol, webdavHttpText, parseWebdavListing, 
 import { resolveZcodeExecutable, resolveDataRootDir } from './paths.mjs';
 import { skillStats, DEFAULT_METADATA_BUDGET } from './skill-stats.mjs';
 
-const VERSION = '1.5.1';
+const VERSION = '1.7.0';
 
 // 全局提示词固定在用户主目录：官方加载器按 HOME/USERPROFILE 拼 .zcode/AGENTS.md，
 // 不读 ZCODE_DATA_BASE_DIR（数据根迁走时全局指令仍在原位）。

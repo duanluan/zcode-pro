@@ -9,7 +9,7 @@
       __defProp(target, name, { get: all[name], enumerable: true });
   };
 
-  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/core.js
+  // src/inject/core.js
   function liveBoot() {
     return typeof window !== "undefined" && window.__ZCODEPRO__ || BOOT;
   }
@@ -167,7 +167,7 @@
   }
   var BOOT, HELPER_URL, configCache, configInflight, configGen, DEFAULT_SHORTCUTS, STATUS_SESSION_IDS, STATUS_GLOBAL_IDS, DEFAULT_TURN_ITEMS, DEFAULT_STATUS_ITEMS, newSidebarCached, zh, en, cachedSystemLocale, zhCache, errEn;
   var init_core = __esm({
-    "../../../../../../../var/tmp/zcodepro-build3/src/inject/core.js"() {
+    "src/inject/core.js"() {
       BOOT = typeof window !== "undefined" ? window.__ZCODEPRO__ || {} : {};
       HELPER_URL = BOOT.helperUrl || "http://127.0.0.1:47889";
       configCache = { value: null, at: 0 };
@@ -185,23 +185,29 @@
         switchAttention: "r"
         // 打开运行中 / 未查看
       };
-      STATUS_SESSION_IDS = /* @__PURE__ */ new Set(["ctx", "questions", "tokRate"]);
+      STATUS_SESSION_IDS = /* @__PURE__ */ new Set(["ctx", "questions", "tokRate", "inOut", "avgHit"]);
       STATUS_GLOBAL_IDS = /* @__PURE__ */ new Set(["todayTokens", "totalTokens", "tasks"]);
       DEFAULT_TURN_ITEMS = [
         { id: "turnIn", on: true },
         // 输入
         { id: "turnOut", on: true },
         // 输出
+        { id: "turnTps", on: true },
+        // TPS（输出 ÷ 净生成秒数，官方口径）
         { id: "turnCache", on: true }
         // 缓存命中率
       ];
       DEFAULT_STATUS_ITEMS = [
         { id: "tokRate", on: true },
         // 最近输出 tokens/s（60 秒窗口，本会话）
+        { id: "avgHit", on: true },
+        // 平均缓存命中率（本会话）
+        { id: "inOut", on: true },
+        // 累计输入/输出（本会话主轮请求）
         { id: "ctx", on: true },
         // 上下文占用
         { id: "questions", on: true },
-        // 提问次数
+        // 主请求数（官方 model_usage 口径）
         { id: "todayTokens", on: true },
         // 今日 token（今天的会话记录完整，数据准确）
         { id: "totalTokens", on: true },
@@ -259,7 +265,7 @@
         proxyPlaceholder: "http://127.0.0.1:7890",
         proxySave: "\u4FDD\u5B58",
         proxySaved: "\u4EE3\u7406\u8BBE\u7F6E\u5DF2\u4FDD\u5B58",
-        proxyHint: "\u7559\u7A7A\u4FDD\u5B58\u5373\u6E05\u9664\u4EE3\u7406\u3002",
+        proxyHint: "\u7559\u7A7A\u4FDD\u5B58\u5373\u6E05\u9664\u624B\u586B\u4EE3\u7406\uFF1AWindows \u8DDF\u968F\u7CFB\u7EDF\u4EE3\u7406\uFF0C\u5176\u4ED6\u5E73\u53F0\u76F4\u8FDE\u3002",
         proxyTest: "\u68C0\u6D4B",
         proxyTesting: "\u68C0\u6D4B\u4E2D\u2026",
         proxyTestEmpty: "\u8BF7\u5148\u8F93\u5165\u4EE3\u7406\u5730\u5740",
@@ -331,6 +337,8 @@
         devReload: "\u91CD\u8F7D ZCode Pro",
         devReloading: "\u91CD\u8F7D\u4E2D\u2026",
         devReloadDesc: "\u70B9\u51FB\u540E\u7EA6 2-3 \u79D2\u5185\u6240\u6709 ZCode \u7A97\u53E3\u81EA\u52A8\u5237\u65B0\u4E00\u6B21\u5E76\u52A0\u8F7D\u65B0\u811A\u672C\u3002",
+        devToolsSwitch: "\u5F00\u53D1\u8005\u5DE5\u5177",
+        devToolsSwitchDesc: "\u5B98\u65B9\u4FA7\u680F\u7684\u201C\u5F00\u53D1\u8005\u5DE5\u5177\u201D\u9762\u677F\uFF08Token \u8C03\u8BD5 / \u7F51\u7EDC\u72B6\u6001\uFF09\uFF0C\u9ED8\u8BA4\u5173\u95ED\u3002\u6539\u52A8\u5199\u5165\u5B98\u65B9\u6BCF\u79D2\u8F6E\u8BE2\u7684\u5F00\u5173\uFF0C1 \u79D2\u5185\u751F\u6548\u3002",
         rowGapName: "\u6BB5\u843D\u95F4\u8DDD",
         rowGapDesc: "\u4F1A\u8BDD\u4E2D\u6BB5\u843D\u7B49\u6587\u672C\u5757\u4E4B\u95F4\u7684\u5782\u76F4\u95F4\u8DDD\uFF08\u56DE\u5408\u4E4B\u95F4\u3001\u7B54\u6848\u5185\u90E8\uFF09\u3002",
         listSpacingName: "\u5217\u8868\u4E0A\u4E0B\u8FB9\u8DDD",
@@ -455,7 +463,7 @@
         tabStatusPane: "\u72B6\u6001\u680F",
         themeColorsPane: "\u4E3B\u9898",
         themeBgRegions: "\u5206\u533A\u80CC\u666F",
-        themeBgRegionFollow: "\u8DDF\u968F\u5168\u5C40\u58C1\u7EB8",
+        themeBgRegionFollow: "\u9ED8\u8BA4\uFF08\u5168\u5C40\u58C1\u7EB8\uFF09",
         themeBgRegionLeft: "\u5DE6\u4FA7\u8FB9\u680F",
         themeBgRegionCenter: "\u4E2D\u95F4\u533A\u57DF",
         themeBgRegionRight: "\u53F3\u4FA7\u8FB9\u680F",
@@ -508,7 +516,7 @@
         themeBgDialogFrost: "\u8BBE\u7F6E\u5F39\u7A97\u78E8\u7802",
         themeBgMisc: "\u5176\u4ED6",
         themeBgFollowGlobal: "\u8DDF\u968F\u5168\u5C40",
-        themeBgRegionsHint: "\u6BCF\u884C\u7684\u7F29\u653E\u3001\u906E\u7F69\u53EF\u5355\u72EC\u8BBE\u7F6E\uFF0C\u9009\u201C\u8DDF\u968F\u5168\u5C40\u201D\u5373\u8DDF\u968F\u201C\u753B\u9762\u201D\u7684\u503C\uFF1B\u6A21\u7CCA\u3001\u8F6C\u573A\u3001\u64AD\u653E\u4EC5\u4F5C\u7528\u4E8E\u5168\u5C40\u58C1\u7EB8\uFF08\u5206\u533A\u53EA\u80FD\u94FA\u56FE\uFF0C\u4E0D\u80FD\u64AD\u89C6\u9891\uFF09\u3002\u5206\u533A\u7528\u6587\u4EF6\u5939\u65F6\uFF0C\u8F6E\u6362\u95F4\u9694\u4E0E\u968F\u673A\u987A\u5E8F\u6CBF\u7528\u5168\u5C40\u8BBE\u7F6E\u3002",
+        themeBgRegionsHint: "\u6765\u6E90\u9009\u201C\u9ED8\u8BA4\uFF08\u5168\u5C40\u58C1\u7EB8\uFF09\u201D\u5373\u8BE5\u533A\u4E0D\u5355\u72EC\u8BBE\u7F6E\u3001\u76F4\u63A5\u663E\u793A\u5168\u5C40\u58C1\u7EB8\uFF1B\u6BCF\u884C\u7684\u7F29\u653E\u3001\u906E\u7F69\u53EF\u5355\u72EC\u8BBE\u7F6E\uFF0C\u9009\u201C\u8DDF\u968F\u5168\u5C40\u201D\u5373\u8DDF\u968F\u201C\u753B\u9762\u201D\u7684\u503C\uFF1B\u6A21\u7CCA\u3001\u8F6C\u573A\u3001\u64AD\u653E\u4EC5\u4F5C\u7528\u4E8E\u5168\u5C40\u58C1\u7EB8\uFF08\u5206\u533A\u53EA\u80FD\u94FA\u56FE\uFF0C\u4E0D\u80FD\u64AD\u89C6\u9891\uFF09\u3002\u5206\u533A\u7528\u6587\u4EF6\u5939\u65F6\uFF0C\u8F6E\u6362\u95F4\u9694\u4E0E\u968F\u673A\u987A\u5E8F\u6CBF\u7528\u5168\u5C40\u8BBE\u7F6E\u3002",
         themeBgPlayback: "\u64AD\u653E\uFF08\u89C6\u9891\u58C1\u7EB8\uFF09",
         themeBgVolume: "\u97F3\u91CF",
         themeBgVolumeHint: "\u89C6\u9891\u58C1\u7EB8\u7684\u97F3\u8F68\u97F3\u91CF\uFF0C0 = \u9759\u97F3\uFF08\u9ED8\u8BA4\uFF09",
@@ -528,7 +536,9 @@
         tableCopied: "\u8868\u683C\u5DF2\u590D\u5236",
         sbItemCtx: "\u4E0A\u4E0B\u6587\u5360\u7528",
         sbItemTokRate: "\u6700\u8FD1\u8F93\u51FA tokens/s",
-        sbItemQuestions: "\u63D0\u95EE\u6B21\u6570",
+        sbItemQuestions: "\u4E3B\u8BF7\u6C42\u6570\uFF08\u672C\u4F1A\u8BDD\uFF09",
+        sbItemInOut: "\u7D2F\u8BA1\u8F93\u5165/\u8F93\u51FA\uFF08\u672C\u4F1A\u8BDD\u4E3B\u8F6E\u8BF7\u6C42\uFF09",
+        sbItemHit: "\u5E73\u5747\u7F13\u5B58\u547D\u4E2D\u7387\uFF08\u672C\u4F1A\u8BDD\uFF09",
         sbMaster: "\u542F\u7528\u7EDF\u8BA1",
         sbMasterDesc: "\u603B\u5F00\u5173\uFF1A\u5173\u95ED\u540E\u8F93\u5165\u6846\u53F3\u4E0B\u89D2\u7684\u7EDF\u8BA1\u884C\u4E0E\u6BCF\u8F6E\u56DE\u7B54\u7684\u7528\u91CF\u6807\u6CE8\u4E00\u8D77\u505C\u7528\u3002",
         sbGroupSession: "\u4F1A\u8BDD\u7EDF\u8BA1\uFF08\u8DDF\u968F\u5F53\u524D\u4F1A\u8BDD\uFF09",
@@ -537,8 +547,11 @@
         sbLabelIn: "\u8F93\u5165",
         sbLabelOut: "\u8F93\u51FA",
         sbLabelCache: "\u7F13\u5B58",
+        sbLabelTps: "\u8F93\u51FA tok/s",
+        sbLabelInOut: "\u8F93\u5165/\u8F93\u51FA",
+        sbLabelHit: "\u5E73\u5747\u547D\u4E2D",
         turnUsageTitle: "\u672C\u8F6E token",
-        sbLabelQuestions: "\u63D0\u95EE",
+        sbLabelQuestions: "\u4E3B\u8BF7\u6C42\u6570",
         sbItemTodayTokens: "\u4ECA\u65E5 token",
         sbItemTasks: "\u4EFB\u52A1\u603B\u6570",
         sbLabelCtx: "\u4E0A\u4E0B\u6587",
@@ -727,6 +740,10 @@
         headroomInterval: "\u76D1\u89C6\u95F4\u9694",
         headroomIntervalDesc: "\u7701\u7535\u76D1\u89C6\u5668\u8F6E\u8BE2\u7535\u6E90\u72B6\u6001\u7684\u95F4\u9694\uFF0810\u20133600 \u79D2\uFF0C\u9ED8\u8BA4 60\uFF09\uFF1B\u4FDD\u5B58\u540E\u4ECE\u4E0B\u4E00\u8F6E\u5DE1\u68C0\u8D77\u751F\u6548\u3002",
         headroomSecUnit: "\u79D2",
+        serenaSwitch: "Serena \u8BED\u4E49\u68C0\u7D22",
+        serenaSwitchDesc: "\u6CE8\u518C Serena MCP\uFF1A\u7528\u7B26\u53F7\u5B9A\u4F4D\u3001\u5F15\u7528\u67E5\u627E\u7B49\u8BED\u4E49\u5DE5\u5177\u4EE3\u66FF\u6574\u6587\u4EF6\u8BFB\u53D6\uFF0C\u7701 token\u3002\u5199\u5165 ZCode MCP \u914D\u7F6E\uFF0C\u91CD\u542F\u4F1A\u8BDD\u540E\u751F\u6548\u3002",
+        serenaEnabled: "\u5DF2\u5F00\u542F Serena\uFF0C\u91CD\u542F\u4F1A\u8BDD\u540E\u751F\u6548",
+        serenaDisabled: "\u5DF2\u5173\u95ED Serena\uFF0C\u91CD\u542F\u4F1A\u8BDD\u540E\u79FB\u9664",
         upgradeCheck: "\u68C0\u67E5\u66F4\u65B0",
         upgradeChecking: "\u68C0\u67E5\u4E2D\u2026",
         upgradeUpToDate: "\u5DF2\u662F\u6700\u65B0\uFF08{v}\uFF09",
@@ -849,7 +866,7 @@
         proxyPlaceholder: "http://127.0.0.1:7890",
         proxySave: "Save",
         proxySaved: "Proxy settings saved.",
-        proxyHint: "Save empty to clear the proxy.",
+        proxyHint: "Save empty to clear the manual proxy; Windows then follows the system proxy, other platforms connect directly.",
         proxyTest: "Test",
         proxyTesting: "Testing\u2026",
         proxyTestEmpty: "Enter a proxy address first",
@@ -919,6 +936,8 @@
         syncVerSaved: "Saved to",
         devModeDesc: 'For development: after changing zcode-pro code, click "Reload ZCode Pro" instead of restarting ZCode. It builds automatically (when running from the source repo), restarts the ZCode Pro launcher process (fresh helper and injected script), and every ZCode window refreshes and re-injects. The ZCode app itself and all sessions stay untouched.',
         devReload: "Reload ZCode Pro",
+        devToolsSwitch: "Developer tools",
+        devToolsSwitchDesc: 'The official "Developer tools" side pane (Token debug / Network status), off by default. The change goes to the flag the official app polls every second.',
         devReloading: "Reloading\u2026",
         devReloadDesc: "Every ZCode window refreshes automatically within 2-3 seconds to load the new script.",
         rowGapName: "Paragraph spacing",
@@ -1044,7 +1063,7 @@
         tabStatusPane: "Status bar",
         themeColorsPane: "Theme",
         themeBgRegions: "Regional backgrounds",
-        themeBgRegionFollow: "Follow global",
+        themeBgRegionFollow: "Default (global)",
         themeBgRegionLeft: "Left sidebar",
         themeBgRegionCenter: "Center area",
         themeBgRegionRight: "Right sidebar",
@@ -1097,7 +1116,7 @@
         themeBgDialogFrost: "Frosted settings window",
         themeBgMisc: "Other",
         themeBgFollowGlobal: "Follow global",
-        themeBgRegionsHint: 'Fit and mask can be set per row; "Follow global" uses the Display values. Blur, transition and playback apply only to the global wallpaper (regions are static images, no video). Region folders reuse the global rotation interval and order settings.',
+        themeBgRegionsHint: '"Default (global)" means the region is not set on its own and just shows the global wallpaper. Fit and mask can be set per row; "Follow global" uses the Display values. Blur, transition and playback apply only to the global wallpaper (regions are static images, no video). Region folders reuse the global rotation interval and order settings.',
         themeBgPlayback: "Playback (video)",
         themeBgVolume: "Volume",
         themeBgVolumeHint: "Audio track volume of video wallpapers, 0 = muted (default)",
@@ -1117,7 +1136,9 @@
         tableCopied: "Table copied",
         sbItemCtx: "Context usage",
         sbItemTokRate: "Recent output tokens/s",
-        sbItemQuestions: "Questions asked",
+        sbItemQuestions: "Main requests (this session)",
+        sbItemInOut: "Total input/output (main requests, this session)",
+        sbItemHit: "Average cache hit rate (this session)",
         sbMaster: "Enable statistics",
         sbMasterDesc: "Master switch: turning this off disables both the input-box statistics and per-turn labels.",
         sbGroupSession: "Session statistics (follows the current session)",
@@ -1126,8 +1147,11 @@
         sbLabelIn: "in",
         sbLabelOut: "out",
         sbLabelCache: "cache",
+        sbLabelTps: "out tok/s",
+        sbLabelInOut: "in/out",
+        sbLabelHit: "avg hit",
         turnUsageTitle: "Turn tokens",
-        sbLabelQuestions: "asks",
+        sbLabelQuestions: "reqs",
         sbItemTodayTokens: "Tokens today",
         sbItemTasks: "Tasks",
         sbLabelCtx: "ctx",
@@ -1316,6 +1340,10 @@
         headroomInterval: "Watch interval",
         headroomIntervalDesc: "Seconds between power checks (10\u20133600, default 60); applies from the next round.",
         headroomSecUnit: "s",
+        serenaSwitch: "Serena semantic search",
+        serenaSwitchDesc: "Registers the Serena MCP: symbol lookup and reference search instead of reading whole files, saving tokens. Written to the ZCode MCP config; takes effect after restarting the session.",
+        serenaEnabled: "Serena enabled; takes effect after restarting the session",
+        serenaDisabled: "Serena disabled; removed after restarting the session",
         upgradeCheck: "Check for updates",
         upgradeChecking: "Checking\u2026",
         upgradeUpToDate: "Up to date ({v})",
@@ -1425,9 +1453,12 @@
         "headroom-action": "The headroom action failed",
         "headroom-status": "Failed to read the headroom status",
         "headroom-update": "headroom update failed",
+        "serena-config-unreadable": "ZCode config is unparseable; aborted writing",
         "ZCODE_NOT_FOUND": "ZCode executable not found",
         "plugins-status": "Failed to read the plugin list",
         "plugins-update": "Failed to update plugins",
+        "plugins-market-git": "Git is missing and GitHub is unreachable. Install Git or set a proxy in ZCode Pro \u2192 Proxy, then retry.",
+        "plugins-market-network": "Cannot reach GitHub. If your network needs a proxy, set it in ZCode Pro \u2192 Proxy, then retry.",
         "sync-invalid": "Invalid sync settings",
         "sync-not-configured": "Set the sync type to WebDAV and save the config first",
         "sync-remote-missing": "No synced data on the server yet; upload from another computer first",
@@ -1468,7 +1499,7 @@
     }
   });
 
-  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/ui.js
+  // src/inject/ui.js
   function showToast(text, kind = "info") {
     document.getElementById("__zcodepro_toast__")?.remove();
     clearTimeout(toastTimer);
@@ -2406,7 +2437,7 @@
   }
   var toastTimer, TOAST_KINDS, overlayClass, overlayClassBare, contentClass, dialogStack;
   var init_ui = __esm({
-    "../../../../../../../var/tmp/zcodepro-build3/src/inject/ui.js"() {
+    "src/inject/ui.js"() {
       init_core();
       toastTimer = null;
       TOAST_KINDS = {
@@ -2422,7 +2453,7 @@
     }
   });
 
-  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/ws-rows.js
+  // src/inject/features/ws-rows.js
   function projectRowSelector() {
     return isNewProjectSidebar() ? NEW_ROW_SEL : OLD_ROW_SEL;
   }
@@ -2462,7 +2493,7 @@
   }
   var norm2, NEW_ROW_SEL, OLD_ROW_SEL, pathByProjectId;
   var init_ws_rows = __esm({
-    "../../../../../../../var/tmp/zcodepro-build3/src/inject/features/ws-rows.js"() {
+    "src/inject/features/ws-rows.js"() {
       init_core();
       norm2 = (p) => String(p || "").replace(/[\\/]+$/, "");
       NEW_ROW_SEL = "section[data-project-id]";
@@ -2471,7 +2502,7 @@
     }
   });
 
-  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/ws-running.js
+  // src/inject/features/ws-running.js
   function findWsRow(ws) {
     return findProjectRow(ws);
   }
@@ -3144,7 +3175,7 @@
   }
   var installed2, enabled2, SCAN_DEBOUNCE_MS, SCAN_FALLBACK_MS, PEEK_FIRST_MS, PEEK_REPEAT_MS, PEEK_SETTLE_MS, PEEK_MAX_MS, PEEK_UNMOUNT_WAIT_MS, CONFIG_POLL_MIN_MS, CONFIG_POLL_MAX_MS, TASK_SEL, WS_SEL, LOADER_FALLBACK_PATHS, runningByWs, peekTimers, activePeeks, peekedWs, wsWithRows, servicesRef, servicesMissAt, synthClick, headInfoCache, PROJECT_HEAD_TEXTS, TASK_HEAD_TEXTS, SEC_SPIN_CLASS, anyActiveCache, sectionActive, activeProjectPaths, authActiveByWs, peekChain, PEEK_EXEMPT_CLASS, cssAttr, TOUCH_WINDOW_MS, wsTouchAt, pollMs, scanDebounce;
   var init_ws_running = __esm({
-    "../../../../../../../var/tmp/zcodepro-build3/src/inject/features/ws-running.js"() {
+    "src/inject/features/ws-running.js"() {
       init_core();
       init_ws_rows();
       installed2 = false;
@@ -3205,7 +3236,7 @@
     }
   });
 
-  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/session-switch.js
+  // src/inject/features/session-switch.js
   var session_switch_exports = {};
   __export(session_switch_exports, {
     startSessionSwitch: () => startSessionSwitch,
@@ -3600,7 +3631,7 @@
   }
   var MRU_LIMIT, SCAN_DEBOUNCE_MS2, SCAN_FALLBACK_MS2, INITIAL_COUNT, PAGE_SIZE, UNSEEN_LIMIT, mru, current, titles, popupEl, popupList, aliasesCache, highlight, scanDebounce2, popupMode, visibleCount, unseen, lastRunKeys, hotkeys, featureOn, idOf, rowSel2, inTaskRow, openPopupInflight;
   var init_session_switch = __esm({
-    "../../../../../../../var/tmp/zcodepro-build3/src/inject/features/session-switch.js"() {
+    "src/inject/features/session-switch.js"() {
       init_core();
       init_ui();
       init_ws_rows();
@@ -3635,14 +3666,14 @@
     }
   });
 
-  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/index.js
+  // src/inject/index.js
   init_core();
 
-  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/project-menu.js
+  // src/inject/features/project-menu.js
   init_core();
   init_ui();
 
-  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/copy-path.js
+  // src/inject/features/copy-path.js
   init_core();
   init_ui();
   async function appendCopyPathItem(menu, anchorItem, project) {
@@ -3714,7 +3745,7 @@
     return svg;
   }
 
-  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/alias.js
+  // src/inject/features/alias.js
   init_core();
   init_ui();
   var norm = (p) => String(p || "").replace(/[\\/]+$/, "");
@@ -3915,7 +3946,7 @@
     });
   }
 
-  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/relocate-dialog.js
+  // src/inject/features/relocate-dialog.js
   init_core();
   init_ui();
   function appendRelocateItem(menu, anchorItem, project) {
@@ -4082,7 +4113,7 @@
     });
   }
 
-  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/open-folder.js
+  // src/inject/features/open-folder.js
   init_core();
   function appendOpenFolderItem(menu, anchorItem, project) {
     if (menu.querySelector('[data-zcodepro-item="open-folder"]')) return;
@@ -4125,7 +4156,7 @@
     return svg;
   }
 
-  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/project-menu.js
+  // src/inject/features/project-menu.js
   var REMOVE_TEXTS = ["\u79FB\u9664", "Remove"];
   function extractPathFromTestId2(testid) {
     let m = testid.match(/[-:=,|](\/.+)$/);
@@ -4343,7 +4374,7 @@
     })();
   }
 
-  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/file-menu.js
+  // src/inject/features/file-menu.js
   init_core();
   init_core();
   init_ui();
@@ -4481,7 +4512,7 @@
     })();
   }
 
-  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/image-menu.js
+  // src/inject/features/image-menu.js
   init_core();
   init_ui();
   var MIN_SIZE = 48;
@@ -4689,11 +4720,11 @@
     }, true);
   }
 
-  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/settings-dialog.js
+  // src/inject/features/settings-dialog.js
   init_core();
   init_ui();
 
-  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/provider-fields.js
+  // src/inject/provider-fields.js
   init_core();
   var PROVIDER_FIELD_CLS = "h-8 w-full rounded-lg border border-border bg-input px-2.5 text-ui-sm text-foreground outline-none transition-shadow placeholder:text-foreground-subtle focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40";
   function comboField(current2, options, onChange, { disabled = false, placeholder = "", staleLabel = t().manualInput, emptyLabel = "" } = {}) {
@@ -4744,7 +4775,7 @@
     return v === "" || v !== "session" && !providers.some((p) => p.id === v);
   }
 
-  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/alias-migration.js
+  // src/inject/features/alias-migration.js
   init_core();
   init_ui();
   init_ws_rows();
@@ -5193,7 +5224,7 @@
     })();
   }
 
-  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/styles.js
+  // src/inject/features/styles.js
   init_core();
   var STYLE_DEFAULTS = {
     rowGap: 20,
@@ -5464,7 +5495,7 @@
     if (hlEl) hlEl.textContent = "";
   }
 
-  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/theme.js
+  // src/inject/features/theme.js
   init_core();
   var mediaAuth = () => "t=" + encodeURIComponent(liveBoot().token || "");
   var SC = (light, dark, lightA, darkA) => ({ light, dark, lightA, darkA });
@@ -6479,7 +6510,83 @@
     }
   }
 
-  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/settings-dialog.js
+  // src/inject/features/plugin-updates.js
+  init_core();
+  init_ui();
+  var NOTIFIED_KEY = "zcodepro-plugin-updates-notified";
+  var AUTO_UPDATE_LAUNCH_KEY = "zcodepro-plugin-autoupdate-launch";
+  var AUTO_UPDATE_SESSION_KEY = "zcodepro-plugin-autoupdate-session-claim";
+  function autoUpdateLaunchMark() {
+    try {
+      const raw = new URLSearchParams(location.search).get("zcodeLaunchMarks");
+      if (raw) {
+        const createdAt = JSON.parse(raw)?.createdAt;
+        if (createdAt != null) return `launch:${createdAt}`;
+      }
+    } catch {
+    }
+    try {
+      let id = sessionStorage.getItem("zcodepro-plugin-autoupdate-session");
+      if (!id) {
+        id = `session:${Date.now()}:${Math.random().toString(36).slice(2)}`;
+        sessionStorage.setItem("zcodepro-plugin-autoupdate-session", id);
+      }
+      return id;
+    } catch {
+      return `memory:${Date.now()}:${Math.random().toString(36).slice(2)}`;
+    }
+  }
+  var memoryClaimed = false;
+  var LAUNCH_MARK = autoUpdateLaunchMark();
+  function claimIn(storage, key, mark) {
+    try {
+      if (storage.getItem(key) === mark) return false;
+      storage.setItem(key, mark);
+      return true;
+    } catch {
+      return null;
+    }
+  }
+  function claimAutoUpdateRun() {
+    const mark = LAUNCH_MARK;
+    const local = typeof localStorage === "undefined" ? null : localStorage;
+    const viaLocal = local ? claimIn(local, AUTO_UPDATE_LAUNCH_KEY, mark) : null;
+    if (viaLocal !== null) return viaLocal;
+    const session = typeof sessionStorage === "undefined" ? null : sessionStorage;
+    const viaSession = session ? claimIn(session, AUTO_UPDATE_SESSION_KEY, mark) : null;
+    if (viaSession !== null) return viaSession;
+    if (memoryClaimed) return false;
+    memoryClaimed = true;
+    return true;
+  }
+  async function startPluginUpdateCheck() {
+    const status = await rpc("/plugins/status");
+    if (!status.ok || !Array.isArray(status.updates)) return;
+    const L = t();
+    if (status.updates.length === 0) return;
+    const config = await getConfig();
+    if ((config.features || {}).autoUpdatePlugins === true) {
+      if (!claimAutoUpdateRun()) return;
+      const res = await rpc("/plugins/update", { method: "POST", body: {} });
+      if (res.ok) showToast(L.pluginsAutoUpdated, "success");
+      else showToast(L.pluginsUpdateFailed + ": " + (res.error || ""), "error");
+      return;
+    }
+    const sig = status.updates.map((u) => `${u.name}:${u.installed}>${u.latest}`).join(",");
+    let seen2 = "";
+    try {
+      seen2 = window.localStorage.getItem(NOTIFIED_KEY) || "";
+    } catch {
+    }
+    if (seen2 === sig) return;
+    try {
+      window.localStorage.setItem(NOTIFIED_KEY, sig);
+    } catch {
+    }
+    showToast(L.pluginsUpdatesAvailable.replaceAll("{n}", String(status.updates.length)), "info");
+  }
+
+  // src/inject/features/settings-dialog.js
   function openExternal(url) {
     try {
       void window.zcode.openExternal(url);
@@ -6749,11 +6856,11 @@
           const cfg = await getConfig(true).catch(() => null);
           const res = await rpc("/plugins/status");
           if (!res.ok) {
-            setPluginsStatus("");
+            setPluginsStatus(errText(res));
             return;
           }
           const n = (res.updates || []).length;
-          if (cfg && (cfg.features || {}).autoUpdatePlugins === true && n > 0) {
+          if (cfg && (cfg.features || {}).autoUpdatePlugins === true && n > 0 && claimAutoUpdateRun()) {
             void runPluginsUpdate();
             return;
           }
@@ -7336,7 +7443,7 @@
         };
         const sbList = h("div", { class: "divide-y divide-border rounded-xl border border-border" });
         const sbGlobalList = h("div", { class: "divide-y divide-border rounded-xl border border-border" });
-        const TURN_NAMES = { turnIn: "sbLabelIn", turnOut: "sbLabelOut", turnCache: "sbLabelCache" };
+        const TURN_NAMES = { turnIn: "sbLabelIn", turnOut: "sbLabelOut", turnTps: "sbLabelTps", turnCache: "sbLabelCache" };
         const turnItems = () => {
           const saved = config.statusBar && Array.isArray(config.statusBar.turnItems) ? config.statusBar.turnItems : null;
           if (!saved) return DEFAULT_TURN_ITEMS.map((x) => ({ ...x }));
@@ -8476,11 +8583,6 @@
         }, "shrink-0");
         const runProxyTest = async () => {
           if (proxyTesting) return;
-          if (!proxyInput.value.trim()) {
-            proxyTestState.className = "mt-2 text-ui-xs/relaxed text-amber-500";
-            proxyTestState.textContent = L.proxyTestEmpty;
-            return;
-          }
           proxyTesting = true;
           proxyTestBtn.disabled = true;
           proxyTestBtn.textContent = L.proxyTesting;
@@ -9027,11 +9129,53 @@
             }
           }, 2e3);
         };
+        const DT_KEYS = ["zcode:developer-tools:enabled", "zcode:token-debug:enabled"];
+        const dtRead = (v) => v !== null && !["0", "false", "off", "no"].includes(v.trim().toLowerCase());
+        const dtOn = () => DT_KEYS.some((k) => dtRead(localStorage.getItem(k)));
+        const dtSet = (on) => {
+          for (const k of DT_KEYS) {
+            if (on) localStorage.setItem(k, "true");
+            else localStorage.removeItem(k);
+          }
+        };
+        const dtSwitchBtn = (checked) => h("button", {
+          type: "button",
+          role: "switch",
+          "aria-checked": String(checked),
+          class: "relative inline-flex shrink-0 cursor-pointer items-center"
+        }, h(
+          "span",
+          { class: "zcodepro-switch", "data-zcodepro-switch": "", "data-state": checked ? "on" : "off" },
+          h("span", { class: "zcodepro-switch-knob" })
+        ));
+        const devToolsRow = () => {
+          const sw = dtSwitchBtn(dtOn());
+          return h(
+            "div",
+            {
+              class: "flex cursor-pointer items-center justify-between gap-2 px-2 py-1.5",
+              onClick: () => {
+                dtSet(!dtOn());
+                const n = dtOn();
+                sw.setAttribute("aria-checked", String(n));
+                sw.firstElementChild.setAttribute("data-state", n ? "on" : "off");
+              }
+            },
+            h(
+              "div",
+              { class: "min-w-0" },
+              h("div", { class: "text-ui-sm font-medium text-foreground" }, L.devToolsSwitch),
+              h("div", { class: "mt-0.5 text-ui-xs/relaxed text-foreground-subtle" }, L.devToolsSwitchDesc)
+            ),
+            sw
+          );
+        };
         paneDebug.append(
           h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.devModeDesc),
           h(
             "div",
-            { class: "mt-3 rounded-xl border border-border" },
+            { class: "mt-3 divide-y divide-border rounded-xl border border-border" },
+            devToolsRow(),
             h(
               "div",
               { class: "flex items-center justify-between gap-2 px-2 py-1.5" },
@@ -9045,7 +9189,13 @@
             )
           )
         );
-        const VISION_DEFAULT_PROMPT = "\u8BF7\u8BE6\u7EC6\u63CF\u8FF0\u8FD9\u5F20\u56FE\u7247\u7684\u5168\u90E8\u5185\u5BB9\u3002\u82E5\u662F\u754C\u9762\u6216\u56FE\u8868\u622A\u56FE\uFF0C\u8BF7\u5148\u628A\u6240\u6709\u9519\u8BEF\u3001\u8B66\u544A\u3001\u5F02\u5E38\u72B6\u6001\u9010\u5B57\u5F15\u7528\u51FA\u6765\uFF08\u542B\u5B8C\u6574\u539F\u6587\uFF09\uFF0C\u518D\u63CF\u8FF0\u6574\u4F53\u5E03\u5C40\u3001\u6587\u5B57\u4E0E\u5173\u952E\u6570\u636E\u3002";
+        const VISION_DEFAULT_PROMPT_ZH = "\u8BF7\u8BE6\u7EC6\u63CF\u8FF0\u8FD9\u5F20\u56FE\u7247\u7684\u5168\u90E8\u5185\u5BB9\u3002\u82E5\u662F\u754C\u9762\u6216\u56FE\u8868\u622A\u56FE\uFF0C\u8BF7\u5148\u628A\u6240\u6709\u9519\u8BEF\u3001\u8B66\u544A\u3001\u5F02\u5E38\u72B6\u6001\u9010\u5B57\u5F15\u7528\u51FA\u6765\uFF08\u542B\u5B8C\u6574\u539F\u6587\uFF09\uFF0C\u518D\u63CF\u8FF0\u6574\u4F53\u5E03\u5C40\u3001\u6587\u5B57\u4E0E\u5173\u952E\u6570\u636E\u3002";
+        const VISION_DEFAULT_PROMPT_EN = "Describe the entire content of this image in detail. If it is a UI or chart screenshot, first quote every error, warning, and abnormal state verbatim (including the full text), then describe the overall layout, text, and key data.";
+        const VISION_DEFAULT_PROMPT = isZhLocale() ? VISION_DEFAULT_PROMPT_ZH : VISION_DEFAULT_PROMPT_EN;
+        const isBuiltinVisionPrompt = (p) => {
+          const text = String(p || "").trim();
+          return text === VISION_DEFAULT_PROMPT_ZH || text === VISION_DEFAULT_PROMPT_EN;
+        };
         const VISION_DEFAULT_CFG = {
           enabled: true,
           chainMode: "fallback",
@@ -9062,6 +9212,11 @@
           // forceIntercept 不写：缺省 = 自动（跟随宿主「模型设置」图片开关，zcode-vision ≥1.7.9）
         };
         let visionCfg = visionRes.ok && visionRes.config && typeof visionRes.config === "object" ? structuredClone(visionRes.config) : null;
+        if (visionCfg && Array.isArray(visionCfg.proxies)) {
+          for (const proxy of visionCfg.proxies) {
+            if (isBuiltinVisionPrompt(proxy.prompt)) proxy.prompt = VISION_DEFAULT_PROMPT;
+          }
+        }
         let visionAutoInitTried = false;
         let visionSaveTimer = null;
         const persistVision = async () => {
@@ -9891,6 +10046,24 @@
             );
           };
           renderHrUsageSwitch();
+          const hrSerenaRow = h("div");
+          const renderSerenaSwitch = () => {
+            const serenaOn = !!(headroomRes.serena && headroomRes.serena.enabled);
+            hrSerenaRow.replaceChildren(
+              settingRow(L.serenaSwitch, L.serenaSwitchDesc, serenaOn, async () => {
+                const next = !serenaOn;
+                const res = await rpc("/headroom", { method: "POST", body: { serena: next } });
+                if (!res.ok) {
+                  showToast(L.failed + ": " + errText(res), "error");
+                  return;
+                }
+                if (res.serena) headroomRes.serena = res.serena;
+                renderSerenaSwitch();
+                showToast(next ? L.serenaEnabled : L.serenaDisabled, "success");
+              })
+            );
+          };
+          renderSerenaSwitch();
           const hrRefreshBtn = btnSmall(L.headroomRefresh, () => {
             void hrRefresh();
           });
@@ -10085,7 +10258,8 @@
                 )
               ),
               hrPwrHint
-            )
+            ),
+            h("div", { class: "mt-2 rounded-xl border border-border p-1" }, hrSerenaRow)
           );
         };
         renderHeadroomPane();
@@ -10330,7 +10504,7 @@
     });
   }
 
-  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/settings-entry.js
+  // src/inject/features/settings-entry.js
   var SETTINGS_BUTTON_TESTID = "task-settings-button";
   function handleSettingsContextmenu(e) {
     const target = e.target;
@@ -10345,7 +10519,7 @@
     document.addEventListener("contextmenu", handleSettingsContextmenu, true);
   }
 
-  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/task-order.js
+  // src/inject/features/task-order.js
   init_core();
   init_ui();
   init_core();
@@ -10440,10 +10614,10 @@
     }
   }
 
-  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/index.js
+  // src/inject/index.js
   init_session_switch();
 
-  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/newtab-panels.js
+  // src/inject/features/newtab-panels.js
   init_core();
   init_ui();
   var GRID_HINTS = ["\u8FD0\u884C\u547D\u4EE4\u548C\u67E5\u770B\u8F93\u51FA", "Run commands and view output"];
@@ -10637,7 +10811,7 @@
     setInterval(tryInject, 5e3);
   }
 
-  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/status-bar.js
+  // src/inject/features/status-bar.js
   init_core();
   init_ui();
   var enabled4 = true;
@@ -10666,6 +10840,9 @@
   }
   var lastRenderedHtml = null;
   function selectedSessionId() {
+    const pane = document.querySelector("[data-session-id]");
+    const pid = pane ? pane.getAttribute("data-session-id") : "";
+    if (pid && /^(?:sess|session)_/.test(pid)) return pid;
     const row = document.querySelector("[data-task-item-key].bg-selected");
     const key = row ? row.getAttribute("data-task-item-key") : "";
     const i = key.lastIndexOf(":sess");
@@ -10775,12 +10952,14 @@
   }
   var GLOBAL_GROUP = /* @__PURE__ */ new Set(["todayTokens", "totalTokens", "tasks"]);
   var SB_ICONS = {
-    tokRate: '<path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/>',
+    tokRate: '<path d="m12 11 4-4"/><path d="M3.34 16a10 10 0 1 1 17.32 0"/>',
     ctx: '<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>',
     asks: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
     today: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
     total: '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>',
     tasks: '<rect x="3" y="5" width="6" height="6" rx="1"/><path d="m3 17 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/>',
+    inOut: '<path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/>',
+    hit: '<path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a2 2 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a2 2 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>',
     coins: '<circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><path d="m16.71 13.88.7.71-2.82 2.82"/>'
   };
   var sbIcon = (name) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="zcodepro-sb-icon">${SB_ICONS[name]}</svg>`;
@@ -10808,15 +10987,14 @@
       case "tokRate": {
         const sid = selectedSessionId();
         if (!sid) return null;
-        const streaming = streamEst && Date.now() - streamEst.at < 6e3;
-        const r = g && g.rate60 && statsSid === sid ? g.rate60 : null;
+        const s = lastStats && statsSid === sid ? lastStats.sessionSummary : null;
+        const tps = s && s.tps != null ? s.tps : null;
         const est = streamEst ? streamEst.value : null;
-        const useEst = !!streaming || !(r && r.out > 0);
-        const shown = useEst ? est : r.out;
+        const shown = tps != null ? tps : est;
         if (shown == null) return null;
         const zh2 = isZhLocale();
-        const estMark = useEst && est != null ? "\u2248" : "";
-        const detail = r ? `${L.sbLabelOut} ${r.out.toLocaleString()} tok/s \xB7 ${zh2 ? "\u603B\u91CF" : "total"} ${r.total.toLocaleString()} tok/s` : zh2 ? "\u65E0 usage \u6570\u636E\uFF0C\u6309\u6587\u672C\u589E\u957F\u4F30\u7B97" : "no usage data, estimated from text growth";
+        const estMark = tps == null && est != null ? "\u2248" : "";
+        const detail = tps != null ? `${L.sbLabelOut} ${tps.toLocaleString()} tok/s${zh2 ? "\uFF08\u5B98\u65B9\u51C0\u751F\u6210\u53E3\u5F84\uFF0C\u672C\u4F1A\u8BDD\u6811\uFF09" : " (net generation, session tree)"}` : zh2 ? "\u65E0 usage \u6570\u636E\uFF0C\u6309\u6587\u672C\u589E\u957F\u4F30\u7B97" : "no usage data, estimated from text growth";
         return {
           html: sbIcon("tokRate") + label(L.sbLabelOut) + `<b>${estMark}${fmtNum(Math.round(shown * 10) / 10)} tok/s</b>`,
           title: `${L.sbItemTokRate}${zh2 ? "\uFF08\u672C\u4F1A\u8BDD\uFF09\uFF1A" : " (this session): "}${detail}`,
@@ -10837,9 +11015,22 @@
         return null;
       }
       case "questions": {
-        const nav = document.querySelector('[data-testid="v4-turn-navigator"]');
-        const n = nav ? Number(nav.getAttribute("data-item-count")) : 0;
-        return n > 0 ? { html: sbIcon("asks") + label(L.sbLabelQuestions) + String(n), title: L.sbItemQuestions } : null;
+        const s = lastStats && statsSid === selectedSessionId() ? lastStats.sessionSummary : null;
+        return s && s.requests > 0 ? { html: sbIcon("asks") + label(L.sbLabelQuestions) + String(s.requests), title: L.sbItemQuestions } : null;
+      }
+      case "inOut": {
+        const s = lastStats && statsSid === selectedSessionId() ? lastStats.sessionSummary : null;
+        return s && s.totalIn + s.totalOut > 0 ? {
+          html: sbIcon("inOut") + label(L.sbLabelInOut) + `${fmtNum(s.totalIn)}/${fmtNum(s.totalOut)}`,
+          title: `${L.sbItemInOut}${isZhLocale() ? "\uFF1A" : ": "}${s.totalIn.toLocaleString()} / ${s.totalOut.toLocaleString()}`
+        } : null;
+      }
+      case "avgHit": {
+        const s = lastStats && statsSid === selectedSessionId() ? lastStats.sessionSummary : null;
+        return s && s.hitRate != null ? {
+          html: sbIcon("hit") + label(L.sbLabelHit) + `${(s.hitRate * 100).toFixed(2)}%`,
+          title: `${L.sbItemHit}${isZhLocale() ? "\uFF1A" : ": "}${(s.hitRate * 100).toFixed(2)}%`
+        } : null;
       }
       case "todayTokens": {
         const n = official && official.todayTokens != null ? official.todayTokens : g ? g.todayTokens : 0;
@@ -10874,7 +11065,7 @@
       }
       host.parentElement.insertBefore(barEl, host.nextSibling);
     }
-    const hasSession = !!document.querySelector("[data-task-item-key].bg-selected");
+    const hasSession = !!selectedSessionId();
     barEl.style.marginBottom = hasSession ? "-14px" : "0";
     barEl.style.paddingBottom = hasSession ? "0" : "7px";
     const L = t();
@@ -10966,14 +11157,15 @@
     }).observe(document.body, { childList: true, subtree: true });
   }
 
-  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/turn-usage.js
+  // src/inject/features/turn-usage.js
   init_core();
   var enabled5 = true;
-  var recentTurns = [];
+  var rounds = [];
   var scanTimer = 0;
   var turnCfg = [
     { id: "turnIn", on: true },
     { id: "turnOut", on: true },
+    { id: "turnTps", on: true },
     { id: "turnCache", on: true }
   ];
   var refreshTurnItems = () => {
@@ -10989,10 +11181,12 @@
   };
   var ICONS = {
     up: '<path d="m5 12 7-7 7 7"/><path d="M12 19V5"/>',
-    down: '<path d="M12 5v14"/><path d="m19 12-7 7-7-7"/>',
-    cache: '<path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>'
+    cache: '<path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>',
+    // 与状态栏“输出”同款（gauge）：计数段与速度段共用
+    // 墨迹在 24 格视图里垂直居中且不出框（旧字形 U 弧画到框底，描边被裁看着偏下）
+    out: '<path d="m12 11 4-4"/><path d="M3.34 16a10 10 0 1 1 17.32 0"/>'
   };
-  var icon = (name) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;vertical-align:-1.5px;opacity:.6">${ICONS[name]}</svg>`;
+  var icon = (name) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;opacity:.6">${ICONS[name]}</svg>`;
   function fmt(n) {
     if (!isZhLocale()) {
       if (n >= 1e9) return (n / 1e9).toFixed(1) + "B";
@@ -11025,6 +11219,9 @@
     return rows;
   }
   function currentSessionId() {
+    const pane = document.querySelector("[data-session-id]");
+    const pid = pane ? pane.getAttribute("data-session-id") : "";
+    if (pid && /^(?:sess|session)_/.test(pid)) return pid;
     const rows = [...document.querySelectorAll("[data-task-item-key]")];
     const cur = rows.find((e) => (e.className + "").includes("bg-selected")) || rows[rows.length - 1];
     const key = cur ? cur.getAttribute("data-task-item-key") : "";
@@ -11035,6 +11232,7 @@
     if (!bucket || bucket.in + bucket.out <= 0) return;
     const L = t();
     const cachePct = bucket.in > 0 && bucket.cacheRead > 0 ? (bucket.cacheRead / bucket.in * 100).toFixed(2) : "";
+    const tps = bucket.genMs > 0 ? bucket.tpsOut / (bucket.genMs / 1e3) : null;
     const group = (html2) => `<span style="display:inline-flex;align-items:center;gap:2px">${html2}</span>`;
     const em = (text) => `<em style="font-style:normal;opacity:.75">${text}</em>`;
     const DOT = '<span style="opacity:.45">\xB7</span>';
@@ -11042,7 +11240,8 @@
     for (const s of turnCfg) {
       if (!s.on) continue;
       if (s.id === "turnIn") sections.push(group(icon("up") + em(L.sbLabelIn) + fmt(bucket.in)));
-      else if (s.id === "turnOut") sections.push(group(icon("down") + em(L.sbLabelOut) + fmt(bucket.out)));
+      else if (s.id === "turnOut") sections.push(group(icon("out") + em(L.sbLabelOut) + fmt(bucket.out)));
+      else if (s.id === "turnTps" && tps != null) sections.push(group(icon("out") + em(L.sbLabelOut) + Math.round(tps * 10) / 10 + " tok/s"));
       else if (s.id === "turnCache" && cachePct) sections.push(group(icon("cache") + em(L.sbLabelCache) + cachePct + "%"));
     }
     const old = row.querySelector("[data-zcodepro-turn-span]");
@@ -11067,7 +11266,7 @@
     el.style.gap = "4px";
     el.style.marginLeft = "10px";
     el.innerHTML = html;
-    el.title = `${L.turnUsageTitle}${isZhLocale() ? "\uFF1A" : ": "}${L.sbLabelIn} ${bucket.in.toLocaleString()} / ${L.sbLabelOut} ${bucket.out.toLocaleString()}` + (bucket.cacheRead > 0 ? ` / ${L.sbLabelCache} ${bucket.cacheRead.toLocaleString()}` : "");
+    el.title = `${L.turnUsageTitle}${isZhLocale() ? "\uFF1A" : ": "}${L.sbLabelIn} ${bucket.in.toLocaleString()} / ${L.sbLabelOut} ${bucket.out.toLocaleString()}` + (tps != null ? ` / ${L.sbLabelOut} ${Math.round(tps * 10) / 10} tok/s` : "") + (bucket.cacheRead > 0 ? ` / ${L.sbLabelCache} ${bucket.cacheRead.toLocaleString()}` : "");
     row.dataset.zcodeproTurn = "1";
     row.append(el);
   }
@@ -11102,31 +11301,35 @@
     const sid = currentSessionId();
     if (sid !== lastSid2) {
       lastSid2 = sid;
-      recentTurns = [];
+      rounds = [];
       for (const r of rows) clearRow(r.row);
       void tick2();
       return;
     }
-    if (document.hidden || !recentTurns.length) {
+    if (document.hidden || !rounds.length) {
       for (const r of rows) clearRow(r.row);
       return;
     }
-    const agg = rows.map(() => ({ in: 0, out: 0, cacheRead: 0 }));
+    const agg = rows.map(() => ({ in: 0, out: 0, cacheRead: 0, tpsOut: 0, genMs: 0 }));
     const dayOf = (t2) => {
       const d = new Date(t2);
       return d.getFullYear() * 1e4 + (d.getMonth() + 1) * 100 + d.getDate();
     };
-    for (const b of recentTurns) {
+    for (const b of rounds) {
       let owner = -1;
       for (let i = 0; i < rows.length; i++) {
-        if (rows[i].ts <= b.ts) owner = i;
+        if (rows[i].ts <= b.at) owner = i;
         else break;
       }
       if (owner < 0) continue;
-      if (dayOf(rows[owner].ts) !== dayOf(b.ts)) continue;
+      if (dayOf(rows[owner].ts) !== dayOf(b.at)) continue;
       agg[owner].in += b.in;
       agg[owner].out += b.out;
       agg[owner].cacheRead += b.cacheRead;
+      if (b.genMs) {
+        agg[owner].tpsOut += b.out;
+        agg[owner].genMs += b.genMs;
+      }
     }
     for (let i = 0; i < rows.length; i++) {
       if (agg[i].in + agg[i].out > 0) injectRow(rows[i].row, agg[i]);
@@ -11138,10 +11341,10 @@
     if (!enabled5 || document.hidden) return;
     const sid = currentSessionId();
     const seq = ++tickSeq2;
-    const res = await rpc("/stats/usage" + (sid ? "?session=" + encodeURIComponent(sid) : "")).catch(() => null);
-    if (res && res.ok && Array.isArray(res.recentTurns)) {
+    const res = await rpc("/stats/turns" + (sid ? "?session=" + encodeURIComponent(sid) : "")).catch(() => null);
+    if (res && res.ok && Array.isArray(res.rounds)) {
       if (seq !== tickSeq2 || sid !== currentSessionId()) return;
-      recentTurns = res.recentTurns;
+      rounds = res.rounds;
       scan3();
     }
   }
@@ -11175,7 +11378,7 @@
     });
   }
 
-  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/title-lock.js
+  // src/inject/features/title-lock.js
   init_core();
   var TASK_SEL2 = "[data-task-item-key]";
   var SCAN_DEBOUNCE_MS3 = 150;
@@ -11441,7 +11644,7 @@
     });
   }
 
-  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/title-gen.js
+  // src/inject/features/title-gen.js
   init_core();
   var CONV2 = '[class*="@md/conversation"]';
   var USER_ROW = '[class*="user-row"]';
@@ -11612,7 +11815,7 @@
     });
   }
 
-  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/auto-rename.js
+  // src/inject/features/auto-rename.js
   init_core();
   init_ui();
   var TASK_SEL4 = "[data-task-item-key]";
@@ -11758,10 +11961,10 @@
     window.addEventListener("zcodepro:config-changed", schedule);
   }
 
-  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/index.js
+  // src/inject/index.js
   init_ws_running();
 
-  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/subagent-icon.js
+  // src/inject/features/subagent-icon.js
   init_core();
   init_ws_running();
   init_ws_rows();
@@ -12166,7 +12369,7 @@
     observer2.observe(document.body, { childList: true, subtree: true });
   }
 
-  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/idle-reclaim.js
+  // src/inject/features/idle-reclaim.js
   init_core();
   init_ws_running();
   var CHECK_MS = 3e4;
@@ -12310,7 +12513,7 @@
     setInterval(loop, CHECK_MS);
   }
 
-  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/sandbox-reclaim.js
+  // src/inject/features/sandbox-reclaim.js
   init_core();
   var CHECK_MS2 = 3e4;
   var MIN_BUDGET = 8;
@@ -12436,7 +12639,7 @@
     setInterval(loop, CHECK_MS2);
   }
 
-  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/plugin-card-retry.js
+  // src/inject/features/plugin-card-retry.js
   init_core();
   var SCAN_MS = 15e3;
   var CLICK_INTERVAL_MS = 3e4;
@@ -12479,7 +12682,7 @@
     }, SCAN_MS);
   }
 
-  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/toolbar-icons.js
+  // src/inject/features/toolbar-icons.js
   init_core();
   init_ui();
   var HIDE_CLASS = "zcodepro-tb-hidden";
@@ -12713,7 +12916,7 @@
     });
   }
 
-  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/pinned-collapse.js
+  // src/inject/features/pinned-collapse.js
   init_core();
   init_ui();
   var COLLAPSED_CLASS = "zcodepro-pin-collapsed";
@@ -12849,7 +13052,7 @@
     });
   }
 
-  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/table-copy.js
+  // src/inject/features/table-copy.js
   init_ui();
   init_core();
   var installed7 = false;
@@ -13002,11 +13205,11 @@
     observer2.observe(document.body, { childList: true, subtree: true });
   }
 
-  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/session-link.js
+  // src/inject/features/session-link.js
   init_core();
   init_ui();
   var CONV3 = '[class*="@md/conversation"]';
-  var SKIP_SEL = "pre, code, a, button, input, textarea, select, [data-zcodepro-sess]";
+  var SKIP_SEL = "pre, code, a, button, input, textarea, select, [contenteditable], [data-zcodepro-sess]";
   var SESS_RE = /(?<![A-Za-z0-9_])(?:session|sess)_[A-Za-z0-9][A-Za-z0-9_-]*[A-Za-z0-9]/g;
   function matchIds(text) {
     SESS_RE.lastIndex = 0;
@@ -13184,7 +13387,7 @@
     });
   }
 
-  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/composer-provider.js
+  // src/inject/features/composer-provider.js
   init_core();
   var installed9 = false;
   var enabled14 = true;
@@ -13293,37 +13496,7 @@
     apply4();
   }
 
-  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/features/plugin-updates.js
-  init_core();
-  init_ui();
-  var NOTIFIED_KEY = "zcodepro-plugin-updates-notified";
-  async function startPluginUpdateCheck() {
-    const status = await rpc("/plugins/status");
-    if (!status.ok || !Array.isArray(status.updates)) return;
-    const L = t();
-    if (status.updates.length === 0) return;
-    const config = await getConfig();
-    if ((config.features || {}).autoUpdatePlugins === true) {
-      const res = await rpc("/plugins/update", { method: "POST", body: {} });
-      if (res.ok) showToast(L.pluginsAutoUpdated, "success");
-      else showToast(L.pluginsUpdateFailed + ": " + (res.error || ""), "error");
-      return;
-    }
-    const sig = status.updates.map((u) => `${u.name}:${u.installed}>${u.latest}`).join(",");
-    let seen2 = "";
-    try {
-      seen2 = window.localStorage.getItem(NOTIFIED_KEY) || "";
-    } catch {
-    }
-    if (seen2 === sig) return;
-    try {
-      window.localStorage.setItem(NOTIFIED_KEY, sig);
-    } catch {
-    }
-    showToast(L.pluginsUpdatesAvailable.replaceAll("{n}", String(status.updates.length)), "info");
-  }
-
-  // ../../../../../../../var/tmp/zcodepro-build3/src/inject/index.js
+  // src/inject/index.js
   init_ui();
   (function zcodeproInject() {
     if (typeof window === "undefined") return;
