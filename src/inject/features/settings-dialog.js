@@ -2210,9 +2210,43 @@ export function openSettingsDialog() {
         // 就自己刷新，宁可多刷一次也不能停在旧代码 + 失效 token 上
         setTimeout(() => { try { location.reload(); } catch { /* ignore */ } }, 2000);
       };
+      // 开发者工具开关：官方侧栏面板（Token 调试/网络状态）由官方自己读 localStorage 的
+      // zcode:developer-tools:enabled / zcode:token-debug:enabled（每秒轮询，值为
+      // 0/false/off/no 算关）。默认关闭，打开与否完全由用户决定
+      const DT_KEYS = ['zcode:developer-tools:enabled', 'zcode:token-debug:enabled'];
+      const dtRead = (v) => v !== null && !['0', 'false', 'off', 'no'].includes(v.trim().toLowerCase());
+      const dtOn = () => DT_KEYS.some((k) => dtRead(localStorage.getItem(k)));
+      const dtSet = (on) => {
+        for (const k of DT_KEYS) {
+          if (on) localStorage.setItem(k, 'true');
+          else localStorage.removeItem(k);
+        }
+      };
+      const dtSwitchBtn = (checked) => h('button', {
+        type: 'button', role: 'switch', 'aria-checked': String(checked),
+        class: 'relative inline-flex shrink-0 cursor-pointer items-center',
+      }, h('span', { class: 'zcodepro-switch', 'data-zcodepro-switch': '', 'data-state': checked ? 'on' : 'off' },
+        h('span', { class: 'zcodepro-switch-knob' })));
+      const devToolsRow = () => {
+        const sw = dtSwitchBtn(dtOn());
+        return h('div', {
+          class: 'flex cursor-pointer items-center justify-between gap-2 px-2 py-1.5',
+          onClick: () => {
+            dtSet(!dtOn());
+            const n = dtOn();
+            sw.setAttribute('aria-checked', String(n));
+            sw.firstElementChild.setAttribute('data-state', n ? 'on' : 'off');
+          },
+        },
+          h('div', { class: 'min-w-0' },
+            h('div', { class: 'text-ui-sm font-medium text-foreground' }, L.devToolsSwitch),
+            h('div', { class: 'mt-0.5 text-ui-xs/relaxed text-foreground-subtle' }, L.devToolsSwitchDesc)),
+          sw);
+      };
       paneDebug.append(
         h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.devModeDesc),
-        h('div', { class: 'mt-3 rounded-xl border border-border' },
+        h('div', { class: 'mt-3 divide-y divide-border rounded-xl border border-border' },
+          devToolsRow(),
           h('div', { class: 'flex items-center justify-between gap-2 px-2 py-1.5' },
             h('div', { class: 'min-w-0' },
               h('div', { class: 'text-ui-sm font-medium text-foreground' }, L.devReload),
