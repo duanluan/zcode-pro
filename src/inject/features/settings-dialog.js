@@ -1108,7 +1108,7 @@ export function openSettingsDialog() {
                 ...CUSTOM_FIELDS.map(([k, key]) => customInput(mode, k, L[key])))))),
         );
       };
-      // 分区背景行：跟随全局 / 图库（下拉选图）/ 文件夹 / 网址
+      // 分区背景行：默认（全局壁纸）/ 图库（下拉选图）/ 文件夹 / 网址
       // regionMaskTimers 记各分区遮罩滑杆的防抖提交（按行分开，互不误撤）；
       // 只有"跟随全局"胶囊撤本行在途提交（它写 null 与拖动值直接冲突）
       const regionMaskTimers = {};
