@@ -1,4 +1,5 @@
-// headroom 配置链路回归测试：headroomUsageScan / setHeadroomUsage / parseHeadroomStatus。
+// headroom 配置链路回归测试：headroomUsageScan / setHeadroomUsage / parseHeadroomStatus /
+// serenaScan / setSerenaEnabled。
 // 零依赖，node scripts/test-headroom.mjs（或 npm test）直接跑，全绿退出码 0。
 // HOME 指进沙箱：任何漏到真实目录的写（含钩子执行）都会落进沙箱。
 // 覆盖：走本地代理条目的统计、启停在 直连/代理 间切换且记忆原地址、
@@ -7,7 +8,7 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { headroomUsageScan, setHeadroomUsage, parseHeadroomStatus } from '../src/host/helper.mjs';
+import { headroomUsageScan, setHeadroomUsage, parseHeadroomStatus, serenaScan, setSerenaEnabled } from '../src/host/helper.mjs';
 
 const root = mkdtempSync(join(tmpdir(), 'zcodepro-headroom-test-'));
 process.env.HOME = join(root, 'fake-home');
@@ -101,6 +102,30 @@ const st = parseHeadroomStatus([
 assert(st.up === true && st.port === 8787 && st.multi === true, `up/端口/多实例判定（${JSON.stringify({ up: st.up, port: st.port, multi: st.multi })}）`);
 assert(st.instances.length === 2 && st.instances[0].up === true && st.instances[1].up === false && st.instances[0].providers === 'p1,p2', '实例行解析');
 assert(st.watcherRunning === true && st.powerSaveMode === 'battery' && st.watchInterval === 60 && st.saverHint.startsWith('注意'), 'watcher/省电/提示解析');
+// —— Serena 开关：读写 cli/config.json 的 mcp.servers.serena，只动这一个键 ——
+// cli/config.json 固定按 HOME 定位（zcodeDataRoot），测试写进沙箱 HOME
+const cliCfgFile = join(process.env.HOME, '.zcode', 'cli', 'config.json');
+mkdirSync(join(process.env.HOME, '.zcode', 'cli'), { recursive: true });
+writeFileSync(cliCfgFile, JSON.stringify({ model: { main: 'x/y' }, mcp: { servers: { 'other-mcp': { type: 'stdio', command: 'x' } } } }));
+assert(serenaScan().enabled === false, '默认关闭（无 serena 条目）');
+const serenaOn = setSerenaEnabled(true);
+assert(serenaOn && serenaOn.ok && serenaOn.serena.enabled === true, `开启后 serena 条目写入（实际 ${JSON.stringify(serenaOn)}）`);
+const cliOn = JSON.parse(readFileSync(cliCfgFile, 'utf8'));
+assert(!!cliOn.mcp?.servers?.serena?.args?.includes('start-mcp-server'), 'serena 服务器条目带 start-mcp-server');
+assert(cliOn.mcp.servers['other-mcp']?.command === 'x', '其它 MCP 条目原样保留');
+assert(cliOn.model?.main === 'x/y', 'config.json 其它键原样保留');
+const serenaOff = setSerenaEnabled(false);
+assert(serenaOff && serenaOff.ok && serenaOff.serena.enabled === false, '关闭后 serena 条目删除');
+assert(!JSON.parse(readFileSync(cliCfgFile, 'utf8')).mcp?.servers?.serena, 'serena 键确实删掉');
+assert(JSON.parse(readFileSync(cliCfgFile, 'utf8')).mcp?.servers?.['other-mcp']?.command === 'x', '关闭后其它 MCP 仍在');
+
+// —— cli/config.json 存在但损坏：拒绝写入，不按空对象重写 ——
+writeFileSync(cliCfgFile, '{ not valid json');
+const serenaBad = setSerenaEnabled(true);
+assert(serenaBad && serenaBad.ok === false && serenaBad.code === 'serena-config-unreadable',
+  `损坏配置报 serena-config-unreadable（实际 ${JSON.stringify(serenaBad)}）`);
+assert(readFileSync(cliCfgFile, 'utf8') === '{ not valid json', '损坏配置不被改写');
+
 assert(!existsSync(join(process.env.HOME, '.zcode', 'headroom.json')), '不写真实 HOME');
 
 rmSync(root, { recursive: true, force: true });

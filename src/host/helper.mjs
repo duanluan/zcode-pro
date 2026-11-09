@@ -1787,6 +1787,7 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
           ok: true, config, file, hook,
           pluginVersion: vm ? vm[1] : null,
           usage: headroomUsageScan(dataRoot),
+          serena: serenaScan(),
           ...(await headroomBinaryInfo()),
         });
         return;
@@ -1855,6 +1856,16 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
           }
           json(res, 200, { ok: true, usage: headroomUsageScan(dataRoot), changed: r.changed });
           return;
+        } else if (body && typeof body.serena === 'boolean') {
+          // Serena 开关：写/删 ~/.zcode/cli/config.json 的 mcp.servers.serena，
+          // ZCode 新会话启动时加载该 MCP 服务器（当前会话不重连，重启会话后生效）
+          const r = setSerenaEnabled(body.serena);
+          if (!r.ok) {
+            json(res, 500, { ok: false, code: r.code, error: r.error });
+            return;
+          }
+          json(res, 200, { ok: true, serena: r.serena });
+          return;
         } else if (body && body.cancelUpgrade === true) {
           json(res, 200, { ok: true, upgrade: cancelHeadroomUpgrade() });
           return;
@@ -1896,7 +1907,7 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
             return;
           }
         } else {
-          json(res, 400, { ok: false, code: 'invalid-request', error: 'body 需包含 action/backend/power/usage/interval 之一' });
+          json(res, 400, { ok: false, code: 'invalid-request', error: 'body 需包含 action/backend/power/usage/serena/interval 之一' });
           return;
         }
         let config = null;
@@ -4930,6 +4941,54 @@ export function parseHeadroomStatus(text) {
 // headroomRoutes 里记下 { 供应商 id → { proxy, direct } }；开启时按记录切回代理。
 const HEADROOM_DIRECT_URL = 'https://open.bigmodel.cn/api/anthropic';
 const HEADROOM_LOCAL_URL_RE = /^http:\/\/127\.0\.0\.1:\d+\/?$/;
+
+// —— Serena（语义代码分析 MCP）：headroom 标签页的启用开关 ——
+// 开关写 ~/.zcode/cli/config.json 的 mcp.servers.serena，ZCode 新会话启动时加载，
+// 会话内即可用 find_symbol / find_referencing_symbols 等语义检索代替整文件读取。
+// 默认关闭：配置里没有 serena 条目就是关闭，不再另设布尔键。
+// 启动参数取 headroom 的 serena 集成：PyPI serena-agent 预编译 wheel（git 源码构建
+// 在部分文件系统下失败），--open-web-dashboard False 免得每次启动弹浏览器面板。
+// --project . 把项目根钉在工作区（MCP 启动时的 cwd），不往上找 .git/.serena：谁的
+// home 有没有假项目都不影响（--project-from-cwd 往上撞到 home 的 .git 就把整个 home
+// 当项目，各人 home 不同、没法逐台清）；多仓库/多工作区父目录则由 agent 调
+// activate_project 挑具体那个。
+const SERENA_ARGS = ['--from', 'serena-agent', 'serena', 'start-mcp-server',
+  '--project', '.', '--context', 'ide-assistant', '--open-web-dashboard', 'False'];
+
+function serenaServerSpec() {
+  // ZCode 拉起 MCP 时的 PATH 不一定含 ~/.local/bin，uvx 写绝对路径兜底（同 mastergo 的 npx）
+  const uvx = findBinFile(['uvx'], [join(homedir(), '.local', 'bin', 'uvx'), '/usr/local/bin/uvx', '/usr/bin/uvx'])
+    || 'uvx';
+  return { type: 'stdio', command: uvx, args: SERENA_ARGS, timeoutMs: 60000 };
+}
+
+export function serenaScan() {
+  // cli/config.json 固定按主目录定位（同 /zcode-config），不跟 ZCODE_DATA_BASE_DIR 迁移
+  const cfg = readZcodeConfig(join(zcodeDataRoot(), 'cli', 'config.json'));
+  return { enabled: !!(cfg.mcp && cfg.mcp.servers && cfg.mcp.servers.serena) };
+}
+
+// 切换 Serena：enable=true 写入 mcp.servers.serena，false 删掉该键。
+// 只动 serena 一个键，其它 MCP（如 mastergo）原样保留。
+export function setSerenaEnabled(enable) {
+  const file = join(zcodeDataRoot(), 'cli', 'config.json');
+  let cfg;
+  try {
+    cfg = JSON.parse(readFileSync(file, 'utf8'));
+  } catch {
+    // 文件存在但解析失败时拒绝写入：按空对象重写会把 provider 等配置清掉
+    if (existsSync(file)) return { ok: false, code: 'serena-config-unreadable', error: 'ZCode 配置文件无法解析，已中止写入' };
+    cfg = {};
+  }
+  const mcp = (cfg.mcp && typeof cfg.mcp === 'object' && !Array.isArray(cfg.mcp)) ? { ...cfg.mcp } : {};
+  const servers = (mcp.servers && typeof mcp.servers === 'object' && !Array.isArray(mcp.servers)) ? { ...mcp.servers } : {};
+  if (enable) servers.serena = serenaServerSpec();
+  else delete servers.serena;
+  mcp.servers = servers;
+  cfg.mcp = mcp;
+  writeJsonAtomic(file, cfg);
+  return { ok: true, serena: serenaScan() };
+}
 
 // 扫描 v2/config.json（provider.<id>.options.baseURL）与 v2/provider_config.json
 // （providerRules[].config.api.baseUrl），统计当前走本地代理的条目数

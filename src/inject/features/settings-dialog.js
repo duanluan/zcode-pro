@@ -2952,6 +2952,25 @@ export function openSettingsDialog() {
             }));
         };
         renderHrUsageSwitch();
+        // Serena：语义代码检索 MCP 开关。不走 hrRun（与压缩代理进程无关），点击即时
+        // 写 cli/config.json；ZCode 新会话启动时加载该 MCP，当前会话不重连。
+        const hrSerenaRow = h('div');
+        const renderSerenaSwitch = () => {
+          const serenaOn = !!(headroomRes.serena && headroomRes.serena.enabled);
+          hrSerenaRow.replaceChildren(
+            settingRow(L.serenaSwitch, L.serenaSwitchDesc, serenaOn, async () => {
+              const next = !serenaOn;
+              const res = await rpc('/headroom', { method: 'POST', body: { serena: next } });
+              if (!res.ok) {
+                showToast(L.failed + ': ' + errText(res), 'error');
+                return;
+              }
+              if (res.serena) headroomRes.serena = res.serena;
+              renderSerenaSwitch();
+              showToast(next ? L.serenaEnabled : L.serenaDisabled, 'success');
+            }));
+        };
+        renderSerenaSwitch();
         const hrRefreshBtn = btnSmall(L.headroomRefresh, () => { void hrRefresh(); });
         const hrStartBtn = btnSmall(L.headroomStart, () => { void hrRun({ action: 'start' }); });
         const hrRestartBtn = btnSmall(L.headroomRestart, () => { void hrRun({ action: 'restart' }); });
@@ -3120,6 +3139,7 @@ export function openSettingsDialog() {
                 hrIntervalField.el,
                 h('span', { class: 'w-4 text-ui-xs text-foreground-subtle' }, L.headroomSecUnit))),
             hrPwrHint),
+          h('div', { class: 'mt-2 rounded-xl border border-border p-1' }, hrSerenaRow),
         );
       };
       renderHeadroomPane();
