@@ -8,6 +8,7 @@ import { migrationCard } from './alias-migration.js';
 import { applyStyles, STYLE_DEFAULTS, showStyleHighlight, hideStyleHighlight } from './styles.js';
 import { THEME_SKINS, CUSTOM_DEFAULTS } from './theme.js';
 import { copyToClipboard, hCopyIcon } from './copy-path.js';
+import { claimAutoUpdateRun } from './plugin-updates.js';
 
 // 调宿主桥在系统浏览器打开外链；宿主没暴露该能力时静默忽略
 function openExternal(url) {
@@ -287,13 +288,13 @@ export function openSettingsDialog() {
         showToast(pluginsStatusLine.textContent, 'success');
       };
       void (async () => {
-        // 打开设置弹窗即自动更新（与启动时同语义）：开关开着且有新版时直接更，
-        // 状态行如实显示过程与结果；开关关闭时只检查并显示“N 个可更新”
+        // 打开设置弹窗时，只有本次 ZCode 启动还没自动更新过才直接更：
+        // 同一次启动里反复开关弹窗不再重复下载/更新。开关关闭时只显示可更新数
         const cfg = await getConfig(true).catch(() => null);
         const res = await rpc('/plugins/status');
-        if (!res.ok) { setPluginsStatus(''); return; }
+        if (!res.ok) { setPluginsStatus(errText(res)); return; }
         const n = (res.updates || []).length;
-        if (cfg && (cfg.features || {}).autoUpdatePlugins === true && n > 0) {
+        if (cfg && (cfg.features || {}).autoUpdatePlugins === true && n > 0 && claimAutoUpdateRun()) {
           void runPluginsUpdate();
           return;
         }
@@ -1711,12 +1712,6 @@ export function openSettingsDialog() {
       const proxyTestBtn = btnSmall(L.proxyTest, () => { void runProxyTest(); }, 'shrink-0');
       const runProxyTest = async () => {
         if (proxyTesting) return;
-        // 空地址不发请求（等网络超时才报“检测失败”的体验太差），立即提示
-        if (!proxyInput.value.trim()) {
-          proxyTestState.className = 'mt-2 text-ui-xs/relaxed text-amber-500';
-          proxyTestState.textContent = L.proxyTestEmpty;
-          return;
-        }
         proxyTesting = true;
         proxyTestBtn.disabled = true;
         proxyTestBtn.textContent = L.proxyTesting;

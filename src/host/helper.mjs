@@ -596,18 +596,65 @@ function readBody(req, limitBytes = 1 << 20) {
 }
 
 // 软件代理（设置弹窗“代理”标签页）：helper 发起的网络访问（zcode CLI→git、pip、
-// WebDAV 同步）按用途（proxyScopes）走这里；startHelper 启动时读配置，
-// 保存代理地址或范围开关时即时更新
+// WebDAV 同步）按用途（proxyScopes）走这里。activeProxyUrl 只存手填代理；没填时
+// 按需读 Windows 系统代理（带短缓存，Clash 开关后能自动跟上）。
 let activeProxyUrl = '';
 let activeProxyScopes = { plugins: true, deps: true, sync: false };
+let systemProxyCache = { url: '', at: 0 };
+
+// ProxyServer 的值有两种写法：host:port，或 http=host:port;https=host:port。
+// 取 https（没有就取 http），补上协议。导出以便测试。
+export function parseWindowsProxyServer(raw) {
+  if (!raw) return '';
+  const clean = (s) => String(s).trim().replace(/^"|"$/g, '').trim();
+  let v = clean(raw);
+  if (v.includes('=')) {
+    const parts = {};
+    for (const seg of v.split(';')) {
+      const i = seg.indexOf('=');
+      if (i > 0) parts[seg.slice(0, i).trim().toLowerCase()] = clean(seg.slice(i + 1));
+    }
+    v = parts.https || parts.http || '';
+  }
+  if (!v) return '';
+  const url = /^[a-z]+:\/\//i.test(v) ? v : `http://${v}`;
+  // 注册表值不做校验会被坏值原样塞进 HTTP_PROXY；和手填代理一样要求 host:port
+  return /^https?:\/\/[^\s/]+:\d+$/.test(url) ? url : '';
+}
+
+// Windows 系统代理（Internet 选项）。没单独配代理时沿用它：新电脑上 Clash 等
+// 工具通常只开系统代理，用户不会再为单个应用填一遍地址。
+function windowsSystemProxy() {
+  if (process.platform !== 'win32') return '';
+  const query = (name) => {
+    const r = spawnSync('reg', ['query', 'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings', '/v', name],
+      { encoding: 'utf8', windowsHide: true, timeout: 5000 });
+    const m = new RegExp(`${name}\\s+REG_(?:DWORD|SZ)\\s+(.+)`, 'i').exec(r.stdout || '');
+    return m ? m[1].trim() : '';
+  };
+  if (!/^0x0*1$/i.test(query('ProxyEnable'))) return '';
+  return parseWindowsProxyServer(query('ProxyServer'));
+}
+
+// 生效代理：手填优先；没填时读 Windows 系统代理并缓存 30 秒。Clash 在 ZCode
+// 之后启动或退出时能自动跟上，又不会每次请求都跑 reg。
+function effectiveProxyUrl() {
+  if (activeProxyUrl) return activeProxyUrl;
+  if (Date.now() - systemProxyCache.at > 30_000) {
+    systemProxyCache = { url: windowsSystemProxy(), at: Date.now() };
+  }
+  return systemProxyCache.url;
+}
 
 // scope：'plugins'（插件市场）/ 'deps'（headroom、rtk）/ 'sync'（WebDAV 同步）；
 // 'none' 表示这次调用与下载无关（headroom 生命周期钩子等），永不注入下载代理
 function proxyEnv(extra = {}, scope = 'deps') {
-  if (scope === 'none' || !activeProxyUrl || !activeProxyScopes[scope]) return extra;
+  if (scope === 'none' || !activeProxyScopes[scope]) return extra;
+  const proxy = effectiveProxyUrl();
+  if (!proxy) return extra;
   return {
-    HTTP_PROXY: activeProxyUrl, HTTPS_PROXY: activeProxyUrl,
-    http_proxy: activeProxyUrl, https_proxy: activeProxyUrl,
+    HTTP_PROXY: proxy, HTTPS_PROXY: proxy,
+    http_proxy: proxy, https_proxy: proxy,
     ...extra,
   };
 }
@@ -615,7 +662,7 @@ function proxyEnv(extra = {}, scope = 'deps') {
 // 该用途当前是否走代理：同步按 proxyUrl 参数传给 webdav（curl 路径用，
 // fetch 兜底路径不认代理环境变量）
 function proxyUrlFor(scope) {
-  return activeProxyScopes[scope] ? activeProxyUrl : '';
+  return activeProxyScopes[scope] ? effectiveProxyUrl() : '';
 }
 
 // 智能起名诊断日志：追加到 <dataRoot>/zcodepro.log（与启动诊断同文件），超 512KB
@@ -864,6 +911,7 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
               return;
             }
             activeProxyUrl = current.proxy;
+            if (!current.proxy) systemProxyCache = { url: '', at: 0 }; // 清空手填后立即重读系统代理
           }
           if (body && typeof body === 'object' && body.proxyScopes && typeof body.proxyScopes === 'object') {
             // 代理生效范围按单项提交（每个开关只改自己那项），即时生效
@@ -1899,7 +1947,7 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
       // —— 软件代理连通性检测：经 curl -x 走代理访问插件市场/本体升级实际要用的站点 ——
       if (req.method === 'POST' && url.pathname === '/proxy/test') {
         const body = await readBody(req);
-        const proxy = typeof body?.proxy === 'string' && body.proxy.trim() ? body.proxy.trim() : activeProxyUrl;
+        const proxy = typeof body?.proxy === 'string' && body.proxy.trim() ? body.proxy.trim() : effectiveProxyUrl();
         if (!proxy) {
           json(res, 400, { ok: false, code: 'proxy-not-set', error: '请先填写代理地址' });
           return;
@@ -2192,9 +2240,10 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         // 同一个市场目录会互相删对方的中间目录（ENOENT/坏目录）。
         // 有更新任务在跑/排队时整个跳过（任务自身会做市场同步并刷新时间戳），
         // 状态页轮询不排队等待、不能被长任务挂住；检查与入队在同一同步段内完成
+        let marketAdd = null;
         if (!pluginsUpdateJobs.size) {
           await runPluginsQueued(async () => {
-            await ensureZcodePluginsMarketplace();
+            marketAdd = await ensureZcodePluginsMarketplace();
             if (Date.now() - lastMarketplaceSync > 30 * 60 * 1000) {
               await ensureZcodePluginsCloneFresh();
               await runZcodeCli(['plugins', 'marketplace', 'update', ZCODE_PLUGINS_MARKETPLACE], 60000);
@@ -2204,7 +2253,14 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         }
         const status = pluginUpdateStatus();
         if (!status) {
-          json(res, 500, { ok: false, code: 'plugins-status', error: '读取插件清单失败（未安装过 zcode-plugins 市场？）' });
+          // 带上市场添加失败的真实原因：新机器最常见的是连不上 GitHub / 没装 Git，
+          // 设置面板和启动检查都靠这条信息提示用户，别再只给一句“读取失败”
+          const failed = marketAdd && !marketAdd.ok ? marketAdd : null;
+          json(res, 500, {
+            ok: false,
+            code: failed?.code || 'plugins-status',
+            error: failed?.error || '读取插件清单失败（未安装过 zcode-plugins 市场？）',
+          });
           return;
         }
         json(res, 200, { ok: true, ...status });
@@ -5068,9 +5124,8 @@ export function pluginUpdateStatus() {
 // 读 known_marketplaces.json 判断，缺失则跑 plugins marketplace add；add 退出后
 // 验证登记结果，未登记则回退 git clone 到本地走目录源——node 26 下 CLI 的 GitHub
 // 归档解包会挂死并以退出码 0 静默退出，add 看似成功、登记表却没写，不能只信退出码。
-// 失败 30 分钟内不重试（add 要访问 GitHub，网络不通时每次面板请求都会白等
-// 最长 120 秒）；返回 null = 已存在无需处理，{ ok, cached } = 执行或跳过了 add。
-let lastMarketplaceAddFail = 0;
+// 不做失败冷却：用户可能刚配好代理就要重试，限制次数只会让人以为一直装不上。
+// 返回 null = 已存在无需处理，{ ok } = 本次执行结果。
 
 // 目录源回退的 git 克隆位置（sources/ 对 CLI 是无关目录，不干扰它自己的缓存布局）
 function zcodePluginsSourceDir() {
@@ -5117,14 +5172,35 @@ async function addZcodePluginsMarketplaceFromClone() {
   return runZcodeCli(['plugins', 'marketplace', 'add', zcodePluginsSourceDir()], 120000);
 }
 
+// 市场添加失败的分类与提示：新机器常见两类原因——没装 Git、连不上 GitHub。
+// 提示放最前：toast 是单行截断，放末尾会被长长的命令错误挤掉；独立的 code 让
+// 英文界面也能显示对应说明（errText 对已登录的错误码用 errEn 文案）。
+export function marketplaceAddFailure(raw) {
+  const text = String(raw || '');
+  if (/spawn git ENOENT/i.test(text)) {
+    return { code: 'plugins-market-git', hint: '本机没有 Git，且直连 GitHub 失败；请安装 Git，或在 ZCode Pro 设置 → 代理 填写代理地址后重试。' };
+  }
+  if (/fetch failed|ENOTFOUND|ECONN|ETIMEDOUT|Failed to materialize|Failed to connect|Could not (?:connect|resolve)|unable to access/i.test(text)) {
+    return { code: 'plugins-market-network', hint: '当前网络访问不了 GitHub；如需要代理，请在 ZCode Pro 设置 → 代理 填写代理地址后重试。' };
+  }
+  return { code: '', hint: '' };
+}
+
 export async function ensureZcodePluginsMarketplace() {
   if (zcodePluginsMarketplaceRegistered()) return null;
-  if (Date.now() - lastMarketplaceAddFail < 30 * 60 * 1000) return { ok: false, cached: true, error: '上次添加市场失败，30 分钟内不再自动重试' };
   let r = await runZcodeCli(['plugins', 'marketplace', 'add', ZCODE_PLUGINS_MARKETPLACE_SOURCE], 120000);
   if (!zcodePluginsMarketplaceRegistered()) r = await addZcodePluginsMarketplaceFromClone();
   const ok = r.ok && zcodePluginsMarketplaceRegistered();
-  if (!ok) lastMarketplaceAddFail = Date.now();
-  return { ok, output: r.output, error: ok ? r.error : (r.error || 'marketplace add 未生效：登记表里没有该市场') };
+  const raw = r.error || 'marketplace add 未生效：登记表里没有该市场';
+  if (ok) return { ok, output: r.output, error: raw };
+  const failure = marketplaceAddFailure(raw);
+  const detail = raw.length > 300 ? `${raw.slice(0, 300)}…` : raw;
+  return {
+    ok,
+    output: r.output,
+    code: failure.code || undefined,
+    error: failure.hint ? `${failure.hint} ${detail}` : detail,
+  };
 }
 
 // /plugins/update 并发控制：启动自动更新、打开设置弹窗时的自动触发、手动按钮、
@@ -5164,7 +5240,7 @@ async function runPluginsUpdateJob(body) {
   if (added) steps.push({ step: 'marketplace add', ok: added.ok, output: added.output || added.error });
   if (added && !added.ok) {
     // 市场没登记上时 update 必然报 Marketplace not found，别让它冒头顶掉真实错误
-    return { status: 500, payload: { ok: false, code: 'plugins-update', error: added.error || added.output || 'marketplace add 失败', steps } };
+    return { status: 500, payload: { ok: false, code: added.code || 'plugins-update', error: added.error || added.output || 'marketplace add 失败', steps } };
   }
   const pull = await ensureZcodePluginsCloneFresh();
   const sync = await runZcodeCli(['plugins', 'marketplace', 'update', ZCODE_PLUGINS_MARKETPLACE], 60000);

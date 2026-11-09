@@ -8,7 +8,7 @@
   },
   "scripts": {
     "build": "esbuild src/inject/index.js --bundle --format=iife --target=chrome120 --outfile=dist/inject.js",
-    "test": "node scripts/test-usage-stats.mjs && node scripts/test-session-link.mjs && node scripts/test-err-codes.mjs && node scripts/test-sync-docs.mjs && node scripts/test-config.mjs && node scripts/test-task-order.mjs && node scripts/test-inject-logic.mjs && node scripts/test-task-index.mjs && node scripts/test-webdav.mjs && node scripts/test-wallpaper-setup.mjs && node scripts/test-headroom.mjs && node scripts/test-concurrency.mjs && node scripts/test-setup-run.mjs",
+    "test": "node scripts/test-usage-stats.mjs && node scripts/test-session-link.mjs && node scripts/test-err-codes.mjs && node scripts/test-sync-docs.mjs && node scripts/test-config.mjs && node scripts/test-task-order.mjs && node scripts/test-inject-logic.mjs && node scripts/test-task-index.mjs && node scripts/test-webdav.mjs && node scripts/test-wallpaper-setup.mjs && node scripts/test-headroom.mjs && node scripts/test-concurrency.mjs && node scripts/test-plugin-install.mjs && node scripts/test-plugin-autoupdate.mjs && node scripts/test-setup-run.mjs",
     "prepack": "npm run build",
     "start": "./bin/zcode-pro"
   },
