@@ -16,7 +16,8 @@ let tickSeq = 0; // 在途请求序号：过期响应丢弃，不覆盖新值
 
 // 流式输出速率估算：usage 缺失的模型（部分供应商不回传 token 数）和长调用
 // 生成期间没有真实数据，按最后一行回答的文本增长估算（约 2 字符/token 折算，
-// 标 ≈）。调用完成后有真实 usage 的会话切回真实值，没有的停在最后的估算值
+// 标 ≈）。长调用生成中官方 60 秒窗口值要等调用结束才更新，会长时间不动；
+// 文本在增长时优先用估算，流停止后切回官方真实值
 const EST_CHARS_PER_TOKEN = 2;
 let streamSample = null; // 上一次采样 { len, at }
 let streamEst = null; // 最近一次估算 { value, at }
@@ -220,17 +221,23 @@ function itemContent(id, L) {
       // 官方净生成口径：本会话树（含子代理）最近 60 秒窗内主轮请求的
       // Σ输出 ÷ Σ净生成秒数（与 Token 调试/每轮标注同款公式）；usage 全缺
       //（供应商不回传 token）才用文本增长估算兜底——估算按 2 字符/token 折算，
-      // 实测虚高 2-4 倍，有真实数据时绝不能让它抢显示
+      // 实测虚高 2-4 倍，有真实数据时绝不能让它抢显示。
+      // 例外：长调用正在生成时官方值要等调用结束才更新，文本还在增长的这
+      // 几秒内先用估算，流停止后自动切回官方值
       const s = (lastStats && statsSid === sid) ? lastStats.sessionSummary : null;
       const tps = s && s.tps != null ? s.tps : null;
       const est = streamEst ? streamEst.value : null;
-      const shown = tps != null ? tps : est;
+      const streaming = !!(streamEst && Date.now() - streamEst.at < 5000);
+      const useEst = streaming && est != null;
+      const shown = useEst ? est : (tps != null ? tps : est);
       if (shown == null) return null;
       const zh = isZhLocale();
-      const estMark = tps == null && est != null ? '≈' : '';
-      const detail = tps != null
-        ? `${L.sbLabelOut} ${tps.toLocaleString()} tok/s${zh ? '（官方净生成口径，本会话树）' : ' (net generation, session tree)'}`
-        : (zh ? '无 usage 数据，按文本增长估算' : 'no usage data, estimated from text growth');
+      const estMark = useEst || tps == null ? '≈' : '';
+      const detail = useEst
+        ? (zh ? '流式生成中，按文本增长估算（约 2 字符/token）' : 'streaming; estimated from text growth (~2 chars/token)')
+        : tps != null
+          ? `${L.sbLabelOut} ${tps.toLocaleString()} tok/s${zh ? '（官方净生成口径，本会话树）' : ' (net generation, session tree)'}`
+          : (zh ? '无 usage 数据，按文本增长估算' : 'no usage data, estimated from text growth');
       return {
         html: sbIcon('tokRate') + label(L.sbLabelOut) + `<b>${estMark}${fmtNum(Math.round(shown * 10) / 10)} tok/s</b>`,
         title: `${L.sbItemTokRate}${zh ? '（本会话）：' : ' (this session): '}${detail}`,

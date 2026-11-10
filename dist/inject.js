@@ -283,6 +283,7 @@
         importSearch: "\u641C\u7D22\u6807\u9898\u6216\u76EE\u5F55",
         importRefresh: "\u5237\u65B0",
         importShowAll: "\u663E\u793A\u5168\u90E8",
+        importShowAllTip: "\u663E\u793A\u5B50\u4EE3\u7406\u4F1A\u8BDD\u3001pi \u91CC\u4ECE Codex \u5BFC\u5165\u7684\u526F\u672C\uFF0C\u4EE5\u53CA\u6CA1\u6709\u771F\u5B9E\u5BF9\u8BDD\u7684 Claude \u4F1A\u8BDD\uFF1B\u5DF2\u5F52\u6863\u59CB\u7EC8\u663E\u793A",
         importOnlyProject: "\u53EA\u770B\u6240\u9009\u9879\u76EE",
         importSelectAll: "\u5168\u9009",
         importSelected: "\u5BFC\u5165\u6240\u9009\uFF08{n}\uFF09",
@@ -912,6 +913,7 @@
         importSearch: "Search title or folder",
         importRefresh: "Refresh",
         importShowAll: "Show all",
+        importShowAllTip: "Show subagent sessions, pi copies imported from Codex, and Claude sessions without real conversation; archived sessions are always shown",
         importOnlyProject: "Only the selected project",
         importSelectAll: "Select all",
         importSelected: "Import selected ({n})",
@@ -6698,7 +6700,7 @@
     });
     const projectSelect = h("select", { class: INPUT_CLS + " min-w-0 max-w-56" });
     const onlyProjectBox = h("input", { type: "checkbox" });
-    const showAllBox = h("input", { type: "checkbox" });
+    const showAllBox = h("input", { type: "checkbox", title: L.importShowAllTip });
     const selectAllBox = h("input", { type: "checkbox" });
     const refreshBtn = btnSmall(L.importRefresh, () => {
       void loadList();
@@ -7003,7 +7005,7 @@
       else selected = /* @__PURE__ */ new Set();
       renderList();
     });
-    const checkLabel = (box, text) => h("label", { class: "flex shrink-0 items-center gap-1.5 text-ui-xs text-foreground-subtle" }, box, text);
+    const checkLabel = (box, text, title = "") => h("label", { class: "flex shrink-0 items-center gap-1.5 text-ui-xs text-foreground-subtle", title: title || void 0 }, box, text);
     root.append(
       h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.importDesc),
       h("div", { class: "mt-3" }, sourceTabs),
@@ -7013,7 +7015,7 @@
         searchInput,
         projectSelect,
         checkLabel(onlyProjectBox, L.importOnlyProject),
-        checkLabel(showAllBox, L.importShowAll),
+        checkLabel(showAllBox, L.importShowAll, L.importShowAllTip),
         refreshBtn
       ),
       h(
@@ -11459,11 +11461,13 @@
         const s = lastStats && statsSid === sid ? lastStats.sessionSummary : null;
         const tps = s && s.tps != null ? s.tps : null;
         const est = streamEst ? streamEst.value : null;
-        const shown = tps != null ? tps : est;
+        const streaming = !!(streamEst && Date.now() - streamEst.at < 5e3);
+        const useEst = streaming && est != null;
+        const shown = useEst ? est : tps != null ? tps : est;
         if (shown == null) return null;
         const zh2 = isZhLocale();
-        const estMark = tps == null && est != null ? "\u2248" : "";
-        const detail = tps != null ? `${L.sbLabelOut} ${tps.toLocaleString()} tok/s${zh2 ? "\uFF08\u5B98\u65B9\u51C0\u751F\u6210\u53E3\u5F84\uFF0C\u672C\u4F1A\u8BDD\u6811\uFF09" : " (net generation, session tree)"}` : zh2 ? "\u65E0 usage \u6570\u636E\uFF0C\u6309\u6587\u672C\u589E\u957F\u4F30\u7B97" : "no usage data, estimated from text growth";
+        const estMark = useEst || tps == null ? "\u2248" : "";
+        const detail = useEst ? zh2 ? "\u6D41\u5F0F\u751F\u6210\u4E2D\uFF0C\u6309\u6587\u672C\u589E\u957F\u4F30\u7B97\uFF08\u7EA6 2 \u5B57\u7B26/token\uFF09" : "streaming; estimated from text growth (~2 chars/token)" : tps != null ? `${L.sbLabelOut} ${tps.toLocaleString()} tok/s${zh2 ? "\uFF08\u5B98\u65B9\u51C0\u751F\u6210\u53E3\u5F84\uFF0C\u672C\u4F1A\u8BDD\u6811\uFF09" : " (net generation, session tree)"}` : zh2 ? "\u65E0 usage \u6570\u636E\uFF0C\u6309\u6587\u672C\u589E\u957F\u4F30\u7B97" : "no usage data, estimated from text growth";
         return {
           html: sbIcon("tokRate") + label(L.sbLabelOut) + `<b>${estMark}${fmtNum(Math.round(shown * 10) / 10)} tok/s</b>`,
           title: `${L.sbItemTokRate}${zh2 ? "\uFF08\u672C\u4F1A\u8BDD\uFF09\uFF1A" : " (this session): "}${detail}`,
