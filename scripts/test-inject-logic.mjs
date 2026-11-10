@@ -39,9 +39,16 @@ const assert = (cond, msg) => {
   if (!cond) { console.error('FAIL: ' + msg); failed = 1; }
   else console.log('ok: ' + msg);
 };
-// 每段测试各自 try/catch：一段抛错记 FAIL，后面的段继续跑
+// 每段测试各自 try/catch：一段抛错记 FAIL，后面的段继续跑；async 段收集起来
+// 在结尾统一 await（process.exit 会掐断未 await 的 promise 续体）
+const pendingRuns = [];
 const run = (name, fn) => {
-  try { fn(); } catch (err) { assert(false, name + ' 抛错: ' + (err && err.message)); }
+  try {
+    const r = fn();
+    if (r && typeof r.then === 'function') {
+      pendingRuns.push(r.catch((err) => assert(false, name + ' 抛错: ' + (err && err.message))));
+    }
+  } catch (err) { assert(false, name + ' 抛错: ' + (err && err.message)); }
 };
 
 // —— 源码截取工具 —— //
@@ -292,6 +299,20 @@ const collectEndedSrc = extractBinding(ssSrc, 'collectEndedUnseen', ssMask);
 assert(!!collectEndedSrc, '截取 session-switch.js collectEndedUnseen 成功');
 const unseenLimitSrc = extractBinding(ssSrc, 'UNSEEN_LIMIT', ssMask);
 assert(!!unseenLimitSrc, '截取 session-switch.js UNSEEN_LIMIT 成功');
+const irSrc = readSrc('../src/inject/features/idle-reclaim.js');
+const irMask = makeMask(irSrc);
+const dueSrc = extractBinding(irSrc, 'dueForReclaim', irMask);
+assert(!!dueSrc, '截取 idle-reclaim.js dueForReclaim 成功');
+const wsrunSrc = readSrc('../src/inject/features/ws-running.js');
+const wsrunMask = makeMask(wsrunSrc);
+const cachedIdsSrc = extractBinding(wsrunSrc, 'listActiveIdsCached', wsrunMask);
+assert(!!cachedIdsSrc, '截取 ws-running.js listActiveIdsCached 成功');
+const ttlSrc = extractBinding(wsrunSrc, 'ACTIVE_IDS_TTL_MS', wsrunMask);
+assert(!!ttlSrc, '截取 ws-running.js ACTIVE_IDS_TTL_MS 成功');
+const cacheTimeoutSrc = extractBinding(wsrunSrc, 'ACTIVE_IDS_TIMEOUT_MS', wsrunMask);
+assert(!!cacheTimeoutSrc, '截取 ws-running.js ACTIVE_IDS_TIMEOUT_MS 成功');
+const idsCacheSrc = extractBinding(wsrunSrc, 'activeIdsCache', wsrunMask);
+assert(!!idsCacheSrc, '截取 ws-running.js activeIdsCache 成功');
 
 // —— 装配：把截出的函数放进 new Function 的函数体，注入假依赖 —— //
 
@@ -732,5 +753,104 @@ run('unseen 运行结束规则', () => {
   assert(collect([], [], null, new Set(['/w:a1', '/w:a2'])).size === 2, '没超上限不动');
 });
 
+// 5. idle-reclaim.js：dueForReclaim 的到点判定与空闲计时维护。回收前的后台命令
+// 扫描已改为只扫这批到点的工作区（不再每 30 秒全量扫），到点集合算错就直接
+// 决定回收成败——截取真实函数跑假输入把边界钉住
+run('dueForReclaim 到点判定', () => {
+  if (!dueSrc) return;
+  let due = null;
+  try {
+    due = new Function(dueSrc + '\nreturn dueForReclaim;')();
+  } catch (err) {
+    assert(false, '装配 dueForReclaim 失败: ' + (err && err.message));
+    return;
+  }
+  const eq = (a, b) => a.length === b.length && a.every((x, i) => x === b[i]);
+  // 没起表的起表、不入列；已到点的入列并扣表
+  let idleSince = new Map();
+  let out = due(['/w/a'], new Set(), idleSince, new Map(), 1000, 60_000, false);
+  assert(out.length === 0 && idleSince.get('/w/a') === 1000, '首次见到的工作区起表不入列');
+  out = due(['/w/a'], new Set(), idleSince, new Map(), 30_000, 60_000, false);
+  assert(out.length === 0, '没到点不入列');
+  out = due(['/w/a'], new Set(), idleSince, new Map(), 61_000, 60_000, false);
+  assert(eq(out, ['/w/a']) && !idleSince.has('/w/a'), '到点入列并扣表（调用方决定回收或重计）');
+  // busy 的清表不入列（清表后下轮重新累计）
+  idleSince = new Map([['/w/b', 0]]);
+  out = due(['/w/b'], new Set(['/w/b']), idleSince, new Map(), 999_999, 60_000, false);
+  assert(out.length === 0 && !idleSince.has('/w/b'), '运行中的工作区清表不入列');
+  // 冷却中的不动表不入列，冷却过后到点即重试
+  idleSince = new Map([['/w/c', 0]]);
+  out = due(['/w/c'], new Set(), idleSince, new Map([['/w/c', 100_000]]), 61_000, 60_000, false);
+  assert(out.length === 0 && idleSince.has('/w/c'), '冷却中的不入列也不扣表');
+  out = due(['/w/c'], new Set(), idleSince, new Map([['/w/c', 100_000]]), 200_000, 60_000, false);
+  assert(eq(out, ['/w/c']) && !idleSince.has('/w/c'), '冷却过后到点即重试');
+  // 启动扫：不等空闲时长全入列，busy/冷却中的除外；与常规到点重合只入列一次
+  idleSince = new Map();
+  out = due(['/w/a', '/w/b', '/w/c'], new Set(['/w/b']), idleSince,
+    new Map([['/w/c', 999_999]]), 1000, 60_000, true);
+  assert(eq(out, ['/w/a']), `启动扫只入列非 busy 非冷却的（实际 ${out.join(',')}）`);
+  idleSince = new Map([['/w/a', 0]]);
+  out = due(['/w/a'], new Set(), idleSince, new Map(), 1000, 60_000, true);
+  assert(eq(out, ['/w/a']), '启动扫与常规到点重合只入列一次');
+  out = due(['/w/a'], new Set(), new Map(), new Map(), 1000, 60_000, false);
+  assert(out.length === 0, 'startupDue=false 不做全量入列');
+});
+
+// 6. ws-running.js：listActiveIdsCached 的缓存与去重——两种尾斜杠合并成一次
+// 查询、TTL 内命中不重查、查询中同键共享同一个 Promise（subagent-icon 与
+// 全局扫描共用这份缓存，TTL/去重算错就白改）
+run('listActiveIdsCached 缓存与去重', async () => {
+  if (!cachedIdsSrc || !ttlSrc || !cacheTimeoutSrc || !idsCacheSrc) return;
+  let cached = null;
+  let TTL = 0;
+  try {
+    const f = new Function('Date', 'findServices',
+      ttlSrc + '\n' + cacheTimeoutSrc + '\n' + idsCacheSrc + '\n' + cachedIdsSrc
+      + '\nreturn { listActiveIdsCached, ACTIVE_IDS_TTL_MS };');
+    const calls = [];
+    let now = 1000;
+    const fakeTs = {
+      listActiveTaskIds: async ({ workspacePath }) => {
+        calls.push(workspacePath);
+        return workspacePath.endsWith('/') ? ['b1'] : ['a1'];
+      },
+    };
+    const r = f({ now: () => now }, () => ({ zcodeTaskService: fakeTs }));
+    cached = r.listActiveIdsCached;
+    TTL = r.ACTIVE_IDS_TTL_MS;
+    // 一次调用查两种尾斜杠并合并
+    const ids1 = await cached('/w/x');
+    assert(calls.length === 2 && calls.includes('/w/x') && calls.includes('/w/x/'),
+      `一次调用查两种尾斜杠（实际 ${calls.join(',')}）`);
+    assert(ids1.join(',') === 'a1,b1', `两种尾斜杠结果合并（实际 ${ids1.join(',')}）`);
+    // TTL 内命中缓存，不再发查询
+    now += TTL - 1;
+    const ids2 = await cached('/w/x');
+    assert(calls.length === 2 && ids2.join(',') === 'a1,b1', 'TTL 内命中缓存不重查');
+    // 过期重查
+    now += 2;
+    await cached('/w/x');
+    assert(calls.length === 4, 'TTL 过期重查');
+    // 尾斜杠归一：/w/x/ 与 /w/x 共用同一条缓存
+    await cached('/w/x/');
+    assert(calls.length === 4, '带尾斜杠的键与去尾斜杠键共用缓存');
+    // 查询中同键共享同一个 Promise（同时并发两次只查一轮）
+    now += TTL + 1;
+    const p1 = cached('/w/y');
+    const p2 = cached('/w/y');
+    const [y1, y2] = await Promise.all([p1, p2]);
+    assert(calls.filter((c) => c.startsWith('/w/y')).length === 2, '并发同键只查一轮两种尾斜杠');
+    assert(y1 === y2, '并发同键共享同一结果');
+    // 服务不可用返回 null
+    const f2 = new Function('Date', 'findServices',
+      ttlSrc + '\n' + cacheTimeoutSrc + '\n' + idsCacheSrc + '\n' + cachedIdsSrc
+      + '\nreturn listActiveIdsCached;')({ now: () => now }, () => null);
+    assert(await f2('/w/z') === null, '服务不可用（≤3.15.x）返回 null');
+  } catch (err) {
+    assert(false, '装配 listActiveIdsCached 失败: ' + (err && err.message));
+  }
+});
+
+await Promise.all(pendingRuns);
 console.log(failed ? 'FAILED' : 'all ok');
 process.exit(failed);

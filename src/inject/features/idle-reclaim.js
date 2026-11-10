@@ -93,6 +93,32 @@ async function tryReclaim(ws, cooldownMs) {
   blockUntil.set(ws, Date.now() + cooldownMs);
 }
 
+// 挑出本轮到点的工作区并顺带维护空闲计时：启动扫（不等空闲时长）+ 空闲时长
+// 到点的入列（入列即扣表，等调用方扫完后台命令后决定回收或重新累计）。
+// busy 的清表、没起表的起表、冷却中的不动表只跳过（冷却过后到点即重试，与
+// 原先每轮全量扫的节奏一致）
+function dueForReclaim(workspaces, busy, idleSince, blockUntil, now, threshold, startupDue) {
+  const due = [];
+  const seen = new Set();
+  const add = (ws) => { if (!seen.has(ws)) { seen.add(ws); due.push(ws); } };
+  if (startupDue) {
+    for (const ws of workspaces) {
+      if (busy.has(ws) || (blockUntil.get(ws) || 0) > now) continue;
+      add(ws);
+    }
+  }
+  for (const ws of workspaces) {
+    if (busy.has(ws)) { idleSince.delete(ws); continue; }
+    if (!idleSince.has(ws)) { idleSince.set(ws, now); continue; }
+    if (now - idleSince.get(ws) < threshold) continue;
+    if ((blockUntil.get(ws) || 0) > now) continue;
+    if (seen.has(ws)) continue; // 启动扫已入列：不动表，回收失败后到点再试
+    idleSince.delete(ws);
+    add(ws);
+  }
+  return due;
+}
+
 async function tick() {
   if (!enabled) {
     idleSince.clear();
@@ -125,39 +151,38 @@ async function tick() {
     if (!workspaces.has(ws)) { idleSince.delete(ws); blockUntil.delete(ws); }
   }
 
-  const candidates = [...workspaces].filter((ws) => !busy.has(normP(ws)));
-  const res = candidates.length
-    ? await rpc('/idle-busy', { method: 'POST', body: { paths: candidates } })
-    : { ok: true, scan: true, busy: [] };
+  const now = Date.now();
+  // 启动一次性回收：应用启动会为每个恢复的项目预热会话进程，这次回收不等空闲
+  // 时长，到点把当时符合条件的项目一次收掉（0 = 启动后尽快回收一次；当前项目
+  // 定位不到时顺延到下一周期）。之后回归常规空闲计时
+  const startupDue = !startupSweepDone && now - bootAt >= startupMinutes * 60_000;
+  const due = dueForReclaim(workspaces, busy, idleSince, blockUntil, now, threshold, startupDue);
+  if (!due.length) {
+    if (startupDue) startupSweepDone = true;
+    return;
+  }
+  // 后台命令扫描（/idle-busy，Windows 上是 PowerShell 全进程枚举）只对本轮到点
+  // 的工作区做一次，不随巡检每轮全量扫——每 30 秒扫全部候选是常驻卡顿源。
+  // 有后台命令在跑的工作区跳过回收、重新累计空闲时长；回收前照样确认没有
+  // 用户命令在跑，回收语义不变
+  const res = await rpc('/idle-busy', { method: 'POST', body: { paths: due } });
   if (!res.ok || res.scan === false) {
     // 无法确认后台命令状态（系统工具缺失 / helper 旧版）：整体停用
     if (!scanDisabledLogged) {
       scanDisabledLogged = true;
       console.info('[zcodepro] idle-reclaim: 后台命令扫描不可用，空闲回收停用');
     }
+    // 启动扫不因失败反复重试：否则每个巡检周期（30 秒）都重新扫——扫描不可用
+    // 还每 30 秒拉一次 PowerShell 全进程枚举，正是要消除的常驻开销。下一次
+    // 尝试回到空闲阈值节奏（默认 30 分钟），扫描恢复后仍能自动接上
+    if (startupDue) startupSweepDone = true;
     idleSince.clear();
     return;
   }
+  if (startupDue) startupSweepDone = true;
   const procBusy = new Set(res.busy || []);
-  const idleCandidates = candidates.filter((ws) => !procBusy.has(ws));
-
-  const now = Date.now();
-  // 启动一次性回收：应用启动会为每个恢复的项目预热会话进程，这次回收不等空闲
-  // 时长，到点把当时符合条件的项目一次收掉（0 = 启动后尽快回收一次；当前项目
-  // 定位不到时顺延到下一周期）。之后回归常规空闲计时
-  if (!startupSweepDone && now - bootAt >= startupMinutes * 60_000) {
-    startupSweepDone = true;
-    for (const ws of idleCandidates) {
-      if ((blockUntil.get(ws) || 0) > now) continue;
-      await tryReclaim(ws, threshold);
-    }
-  }
-  for (const ws of workspaces) {
-    if (busy.has(ws) || procBusy.has(ws)) { idleSince.delete(ws); continue; }
-    if (!idleSince.has(ws)) { idleSince.set(ws, now); continue; }
-    if (now - idleSince.get(ws) < threshold) continue;
-    if ((blockUntil.get(ws) || 0) > now) continue;
-    idleSince.delete(ws);
+  for (const ws of due) {
+    if (procBusy.has(ws)) { idleSince.delete(ws); continue; }
     await tryReclaim(ws, threshold);
   }
 }

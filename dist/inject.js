@@ -2662,6 +2662,30 @@
       return null;
     }
   }
+  function listActiveIdsCached(base) {
+    const key = String(base).replace(/[\\/]+$/, "");
+    const now = Date.now();
+    const hit = activeIdsCache.get(key);
+    if (hit && hit.pending) return hit.pending;
+    if (hit && now - hit.doneAt < ACTIVE_IDS_TTL_MS) return Promise.resolve(hit.ids);
+    const services = findServices();
+    const ts = services && services.zcodeTaskService;
+    if (!ts || typeof ts.listActiveTaskIds !== "function") return Promise.resolve(null);
+    const one = (w) => new Promise((resolve) => {
+      const timer = setTimeout(() => resolve([]), ACTIVE_IDS_TIMEOUT_MS);
+      Promise.resolve().then(() => ts.listActiveTaskIds({ workspacePath: w })).then(
+        (r) => resolve(Array.isArray(r) ? r.map(String) : []),
+        () => resolve([])
+      ).finally(() => clearTimeout(timer));
+    });
+    const pending = Promise.all([one(key), one(key + "/")]).then(([a, b]) => {
+      const ids = [...a, ...b];
+      activeIdsCache.set(key, { ids, doneAt: Date.now(), pending: null });
+      return ids;
+    });
+    activeIdsCache.set(key, { ids: hit && hit.ids || [], doneAt: hit ? hit.doneAt : 0, pending });
+    return pending;
+  }
   async function authoritativeIdle(ws) {
     const services = findServices();
     const ts = services && services.zcodeTaskService;
@@ -2863,13 +2887,7 @@
             }
             projectPaths.set(proj.name, names);
           }
-          const pairs = await Promise.all([...scanPaths].map(async (base) => {
-            const [a, b] = await Promise.all([
-              ts.listActiveTaskIds({ workspacePath: base }),
-              ts.listActiveTaskIds({ workspacePath: base + "/" })
-            ]);
-            return [base, [...Array.isArray(a) ? a : [], ...Array.isArray(b) ? b : []].map(String)];
-          }));
+          const pairs = await Promise.all([...scanPaths].map(async (base) => [base, await listActiveIdsCached(base) || []]));
           for (const [base, ids] of pairs) {
             if (!ids.length) continue;
             byKindByPath.set(base, ids);
@@ -3242,7 +3260,7 @@
       if (row) wsTouchAt.set(row, Date.now());
     }, true);
   }
-  var installed, enabled2, SCAN_DEBOUNCE_MS, SCAN_FALLBACK_MS, PEEK_FIRST_MS, PEEK_REPEAT_MS, PEEK_SETTLE_MS, PEEK_MAX_MS, PEEK_UNMOUNT_WAIT_MS, CONFIG_POLL_MIN_MS, CONFIG_POLL_MAX_MS, TASK_SEL, WS_SEL, LOADER_FALLBACK_PATHS, runningByWs, peekTimers, activePeeks, peekedWs, wsWithRows, servicesRef, servicesMissAt, synthClick, headInfoCache, PROJECT_HEAD_TEXTS, TASK_HEAD_TEXTS, SEC_SPIN_CLASS, anyActiveCache, sectionActive, activeProjectPaths, authActiveByWs, peekChain, PEEK_EXEMPT_CLASS, cssAttr, TOUCH_WINDOW_MS, wsTouchAt, pollMs, scanDebounce;
+  var installed, enabled2, SCAN_DEBOUNCE_MS, SCAN_FALLBACK_MS, PEEK_FIRST_MS, PEEK_REPEAT_MS, PEEK_SETTLE_MS, PEEK_MAX_MS, PEEK_UNMOUNT_WAIT_MS, CONFIG_POLL_MIN_MS, CONFIG_POLL_MAX_MS, TASK_SEL, WS_SEL, LOADER_FALLBACK_PATHS, runningByWs, peekTimers, activePeeks, peekedWs, wsWithRows, servicesRef, servicesMissAt, ACTIVE_IDS_TTL_MS, ACTIVE_IDS_TIMEOUT_MS, activeIdsCache, synthClick, headInfoCache, PROJECT_HEAD_TEXTS, TASK_HEAD_TEXTS, SEC_SPIN_CLASS, anyActiveCache, sectionActive, activeProjectPaths, authActiveByWs, peekChain, PEEK_EXEMPT_CLASS, cssAttr, TOUCH_WINDOW_MS, wsTouchAt, pollMs, scanDebounce;
   var init_ws_running = __esm({
     "src/inject/features/ws-running.js"() {
       init_core();
@@ -3277,6 +3295,9 @@
       wsWithRows = /* @__PURE__ */ new Set();
       servicesRef = null;
       servicesMissAt = 0;
+      ACTIVE_IDS_TTL_MS = 25e3;
+      ACTIVE_IDS_TIMEOUT_MS = 6e3;
+      activeIdsCache = /* @__PURE__ */ new Map();
       synthClick = (el) => {
         try {
           el.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
@@ -12768,23 +12789,20 @@
       }
       liveSessions = live;
       liveByWs = liveWs;
-      const ts = services && services.zcodeTaskService;
       const busy = /* @__PURE__ */ new Set();
-      if (ts && typeof ts.listActiveTaskIds === "function") {
-        const needBusyWs = /* @__PURE__ */ new Set();
-        for (const el of document.querySelectorAll(TASK_SEL5)) {
-          const key = el.getAttribute("data-task-item-key") || "";
-          const cut = key.lastIndexOf(":");
-          const sid = cut > 1 ? key.slice(cut + 1) : "";
-          const slot = rowIconSlot(el);
-          const unread = slot && slot.querySelector("[data-unread-indicator]");
-          if (live.has(sid) || unread) needBusyWs.add(normWs(key.slice(0, cut)));
-        }
-        await Promise.all([...needBusyWs].flatMap((ws) => [ws, ws + "/"].map(async (w) => {
-          const r = await withTimeout(ts.listActiveTaskIds({ workspacePath: w }), CALL_TIMEOUT_MS, null);
-          if (Array.isArray(r)) for (const id of r) busy.add(String(id));
-        })));
+      const needBusyWs = /* @__PURE__ */ new Set();
+      for (const el of document.querySelectorAll(TASK_SEL5)) {
+        const key = el.getAttribute("data-task-item-key") || "";
+        const cut = key.lastIndexOf(":");
+        const sid = cut > 1 ? key.slice(cut + 1) : "";
+        const slot = rowIconSlot(el);
+        const unread = slot && slot.querySelector("[data-unread-indicator]");
+        if (live.has(sid) || unread) needBusyWs.add(normWs(key.slice(0, cut)));
       }
+      await Promise.all([...needBusyWs].map(async (ws) => {
+        const ids = await withTimeout(listActiveIdsCached(ws), CALL_TIMEOUT_MS, null);
+        if (ids) for (const id of ids) busy.add(id);
+      }));
       busySessions = busy;
       const term = /* @__PURE__ */ new Set();
       const termWs = /* @__PURE__ */ new Set();
@@ -12952,6 +12970,38 @@
     await reclaim(ws);
     blockUntil.set(ws, Date.now() + cooldownMs);
   }
+  function dueForReclaim(workspaces, busy, idleSince2, blockUntil2, now, threshold, startupDue) {
+    const due = [];
+    const seen2 = /* @__PURE__ */ new Set();
+    const add = (ws) => {
+      if (!seen2.has(ws)) {
+        seen2.add(ws);
+        due.push(ws);
+      }
+    };
+    if (startupDue) {
+      for (const ws of workspaces) {
+        if (busy.has(ws) || (blockUntil2.get(ws) || 0) > now) continue;
+        add(ws);
+      }
+    }
+    for (const ws of workspaces) {
+      if (busy.has(ws)) {
+        idleSince2.delete(ws);
+        continue;
+      }
+      if (!idleSince2.has(ws)) {
+        idleSince2.set(ws, now);
+        continue;
+      }
+      if (now - idleSince2.get(ws) < threshold) continue;
+      if ((blockUntil2.get(ws) || 0) > now) continue;
+      if (seen2.has(ws)) continue;
+      idleSince2.delete(ws);
+      add(ws);
+    }
+    return due;
+  }
   async function tick4() {
     if (!enabled8) {
       idleSince.clear();
@@ -12982,38 +13032,30 @@
         blockUntil.delete(ws);
       }
     }
-    const candidates = [...workspaces].filter((ws) => !busy.has(normP(ws)));
-    const res = candidates.length ? await rpc("/idle-busy", { method: "POST", body: { paths: candidates } }) : { ok: true, scan: true, busy: [] };
+    const now = Date.now();
+    const startupDue = !startupSweepDone && now - bootAt >= startupMinutes * 6e4;
+    const due = dueForReclaim(workspaces, busy, idleSince, blockUntil, now, threshold, startupDue);
+    if (!due.length) {
+      if (startupDue) startupSweepDone = true;
+      return;
+    }
+    const res = await rpc("/idle-busy", { method: "POST", body: { paths: due } });
     if (!res.ok || res.scan === false) {
       if (!scanDisabledLogged) {
         scanDisabledLogged = true;
         console.info("[zcodepro] idle-reclaim: \u540E\u53F0\u547D\u4EE4\u626B\u63CF\u4E0D\u53EF\u7528\uFF0C\u7A7A\u95F2\u56DE\u6536\u505C\u7528");
       }
+      if (startupDue) startupSweepDone = true;
       idleSince.clear();
       return;
     }
+    if (startupDue) startupSweepDone = true;
     const procBusy = new Set(res.busy || []);
-    const idleCandidates = candidates.filter((ws) => !procBusy.has(ws));
-    const now = Date.now();
-    if (!startupSweepDone && now - bootAt >= startupMinutes * 6e4) {
-      startupSweepDone = true;
-      for (const ws of idleCandidates) {
-        if ((blockUntil.get(ws) || 0) > now) continue;
-        await tryReclaim(ws, threshold);
-      }
-    }
-    for (const ws of workspaces) {
-      if (busy.has(ws) || procBusy.has(ws)) {
+    for (const ws of due) {
+      if (procBusy.has(ws)) {
         idleSince.delete(ws);
         continue;
       }
-      if (!idleSince.has(ws)) {
-        idleSince.set(ws, now);
-        continue;
-      }
-      if (now - idleSince.get(ws) < threshold) continue;
-      if ((blockUntil.get(ws) || 0) > now) continue;
-      idleSince.delete(ws);
       await tryReclaim(ws, threshold);
     }
   }

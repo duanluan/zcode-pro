@@ -164,6 +164,40 @@ export function findServices() {
   }
 }
 
+// listActiveTaskIds 两种尾斜杠各查一次并合并（订阅键两种形式都有），按工作区
+// 缓存 25 秒 + 查询中去重：全局扫描与 subagent-icon 的运行中判定查的是同一批
+// 工作区，共用后同一工作区 25 秒内只查一遍（此前各自重复查，是该接口调用量的
+// 大头）。单次查询 6 秒兜底、失败/超时按空结果，挂死的查询不拖垮整轮扫描。
+// 返回 null = 服务不可用（≤3.15.x）。不给 authoritativeIdle 用：回收前复核
+// 要当刻实况，不吃缓存
+const ACTIVE_IDS_TTL_MS = 25_000;
+const ACTIVE_IDS_TIMEOUT_MS = 6_000;
+const activeIdsCache = new Map(); // base → { ids, doneAt, pending }
+
+export function listActiveIdsCached(base) {
+  const key = String(base).replace(/[\\/]+$/, '');
+  const now = Date.now();
+  const hit = activeIdsCache.get(key);
+  if (hit && hit.pending) return hit.pending;
+  if (hit && now - hit.doneAt < ACTIVE_IDS_TTL_MS) return Promise.resolve(hit.ids);
+  const services = findServices();
+  const ts = services && services.zcodeTaskService;
+  if (!ts || typeof ts.listActiveTaskIds !== 'function') return Promise.resolve(null);
+  const one = (w) => new Promise((resolve) => {
+    const timer = setTimeout(() => resolve([]), ACTIVE_IDS_TIMEOUT_MS);
+    Promise.resolve().then(() => ts.listActiveTaskIds({ workspacePath: w })).then(
+      (r) => resolve(Array.isArray(r) ? r.map(String) : []), () => resolve([]))
+      .finally(() => clearTimeout(timer));
+  });
+  const pending = Promise.all([one(key), one(key + '/')]).then(([a, b]) => {
+    const ids = [...a, ...b];
+    activeIdsCache.set(key, { ids, doneAt: Date.now(), pending: null });
+    return ids;
+  });
+  activeIdsCache.set(key, { ids: (hit && hit.ids) || [], doneAt: hit ? hit.doneAt : 0, pending });
+  return pending;
+}
+
 // 权威空闲判定：官方 zcodeTaskService.listActiveTaskIds 返回该工作区仍处非终态
 // （运行/创建/流式等）的会话，来自 CLI 实时活动集合——比侧栏 DOM 的 loader 可靠
 // （DOM 有“提交消息到 loader 渲染”与页面刷新后折叠项目的盲区，曾致误杀）。
@@ -454,14 +488,10 @@ function globalAnyActive() {
           }
           projectPaths.set(proj.name, names);
         }
-        // 各工作区并行查（串行 await 在几十个工作区时要跑数秒）：每区两种尾斜杠各查一次
-        const pairs = await Promise.all([...scanPaths].map(async (base) => {
-          const [a, b] = await Promise.all([
-            ts.listActiveTaskIds({ workspacePath: base }),
-            ts.listActiveTaskIds({ workspacePath: base + '/' }),
-          ]);
-          return [base, [...(Array.isArray(a) ? a : []), ...(Array.isArray(b) ? b : [])].map(String)];
-        }));
+        // 各工作区并行查（串行 await 在几十个工作区时要跑数秒）：每区两种尾斜杠
+        // 各查一次，走共享缓存（subagent-icon 复用同一份结果）
+        const pairs = await Promise.all([...scanPaths].map(async (base) =>
+          [base, (await listActiveIdsCached(base)) || []]));
         for (const [base, ids] of pairs) {
           if (!ids.length) continue;
           byKindByPath.set(base, ids);

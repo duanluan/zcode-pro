@@ -26,7 +26,7 @@
 // ws-running 的旋转 loader 优先：项目行在转就是会话级的运行，机器人不抢位。
 // 开关：helper subagentIcon（默认 true）。
 import { rpc, getConfig, t } from '../core.js';
-import { findServices, iconHolderOf, wsHead } from './ws-running.js';
+import { findServices, iconHolderOf, wsHead, listActiveIdsCached } from './ws-running.js';
 import { projectRows, rowPath } from './ws-rows.js';
 
 let installed = false;
@@ -348,24 +348,23 @@ async function tick() {
     liveSessions = live;
     liveByWs = liveWs;
     // 运行中判定（运行中恒转圈用）：只查"有子代理或未读圆点"的行所在工作区，
-    // 会话在应用的活跃列表里（阶段非终态）就算运行中；两种尾分隔符都查
-    const ts = services && services.zcodeTaskService;
+    // 会话在应用的活跃列表里（阶段非终态）就算运行中。两种尾分隔符的查询与
+    // 25 秒缓存都在 listActiveIdsCached 里（ws-running 全局扫描复用同一份），
+    // 每 20 秒的 tick 不再对同一批工作区重复发起查询
     const busy = new Set();
-    if (ts && typeof ts.listActiveTaskIds === 'function') {
-      const needBusyWs = new Set();
-      for (const el of document.querySelectorAll(TASK_SEL)) {
-        const key = el.getAttribute('data-task-item-key') || '';
-        const cut = key.lastIndexOf(':');
-        const sid = cut > 1 ? key.slice(cut + 1) : '';
-        const slot = rowIconSlot(el);
-        const unread = slot && slot.querySelector('[data-unread-indicator]');
-        if (live.has(sid) || unread) needBusyWs.add(normWs(key.slice(0, cut)));
-      }
-      await Promise.all([...needBusyWs].flatMap((ws) => [ws, ws + '/'].map(async (w) => {
-        const r = await withTimeout(ts.listActiveTaskIds({ workspacePath: w }), CALL_TIMEOUT_MS, null);
-        if (Array.isArray(r)) for (const id of r) busy.add(String(id));
-      })));
+    const needBusyWs = new Set();
+    for (const el of document.querySelectorAll(TASK_SEL)) {
+      const key = el.getAttribute('data-task-item-key') || '';
+      const cut = key.lastIndexOf(':');
+      const sid = cut > 1 ? key.slice(cut + 1) : '';
+      const slot = rowIconSlot(el);
+      const unread = slot && slot.querySelector('[data-unread-indicator]');
+      if (live.has(sid) || unread) needBusyWs.add(normWs(key.slice(0, cut)));
     }
+    await Promise.all([...needBusyWs].map(async (ws) => {
+      const ids = await withTimeout(listActiveIdsCached(ws), CALL_TIMEOUT_MS, null);
+      if (ids) for (const id of ids) busy.add(id);
+    }));
     busySessions = busy;
     // 后台任务判定（终端图标）：helper 一次文件系统扫描（/background-bash）给出
     // 在跑的后台 bash 任务及其会话，bash 任务在跑才算终端（agent 任务归机器人管）。
