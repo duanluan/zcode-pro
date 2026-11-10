@@ -6,6 +6,7 @@ import { t, rpc, getConfig, isZhLocale } from '../core.js';
 
 let enabled = true;
 let rounds = []; // 官方主轮请求 [{idx, at, in, out, cacheRead, genMs, tps…}] 按完成时间升序
+let liveRounds = []; // 最后一条已完成轮次之后的请求，挂到最新回答上做实时用量
 let scanTimer = 0;
 // 四段（输入/输出/TPS/缓存）的显隐与顺序：设置 → 样式 → 状态栏 → 每轮统计
 let turnCfg = [
@@ -176,6 +177,7 @@ function scan() {
   if (sid !== lastSid) {
     lastSid = sid;
     rounds = [];
+    liveRounds = [];
     for (const r of rows) clearRow(r.row);
     void tick();
     return;
@@ -188,21 +190,63 @@ function scan() {
   // 的全部调用（一轮可能跨多个分钟）；最后一条收到其后所有桶（进行中的轮）。
   // 行集是虚拟列表的可见窗口，同一条回答的邻居行在场时归属稳定
   const agg = rows.map(() => ({ in: 0, out: 0, cacheRead: 0, tpsOut: 0, genMs: 0 }));
-  const dayOf = (t) => { const d = new Date(t); return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); };
-  for (const b of rounds) {
-    let owner = -1;
-    for (let i = 0; i < rows.length; i++) {
-      if (rows[i].ts <= b.at) owner = i;
-      else break;
+  // turnMode = 后端用官方 turn_usage 每轮汇总（含工具循环/重试，一轮一条）。
+  // 按每轮起止分钟匹配可见回答行；匹配不到就跳过，不能像旧算法那样让最后一条
+  // 可见回答吞掉后面轮次的用量——虚拟列表一滚，数值就会 1677/4665 来回跳。
+  if (rounds.some((r) => r.startAt != null)) {
+    const used = new Set();
+    for (const b of rounds) {
+      const startMin = Math.floor((b.startAt ?? b.at) / 60000);
+      const endMin = Math.floor(b.at / 60000);
+      let owner = -1;
+      let bestDist = Infinity;
+      for (let i = 0; i < rows.length; i++) {
+        if (used.has(i)) continue;
+        const m = Math.floor(rows[i].ts / 60000);
+        if (m < startMin || m > endMin) continue;
+        const dist = Math.abs(rows[i].ts - b.at);
+        if (dist < bestDist) { owner = i; bestDist = dist; }
+      }
+      if (owner < 0) continue;
+      used.add(owner);
+      agg[owner].in += b.in;
+      agg[owner].out += b.out;
+      agg[owner].cacheRead += b.cacheRead;
+      if (b.genMs) { agg[owner].tpsOut += b.out; agg[owner].genMs += b.genMs; }
     }
-    if (owner < 0) continue; // 比窗口里最早的行还早：不属于可见任何一条
-    // 同日约束：跨天的请求不归属（昨天的旧行不吞今天的调用——今天的提问
-    // 行可能只是不在当前虚拟列表窗口里）
-    if (dayOf(rows[owner].ts) !== dayOf(b.at)) continue;
-    agg[owner].in += b.in;
-    agg[owner].out += b.out;
-    agg[owner].cacheRead += b.cacheRead;
-    if (b.genMs) { agg[owner].tpsOut += b.out; agg[owner].genMs += b.genMs; }
+    // 进行中的轮次还没有 turn_usage 行：live 是最后一条已完成轮次之后的
+    // model_usage 行，只挂到最新一条尚未被已完成轮次占用的可见回答上。
+    if (liveRounds.length && rows.length) {
+      const owner = rows.length - 1;
+      const lastTurnAt = rounds.length ? rounds[rounds.length - 1].at : 0;
+      // 最新可见行必须落在最后一条已完成轮次之后：用户滚到旧消息时，不能把
+      // 正在跑的轮次用量挂到一条无关的旧回答上。
+      if (!used.has(owner) && rows[owner].ts >= lastTurnAt - 60000) {
+        for (const b of liveRounds) {
+          agg[owner].in += b.in;
+          agg[owner].out += b.out;
+          agg[owner].cacheRead += b.cacheRead;
+          if (b.genMs) { agg[owner].tpsOut += b.out; agg[owner].genMs += b.genMs; }
+        }
+      }
+    }
+  } else {
+    const dayOf = (t) => { const d = new Date(t); return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); };
+    for (const b of rounds) {
+      let owner = -1;
+      for (let i = 0; i < rows.length; i++) {
+        if (rows[i].ts <= b.at) owner = i;
+        else break;
+      }
+      if (owner < 0) continue; // 比窗口里最早的行还早：不属于可见任何一条
+      // 同日约束：跨天的请求不归属（昨天的旧行不吞今天的调用——今天的提问
+      // 行可能只是不在当前虚拟列表窗口里）
+      if (dayOf(rows[owner].ts) !== dayOf(b.at)) continue;
+      agg[owner].in += b.in;
+      agg[owner].out += b.out;
+      agg[owner].cacheRead += b.cacheRead;
+      if (b.genMs) { agg[owner].tpsOut += b.out; agg[owner].genMs += b.genMs; }
+    }
   }
   for (let i = 0; i < rows.length; i++) {
     if (agg[i].in + agg[i].out > 0) injectRow(rows[i].row, agg[i]);
@@ -222,6 +266,7 @@ async function tick() {
     if (seq !== tickSeq || sid !== currentSessionId()) return;
     // 官方明细随请求完成增长，全量替换
     rounds = res.rounds;
+    liveRounds = Array.isArray(res.live) ? res.live : [];
     scan();
   }
 }

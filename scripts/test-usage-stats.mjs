@@ -267,6 +267,9 @@ try {
   db.exec('CREATE TABLE model_usage (session_id TEXT, query_source TEXT, status TEXT, completed_at INTEGER,'
     + ' duration_ms INTEGER, time_to_first_token_ms INTEGER, input_tokens INTEGER, output_tokens INTEGER,'
     + ' reasoning_tokens INTEGER, cache_read_input_tokens INTEGER, cache_creation_input_tokens INTEGER, computed_total_tokens INTEGER)');
+  db.exec('CREATE TABLE turn_usage (session_id TEXT, turn_id TEXT, status TEXT, started_at INTEGER, completed_at INTEGER,'
+    + ' duration_ms INTEGER, time_to_first_token_ms INTEGER, input_tokens INTEGER, output_tokens INTEGER,'
+    + ' reasoning_tokens INTEGER, cache_read_input_tokens INTEGER, cache_creation_input_tokens INTEGER, computed_total_tokens INTEGER)');
   const ins = db.prepare('INSERT INTO model_usage VALUES (?,?,?,?,?,?,?,?,?,?,?,?)');
   ins.run('sess_mu', 'main_turn', 'completed', 1000, 10_000, 2_000, 1000, 80, 0, 900, 50, 1080);
   ins.run('sess_mu', 'main_turn', 'completed', 2000, 5_000, null, 2000, 100, 0, 1900, 0, 2100);
@@ -274,6 +277,13 @@ try {
   // 非流式/整段返回的请求：首 token 时机贴着结束（只差 25ms），速率按全程算，
   // 不能让 25ms 的净生成时长把速率顶到几万 tok/s
   ins.run('sess_nostream', 'main_turn', 'completed', 5000, 26_760, 26_735, 2000, 961, 0, 0, 0, 2961);
+  // 官方每轮汇总：同一轮两个请求算一条；生成时长仍按轮内 model_usage 行累加
+  const tu = db.prepare('INSERT INTO turn_usage VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)');
+  tu.run('sess_turn', 't1', 'completed', 1000, 3000, 2000, 0, 100, 50, 0, 100, 0, 150);
+  tu.run('sess_turn', 't2', 'completed', 4000, 6000, 1000, 0, 50, 70, 0, 0, 0, 120);
+  ins.run('sess_turn', 'main_turn', 'completed', 2000, 2000, 0, 100, 50, 0, 100, 0, 150);
+  ins.run('sess_turn', 'main_turn', 'completed', 5000, 1000, 0, 50, 70, 0, 0, 0, 120);
+  ins.run('sess_turn', 'main_turn', 'completed', 7000, 1000, 0, 10, 20, 0, 0, 0, 30); // 进行中的轮次
   db.close();
   const mu = await get('/stats/turns?session=sess_mu');
   assert(mu.rounds.length === 2, `辅助调用不进主轮（期望 2 条，实得 ${mu.rounds.length}）`);
@@ -286,6 +296,12 @@ try {
   const ns = await get('/stats/turns?session=sess_nostream');
   assert(Math.round(ns.rounds[0].tps * 10) === 359 && ns.summary.tps === ns.rounds[0].tps,
     `首 token 贴着结束的请求按全程算速率（期望 35.9，实得 ${ns.rounds[0].tps}）`);
+  const tt = await get('/stats/turns?session=sess_turn');
+  assert(tt.turnMode === true && tt.rounds.length === 2, `有 turn_usage 时按每轮汇总（实得 ${JSON.stringify(tt.rounds?.length)}）`);
+  assert(tt.rounds[0].startAt === 1000 && tt.rounds[0].at === 3000 && tt.rounds[0].out === 50
+    && tt.rounds[0].hitRate === 1 && tt.rounds[0].tps === 25, `每轮起始/结束/输出正确（实得 ${JSON.stringify(tt.rounds[0])}）`);
+  assert(tt.rounds[1].out === 70 && tt.rounds[1].tps === 70, '第二轮输出与速率正确');
+  assert(Array.isArray(tt.live) && tt.live.length === 1 && tt.live[0].out === 20, `进行中轮次的 live 用量返回正确（实得 ${JSON.stringify(tt.live)}）`);
 } catch (err) {
   assert(false, 'model_usage 假库测试装配失败: ' + (err && err.message));
 }

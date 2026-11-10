@@ -518,6 +518,114 @@ export async function listSessionModelUsage(dataRoot, sessionId, treeTrace = '')
   }
 }
 
+// 每轮官方汇总（turn_usage）：一轮里的多个模型请求、工具循环、重试都算在同一轮，
+// 比按 model_usage 行 + 可见回答行分桶稳定。返回 null = 当前 ZCode 版本没有这张表
+// （调用方回退到按 model_usage 行分桶的旧算法）。
+export async function listSessionTurnUsage(dataRoot, sessionId) {
+  const sid = String(sessionId || '');
+  if (!sid) return null;
+  const dbFile = join(dataRoot, 'cli', 'db', 'db.sqlite');
+  if (!existsSync(dbFile)) return null;
+  const driver = await loadDriver();
+  if (!driver) return null;
+  const esc = (v) => "'" + String(v).replace(/'/g, "''") + "'";
+  const tableSql = "SELECT name FROM sqlite_master WHERE type='table' AND name='turn_usage'";
+  const turnSql = `SELECT turn_id, started_at, completed_at, duration_ms, time_to_first_token_ms,`
+    + ` input_tokens, output_tokens, reasoning_tokens, cache_read_input_tokens, cache_creation_input_tokens, computed_total_tokens`
+    + ` FROM turn_usage WHERE session_id = ${esc(sid)} AND status = 'completed' AND completed_at IS NOT NULL`
+    + ` AND (coalesce(input_tokens, 0) + coalesce(output_tokens, 0)) > 0 ORDER BY started_at ASC`;
+  const useSql = `SELECT completed_at, duration_ms, time_to_first_token_ms, input_tokens, output_tokens, cache_read_input_tokens`
+    + ` FROM model_usage WHERE session_id = ${esc(sid)} AND query_source = 'main_turn'`
+    + ` AND status = 'completed' AND completed_at IS NOT NULL ORDER BY completed_at ASC`;
+  try {
+    let turns;
+    let usages;
+    if (driver.kind === 'node') {
+      const db = new driver.DatabaseSync(dbFile, { readOnly: true });
+      try {
+        if (!db.prepare(tableSql).all().length) return null;
+        turns = db.prepare(turnSql).all();
+        usages = db.prepare(useSql).all();
+      } finally { db.close(); }
+    } else {
+      if (!runCli(dbFile, tableSql + ';').stdout.trim()) return null;
+      turns = JSON.parse(runCli(dbFile,
+        `SELECT coalesce(json_group_array(json_object('turn_id', turn_id, 'started_at', started_at,`
+        + ` 'completed_at', completed_at, 'duration_ms', duration_ms, 'time_to_first_token_ms', time_to_first_token_ms,`
+        + ` 'input_tokens', input_tokens, 'output_tokens', output_tokens, 'reasoning_tokens', reasoning_tokens,`
+        + ` 'cache_read_input_tokens', cache_read_input_tokens, 'cache_creation_input_tokens', cache_creation_input_tokens,`
+        + ` 'computed_total_tokens', computed_total_tokens)), '[]') FROM (${turnSql});`).stdout.trim() || '[]');
+      usages = JSON.parse(runCli(dbFile,
+        `SELECT coalesce(json_group_array(json_object('completed_at', completed_at, 'duration_ms', duration_ms,`
+        + ` 'time_to_first_token_ms', time_to_first_token_ms, 'input_tokens', input_tokens, 'output_tokens', output_tokens,`
+        + ` 'cache_read_input_tokens', cache_read_input_tokens)), '[]') FROM (${useSql});`
+      ).stdout.trim() || '[]');
+    }
+    if (!turns.length) return null;
+    const num = (v) => Number(v) || 0;
+    const genMsOf = (dur, ttft) => (dur > 0 ? (ttft > 0 && ttft < dur * 0.8 ? dur - ttft : dur) : null);
+    const rounds = turns.map((t, i) => {
+      const inp = num(t.input_tokens);
+      const cacheRead = num(t.cache_read_input_tokens);
+      return {
+        idx: i + 1,
+        startAt: num(t.started_at) || num(t.completed_at),
+        at: num(t.completed_at),
+        in: inp,
+        out: num(t.output_tokens),
+        total: num(t.computed_total_tokens),
+        reasoning: num(t.reasoning_tokens),
+        cacheRead,
+        cacheWrite: num(t.cache_creation_input_tokens),
+        hitRate: inp > 0 ? cacheRead / inp : null,
+        genMs: 0,
+        tps: null,
+      };
+    });
+    // 一轮的生成时长按落在该轮起止时间内的 model_usage 行累加：包含工具循环的
+    // 轮次也能算净生成速率，且与旧算法同一公式。
+    let ti = 0;
+    for (const u of usages) {
+      const at = num(u.completed_at);
+      while (ti < rounds.length && at > rounds[ti].at) ti += 1;
+      const turn = rounds[ti];
+      if (!turn || at < turn.startAt || at > turn.at) continue;
+      const genMs = genMsOf(num(u.duration_ms), num(u.time_to_first_token_ms));
+      if (genMs) turn.genMs += genMs;
+    }
+    for (const turn of rounds) {
+      turn.tps = turn.genMs > 0 ? turn.out / (turn.genMs / 1000) : null;
+    }
+    const summary = { requests: rounds.length, totalIn: 0, totalOut: 0, totalCacheRead: 0, hitRate: null, tps: null };
+    for (const r of rounds) {
+      summary.totalIn += r.in;
+      summary.totalOut += r.out;
+      summary.totalCacheRead += r.cacheRead;
+    }
+    summary.hitRate = summary.totalIn > 0 ? summary.totalCacheRead / summary.totalIn : null;
+    // 进行中的轮次还没有 turn_usage 行：把最后一条已完成轮次之后的 model_usage
+    // 行作为 live 返回，注入层挂到最新一条可见回答上，长回合也能实时看到用量。
+    const lastAt = rounds.length ? rounds[rounds.length - 1].at : 0;
+    const live = [];
+    for (const u of usages) {
+      const at = num(u.completed_at);
+      if (at <= lastAt) continue;
+      const genMs = genMsOf(num(u.duration_ms), num(u.time_to_first_token_ms));
+      live.push({
+        at,
+        in: num(u.input_tokens),
+        out: num(u.output_tokens),
+        cacheRead: num(u.cache_read_input_tokens),
+        genMs: genMs || 0,
+        tpsOut: genMs ? num(u.output_tokens) : 0,
+      });
+    }
+    return { rounds, summary, turnMode: true, live };
+  } catch {
+    return null;
+  }
+}
+
 // 项目里"真未读"的任务数（未读但排除错误态）：项目行蓝色未读徽标的判据——
 // 错误态任务行显示的是红色错误点（应用图标优先级 错误>未读），它的未读不该再
 // 把项目徽标点亮成蓝色（subagent-icon.js）

@@ -11630,6 +11630,7 @@
   init_core();
   var enabled5 = true;
   var rounds = [];
+  var liveRounds = [];
   var scanTimer = 0;
   var turnCfg = [
     { id: "turnIn", on: true },
@@ -11771,6 +11772,7 @@
     if (sid !== lastSid2) {
       lastSid2 = sid;
       rounds = [];
+      liveRounds = [];
       for (const r of rows) clearRow(r.row);
       void tick2();
       return;
@@ -11780,24 +11782,68 @@
       return;
     }
     const agg = rows.map(() => ({ in: 0, out: 0, cacheRead: 0, tpsOut: 0, genMs: 0 }));
-    const dayOf = (t2) => {
-      const d = new Date(t2);
-      return d.getFullYear() * 1e4 + (d.getMonth() + 1) * 100 + d.getDate();
-    };
-    for (const b of rounds) {
-      let owner = -1;
-      for (let i = 0; i < rows.length; i++) {
-        if (rows[i].ts <= b.at) owner = i;
-        else break;
+    if (rounds.some((r) => r.startAt != null)) {
+      const used = /* @__PURE__ */ new Set();
+      for (const b of rounds) {
+        const startMin = Math.floor((b.startAt ?? b.at) / 6e4);
+        const endMin = Math.floor(b.at / 6e4);
+        let owner = -1;
+        let bestDist = Infinity;
+        for (let i = 0; i < rows.length; i++) {
+          if (used.has(i)) continue;
+          const m = Math.floor(rows[i].ts / 6e4);
+          if (m < startMin || m > endMin) continue;
+          const dist = Math.abs(rows[i].ts - b.at);
+          if (dist < bestDist) {
+            owner = i;
+            bestDist = dist;
+          }
+        }
+        if (owner < 0) continue;
+        used.add(owner);
+        agg[owner].in += b.in;
+        agg[owner].out += b.out;
+        agg[owner].cacheRead += b.cacheRead;
+        if (b.genMs) {
+          agg[owner].tpsOut += b.out;
+          agg[owner].genMs += b.genMs;
+        }
       }
-      if (owner < 0) continue;
-      if (dayOf(rows[owner].ts) !== dayOf(b.at)) continue;
-      agg[owner].in += b.in;
-      agg[owner].out += b.out;
-      agg[owner].cacheRead += b.cacheRead;
-      if (b.genMs) {
-        agg[owner].tpsOut += b.out;
-        agg[owner].genMs += b.genMs;
+      if (liveRounds.length && rows.length) {
+        const owner = rows.length - 1;
+        const lastTurnAt = rounds.length ? rounds[rounds.length - 1].at : 0;
+        if (!used.has(owner) && rows[owner].ts >= lastTurnAt - 6e4) {
+          for (const b of liveRounds) {
+            agg[owner].in += b.in;
+            agg[owner].out += b.out;
+            agg[owner].cacheRead += b.cacheRead;
+            if (b.genMs) {
+              agg[owner].tpsOut += b.out;
+              agg[owner].genMs += b.genMs;
+            }
+          }
+        }
+      }
+    } else {
+      const dayOf = (t2) => {
+        const d = new Date(t2);
+        return d.getFullYear() * 1e4 + (d.getMonth() + 1) * 100 + d.getDate();
+      };
+      for (const b of rounds) {
+        let owner = -1;
+        for (let i = 0; i < rows.length; i++) {
+          if (rows[i].ts <= b.at) owner = i;
+          else break;
+        }
+        if (owner < 0) continue;
+        if (dayOf(rows[owner].ts) !== dayOf(b.at)) continue;
+        agg[owner].in += b.in;
+        agg[owner].out += b.out;
+        agg[owner].cacheRead += b.cacheRead;
+        if (b.genMs) {
+          agg[owner].tpsOut += b.out;
+          agg[owner].genMs += b.genMs;
+        }
       }
     }
     for (let i = 0; i < rows.length; i++) {
@@ -11814,6 +11860,7 @@
     if (res && res.ok && Array.isArray(res.rounds)) {
       if (seq !== tickSeq2 || sid !== currentSessionId()) return;
       rounds = res.rounds;
+      liveRounds = Array.isArray(res.live) ? res.live : [];
       scan3();
     }
   }

@@ -302,6 +302,7 @@ function makeTurnBundle() {
     [
       'let enabled = true;',
       'let rounds = [];',
+      'let liveRounds = [];',
       "let lastSid = '';",
       "let turnCfg = [{ id: 'turnIn', on: true }, { id: 'turnOut', on: true }, { id: 'turnTps', on: true }, { id: 'turnCache', on: true }];",
       fmtSrc,
@@ -313,6 +314,8 @@ function makeTurnBundle() {
       'return { scan, fmt, rowTimeTs, findRows, currentSessionId,',
       '  setEnabled: (v) => { enabled = v; },',
       '  setRounds: (r) => { rounds = r; },',
+      '  setLive: (r) => { liveRounds = r; },',
+      '  getLive: () => liveRounds,',
       '  getRounds: () => rounds,',
       '  setTurnCfg: (c) => { turnCfg = c; } };',
     ].join('\n')
@@ -550,6 +553,41 @@ run('scan', () => {
   assert(htmlOf(y1).includes('IN</em>111') && htmlOf(y2).includes('IN</em>222'), '同日的桶正常归属');
   assert(!htmlOf(y1).includes('77.8万') && !htmlOf(y2).includes('77.8万'), '跨天的桶丢弃（昨天的行不吞今天的调用）');
 
+  // turnMode：官方每轮汇总按起止分钟匹配回答行；后面轮次的行不在可见区时，
+  // 不能把它的用量算到最后一条可见回答上（滚动时数值来回跳的根因）
+  const r1 = makeRow('10:00');
+  const r2 = makeRow('10:05');
+  fdoc.roots = [taskA, r1, r2];
+  const turn = (startH, startM, endH, endM, inTok, outTok) => ({
+    startAt: dayTs(0, startH, startM), at: dayTs(0, endH, endM),
+    in: inTok, out: outTok, cacheRead: 0, genMs: 1000, tpsOut: outTok,
+  });
+  bun.setRounds([
+    turn(9, 58, 10, 4, 1000, 100),
+    turn(10, 5, 10, 9, 2000, 200),
+    turn(10, 20, 10, 25, 3000, 300), // 这一轮的回答行不在可见区
+  ]);
+  bun.scan();
+  assert(htmlOf(r1).includes('OUT</em>100') && htmlOf(r2).includes('OUT</em>200'), 'turnMode 按每轮起止时间归属可见回答行');
+  assert(!htmlOf(r2).includes('OUT</em>500') && !htmlOf(r2).includes('OUT</em>300'), '后面轮次不在可见区时不被最后一条回答吞掉');
+  const r3 = makeRow('10:20');
+  fdoc.roots = [taskA, r1, r2, r3];
+  bun.scan();
+  assert(htmlOf(r3).includes('OUT</em>300'), '滚出该轮回答行后重新扫描能补上（不改动其它行）');
+
+  // 进行中的轮次还没有 turn_usage：live 挂到最新一条未占用的可见回答行
+  bun.setRounds([turn(9, 58, 10, 4, 1000, 100), turn(10, 5, 10, 9, 2000, 200)]);
+  bun.setLive([{ at: dayTs(0, 10, 25), in: 3000, out: 300, cacheRead: 0, genMs: 1000, tpsOut: 300 }]);
+  bun.scan();
+  assert(htmlOf(r3).includes('OUT</em>300') && !htmlOf(r3).includes('OUT</em>600'), 'live 用量挂到最新未占用的回答行');
+  fdoc.roots = [taskA, r1, r2];
+  bun.scan();
+  assert(!htmlOf(r2).includes('OUT</em>500'), '最新可见行已被完成轮占用时 live 不硬塞');
+  const stale = makeRow('09:00');
+  fdoc.roots = [taskA, stale];
+  bun.scan();
+  assert(spansOf(stale).length === 0, '滚到旧消息时 live 不挂到无关旧回答上');
+
   // 切换会话：桶清空，只清不注，并立即补拉一次
   const taskB = makeTaskRow('/home/me/proj:sess_B', true);
   taskA.className = '';
@@ -559,6 +597,7 @@ run('scan', () => {
   assert(spansOf(y1).length === 0 && spansOf(y2).length === 0, '切换会话后先清不注（旧会话的桶不带过来）');
   assert(tickState.calls === tickBefore + 1, '切换会话后立即补拉一次数据');
   assert(bun.getRounds().length === 0, '切换会话后桶清空');
+  assert(bun.getLive().length === 0, '切换会话后 live 清空');
 });
 
 // 5. currentSessionId：选中行优先，无选中回退最后一行；只认 :sess/:session 键

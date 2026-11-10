@@ -11,7 +11,7 @@ import { basename, delimiter, dirname, isAbsolute, join, resolve, sep } from 'no
 import { homedir, tmpdir, userInfo } from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { readSettings, remapSettingsPathsAtomic, isProjectOpenInTabs } from './settings.mjs';
-import { taskIndexPath, probeTaskIndexWritable, remapTaskIndexPaths, taskIndexDriverAvailable, listOverriddenTitles, listTaskWorkspaceMap, listTaskStatuses, listSessionsActivity, listSessionsTrace, listSessionModelUsage, listSubagentChildrenActivity, listProjectsUnread, listWorkspaceTaskIds, setTaskTitleIfNotOverridden, setCustomSessionTitle, isTaskTitleOverridden, reconcileCustomTitles, getTaskProviderModel, listVirtualProjects, countTasks, readRecentQa } from './taskIndex.mjs';
+import { taskIndexPath, probeTaskIndexWritable, remapTaskIndexPaths, taskIndexDriverAvailable, listOverriddenTitles, listTaskWorkspaceMap, listTaskStatuses, listSessionsActivity, listSessionsTrace, listSessionModelUsage, listSessionTurnUsage, listSubagentChildrenActivity, listProjectsUnread, listWorkspaceTaskIds, setTaskTitleIfNotOverridden, setCustomSessionTitle, isTaskTitleOverridden, reconcileCustomTitles, getTaskProviderModel, listVirtualProjects, countTasks, readRecentQa } from './taskIndex.mjs';
 import { pickFolderSystem } from './pickFolder.mjs';
 import { reorderTasks } from './taskOrder.mjs';
 import { webdavRequest, webdavPutWithMkcol, webdavHttpText, parseWebdavListing, findCurl } from './webdav.mjs';
@@ -2265,12 +2265,14 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         json(res, 200, { ok: true, global, recentTurns, ...(mu ? { sessionSummary: mu.summary } : {}) });
         return;
       }
-      // —— 每轮用量（turn-usage.js）：官方 model_usage 同源的主轮请求明细 ——
+      // —— 每轮用量（turn-usage.js）：优先官方 turn_usage 每轮汇总，没有这张表时
+      //    回退到 model_usage 主轮请求明细（旧版 ZCode 兼容） ——
       if (req.method === 'GET' && url.pathname === '/stats/turns') {
         const rawSid = url.searchParams.get('session') || '';
         const sessionId = /^(?:sess|session)_[A-Za-z0-9._-]+$/.test(rawSid) ? rawSid : '';
-        const mu = await listSessionModelUsage(dataRoot, sessionId);
-        json(res, 200, { ok: true, rounds: mu.rounds, summary: mu.summary });
+        const turns = await listSessionTurnUsage(dataRoot, sessionId);
+        const mu = turns || await listSessionModelUsage(dataRoot, sessionId);
+        json(res, 200, { ok: true, rounds: mu.rounds, summary: mu.summary, ...(turns ? { turnMode: true, live: turns.live } : {}) });
         return;
       }
       if (req.method === 'GET' && url.pathname === '/plugins/status') {
