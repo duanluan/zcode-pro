@@ -109,8 +109,8 @@
     }
     return res.error || "";
   }
-  function h(tag, attrs, ...children) {
-    const el = document.createElement(tag);
+  function h(tag2, attrs, ...children) {
+    const el = document.createElement(tag2);
     if (attrs) {
       for (const [k, v] of Object.entries(attrs)) {
         if (k === "class") el.className = v;
@@ -277,7 +277,33 @@
         proxyScopeSync: "\u540C\u6B65",
         proxyScopeSyncDesc: "WebDAV \u4E0A\u4F20\u4E0E\u4E0B\u8F7D\u8D70\u4EE3\u7406\u3002",
         tabSync: "\u540C\u6B65",
+        tabImport: "\u5BFC\u5165\u4F1A\u8BDD",
         tabDebug: "\u8C03\u8BD5",
+        importDesc: "\u628A Codex\u3001Claude Code\u3001dsh\u3001pi \u7684\u5386\u53F2\u4F1A\u8BDD\u590D\u5236\u6210 ZCode \u4EFB\u52A1\u3002\u5BFC\u5165\u662F\u5FEB\u7167\uFF0C\u4E4B\u540E\u6E90\u4F1A\u8BDD\u7684\u53D8\u5316\u4E0D\u4F1A\u518D\u540C\u6B65\u3002",
+        importSearch: "\u641C\u7D22\u6807\u9898\u6216\u76EE\u5F55",
+        importRefresh: "\u5237\u65B0",
+        importShowAll: "\u663E\u793A\u5168\u90E8",
+        importOnlyProject: "\u53EA\u770B\u6240\u9009\u9879\u76EE",
+        importSelectAll: "\u5168\u9009",
+        importSelected: "\u5BFC\u5165\u6240\u9009\uFF08{n}\uFF09",
+        importImporting: "\u5BFC\u5165\u4E2D\u2026",
+        importLoading: "\u52A0\u8F7D\u4E2D\u2026",
+        importNoSessions: "\u6CA1\u6709\u53EF\u5BFC\u5165\u7684\u4F1A\u8BDD",
+        importNoSource: "\u6CA1\u6709\u627E\u5230\u8BE5\u5DE5\u5177\u7684\u4F1A\u8BDD\u76EE\u5F55",
+        importSourceMissing: "\u6CA1\u6709\u68C0\u6D4B\u5230\u4F1A\u8BDD\u76EE\u5F55",
+        importAlready: "\u5DF2\u5BFC\u5165",
+        importAlreadyArchived: "\u5DF2\u5BFC\u5165\uFF08\u4EFB\u52A1\u5DF2\u5F52\u6863\uFF09",
+        importArchivedTaskTip: "\u5BFC\u5165\u7684\u4EFB\u52A1\u5DF2\u5F52\u6863\uFF1B\u53D6\u6D88\u5F52\u6863\u6216\u5220\u9664\u540E\u624D\u80FD\u91CD\u65B0\u5BFC\u5165",
+        importArchived: "\u5DF2\u5F52\u6863",
+        importSubagent: "\u5B50\u4EE3\u7406",
+        importCodexCopy: "Codex \u526F\u672C",
+        importLarge: "\u5927\u6587\u4EF6",
+        importCwdMissing: "\u539F\u76EE\u5F55\u4E0D\u5B58\u5728",
+        importProjectNone: "\u4E0D\u9009\u9879\u76EE\uFF08\u5F52\u5230\u201C\u4EFB\u52A1\u201D\uFF09",
+        importProjectHint: "\u9879\u76EE\u53EA\u51B3\u5B9A\u4FA7\u8FB9\u680F\u5F52\u7C7B\uFF0C\u4E0D\u6539\u53D8\u4F1A\u8BDD\u539F\u6765\u7684\u5DE5\u4F5C\u76EE\u5F55",
+        importConfirmLarge: "\u6240\u9009\u4F1A\u8BDD\u91CC\u6709\u8D85\u8FC7 20MB \u7684\u5927\u6587\u4EF6\uFF0C\u5BFC\u5165\u53EF\u80FD\u9700\u8981\u4E00\u4E9B\u65F6\u95F4\uFF0C\u7EE7\u7EED\u5417\uFF1F",
+        importDone: "\u5BFC\u5165\u5B8C\u6210\uFF1A\u6210\u529F {ok}\uFF0C\u8DF3\u8FC7 {skip}\uFF0C\u5931\u8D25 {fail}",
+        importFailed: "\u5BFC\u5165\u5931\u8D25",
         testNoSessionHint: "\u9009\u62E9\u201C\u8DDF\u968F\u5F53\u524D\u4F1A\u8BDD[\u5F53\u524D\u6A21\u578B]\u201D\u65F6\uFF0C\u9009\u62E9\u4E0A\u6B21\u4F1A\u8BDD\u4E2D\u4F7F\u7528\u7684\u4F9B\u5E94\u5546[\u6A21\u578B]",
         syncDesc: "\u624B\u52A8\u628A ZCode Pro \u8BBE\u7F6E\u4E0E\u6A21\u578B\u8BBE\u7F6E\u5907\u4EFD\u5230 WebDAV\uFF0C\u6216\u5728\u65B0\u7535\u8111\u4E0A\u6062\u590D\u3002\u4E24\u9879\u5404\u81EA\u72EC\u7ACB\u6210\u6587\u4EF6\uFF0C\u53EF\u53EA\u4E0A\u4F20\u6216\u53EA\u8986\u76D6\u5176\u4E2D\u4E00\u9879\uFF1B\u6BCF\u6B21\u4E0A\u4F20\u4F1A\u989D\u5916\u4FDD\u7559\u4E00\u4EFD\u5E26\u65F6\u95F4\u6233\u7684\u5386\u53F2\u7248\u672C\uFF08\u4FDD\u7559\u591A\u5C11\u4E2A\u89C1\u201C\u5386\u53F2\u7248\u672C\u201D\u4E00\u884C\uFF0C\u4E0A\u4F20\u540E\u81EA\u52A8\u5220\u9664\u8D85\u51FA\u7684\u6700\u65E7\u7248\u672C\uFF09\uFF0C\u4E0B\u8F7D\u65F6\u4EFB\u9009\u4E00\u4E2A\u7248\u672C\u6062\u590D\uFF1B\u4EC5\u5728\u70B9\u51FB\u6309\u94AE\u65F6\u4F20\u8F93\uFF0C\u4E0D\u505A\u81EA\u52A8\u540C\u6B65\u3002",
         syncUrlPlaceholder: "https://dav.jianguoyun.com/dav/",
@@ -597,6 +623,8 @@
         featureSessionLink: "\u4F1A\u8BDD ID \u663E\u793A\u4E3A\u4EFB\u52A1\u540D\u94FE\u63A5",
         featureSessionLinkDesc: "\u63D0\u95EE\u4E0E\u56DE\u7B54\u91CC\u7684\u4F1A\u8BDD ID\uFF08sess_ / session_ \u5F00\u5934\uFF09\u663E\u793A\u4E3A\u4EFB\u52A1\u540D\uFF0C\u70B9\u51FB\u5207\u6362\u5230\u8BE5\u4F1A\u8BDD\uFF0C\u60AC\u505C\u53EF\u770B\u539F\u59CB ID\u3002",
         featureComposerProviderDesc: "\u6A21\u578B\u540D\u524D\u663E\u793A\u4F9B\u5E94\u5546\u540D\uFF08\u5982 BigModel-Max1 / glm-5.3\uFF09\uFF0C\u533A\u5206\u540C\u540D\u6A21\u578B\u3002",
+        featureSessionImport: "\u5BFC\u5165\u4F1A\u8BDD",
+        featureSessionImportDesc: "\u5728\u8BBE\u7F6E\u5F39\u7A97\u91CC\u628A Codex\u3001Claude Code\u3001dsh\u3001pi \u7684\u5386\u53F2\u4F1A\u8BDD\u5BFC\u5165\u6210 ZCode \u4EFB\u52A1\u3002",
         imageCopy: "\u590D\u5236\u56FE\u7247",
         imageCopied: "\u56FE\u7247\u5DF2\u590D\u5236\u5230\u526A\u8D34\u677F",
         imageCopyFailed: "\u590D\u5236\u56FE\u7247\u5931\u8D25",
@@ -878,7 +906,33 @@
         proxyScopeSync: "Sync",
         proxyScopeSyncDesc: "WebDAV upload and download go through the proxy.",
         tabSync: "Sync",
+        tabImport: "Session import",
         tabDebug: "Debug",
+        importDesc: "Copy sessions from Codex, Claude Code, dsh and pi into ZCode tasks. The copy is a snapshot; later changes in the source session are not synced.",
+        importSearch: "Search title or folder",
+        importRefresh: "Refresh",
+        importShowAll: "Show all",
+        importOnlyProject: "Only the selected project",
+        importSelectAll: "Select all",
+        importSelected: "Import selected ({n})",
+        importImporting: "Importing\u2026",
+        importLoading: "Loading\u2026",
+        importNoSessions: "No sessions to import",
+        importNoSource: "The session folder for this tool was not found",
+        importSourceMissing: "No session folder detected",
+        importAlready: "Imported",
+        importAlreadyArchived: "Imported (task archived)",
+        importArchivedTaskTip: "The imported task is archived; unarchive or delete it before importing again",
+        importArchived: "Archived",
+        importSubagent: "Subagent",
+        importCodexCopy: "Codex copy",
+        importLarge: "Large",
+        importCwdMissing: "Original folder missing",
+        importProjectNone: "No project (Tasks section)",
+        importProjectHint: "The project only controls the sidebar group; the session keeps its original working folder",
+        importConfirmLarge: "The selection includes files larger than 20MB. Importing may take a while. Continue?",
+        importDone: "Import finished: {ok} imported, {skip} skipped, {fail} failed",
+        importFailed: "Import failed",
         testNoSessionHint: 'With "Follow current session" selected, the provider and model of the last session are used (the label shows the model name in brackets).',
         syncDesc: 'Manually back up ZCode Pro settings and model settings to WebDAV, or restore them on a new computer. The two items are stored as separate files, so you can upload or overwrite either one alone; every upload also keeps a timestamped history version (how many to keep is set in the "History" row; older ones are removed automatically after upload) and download lets you pick any of them. Data moves only when you click, never automatically.',
         syncUrlPlaceholder: "https://dav.example.com/dav/",
@@ -1197,6 +1251,8 @@
         featureSessionLink: "Session ID links",
         featureSessionLinkDesc: "Shows session IDs (sess_ / session_) in chat as task names; click to switch to that session, hover for the raw ID.",
         featureComposerProviderDesc: "Shows the provider before the model name (e.g. BigModel-Max1 / glm-5.3).",
+        featureSessionImport: "Session import",
+        featureSessionImportDesc: "Import sessions from Codex, Claude Code, dsh and pi as ZCode tasks from the settings dialog.",
         imageCopy: "Copy image",
         imageCopied: "Image copied to the clipboard.",
         imageCopyFailed: "Failed to copy the image.",
@@ -1436,6 +1492,17 @@
         "index-remap-failed": "Failed to update the task index (config changes rolled back)",
         "index-error": "Task index error",
         "index-busy": "The task index is busy. Please retry shortly.",
+        "bad-source": "Unknown session source",
+        "source-unavailable": "No session folder found for this tool",
+        "bad-request": "Invalid import request",
+        "too-many-items": "At most 1000 sessions per import; split the selection",
+        "project-not-found": "Project not found or has no folder",
+        "bad-source-path": "The session file is outside the source folder or no longer exists",
+        "session-mismatch": "The session id does not match the file content",
+        "empty-session": "No messages to import",
+        "db-missing": "The ZCode session database or task index is missing",
+        "import-failed": "Import failed",
+        "zstd-unavailable": "This Node build cannot read dsh sessions (zstd support is missing)",
         "vision-invalid": "Invalid vision config",
         "vision-read": "Failed to read zcode-vision.json",
         "vision-write": "Failed to write zcode-vision.json",
@@ -3141,8 +3208,8 @@
     }, pollMs);
   }
   function startWsRunningSpin() {
-    if (installed2 || typeof document === "undefined") return;
-    installed2 = true;
+    if (installed || typeof document === "undefined") return;
+    installed = true;
     const st = document.createElement("style");
     st.id = "__zcodepro_ws_style__";
     st.textContent = ".zcodepro-ws-loader{color:color-mix(in srgb, currentColor 85%, black) !important}";
@@ -3173,12 +3240,12 @@
       if (row) wsTouchAt.set(row, Date.now());
     }, true);
   }
-  var installed2, enabled2, SCAN_DEBOUNCE_MS, SCAN_FALLBACK_MS, PEEK_FIRST_MS, PEEK_REPEAT_MS, PEEK_SETTLE_MS, PEEK_MAX_MS, PEEK_UNMOUNT_WAIT_MS, CONFIG_POLL_MIN_MS, CONFIG_POLL_MAX_MS, TASK_SEL, WS_SEL, LOADER_FALLBACK_PATHS, runningByWs, peekTimers, activePeeks, peekedWs, wsWithRows, servicesRef, servicesMissAt, synthClick, headInfoCache, PROJECT_HEAD_TEXTS, TASK_HEAD_TEXTS, SEC_SPIN_CLASS, anyActiveCache, sectionActive, activeProjectPaths, authActiveByWs, peekChain, PEEK_EXEMPT_CLASS, cssAttr, TOUCH_WINDOW_MS, wsTouchAt, pollMs, scanDebounce;
+  var installed, enabled2, SCAN_DEBOUNCE_MS, SCAN_FALLBACK_MS, PEEK_FIRST_MS, PEEK_REPEAT_MS, PEEK_SETTLE_MS, PEEK_MAX_MS, PEEK_UNMOUNT_WAIT_MS, CONFIG_POLL_MIN_MS, CONFIG_POLL_MAX_MS, TASK_SEL, WS_SEL, LOADER_FALLBACK_PATHS, runningByWs, peekTimers, activePeeks, peekedWs, wsWithRows, servicesRef, servicesMissAt, synthClick, headInfoCache, PROJECT_HEAD_TEXTS, TASK_HEAD_TEXTS, SEC_SPIN_CLASS, anyActiveCache, sectionActive, activeProjectPaths, authActiveByWs, peekChain, PEEK_EXEMPT_CLASS, cssAttr, TOUCH_WINDOW_MS, wsTouchAt, pollMs, scanDebounce;
   var init_ws_running = __esm({
     "src/inject/features/ws-running.js"() {
       init_core();
       init_ws_rows();
-      installed2 = false;
+      installed = false;
       enabled2 = true;
       SCAN_DEBOUNCE_MS = 150;
       SCAN_FALLBACK_MS = 5e3;
@@ -6586,6 +6653,399 @@
     showToast(L.pluginsUpdatesAvailable.replaceAll("{n}", String(status.updates.length)), "info");
   }
 
+  // src/inject/features/session-import.js
+  init_core();
+  init_ui();
+  init_ws_running();
+  var INPUT_CLS = "h-8 w-full rounded-lg border border-border bg-input px-2.5 text-ui-sm text-foreground outline-none transition-shadow placeholder:text-foreground-subtle focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40";
+  function tag(text, title = "") {
+    return h("span", { class: "shrink-0 rounded border border-border px-1 text-ui-xs text-foreground-subtle", title: title || void 0 }, text);
+  }
+  function when(ms) {
+    if (!ms) return "";
+    try {
+      return new Date(ms).toLocaleString();
+    } catch {
+      return "";
+    }
+  }
+  function createSessionImportPane() {
+    const L = t();
+    const root = h("div", { role: "tabpanel", style: "display:none" });
+    let sources = [];
+    let active = "";
+    let sessions = [];
+    let selected = /* @__PURE__ */ new Set();
+    let projects = [];
+    let projectId = "";
+    let showAll = false;
+    let onlyProject = false;
+    let search = "";
+    let loading = false;
+    let importing = false;
+    let loaded = false;
+    let pendingReload = false;
+    let searchTimer = null;
+    const statusEl = h("div", { class: "mt-2 min-h-4 text-ui-xs/relaxed text-foreground-subtle" });
+    const listEl = h("div", { class: "max-h-80 overflow-auto divide-y divide-border" });
+    const sourceTabs = h("div", { role: "tablist", "aria-orientation": "horizontal", class: "zcodepro-tablist" });
+    const searchInput = h("input", {
+      type: "text",
+      class: INPUT_CLS + " min-w-0 flex-1",
+      placeholder: L.importSearch,
+      spellcheck: "false",
+      autocomplete: "off"
+    });
+    const projectSelect = h("select", { class: INPUT_CLS + " min-w-0 max-w-56" });
+    const onlyProjectBox = h("input", { type: "checkbox" });
+    const showAllBox = h("input", { type: "checkbox" });
+    const selectAllBox = h("input", { type: "checkbox" });
+    const refreshBtn = btnSmall(L.importRefresh, () => {
+      void loadList();
+    });
+    const importBtn = btnSmall(L.importSelected.replace("{n}", "0"), () => {
+      void doImport();
+    }, "shrink-0", "primary");
+    importBtn.disabled = true;
+    const setStatus = (text, kind = "") => {
+      statusEl.textContent = text || "";
+      statusEl.className = "mt-2 min-h-4 text-ui-xs/relaxed " + (kind === "error" ? "text-destructive" : "text-foreground-subtle");
+    };
+    const selectedProject = () => projects.find((p) => p.id === projectId) || null;
+    const projectRoots = () => (selectedProject()?.roots || []).map((r) => r.path).filter(Boolean);
+    const refreshTaskTree = async () => {
+      const rootEl = document.getElementById("root");
+      const containerKey = rootEl && Object.keys(rootEl).find((k) => k.startsWith("__reactContainer$"));
+      if (!containerKey) return false;
+      const seen2 = /* @__PURE__ */ new Set();
+      let found = null;
+      const scan6 = (o) => {
+        if (!o || typeof o !== "object" || seen2.has(o) || found) return;
+        seen2.add(o);
+        try {
+          if (typeof o.refresh === "function" && "factTree" in o && "tree" in o) found = o;
+        } catch {
+        }
+      };
+      let visited = 0;
+      const visit = (f) => {
+        if (!f || found || visited > 6e4) return;
+        visited++;
+        for (const h2 of [f.memoizedProps, f.memoizedState]) {
+          if (!h2 || typeof h2 !== "object") continue;
+          scan6(h2);
+          for (const v of Object.values(h2)) if (v && typeof v === "object") scan6(v);
+        }
+        visit(f.child);
+        visit(f.sibling);
+      };
+      visit(rootEl[containerKey]);
+      if (!found) return false;
+      try {
+        await found.refresh();
+        return true;
+      } catch {
+        return false;
+      }
+    };
+    const prepareWorkspaces = async (imported) => {
+      const ag = findServices()?.zcodeAgentService;
+      if (!ag || typeof ag.resumeSession !== "function") return;
+      const seen2 = /* @__PURE__ */ new Set();
+      for (const item of imported) {
+        if (!item.workspace || seen2.has(item.workspace)) continue;
+        seen2.add(item.workspace);
+        try {
+          await ag.resumeSession({ workspacePath: item.workspace, sessionId: item.taskId });
+        } catch {
+        }
+      }
+    };
+    const renderSources = () => {
+      sourceTabs.replaceChildren(...sources.filter((s) => s.available).map((s) => h("button", {
+        type: "button",
+        role: "tab",
+        class: "zcodepro-tab",
+        "aria-selected": String(active === s.id),
+        "data-state": active === s.id ? "active" : "inactive",
+        disabled: !s.available,
+        title: s.available ? "" : L.importSourceMissing,
+        onClick: () => {
+          if (!s.available || active === s.id) return;
+          active = s.id;
+          selected = /* @__PURE__ */ new Set();
+          sessions = [];
+          renderSources();
+          void loadList();
+        }
+      }, s.label)));
+    };
+    const selectable = () => sessions.filter((s) => !s.imported);
+    const allSelected = () => {
+      const list = selectable();
+      return list.length > 0 && list.every((s) => selected.has(s.sessionId));
+    };
+    const renderList = () => {
+      selectAllBox.checked = allSelected();
+      selectAllBox.disabled = importing || !selectable().length;
+      importBtn.textContent = L.importSelected.replace("{n}", String(selected.size));
+      importBtn.disabled = importing || !selected.size;
+      if (loading) {
+        listEl.replaceChildren(h("div", { class: "px-3 py-6 text-center text-ui-sm text-foreground-subtle" }, L.importLoading));
+        return;
+      }
+      if (!sessions.length) {
+        listEl.replaceChildren(h("div", { class: "px-3 py-6 text-center text-ui-sm text-foreground-subtle" }, L.importNoSessions));
+        return;
+      }
+      listEl.replaceChildren(...sessions.map((s) => {
+        const checked = selected.has(s.sessionId);
+        const box = h("input", {
+          type: "checkbox",
+          class: "mt-0.5 shrink-0",
+          checked,
+          disabled: importing || s.imported,
+          onChange: () => {
+            if (box.checked) selected.add(s.sessionId);
+            else selected.delete(s.sessionId);
+            renderList();
+          }
+        });
+        const tags = [];
+        if (s.imported) {
+          tags.push(tag(
+            s.importedArchived ? L.importAlreadyArchived : L.importAlready,
+            s.importedArchived ? L.importArchivedTaskTip : ""
+          ));
+        }
+        if (s.archived) tags.push(tag(L.importArchived));
+        if (s.subagent) tags.push(tag(L.importSubagent));
+        if (s.codexImport) tags.push(tag(L.importCodexCopy));
+        if (s.large) tags.push(tag(L.importLarge));
+        if (s.cwdExists === false) tags.push(tag(L.importCwdMissing));
+        return h(
+          "label",
+          {
+            class: "flex cursor-pointer items-start gap-2 px-3 py-2 transition-colors hover:bg-surface-hover",
+            title: s.cwd || ""
+          },
+          box,
+          h(
+            "div",
+            { class: "min-w-0 flex-1" },
+            h("div", { class: "truncate text-ui-sm" }, s.title || s.sessionId),
+            h(
+              "div",
+              { class: "mt-0.5 flex items-center gap-2 overflow-hidden" },
+              h("span", { class: "min-w-0 flex-1 truncate text-ui-xs text-foreground-subtle" }, s.cwd || s.sourcePath || ""),
+              h("span", { class: "shrink-0 text-ui-xs text-foreground-subtle" }, when(s.updatedAt)),
+              ...tags
+            )
+          )
+        );
+      }));
+    };
+    const loadProjects = async () => {
+      const res = await rpc("/projects-v2");
+      projects = res.ok && Array.isArray(res.projects) ? res.projects : [];
+      const current2 = projectId;
+      projectSelect.replaceChildren(
+        h("option", { value: "" }, L.importProjectNone),
+        ...projects.map((p) => h("option", { value: p.id }, p.name || p.id))
+      );
+      projectSelect.value = projects.some((p) => p.id === current2) ? current2 : "";
+      projectId = projectSelect.value;
+      onlyProjectBox.disabled = !projectId;
+      if (!projectId) {
+        onlyProjectBox.checked = false;
+        onlyProject = false;
+      }
+    };
+    const loadList = async () => {
+      if (loading || importing) {
+        pendingReload = true;
+        return;
+      }
+      loading = true;
+      renderList();
+      const done = () => {
+        loading = false;
+        if (pendingReload) {
+          pendingReload = false;
+          queueMicrotask(() => {
+            void loadList();
+          });
+        }
+      };
+      if (!sources.length || !sources.some((s) => s.id === active && s.available)) {
+        const meta = await rpc("/import/list", { method: "POST", body: { source: "" } });
+        if (meta.ok && Array.isArray(meta.sources)) sources = meta.sources;
+        if (!sources.some((s) => s.id === active && s.available)) {
+          active = (sources.find((s) => s.available) || {}).id || "";
+        }
+        renderSources();
+        if (!active) {
+          sessions = [];
+          done();
+          renderList();
+          setStatus(L.importNoSource);
+          return;
+        }
+      }
+      const res = await rpc("/import/list", {
+        method: "POST",
+        body: {
+          source: active,
+          showAll,
+          search,
+          roots: onlyProject && projectId ? projectRoots() : []
+        }
+      });
+      if (!res.ok) {
+        sessions = [];
+        done();
+        renderList();
+        setStatus(errText(res), "error");
+        return;
+      }
+      sources = res.sources || sources;
+      sessions = res.sessions || [];
+      const usable = new Set(selectable().map((s) => s.sessionId));
+      selected = new Set([...selected].filter((id) => usable.has(id)));
+      if (!active || !sources.some((s) => s.id === active)) {
+        active = (sources.find((s) => s.available) || {}).id || "";
+      }
+      done();
+      renderSources();
+      renderList();
+      setStatus(res.unavailable ? L.importNoSource : "");
+    };
+    const doImport = async () => {
+      if (importing || !selected.size) return;
+      const chosen = sessions.filter((s) => selected.has(s.sessionId));
+      if (!chosen.length) return;
+      if (chosen.some((s) => s.large)) {
+        if (!window.confirm(L.importConfirmLarge)) return;
+      }
+      importing = true;
+      renderList();
+      setStatus(L.importImporting);
+      let summary = "";
+      let summaryKind = "";
+      try {
+        const res = await rpc("/import/run", {
+          method: "POST",
+          body: {
+            source: active,
+            projectId: projectId || null,
+            items: chosen.map((s) => ({
+              sessionId: s.sessionId,
+              sourcePath: s.sourcePath,
+              title: s.title,
+              cwd: s.cwd
+            }))
+          }
+        });
+        if (!res.ok) {
+          setStatus(errText(res), "error");
+          showToast(L.importFailed + ": " + errText(res), "error");
+          return;
+        }
+        const imported = Array.isArray(res.imported) ? res.imported : [];
+        const skipped = Array.isArray(res.skipped) ? res.skipped : [];
+        const failed = Array.isArray(res.failed) ? res.failed : [];
+        const msg = L.importDone.replace("{ok}", String(imported.length)).replace("{skip}", String(skipped.length)).replace("{fail}", String(failed.length));
+        const detail = failed.slice(0, 3).map((f) => `${f.sessionId}: ${f.error}`).join("; ");
+        summary = msg + (detail ? " \xB7 " + detail : "");
+        summaryKind = failed.length ? "error" : "";
+        showToast(msg, failed.length ? "error" : "success");
+        if (imported.length) {
+          void (async () => {
+            await prepareWorkspaces(imported);
+            await refreshTaskTree().catch(() => {
+            });
+          })();
+        }
+        selected = /* @__PURE__ */ new Set();
+      } finally {
+        importing = false;
+      }
+      await loadList();
+      setStatus(summary, summaryKind);
+    };
+    searchInput.addEventListener("input", () => {
+      search = searchInput.value;
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => {
+        void loadList();
+      }, 250);
+    });
+    projectSelect.addEventListener("change", () => {
+      projectId = projectSelect.value;
+      onlyProjectBox.disabled = !projectId;
+      if (!projectId) {
+        onlyProjectBox.checked = false;
+        onlyProject = false;
+      }
+      void loadList();
+    });
+    onlyProjectBox.addEventListener("change", () => {
+      onlyProject = onlyProjectBox.checked;
+      void loadList();
+    });
+    showAllBox.addEventListener("change", () => {
+      showAll = showAllBox.checked;
+      selected = /* @__PURE__ */ new Set();
+      void loadList();
+    });
+    selectAllBox.addEventListener("change", () => {
+      if (selectAllBox.checked) selected = new Set(selectable().map((s) => s.sessionId));
+      else selected = /* @__PURE__ */ new Set();
+      renderList();
+    });
+    const checkLabel = (box, text) => h("label", { class: "flex shrink-0 items-center gap-1.5 text-ui-xs text-foreground-subtle" }, box, text);
+    root.append(
+      h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.importDesc),
+      h("div", { class: "mt-3" }, sourceTabs),
+      h(
+        "div",
+        { class: "mt-2 flex flex-wrap items-center gap-2" },
+        searchInput,
+        projectSelect,
+        checkLabel(onlyProjectBox, L.importOnlyProject),
+        checkLabel(showAllBox, L.importShowAll),
+        refreshBtn
+      ),
+      h(
+        "div",
+        { class: "mt-2 flex items-center justify-between gap-2" },
+        h(
+          "div",
+          { class: "flex items-center gap-2" },
+          checkLabel(selectAllBox, L.importSelectAll),
+          h("span", { class: "text-ui-xs text-foreground-subtle" }, L.importProjectHint)
+        ),
+        importBtn
+      ),
+      h("div", { class: "mt-2 rounded-xl border border-border" }, listEl),
+      statusEl
+    );
+    root.__onShow = () => {
+      if (importing) return;
+      if (!loaded) {
+        loaded = true;
+        setStatus(L.importLoading);
+        void (async () => {
+          await loadProjects();
+          await loadList();
+        })();
+      } else {
+        void loadList();
+      }
+    };
+    return root;
+  }
+
   // src/inject/features/settings-dialog.js
   function openExternal(url) {
     try {
@@ -6947,6 +7407,11 @@
               if (await setFeature("composerProvider", next)) f.composerProvider = next;
               refreshRows();
             }),
+            settingRow(L.featureSessionImport, L.featureSessionImportDesc, f.sessionImport !== false, async () => {
+              const next = !(f.sessionImport !== false);
+              if (await setFeature("sessionImport", next)) f.sessionImport = next;
+              refreshRows();
+            }),
             settingRow(L.featureSandboxReclaim, L.featureSandboxReclaimDesc, f.sandboxReclaim !== false, async () => {
               const next = !(f.sandboxReclaim !== false);
               if (await setFeature("sandboxReclaim", next)) f.sandboxReclaim = next;
@@ -7182,12 +7647,13 @@
         const paneAgents = h("div", { role: "tabpanel", style: "display:none" });
         const paneProxy = h("div", { role: "tabpanel", style: "display:none" });
         const paneSync = h("div", { role: "tabpanel", style: "display:none" });
+        const paneImport = createSessionImportPane();
         const paneVision = h("div", { role: "tabpanel", style: "display:none" });
         const paneRtk = h("div", { role: "tabpanel", style: "display:none" });
         const paneHeadroom = h("div", { role: "tabpanel", style: "display:none" });
         const paneTitleGen = h("div", { role: "tabpanel", style: "display:none" });
         const paneDebug = h("div", { role: "tabpanel", style: "display:none" });
-        const panes = { features: paneFeatures, shortcuts: paneShortcuts, styles: paneStyles, perf: panePerf, agents: paneAgents, proxy: paneProxy, sync: paneSync, vision: paneVision, headroom: paneHeadroom, rtk: paneRtk, debug: paneDebug };
+        const panes = { features: paneFeatures, shortcuts: paneShortcuts, styles: paneStyles, perf: panePerf, agents: paneAgents, proxy: paneProxy, sync: paneSync, import: paneImport, vision: paneVision, headroom: paneHeadroom, rtk: paneRtk, debug: paneDebug };
         const tabDefs = [
           ["features", L.tabFeatures],
           ["styles", L.tabStyles],
@@ -7196,6 +7662,7 @@
           ["shortcuts", L.tabShortcuts],
           ["proxy", L.tabProxy],
           ["sync", L.tabSync],
+          ...config.features.sessionImport !== false ? [["import", L.tabImport]] : [],
           ["vision", L.tabVision],
           ["headroom", L.tabHeadroom],
           ["rtk", L.tabRtk],
@@ -7217,6 +7684,7 @@
           if (name !== "shortcuts" && hkRecording) stopHkRecording();
           for (const [id, pane] of Object.entries(panes)) pane.style.display = id === name ? "" : "none";
           for (const [id, bar] of Object.entries(subTabBars)) bar.style.display = id === name ? "" : "none";
+          if (name === "import") paneImport.__onShow?.();
           renderTabs();
         };
         renderTabs();
@@ -10495,6 +10963,7 @@
           panePerf,
           paneProxy,
           paneSync,
+          paneImport,
           paneVision,
           paneHeadroom,
           paneRtk,
@@ -10523,7 +10992,7 @@
   init_core();
   init_ui();
   init_core();
-  var installed = false;
+  var installed2 = false;
   var dragKey = null;
   var lastOverRow = null;
   var lastOverBefore = false;
@@ -10549,8 +11018,8 @@
     });
   }
   function startTaskOrderWatcher() {
-    if (installed || typeof document === "undefined") return;
-    installed = true;
+    if (installed2 || typeof document === "undefined") return;
+    installed2 = true;
     ensureStyle();
     document.addEventListener("dragstart", (e) => {
       const row = e.target.closest && e.target.closest("[data-task-item-key]");
@@ -12012,8 +12481,8 @@
     svg.setAttribute("stroke-linejoin", "round");
     svg.setAttribute("class", ((baseClass || "size-4") + " " + ROBOT_CLASS).trim());
     svg.setAttribute("title", t().subagentRobotTip);
-    for (const [tag, attrs] of BOT_FALLBACK) {
-      const el = document.createElementNS(ns, tag);
+    for (const [tag2, attrs] of BOT_FALLBACK) {
+      const el = document.createElementNS(ns, tag2);
       for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
       svg.append(el);
     }
@@ -12056,8 +12525,8 @@
     svg.setAttribute("stroke-linejoin", "round");
     svg.setAttribute("class", `size-4 text-foreground-subtle ${TERMINAL_CLASS}`);
     svg.setAttribute("title", t().subagentTermTip);
-    for (const [tag, attrs] of TERMINAL_FALLBACK) {
-      const el = document.createElementNS(ns, tag);
+    for (const [tag2, attrs] of TERMINAL_FALLBACK) {
+      const el = document.createElementNS(ns, tag2);
       for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
       svg.append(el);
     }
@@ -13066,9 +13535,9 @@
           continue;
         }
         if (node.nodeType !== Node.ELEMENT_NODE) continue;
-        const tag = node.tagName;
-        const el = document.createElement(tag.toLowerCase());
-        if (tag === "TD" || tag === "TH") {
+        const tag2 = node.tagName;
+        const el = document.createElement(tag2.toLowerCase());
+        if (tag2 === "TD" || tag2 === "TH") {
           for (const a of ["colspan", "rowspan"]) {
             const v = node.getAttribute(a);
             if (v && v !== "1") el.setAttribute(a, v);

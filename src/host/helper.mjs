@@ -17,6 +17,9 @@ import { reorderTasks } from './taskOrder.mjs';
 import { webdavRequest, webdavPutWithMkcol, webdavHttpText, parseWebdavListing, findCurl } from './webdav.mjs';
 import { resolveZcodeExecutable, resolveDataRootDir } from './paths.mjs';
 import { skillStats, DEFAULT_METADATA_BUDGET } from './skill-stats.mjs';
+import { listImportSessions, runImport } from './session-import/index.mjs';
+
+// 会话导入（/import/list、/import/run）：把外部 CLI 的历史会话写成 ZCode 任务。
 
 const VERSION = '1.7.0';
 
@@ -308,6 +311,7 @@ export function defaultConfig() {
       tableCopy: true,        // 表格工具条"复制表格"按钮：富文本剪贴板，粘贴即表格（table-copy.js）
       sessionLink: true,      // 会话 ID 显示为任务名链接：聊天里的 sess_/session_ 显示为任务名，点击切换（session-link.js）
       composerProvider: true, // 输入框模型名前显示供应商名（composer-provider.js）
+      sessionImport: true,    // 导入会话：把 Codex/Claude Code/dsh/pi 的历史会话复制成 ZCode 任务
     },
     // 空闲项目内存回收的判定时长（分钟，1–1440）：项目无运行中会话、无后台命令
     // 且非当前选中，持续满该时长后释放其会话进程
@@ -1367,6 +1371,29 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         json(res, 200, data
           ? { ok: true, available: true, ...data }
           : { ok: true, available: false, projects: [], deletedRoots: [] });
+        return;
+      }
+      if (req.method === 'POST' && url.pathname === '/import/list') {
+        const body = await readBody(req);
+        const result = await listImportSessions({
+          dataRoot,
+          source: body && body.source,
+          showAll: !!(body && body.showAll),
+          search: String((body && body.search) || '').slice(0, 200),
+          roots: Array.isArray(body && body.roots) ? body.roots.filter((r) => typeof r === 'string').slice(0, 20) : [],
+        });
+        json(res, result.ok ? 200 : 400, result);
+        return;
+      }
+      if (req.method === 'POST' && url.pathname === '/import/run') {
+        const body = await readBody(req);
+        const result = await runImport({
+          dataRoot,
+          source: body && body.source,
+          items: body && body.items,
+          projectId: (body && body.projectId) || null,
+        });
+        json(res, result.ok ? 200 : 400, result);
         return;
       }
       if (req.method === 'GET' && url.pathname === '/task-statuses') {

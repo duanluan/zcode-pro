@@ -9,6 +9,7 @@ import { applyStyles, STYLE_DEFAULTS, showStyleHighlight, hideStyleHighlight } f
 import { THEME_SKINS, CUSTOM_DEFAULTS } from './theme.js';
 import { copyToClipboard, hCopyIcon } from './copy-path.js';
 import { claimAutoUpdateRun } from './plugin-updates.js';
+import { createSessionImportPane } from './session-import.js';
 
 // 调宿主桥在系统浏览器打开外链；宿主没暴露该能力时静默忽略
 function openExternal(url) {
@@ -395,6 +396,11 @@ export function openSettingsDialog() {
             if (await setFeature('composerProvider', next)) f.composerProvider = next;
             refreshRows();
           }),
+          settingRow(L.featureSessionImport, L.featureSessionImportDesc, f.sessionImport !== false, async () => {
+            const next = !(f.sessionImport !== false);
+            if (await setFeature('sessionImport', next)) f.sessionImport = next;
+            refreshRows();
+          }),
           settingRow(L.featureSandboxReclaim, L.featureSandboxReclaimDesc, f.sandboxReclaim !== false, async () => {
             const next = !(f.sandboxReclaim !== false);
             if (await setFeature('sandboxReclaim', next)) f.sandboxReclaim = next;
@@ -597,12 +603,13 @@ export function openSettingsDialog() {
       const paneAgents = h('div', { role: 'tabpanel', style: 'display:none' });
       const paneProxy = h('div', { role: 'tabpanel', style: 'display:none' });
       const paneSync = h('div', { role: 'tabpanel', style: 'display:none' });
+      const paneImport = createSessionImportPane();
       const paneVision = h('div', { role: 'tabpanel', style: 'display:none' });
       const paneRtk = h('div', { role: 'tabpanel', style: 'display:none' });
       const paneHeadroom = h('div', { role: 'tabpanel', style: 'display:none' });
       const paneTitleGen = h('div', { role: 'tabpanel', style: 'display:none' });
       const paneDebug = h('div', { role: 'tabpanel', style: 'display:none' });
-      const panes = { features: paneFeatures, shortcuts: paneShortcuts, styles: paneStyles, perf: panePerf, agents: paneAgents, proxy: paneProxy, sync: paneSync, vision: paneVision, headroom: paneHeadroom, rtk: paneRtk, debug: paneDebug };
+      const panes = { features: paneFeatures, shortcuts: paneShortcuts, styles: paneStyles, perf: panePerf, agents: paneAgents, proxy: paneProxy, sync: paneSync, import: paneImport, vision: paneVision, headroom: paneHeadroom, rtk: paneRtk, debug: paneDebug };
       // 一级 tab 顺序：功能 → 外观 → 行为 → 性能 → 快捷键 → 代理/同步/插件页
       const tabDefs = [
         ['features', L.tabFeatures],
@@ -612,6 +619,7 @@ export function openSettingsDialog() {
         ['shortcuts', L.tabShortcuts],
         ['proxy', L.tabProxy],
         ['sync', L.tabSync],
+        ...(config.features.sessionImport !== false ? [['import', L.tabImport]] : []),
         ['vision', L.tabVision],
         ['headroom', L.tabHeadroom],
         ['rtk', L.tabRtk],
@@ -633,6 +641,7 @@ export function openSettingsDialog() {
         if (name !== 'shortcuts' && hkRecording) stopHkRecording();
         for (const [id, pane] of Object.entries(panes)) pane.style.display = id === name ? '' : 'none';
         for (const [id, bar] of Object.entries(subTabBars)) bar.style.display = id === name ? '' : 'none';
+        if (name === 'import') paneImport.__onShow?.();
         renderTabs();
       };
       renderTabs();
@@ -3384,6 +3393,7 @@ export function openSettingsDialog() {
         panePerf,
         paneProxy,
         paneSync,
+        paneImport,
         paneVision,
         paneHeadroom,
         paneRtk,
