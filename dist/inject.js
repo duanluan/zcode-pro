@@ -2318,6 +2318,8 @@
       pointer-events: none;
     }
     .zcodepro-statusbar span[data-tone='warn'] { color: var(--color-amber-500, #f59e0b); }
+    /* \u5B50\u9879\u4E0D\u538B\u7F29\uFF1A\u8D85\u5BBD\u65F6\u6309 HIDE_ORDER \u9690\u85CF\u6761\u76EE\uFF08status-bar.js\uFF09\uFF0C\u4E0D\u9760\u6324\u538B\u6587\u5B57 */
+    .zcodepro-statusbar > * { flex-shrink: 0; }
     .zcodepro-statusbar span[data-tone='danger'] { color: var(--color-red-500, #ef4444); }
     .zcodepro-statusbar-sep { opacity: 0.45; }
     /* \u4F1A\u8BDD\u7EC4\u4E0E\u5168\u5C40\u7EC4\u4E4B\u95F4\u7684\u5206\u754C\u7AD6\u7EBF */
@@ -11563,29 +11565,48 @@
     barEl.style.marginBottom = hasSession ? "-14px" : "0";
     barEl.style.paddingBottom = hasSession ? "0" : "7px";
     const L = t();
-    const parts = [];
-    let lastGroup = "";
+    const entries = [];
     for (const it of items) {
       if (!it.on) continue;
       const c = itemContent(it.id, L);
       if (!c) continue;
-      const group = GLOBAL_GROUP.has(it.id) ? "g" : "s";
-      if (lastGroup && group !== lastGroup) parts.push('<span class="zcodepro-statusbar-groupsep"></span>');
-      lastGroup = group;
-      parts.push(`<span title="${c.title.replace(/"/g, "&quot;")}"${c.tone ? ` data-tone="${c.tone}"` : ""}>${c.html}</span>`);
+      entries.push({ id: it.id, group: GLOBAL_GROUP.has(it.id) ? "g" : "s", ...c });
     }
     const SEP = '<span class="zcodepro-statusbar-sep">\xB7</span>';
     const GROUPSEP = '<span class="zcodepro-statusbar-groupsep"></span>';
-    const html = parts.reduce((acc, p, i) => {
-      if (i === 0) return p;
-      if (p === GROUPSEP || parts[i - 1] === GROUPSEP) return acc + p;
-      return acc + SEP + p;
-    }, "");
-    barEl.style.display = parts.length ? "" : "none";
-    if (html === lastRenderedHtml) return;
-    lastRenderedHtml = html;
-    barEl.innerHTML = html;
+    const buildHtml = (hidden2) => {
+      const parts = [];
+      let lastGroup = "";
+      for (const e of entries) {
+        if (hidden2.has(e.id)) continue;
+        if (lastGroup && e.group !== lastGroup) parts.push(GROUPSEP);
+        lastGroup = e.group;
+        parts.push(`<span title="${e.title.replace(/"/g, "&quot;")}"${e.tone ? ` data-tone="${e.tone}"` : ""}>${e.html}</span>`);
+      }
+      return parts.reduce((acc, p, i) => {
+        if (i === 0) return p;
+        if (p === GROUPSEP || parts[i - 1] === GROUPSEP) return acc + p;
+        return acc + SEP + p;
+      }, "");
+    };
+    const hidden = /* @__PURE__ */ new Set();
+    for (let guard = 0; guard <= HIDE_ORDER.length; guard++) {
+      const html = buildHtml(hidden);
+      barEl.style.display = html ? "" : "none";
+      if (html !== lastRenderedHtml) {
+        lastRenderedHtml = html;
+        barEl.innerHTML = html;
+      }
+      const gap = 8;
+      let sum = 0;
+      for (const c of barEl.children) sum += c.getBoundingClientRect().width + gap;
+      if (sum - gap <= host.clientWidth + 2) break;
+      const next = HIDE_ORDER.find((id) => !hidden.has(id));
+      if (!next) break;
+      hidden.add(next);
+    }
   }
+  var HIDE_ORDER = ["tasks", "questions", "totalTokens", "todayTokens", "inOut"];
   async function tick() {
     if (!enabled4 || document.hidden) return;
     refreshOfficial();

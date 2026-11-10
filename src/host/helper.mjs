@@ -4977,18 +4977,31 @@ const HEADROOM_LOCAL_URL_RE = /^http:\/\/127\.0\.0\.1:\d+\/?$/;
 // 默认关闭：配置里没有 serena 条目就是关闭，不再另设布尔键。
 // 启动参数取 headroom 的 serena 集成：PyPI serena-agent 预编译 wheel（git 源码构建
 // 在部分文件系统下失败），--open-web-dashboard False 免得每次启动弹浏览器面板。
-// --project . 把项目根钉在工作区（MCP 启动时的 cwd），不往上找 .git/.serena：谁的
-// home 有没有假项目都不影响（--project-from-cwd 往上撞到 home 的 .git 就把整个 home
-// 当项目，各人 home 不同、没法逐台清）；多仓库/多工作区父目录则由 agent 调
-// activate_project 挑具体那个。
-const SERENA_ARGS = ['--from', 'serena-agent', 'serena', 'start-mcp-server',
-  '--project', '.', '--context', 'ide-assistant', '--open-web-dashboard', 'False'];
+// --project $CWD 把项目根钉在会话工作区（$CWD 由桥替换成工作目录）：不往上找
+// .git/.serena，谁的 home 有没有假项目都不影响（--project-from-cwd 往上撞到 home 的
+// .git 就把整个 home 当项目，各人 home 不同、没法逐台清）；多仓库/多工作区父目录则由
+// agent 调 activate_project 挑具体那个。
+// 服务经 mcp-bridge.mjs 拉起：同一项目的多个会话共用一份 serena（一份语言服务器，不再
+// 互抢工作区、不会写坏缓存），不同项目各一份；空闲 30 分钟自退、最多保温 2 份、语言服
+// 务器起不来时自动清坏缓存。
+const SERENA_SERVICE_ARGS = ['--from', 'serena-agent', 'serena', 'start-mcp-server',
+  '--project', '$CWD', '--context', 'ide-assistant', '--open-web-dashboard', 'False'];
 
 function serenaServerSpec() {
-  // ZCode 拉起 MCP 时的 PATH 不一定含 ~/.local/bin，uvx 写绝对路径兜底（同 mastergo 的 npx）
+  // 桥本身用 ZCode 自带的 Node 运行时跑（同 bin/zcode-pro 的做法，用户机器不用装 node）；
+  // 解析不到可执行文件时退回 PATH 的 node
+  let command = 'node';
+  try { command = resolveZcodeExecutable() || command; } catch { /* 找不到就用 PATH 的 node */ }
   const uvx = findBinFile(['uvx'], [join(homedir(), '.local', 'bin', 'uvx'), '/usr/local/bin/uvx', '/usr/bin/uvx'])
     || 'uvx';
-  return { type: 'stdio', command: uvx, args: SERENA_ARGS, timeoutMs: 60000 };
+  const bridge = join(dirname(fileURLToPath(import.meta.url)), 'mcp-bridge.mjs');
+  return {
+    type: 'stdio',
+    command,
+    args: [bridge, '--', uvx, ...SERENA_SERVICE_ARGS],
+    env: { ELECTRON_RUN_AS_NODE: '1', MCP_BRIDGE_IDLE_MS: '1800000' },
+    timeoutMs: 60000,
+  };
 }
 
 export function serenaScan() {
