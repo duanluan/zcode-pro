@@ -318,33 +318,58 @@ function renderBar() {
   barEl.style.marginBottom = hasSession ? '-14px' : '0';
   barEl.style.paddingBottom = hasSession ? '0' : '7px';
   const L = t();
-  const parts = [];
-  let lastGroup = '';
+  const entries = [];
   for (const it of items) {
     if (!it.on) continue;
     const c = itemContent(it.id, L);
     if (!c) continue;
-    const group = GLOBAL_GROUP.has(it.id) ? 'g' : 's';
-    // 会话项与全局项之间用竖线分隔（比项间的 · 更强的分界）
-    if (lastGroup && group !== lastGroup) parts.push('<span class="zcodepro-statusbar-groupsep"></span>');
-    lastGroup = group;
-    parts.push(`<span title="${c.title.replace(/"/g, '&quot;')}"${c.tone ? ` data-tone="${c.tone}"` : ''}>${c.html}</span>`);
+    entries.push({ id: it.id, group: GLOBAL_GROUP.has(it.id) ? 'g' : 's', ...c });
   }
-  // 组内项之间用 ·，跨组竖线两侧不再叠加 ·
+  // 会话项与全局项之间用竖线分隔（比项间的 · 更强的分界）；组内项之间用 ·，
+  // 跨组竖线两侧不再叠加 ·。隐藏的项在拼 html 之前就排除，圆点与竖线随
+  // 重建渲染，不会悬空在行首行尾
   const SEP = '<span class="zcodepro-statusbar-sep">·</span>';
   const GROUPSEP = '<span class="zcodepro-statusbar-groupsep"></span>';
+  const buildHtml = (hidden) => {
+    const parts = [];
+    let lastGroup = '';
+    for (const e of entries) {
+      if (hidden.has(e.id)) continue;
+      if (lastGroup && e.group !== lastGroup) parts.push(GROUPSEP);
+      lastGroup = e.group;
+      parts.push(`<span title="${e.title.replace(/"/g, '&quot;')}"${e.tone ? ` data-tone="${e.tone}"` : ''}>${e.html}</span>`);
+    }
+    return parts.reduce((acc, p, i) => {
+      if (i === 0) return p;
+      if (p === GROUPSEP || parts[i - 1] === GROUPSEP) return acc + p;
+      return acc + SEP + p;
+    }, '');
+  };
   // 数值没变就不重写 DOM：每 2 秒 tick 全量重建会在流式渲染期持续触发布局
   //（CPU 剖析中 renderBar 是我们唯一上榜的函数）
-  const html = parts.reduce((acc, p, i) => {
-    if (i === 0) return p;
-    if (p === GROUPSEP || parts[i - 1] === GROUPSEP) return acc + p;
-    return acc + SEP + p;
-  }, '');
-  barEl.style.display = parts.length ? '' : 'none';
-  if (html === lastRenderedHtml) return;
-  lastRenderedHtml = html;
-  barEl.innerHTML = html;
+  // 超宽自适应：单行不折行，放不下就按 HIDE_ORDER 隐藏次要项直到放下；
+  // 输出/平均命中/上下文 三项不参与隐藏（必够放）
+  const hidden = new Set();
+  for (let guard = 0; guard <= HIDE_ORDER.length; guard++) {
+    const html = buildHtml(hidden);
+    barEl.style.display = html ? '' : 'none';
+    if (html !== lastRenderedHtml) {
+      lastRenderedHtml = html;
+      barEl.innerHTML = html;
+    }
+    // 子项 flex-shrink:0，子项宽度求和即真实内容宽（scrollWidth 量不出被压缩的）
+    const gap = 8;
+    let sum = 0;
+    for (const c of barEl.children) sum += c.getBoundingClientRect().width + gap;
+    if (sum - gap <= host.clientWidth + 2) break;
+    const next = HIDE_ORDER.find((id) => !hidden.has(id));
+    if (!next) break;
+    hidden.add(next);
+  }
 }
+
+// 超宽时的隐藏顺序（先隐左边的）：剩 输出/平均命中/上下文 三项必够放
+const HIDE_ORDER = ['tasks', 'questions', 'totalTokens', 'todayTokens', 'inOut'];
 
 async function tick() {
   if (!enabled || document.hidden) return;

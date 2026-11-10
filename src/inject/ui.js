@@ -759,6 +759,8 @@ export function ensureStyle() {
       pointer-events: none;
     }
     .zcodepro-statusbar span[data-tone='warn'] { color: var(--color-amber-500, #f59e0b); }
+    /* 子项不压缩：超宽时按 HIDE_ORDER 隐藏条目（status-bar.js），不靠挤压文字 */
+    .zcodepro-statusbar > * { flex-shrink: 0; }
     .zcodepro-statusbar span[data-tone='danger'] { color: var(--color-red-500, #ef4444); }
     .zcodepro-statusbar-sep { opacity: 0.45; }
     /* 会话组与全局组之间的分界竖线 */
