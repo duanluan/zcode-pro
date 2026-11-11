@@ -541,6 +541,8 @@
         themeBgBlur: "\u753B\u9762\u6A21\u7CCA",
         themeBgPanel: "\u9762\u677F\u4E0D\u900F\u660E\u5EA6",
         themeBgDialogFrost: "\u8BBE\u7F6E\u5F39\u7A97\u78E8\u7802",
+        themeBgCardVeil: "\u63D2\u4EF6\u5361\u7247\u906E\u7F69",
+        themeBgCardVeilHint: "\u58C1\u7EB8\u5F00\u7740\u65F6\u57AB\u5728\u63D2\u4EF6\u5361\u7247\u5E95\u4E0B\u7684\u4E3B\u9898\u8272\u906E\u7F69\uFF1A0 \u4E0D\u906E\uFF08\u58C1\u7EB8\u539F\u6837\u900F\u51FA\uFF09\uFF0C\u8D8A\u5927\u5361\u7247\u8D8A\u5B9E\u5728\u3001\u8D8A\u6697\u3002",
         themeBgMisc: "\u5176\u4ED6",
         themeBgFollowGlobal: "\u8DDF\u968F\u5168\u5C40",
         themeBgRegionsHint: "\u6765\u6E90\u9009\u201C\u9ED8\u8BA4\uFF08\u5168\u5C40\u58C1\u7EB8\uFF09\u201D\u5373\u8BE5\u533A\u4E0D\u5355\u72EC\u8BBE\u7F6E\u3001\u76F4\u63A5\u663E\u793A\u5168\u5C40\u58C1\u7EB8\uFF1B\u6BCF\u884C\u7684\u7F29\u653E\u3001\u906E\u7F69\u53EF\u5355\u72EC\u8BBE\u7F6E\uFF0C\u9009\u201C\u8DDF\u968F\u5168\u5C40\u201D\u5373\u8DDF\u968F\u201C\u753B\u9762\u201D\u7684\u503C\uFF1B\u6A21\u7CCA\u3001\u8F6C\u573A\u3001\u64AD\u653E\u4EC5\u4F5C\u7528\u4E8E\u5168\u5C40\u58C1\u7EB8\uFF08\u5206\u533A\u53EA\u80FD\u94FA\u56FE\uFF0C\u4E0D\u80FD\u64AD\u89C6\u9891\uFF09\u3002\u5206\u533A\u7528\u6587\u4EF6\u5939\u65F6\uFF0C\u8F6E\u6362\u95F4\u9694\u4E0E\u968F\u673A\u987A\u5E8F\u6CBF\u7528\u5168\u5C40\u8BBE\u7F6E\u3002",
@@ -1170,6 +1172,8 @@
         themeBgBlur: "Wallpaper blur",
         themeBgPanel: "Panel opacity",
         themeBgDialogFrost: "Frosted settings window",
+        themeBgCardVeil: "Plugin card veil",
+        themeBgCardVeilHint: "Theme-colored veil behind plugin cards while a wallpaper is on: 0 shows the wallpaper as-is; higher makes cards more solid and darker.",
         themeBgMisc: "Other",
         themeBgFollowGlobal: "Follow global",
         themeBgRegionsHint: '"Default (global)" means the region is not set on its own and just shows the global wallpaper. Fit and mask can be set per row; "Follow global" uses the Display values. Blur, transition and playback apply only to the global wallpaper (regions are static images, no video). Region folders reuse the global rotation interval and order settings.',
@@ -5974,18 +5978,24 @@
   }
   var webviewScanTimer = null;
   var wvStyled = [];
+  function cardVeilCss() {
+    const raw = Number((currentTheme.bg || {}).cardVeil);
+    const veil = Number.isFinite(raw) ? raw : 0.2;
+    const rgb = rgbTriple(resolvedColor("--color-background"), isDarkMode() ? "13,13,13" : "248,248,248");
+    return `html,body{background:rgba(${rgb},${veil}) !important}`;
+  }
   function applyWebviewTransparency() {
-    const css = "html,body{background:transparent !important}";
-    const hook = (w) => {
+    const hook = (w, css) => {
       const on = document.documentElement.classList.contains("zcodepro-bg-on");
       const rec = wvStyled.find((r) => r.el === w);
       if (on && !rec) {
-        const entry = { el: w, key: null, handler: null };
+        const entry = { el: w, key: null, css, handler: null };
         entry.handler = () => {
           if (!wvStyled.includes(entry)) return;
+          const myCss = entry.css;
           try {
-            void w.insertCSS(css).then((k) => {
-              if (wvStyled.includes(entry)) entry.key = k;
+            void w.insertCSS(myCss).then((k) => {
+              if (wvStyled.includes(entry) && entry.css === myCss) entry.key = k;
               else {
                 try {
                   void w.removeCSS(k).catch(() => {
@@ -6001,6 +6011,32 @@
         w.addEventListener("dom-ready", entry.handler);
         wvStyled.push(entry);
         entry.handler();
+      } else if (on && rec && rec.css !== css) {
+        rec.css = css;
+        const oldKey = rec.key;
+        rec.key = null;
+        if (oldKey) {
+          try {
+            void w.removeCSS(oldKey).catch(() => {
+            });
+          } catch {
+          }
+        }
+        try {
+          void w.insertCSS(css).then((k) => {
+            if (wvStyled.includes(rec) && rec.css === css) rec.key = k;
+            else {
+              try {
+                void w.removeCSS(k).catch(() => {
+                });
+              } catch {
+              }
+            }
+          }).catch(() => {
+            if (wvStyled.includes(rec) && rec.css === css) rec.css = "";
+          });
+        } catch {
+        }
       } else if (!on && rec) {
         if (rec.handler) w.removeEventListener("dom-ready", rec.handler);
         if (rec.key) {
@@ -6013,7 +6049,10 @@
         wvStyled.splice(wvStyled.indexOf(rec), 1);
       }
     };
-    const scan6 = () => document.querySelectorAll("webview").forEach(hook);
+    const scan6 = () => {
+      const css = cardVeilCss();
+      document.querySelectorAll("webview").forEach((w) => hook(w, css));
+    };
     scan6();
     if (!webviewScanTimer) webviewScanTimer = setInterval(scan6, 2e3);
   }
@@ -8552,6 +8591,19 @@
               void saveTheme({ bg: { dialogFrost: !(themeCfg.bg.dialogFrost !== false) } });
             });
           };
+          const cardVeilRow = () => sliderRow(
+            L.themeBgCardVeil,
+            "",
+            0,
+            100,
+            1,
+            Math.round(numOr(themeCfg.bg.cardVeil, 0.2) * 100),
+            "%",
+            (v) => {
+              void saveTheme({ bg: { cardVeil: v / 100 } });
+            },
+            L.themeBgCardVeilHint
+          );
           const urlInput = h("input", { type: "url", value: themeCfg.bg.url, class: themeInputCls, placeholder: "https://..." });
           urlInput.addEventListener("change", () => {
             const v = urlInput.value.trim();
@@ -8803,6 +8855,7 @@
                 pauseCheck("pauseOnBlur", L.themeBgPauseBlur),
                 pauseCheck("pauseOnBattery", L.themeBgPauseBattery)
               ),
+              themeCfg.bg.mode !== "none" ? cardVeilRow() : null,
               dialogFrostRow()
             )),
             bgInput

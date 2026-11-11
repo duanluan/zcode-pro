@@ -28,6 +28,9 @@ assert(cfg.bg.maskOpacity === 0.99, `maskOpacity 越界钳到 0.99（实际 ${cf
 assert(cfg.bg.blurPx === 24, `blurPx 越界钳到 24（实际 ${cfg.bg.blurPx}）`);
 assert(cfg.bg.panelOpacity === 0, `panelOpacity 负值钳到下边界 0（实际 ${cfg.bg.panelOpacity}）`);
 assert(mergeThemeConfig({ bg: {} }).bg.panelOpacity === 0.3, 'panelOpacity 缺省默认 0.3');
+assert(mergeThemeConfig({ bg: {} }).bg.cardVeil === 0.2, 'cardVeil 缺省默认 0.2');
+assert(mergeThemeConfig({ bg: { cardVeil: 5 } }).bg.cardVeil === 1, 'cardVeil 越界钳到 1');
+assert(mergeThemeConfig({ bg: { cardVeil: 0 } }).bg.cardVeil === 0, 'cardVeil 0 合法保留');
 assert(cfg.bg.intervalMin === 1440, `intervalMin 越界钳到 1440（实际 ${cfg.bg.intervalMin}）`);
 assert(cfg.bg.videoVolume === 1, `videoVolume 越界钳到 1（实际 ${cfg.bg.videoVolume}）`);
 assert(cfg.bg.playbackRate === 2, `playbackRate 越界钳到 2（实际 ${cfg.bg.playbackRate}）`);

@@ -1313,6 +1313,10 @@ export function openSettingsDialog() {
             void saveTheme({ bg: { dialogFrost: !(themeCfg.bg.dialogFrost !== false) } });
           });
         };
+        // 插件卡片遮罩：壁纸开着时垫在插件卡片页底下的主题色遮罩，
+        // 0 = 壁纸原样透出，越大卡片越实在、越暗。默认 20%。没壁纸时整行不显示
+        const cardVeilRow = () => sliderRow(L.themeBgCardVeil, '', 0, 100, 1, Math.round(numOr(themeCfg.bg.cardVeil, 0.2) * 100), '%',
+          (v) => { void saveTheme({ bg: { cardVeil: v / 100 } }); }, L.themeBgCardVeilHint);
         // 图片网址输入：change 提交；空值回无壁纸
         const urlInput = h('input', { type: 'url', value: themeCfg.bg.url, class: themeInputCls, placeholder: 'https://...' });
         urlInput.addEventListener('change', () => {
@@ -1457,6 +1461,7 @@ export function openSettingsDialog() {
               pauseCheck('pauseOnHidden', L.themeBgPauseHidden),
               pauseCheck('pauseOnBlur', L.themeBgPauseBlur),
               pauseCheck('pauseOnBattery', L.themeBgPauseBattery)),
+            themeCfg.bg.mode !== 'none' ? cardVeilRow() : null,
             dialogFrostRow())),
           bgInput,
         );

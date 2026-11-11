@@ -250,6 +250,10 @@ export function mergeThemeConfig(saved) {
       transition: bg.transition === 'fade' ? 'fade' : 'cut',
       fpsCap: TRANSCODE_FPS.has(Number(bg.fpsCap)) ? Number(bg.fpsCap) : 0,
       dialogFrost: bg.dialogFrost !== false,
+      // 插件卡片遮罩：注入插件沙箱页的主题色遮罩透明度（0=壁纸原样透出，1=实底）；
+      // 默认 20%，卡片略实的初始观感，用户可在壁纸设置里调
+      cardVeil: bg.cardVeil != null && bg.cardVeil !== '' && Number.isFinite(Number(bg.cardVeil))
+        ? Math.min(1, Math.max(0, Number(bg.cardVeil))) : 0.2,
       videoVolume: bg.videoVolume != null && Number.isFinite(Number(bg.videoVolume))
         ? Math.min(1, Math.max(0, Number(bg.videoVolume))) : 0,
       playbackRate: bg.playbackRate != null && Number.isFinite(Number(bg.playbackRate))
@@ -275,6 +279,7 @@ export function mergeThemeConfig(saved) {
 export const BG_PARAM_KEYS = {
   maskOpacity: 'number', blurPx: 'number', panelOpacity: 'number', videoVolume: 'number', playbackRate: 'number',
   pauseOnHidden: 'boolean', pauseOnBlur: 'boolean', pauseOnBattery: 'boolean', dialogFrost: 'boolean',
+  cardVeil: 'number',
   fit: BG_FITS, transition: new Set(['cut', 'fade']), fpsCap: new Set([0, ...TRANSCODE_FPS]),
 };
 
@@ -1010,6 +1015,7 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
                 pauseOnBlur: bt.bg && bt.bg.pauseOnBlur !== undefined ? bt.bg.pauseOnBlur : cur.bg.pauseOnBlur,
                 pauseOnBattery: bt.bg && bt.bg.pauseOnBattery !== undefined ? bt.bg.pauseOnBattery : cur.bg.pauseOnBattery,
                 dialogFrost: bt.bg && bt.bg.dialogFrost !== undefined ? bt.bg.dialogFrost : cur.bg.dialogFrost,
+                cardVeil: bt.bg && bt.bg.cardVeil !== undefined ? bt.bg.cardVeil : cur.bg.cardVeil,
                 regions: bt.bg && bt.bg.regions !== undefined ? bt.bg.regions : cur.bg.regions,
               },
             };

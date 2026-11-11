@@ -32,6 +32,7 @@ function usage() {
       pauseOnHidden=true 窗口最小化暂停             pauseOnBlur=false 窗口失焦暂停
       pauseOnBattery=false 电池供电暂停
       dialogFrost=true   设置弹窗磨砂透出壁纸
+      cardVeil=0.2       插件卡片遮罩 0-1
   wallpaper upload [--select] <文件路径>... 把本机图片/视频复制进图库（--select 顺手设为壁纸）
   wallpaper delete <图库文件名>             从图库删除
 `;
@@ -282,7 +283,7 @@ zcode-pro（ZCode 桌面版增强工具）内置壁纸引擎：图片、视频�
 | \`zcode-pro wallpaper list\` | 看当前配置和图库文件 |
 | \`zcode-pro wallpaper set none\\|library <文件>\\|folder <目录>\\|url <地址>\\|web <地址>\` | 切换壁纸来源 |
 | \`zcode-pro wallpaper rotate <分钟> [--random\\|--sequential]\` | 文件夹轮换/网址刷新间隔（0 = 不轮换/不刷新） |
-| \`zcode-pro wallpaper params <键=值>...\` | 调画面（遮罩/模糊/面板/缩放）、转场、播放（音量/倍速/帧率）、暂停条件、弹窗磨砂 |
+| \`zcode-pro wallpaper params <键=值>...\` | 调画面（遮罩/模糊/面板/缩放/插件卡片遮罩）、转场、播放（音量/倍速/帧率）、暂停条件、弹窗磨砂 |
 | \`zcode-pro wallpaper upload [--select] <文件路径>...\` | 把本机图片/视频复制进图库（--select 顺手设为当前壁纸） |
 | \`zcode-pro wallpaper delete <图库文件名>\` | 从图库删文件 |
 
@@ -310,6 +311,7 @@ zcode-pro（ZCode 桌面版增强工具）内置壁纸引擎：图片、视频�
 | videoVolume / playbackRate | 音量 0-1 / 倍速 0.5-2 | 数值 |
 | pauseOnHidden / pauseOnBlur / pauseOnBattery | 最小化/失焦/电池暂停 | true/false |
 | dialogFrost | 设置弹窗磨砂透出壁纸（false = 恢复不透明底） | true/false |
+| cardVeil | 插件卡片遮罩：插件卡片透出壁纸时垫在卡片底下的主题色遮罩 | 0-1，默认 0.2 |
 | regions.left / center / right | 分区背景，每区可独立缩放/遮罩（null = 跟随全局；仅静态图，mode 取 library/folder/url，文件夹轮换复用全局间隔与顺序） | {mode,file,folder,url,fit,maskOpacity} |
 `;
 

@@ -394,24 +394,35 @@ function clearWpTimers() {
   }
 }
 // 插件卡片（沙箱 webview）页面自带的背景是实色，会把壁纸整块盖住；
-// 用 webview 自带的 insertCSS 把 guest 页面的 html/body 背景改透明（页面每次
-// 加载后重插，CSS 随文档生命周期失效）。只做加法：页面其余样式不动
+// 用 webview 自带的 insertCSS 把 guest 页面的 html/body 背景改成“主题色遮罩 +
+// 卡片遮罩透明度”（0 = 全透明 = 壁纸原样透出）。页面每次加载后重插（CSS 随文档
+// 生命周期失效），遮罩滑杆（bg.cardVeil）变化时撤旧 key 重插。只做加法：
+// 页面其余样式不动
 let webviewScanTimer = null;
-const wvStyled = []; // [{ el, key }]：壁纸关闭时撤掉透明，恢复卡片自己的背景
+const wvStyled = []; // [{ el, key, css, handler }]：壁纸关闭时撤掉遮罩，恢复卡片自己的背景
+function cardVeilCss() {
+  const raw = Number((currentTheme.bg || {}).cardVeil);
+  const veil = Number.isFinite(raw) ? raw : 0.2;
+  // 与壁纸遮罩同源取色：面板半透明化后 --color-background 是 color-mix，直接读
+  // 自定义属性拿到的 token 认不出；resolvedColor 取计算值，rgbTriple 归一化成 rgb
+  const rgb = rgbTriple(resolvedColor('--color-background'), isDarkMode() ? '13,13,13' : '248,248,248');
+  return `html,body{background:rgba(${rgb},${veil}) !important}`;
+}
 function applyWebviewTransparency() {
-  const css = 'html,body{background:transparent !important}';
-  const hook = (w) => {
-    // on 每次现读：函数只在启动时调用一次，闭包固化初值会让插入分支永远走不到
+  const hook = (w, css) => {
+    // on 每次现读、css 每轮扫描现算：扫描定时器只启动一次、长期存活，闭包固化
+    // 初值会让后建的 webview 拿到旧遮罩，还会每 2 秒把滑杆改后的新值覆盖回旧值
     const on = document.documentElement.classList.contains('zcodepro-bg-on');
     const rec = wvStyled.find((r) => r.el === w);
     if (on && !rec) {
-      const entry = { el: w, key: null, handler: null };
+      const entry = { el: w, key: null, css, handler: null };
       entry.handler = () => {
-        if (!wvStyled.includes(entry)) return; // 已随关壁纸摘牌：别再插透明
+        if (!wvStyled.includes(entry)) return; // 已随关壁纸摘牌：别再插遮罩
+        const myCss = entry.css; // 插入期间遮罩可能又变：结果回来只认自己这份
         try {
-          void w.insertCSS(css).then((k) => {
-            // 结果回来时若已摘牌，插进去的透明没人撤，立刻自己撤掉
-            if (wvStyled.includes(entry)) entry.key = k;
+          void w.insertCSS(myCss).then((k) => {
+            // 已摘牌或值已过期：插进去的遮罩没人撤，立刻自己撤掉
+            if (wvStyled.includes(entry) && entry.css === myCss) entry.key = k;
             else { try { void w.removeCSS(k).catch(() => { /* ignore */ }); } catch { /* ignore */ } }
           }).catch(() => { /* 未就绪：dom-ready 再试 */ });
         } catch { /* 同步抛出：同上 */ }
@@ -419,13 +430,33 @@ function applyWebviewTransparency() {
       w.addEventListener('dom-ready', entry.handler);
       wvStyled.push(entry);
       entry.handler();
+    } else if (on && rec && rec.css !== css) {
+      // 遮罩滑杆变了：撤旧 key 重插新值（insertCSS 的 key 对应一份 CSS 文本）
+      rec.css = css;
+      const oldKey = rec.key;
+      rec.key = null;
+      if (oldKey) { try { void w.removeCSS(oldKey).catch(() => { /* ignore */ }); } catch { /* ignore */ } }
+      try {
+        void w.insertCSS(css).then((k) => {
+          if (wvStyled.includes(rec) && rec.css === css) rec.key = k;
+          else { try { void w.removeCSS(k).catch(() => { /* ignore */ }); } catch { /* ignore */ } }
+        }).catch(() => {
+          // 没插进去（guest 未就绪等）：清掉记录值让下次扫描重试，否则
+          // rec.css 已是新值、再也进不了本分支，遮罩就一直缺着
+          if (wvStyled.includes(rec) && rec.css === css) rec.css = '';
+        });
+      } catch { /* 同步抛出：同上 */ }
     } else if (!on && rec) {
       if (rec.handler) w.removeEventListener('dom-ready', rec.handler); // 不摘会随开关次数累积
       if (rec.key) { try { void w.removeCSS(rec.key).catch(() => { /* ignore */ }); } catch { /* ignore */ } }
       wvStyled.splice(wvStyled.indexOf(rec), 1);
     }
   };
-  const scan = () => document.querySelectorAll('webview').forEach(hook);
+  // 每轮扫描算一次 CSS 给所有 webview 共用：卡片多时不必逐个读计算样式
+  const scan = () => {
+    const css = cardVeilCss();
+    document.querySelectorAll('webview').forEach((w) => hook(w, css));
+  };
   scan();
   if (!webviewScanTimer) webviewScanTimer = setInterval(scan, 2000);
 }
