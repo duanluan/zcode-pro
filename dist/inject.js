@@ -2209,6 +2209,16 @@
     .zcodepro-textarea.zcodepro-textarea-sm { min-height: 0; }
     /* \u5168\u5C40\u63D0\u793A\u8BCD\u5927\u7F16\u8F91\u6846\uFF1A\u9ED8\u8BA4/\u6700\u5927\u9AD8\u5EA6\u90FD\u6BD4\u9ED8\u8BA4\u6587\u672C\u57DF\u66F4\u9AD8 */
     .zcodepro-textarea.zcodepro-textarea-lg { min-height: 16rem; max-height: 40rem; }
+    /* \u8BBE\u7F6E\u9875\u4E0B\u62C9\u6846\uFF1A\u58C1\u7EB8\u5F00\u7740\u65F6\u8868\u9762 token \u88AB\u6362\u6210 color-mix \u534A\u900F\u660E\uFF0C\u539F\u751F\u4E0B\u62C9\u5217\u8868
+       \u4F1A\u6E32\u67D3\u6210\u9ED1\u5E95 + \u9ED8\u8BA4\u9ED1\u5B57\uFF08\u6DF1\u8272\u6A21\u5F0F\u770B\u4E0D\u6E05\uFF09\u3002\u7ED9\u9009\u9879\u5199\u6B7B\u4E3B\u9898\u7684\u4E0D\u900F\u660E\u5E95\u8272\u4E0E
+       \u6B63\u6587\u8272\uFF0C\u5E76\u6309\u660E\u6697\u7ED9 select \u4E00\u4E2A color-scheme\uFF0C\u5217\u8868\u5728\u4E24\u79CD\u6A21\u5F0F\u4E0B\u90FD\u53EF\u8BFB */
+    [data-zcodepro-settings] select { color-scheme: light; }
+    html.theme-zai-dark [data-zcodepro-settings] select,
+    html.dark [data-zcodepro-settings] select { color-scheme: dark; }
+    [data-zcodepro-settings] select option {
+      background-color: var(--color-popover, #fff);
+      color: var(--color-foreground, #111);
+    }
     /* \u884C\u9AD8\u6ED1\u6746\uFF08\u6837\u5F0F\u8C03\u6574\u6807\u7B7E\u9875\uFF09 */
     .zcodepro-range {
       -webkit-appearance: none;

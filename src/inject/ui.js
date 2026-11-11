@@ -646,6 +646,16 @@ export function ensureStyle() {
     .zcodepro-textarea.zcodepro-textarea-sm { min-height: 0; }
     /* 全局提示词大编辑框：默认/最大高度都比默认文本域更高 */
     .zcodepro-textarea.zcodepro-textarea-lg { min-height: 16rem; max-height: 40rem; }
+    /* 设置页下拉框：壁纸开着时表面 token 被换成 color-mix 半透明，原生下拉列表
+       会渲染成黑底 + 默认黑字（深色模式看不清）。给选项写死主题的不透明底色与
+       正文色，并按明暗给 select 一个 color-scheme，列表在两种模式下都可读 */
+    [data-zcodepro-settings] select { color-scheme: light; }
+    html.theme-zai-dark [data-zcodepro-settings] select,
+    html.dark [data-zcodepro-settings] select { color-scheme: dark; }
+    [data-zcodepro-settings] select option {
+      background-color: var(--color-popover, #fff);
+      color: var(--color-foreground, #111);
+    }
     /* 行高滑杆（样式调整标签页） */
     .zcodepro-range {
       -webkit-appearance: none;
