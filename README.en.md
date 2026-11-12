@@ -76,7 +76,7 @@ Right-click the settings button (gear) at the bottom of the ZCode sidebar to ope
 
 ## 📦 Installation
 
-> **Version match**: for ZCode ≥ 3.16.1 use **zcode-pro 1.1.0 or newer** (the latest is 1.8.0); for ZCode 3.15.x and earlier use **zcode-pro 0.20.3** (the previous release, still available).
+> **Version match**: for ZCode ≥ 3.16.1 use **zcode-pro 1.1.0 or newer** (the latest is 1.8.1); for ZCode 3.15.x and earlier use **zcode-pro 0.20.3** (the previous release, still available).
 
 Once installed, launch ZCode via the "ZCode Pro" shortcut in your app menu / Start menu, or the `zcode-pro` command in a terminal — the enhancements are enabled automatically in this mode; launching ZCode through its original entry does not load them. After launching, right-click the settings button at the bottom of the ZCode sidebar to open the ZCode Pro settings window.
 
