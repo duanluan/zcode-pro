@@ -5404,7 +5404,16 @@
         `.history-message.flex.flex-col > * + *:not([data-slot="collapsible-content"]){margin-block-start:${n}px !important;margin-top:${n}px !important;}`,
         // 工具/状态卡片（“N 个文件已更改”等）上方间距下限 8px：
         // 段落间距调到 0 时也不至于贴死（gap 与 margin 在弹性布局里相加）
-        `${CONV} .flex.flex-col.gap-5 > [data-slot="collapsible"]{margin-block-start:max(0px, calc(8px - ${n}px)) !important;margin-top:max(0px, calc(8px - ${n}px)) !important;}`
+        `${CONV} .flex.flex-col.gap-5 > [data-slot="collapsible"]{margin-block-start:max(0px, calc(8px - ${n}px)) !important;margin-top:max(0px, calc(8px - ${n}px)) !important;}`,
+        // 3.18 的“工作中”槽位带 -8px 上边距（默认 gap 20 → 实际 12px）；行间距调小后
+        // 这层负边距会把槽位拉得贴住上面的内容（gap 7 → 实际 -1px）。清掉负边距，
+        // 让它跟其它块一样按设置的行间距排
+        `${CONV} .flex.flex-col.gap-5 > [data-zcode-chat-loading-slot]:not(:first-child){margin-block-start:0 !important;margin-top:0 !important;}`,
+        // 过程视图（思考/工具摘要/过程正文）的行块：应用给容器 4px gap + 每行
+        // 12px 上内边距（共 16px）。段落间距设置时直接接管：gap 归零、上内边距
+        // 按设置值，总间距等于设置值（设 0 就完全贴紧）
+        `${CONV} [data-conversation-work-items]{gap:0 !important;}`,
+        `${CONV} [data-conversation-work-items] > * + *{padding-top:${n}px !important;}`
       );
     }
     const own = (v) => typeof v === "number" && Number.isFinite(v) && v >= 0 ? v : rowGapSet ? n : null;
@@ -5452,7 +5461,20 @@
     const tlh = styles.thinkingLineHeight;
     if (typeof tlh === "number" && Number.isFinite(tlh) && tlh >= 0.8) {
       parts.push(
-        `[data-testid^="chat-assistant-history-content"]{line-height:${tlh} !important;}`
+        `[data-testid^="chat-assistant-history-content"]{line-height:${tlh} !important;}`,
+        // 历史回合顶部的“已工作 N 秒”触发行在历史内容容器外，按钮自带 text-ui-base
+        // 的行高，只靠容器继承改不到；直接覆盖，否则调“思考行高”时这行不变
+        `[class~="group/history-message"]{line-height:${tlh} !important;}`,
+        // 用户要求：“已工作”展开块内的内容算思考，块外的才算回答。
+        // 历史视图整轮消息（含回答正文）都在历史内容容器里，容器内的 .space-y-4
+        // 改用思考行高；正在回答的回合里，展开块外的回答正文仍用回答行高。
+        // 放在回答行高规则之后（同特异性，后写的生效）
+        `[data-testid^="chat-assistant-history-content"] .space-y-4{line-height:${tlh} !important;}`,
+        `[data-conversation-work-items] .space-y-4{line-height:${tlh} !important;}`,
+        // 3.18 实时回合的思考正文与“工作中”行在历史容器外，且自带 text-ui-base 的
+        // 行高，只靠继承改不动；直接覆盖，调“思考行高”时正在生成的回合也生效
+        `[data-testid="chat-reasoning-content"] .whitespace-pre-wrap{line-height:${tlh} !important;}`,
+        `[data-testid="chat-loading"] *{line-height:${tlh} !important;}`
       );
     }
     const ulh = styles.userLineHeight;
@@ -5557,10 +5579,9 @@
     tableCellPaddingV: `${CONV} td, ${CONV} th`,
     tableCellPaddingH: `${CONV} td, ${CONV} th`,
     codeLineHeight: `${CONV} diffs-container, ${CONV} pre`,
-    lineHeight: `${CONV} .space-y-4:not([data-reasoning-content] *)`,
-    // 思考行高作用在“已工作/工作中”过程视图容器上；视图折叠未挂载时不标
-    // （触发行不属此设置范围，不额外描边）
-    thinkingLineHeight: `[data-testid^="chat-assistant-history-content"]`,
+    lineHeight: `${CONV} .space-y-4:not([data-reasoning-content] *):not([data-testid^="chat-assistant-history-content"] *):not([data-conversation-work-items] *)`,
+    // 思考行高作用在“已工作/工作中”过程视图、触发行与思考正文上；视图折叠未挂载时不标
+    thinkingLineHeight: `[data-testid^="chat-assistant-history-content"], [class~="group/history-message"], [data-testid="chat-loading"], [data-testid="chat-reasoning-content"]`,
     userLineHeight: `${CONV} [class*="user-row"] .whitespace-pre-wrap`,
     contentWidth: "[data-v4-timeline-content-column]",
     // 双结构：新侧栏项目行 / 旧 testid 行
