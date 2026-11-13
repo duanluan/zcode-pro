@@ -2317,8 +2317,8 @@
       color: var(--color-muted-foreground, #888);
     }
     /* \u72B6\u6001\u680F\u7EDF\u8BA1\uFF08status-bar.js\uFF09\uFF1A\u8F93\u5165\u6846\u4E0B\u65B9\u53F3\u5BF9\u9F50\u7684\u4E00\u884C\u5C0F\u5B57\uFF0C\u6BCF\u9879\u5E26 lucide \u5C0F\u56FE\u6807\u3002
-       \u4E0A\u4E0B\u95F4\u8DDD\u7531\u811A\u672C\u6309\u89C6\u56FE\u63A7\u5236\uFF08status-bar.js\uFF1A\u4E0B\u65B9\u6709\u5185\u5BB9\u65F6\u5BF9\u79F0 7px\uFF0C
-       \u4E0B\u65B9\u662F\u7A97\u5E95\u7559\u767D\u65F6\u8D1F margin \u538B\u5165\u8D34\u5E95\uFF09 */
+       \u4F1A\u8BDD\u89C6\u56FE\u91CC\u7EDD\u5BF9\u5B9A\u4F4D\u5230\u6EDA\u52A8\u5BB9\u5668\u5916\u7684\u5E95\u90E8\uFF08\u907F\u5F00\u6EDA\u52A8\u88C1\u526A\uFF09\uFF0C\u65B0\u5EFA\u4F1A\u8BDD\u89C6\u56FE\u5728\u8F93\u5165\u6846\u540E
+       \u6309\u539F\u6837\u6392\uFF1B\u4F4D\u7F6E\u4E0E\u95F4\u8DDD\u7531\u811A\u672C\u63A7\u5236 */
     .zcodepro-statusbar {
       display: flex;
       justify-content: flex-end;
@@ -11395,6 +11395,8 @@
   var enabled4 = true;
   var items = DEFAULT_STATUS_ITEMS.map((x) => ({ ...x }));
   var barEl = null;
+  var liftedPane = null;
+  var BAR_LIFT = 10;
   var lastStats = null;
   var lastSid = null;
   var statsSid = null;
@@ -11628,26 +11630,67 @@
         return null;
     }
   }
+  function clipPane(el) {
+    for (let n = el.parentElement; n && n !== document.body; n = n.parentElement) {
+      if (/(auto|scroll|hidden)/.test(getComputedStyle(n).overflowY)) return n;
+    }
+    return null;
+  }
   function renderBar() {
     const ta = composerEl();
     const host = ta && (ta.closest("form") || ta.parentElement);
     if (!enabled4 || !host || !host.parentElement) {
       if (barEl) barEl.remove();
       barEl = null;
+      if (liftedPane) {
+        liftedPane.style.marginBottom = "";
+        liftedPane = null;
+      }
       lastRenderedHtml = null;
       return;
     }
-    if (!barEl || !barEl.isConnected) {
+    const hasSession = !!selectedSessionId();
+    const pane = hasSession ? clipPane(host) : null;
+    const mount = pane && pane.parentElement && getComputedStyle(pane.parentElement).position !== "static" ? pane.parentElement : host.parentElement;
+    if (!barEl || !barEl.isConnected || barEl.parentElement !== mount) {
       if (!barEl) {
         barEl = document.createElement("div");
         barEl.className = "zcodepro-statusbar";
         lastRenderedHtml = null;
       }
-      host.parentElement.insertBefore(barEl, host.nextSibling);
+      if (mount === host.parentElement) mount.insertBefore(barEl, host.nextSibling);
+      else mount.append(barEl);
     }
-    const hasSession = !!selectedSessionId();
-    barEl.style.marginBottom = hasSession ? "-14px" : "0";
-    barEl.style.paddingBottom = hasSession ? "0" : "7px";
+    if (mount !== host.parentElement) {
+      if (liftedPane && liftedPane !== pane) liftedPane.style.marginBottom = "";
+      liftedPane = pane;
+      liftedPane.style.marginBottom = `${BAR_LIFT}px`;
+      const hr = host.getBoundingClientRect();
+      const mr = mount.getBoundingClientRect();
+      barEl.style.position = "absolute";
+      barEl.style.left = `${Math.round(hr.left - mr.left - mount.clientLeft)}px`;
+      barEl.style.width = `${Math.round(hr.width)}px`;
+      barEl.style.top = `${Math.round(hr.bottom - mr.top - mount.clientTop)}px`;
+      barEl.style.bottom = `${Math.round(mr.bottom - innerHeight)}px`;
+      barEl.style.zIndex = "20";
+      barEl.style.marginBottom = "0";
+      barEl.style.paddingTop = "0";
+      barEl.style.paddingBottom = "0";
+    } else {
+      if (liftedPane) {
+        liftedPane.style.marginBottom = "";
+        liftedPane = null;
+      }
+      barEl.style.position = "";
+      barEl.style.left = "";
+      barEl.style.width = "";
+      barEl.style.top = "";
+      barEl.style.bottom = "";
+      barEl.style.zIndex = "";
+      barEl.style.paddingTop = "";
+      barEl.style.marginBottom = hasSession ? "-14px" : "0";
+      barEl.style.paddingBottom = hasSession ? "0" : "7px";
+    }
     const L = t();
     const entries = [];
     for (const it of items) {

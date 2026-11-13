@@ -9,6 +9,10 @@ import { ensureStyle } from '../ui.js';
 let enabled = true;
 let items = DEFAULT_STATUS_ITEMS.map((x) => ({ ...x }));
 let barEl = null;
+let liftedPane = null; // 为状态栏让出底部空间而加过 margin-bottom 的滚动容器
+// 状态栏区域只有输入框下的官方留白时上下一共 3px，太挤：把滚动容器底再抬
+// 10px（输入框随之上移），状态栏上下留白各约 8px
+const BAR_LIFT = 10;
 let lastStats = null; // /stats/usage 响应缓存（失败保旧值）
 let lastSid = null; // 上次取数的会话 id：切换会话即作废缓存，不显示上个会话的速率
 let statsSid = null; // lastStats 取数时的会话 id：渲染时对不上就不用（切会话瞬间不顶旧值）
@@ -293,6 +297,15 @@ function itemContent(id, L) {
   }
 }
 
+// 输入框所在的滚动容器：会话视图里输入框区是 sticky 在聊天滚动容器底部的，
+// 容器下边缘之外的像素会被裁掉。状态栏挤在输入框后面时，滚一下就被裁没。
+function clipPane(el) {
+  for (let n = el.parentElement; n && n !== document.body; n = n.parentElement) {
+    if (/(auto|scroll|hidden)/.test(getComputedStyle(n).overflowY)) return n;
+  }
+  return null;
+}
+
 function renderBar() {
   // 3.16.1 的输入框是 contenteditable（旧版是 textarea），两种都认
   const ta = composerEl();
@@ -300,23 +313,58 @@ function renderBar() {
   if (!enabled || !host || !host.parentElement) {
     if (barEl) barEl.remove();
     barEl = null;
+    if (liftedPane) { liftedPane.style.marginBottom = ''; liftedPane = null; }
     lastRenderedHtml = null; // 元素没了，去重基线同步清空，重建后首渲染不被跳过
     return;
   }
-  if (!barEl || !barEl.isConnected) {
+  // 会话视图：状态栏挪到滚动容器外（容器父级带定位），按输入框的横向位置绝对
+  // 定位、贴容器底，滚动裁不到它；新建会话视图没有滚动裁剪，仍在输入框后面排
+  // （下方是官方功能按钮区，不能往下压）。
+  // 按选中会话判定视图（按钮区与状态条不在同一父容器，兄弟判断不可用）
+  const hasSession = !!selectedSessionId();
+  const pane = hasSession ? clipPane(host) : null;
+  const mount = pane && pane.parentElement && getComputedStyle(pane.parentElement).position !== 'static'
+    ? pane.parentElement
+    : host.parentElement;
+  if (!barEl || !barEl.isConnected || barEl.parentElement !== mount) {
     if (!barEl) {
       barEl = document.createElement('div');
       barEl.className = 'zcodepro-statusbar';
       lastRenderedHtml = null; // 新元素：内容基线作废
     }
-    host.parentElement.insertBefore(barEl, host.nextSibling);
+    if (mount === host.parentElement) mount.insertBefore(barEl, host.nextSibling);
+    else mount.append(barEl);
   }
-  // 新建会话视图（无选中会话）下方是官方的功能按钮区，不能往下压：上下对称
-  // 留 7px；普通会话视图下方是窗口底的官方留白，压进去贴底（同为约 7px）。
-  // 按选中会话判定视图（按钮区与状态条不在同一父容器，兄弟判断不可用）
-  const hasSession = !!selectedSessionId();
-  barEl.style.marginBottom = hasSession ? '-14px' : '0';
-  barEl.style.paddingBottom = hasSession ? '0' : '7px';
+  if (mount !== host.parentElement) {
+    // 给状态栏让出上下留白：滚动容器底抬 BAR_LIFT，输入框随之上移
+    if (liftedPane && liftedPane !== pane) liftedPane.style.marginBottom = '';
+    liftedPane = pane;
+    liftedPane.style.marginBottom = `${BAR_LIFT}px`;
+    const hr = host.getBoundingClientRect();
+    const mr = mount.getBoundingClientRect();
+    // 横跨输入框底到窗口底，内容垂直居中：上下留白相等
+    barEl.style.position = 'absolute';
+    // 绝对定位以父级 padding box 为参照，减去边框宽度
+    barEl.style.left = `${Math.round(hr.left - mr.left - mount.clientLeft)}px`;
+    barEl.style.width = `${Math.round(hr.width)}px`;
+    barEl.style.top = `${Math.round(hr.bottom - mr.top - mount.clientTop)}px`;
+    barEl.style.bottom = `${Math.round(mr.bottom - innerHeight)}px`;
+    barEl.style.zIndex = '20';
+    barEl.style.marginBottom = '0';
+    barEl.style.paddingTop = '0';
+    barEl.style.paddingBottom = '0';
+  } else {
+    if (liftedPane) { liftedPane.style.marginBottom = ''; liftedPane = null; }
+    barEl.style.position = '';
+    barEl.style.left = '';
+    barEl.style.width = '';
+    barEl.style.top = '';
+    barEl.style.bottom = '';
+    barEl.style.zIndex = '';
+    barEl.style.paddingTop = '';
+    barEl.style.marginBottom = hasSession ? '-14px' : '0';
+    barEl.style.paddingBottom = hasSession ? '0' : '7px';
+  }
   const L = t();
   const entries = [];
   for (const it of items) {

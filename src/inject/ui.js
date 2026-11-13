@@ -754,8 +754,8 @@ export function ensureStyle() {
       color: var(--color-muted-foreground, #888);
     }
     /* 状态栏统计（status-bar.js）：输入框下方右对齐的一行小字，每项带 lucide 小图标。
-       上下间距由脚本按视图控制（status-bar.js：下方有内容时对称 7px，
-       下方是窗底留白时负 margin 压入贴底） */
+       会话视图里绝对定位到滚动容器外的底部（避开滚动裁剪），新建会话视图在输入框后
+       按原样排；位置与间距由脚本控制 */
     .zcodepro-statusbar {
       display: flex;
       justify-content: flex-end;
