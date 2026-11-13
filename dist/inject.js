@@ -366,8 +366,10 @@
         devReloadDesc: "\u70B9\u51FB\u540E\u7EA6 2-3 \u79D2\u5185\u6240\u6709 ZCode \u7A97\u53E3\u81EA\u52A8\u5237\u65B0\u4E00\u6B21\u5E76\u52A0\u8F7D\u65B0\u811A\u672C\u3002",
         devToolsSwitch: "\u5F00\u53D1\u8005\u5DE5\u5177",
         devToolsSwitchDesc: "\u5B98\u65B9\u4FA7\u680F\u7684\u201C\u5F00\u53D1\u8005\u5DE5\u5177\u201D\u9762\u677F\uFF08Token \u8C03\u8BD5 / \u7F51\u7EDC\u72B6\u6001\uFF09\uFF0C\u9ED8\u8BA4\u5173\u95ED\u3002\u6539\u52A8\u5199\u5165\u5B98\u65B9\u6BCF\u79D2\u8F6E\u8BE2\u7684\u5F00\u5173\uFF0C1 \u79D2\u5185\u751F\u6548\u3002",
-        rowGapName: "\u6BB5\u843D\u95F4\u8DDD",
-        rowGapDesc: "\u4F1A\u8BDD\u4E2D\u6BB5\u843D\u7B49\u6587\u672C\u5757\u4E4B\u95F4\u7684\u5782\u76F4\u95F4\u8DDD\uFF08\u56DE\u5408\u4E4B\u95F4\u3001\u7B54\u6848\u5185\u90E8\uFF09\u3002",
+        thinkingRowGapName: "\u601D\u8003\u6BB5\u843D\u95F4\u8DDD",
+        thinkingRowGapDesc: "\u201C\u5DF2\u5DE5\u4F5C/\u5DE5\u4F5C\u4E2D\u201D\u8FC7\u7A0B\u8BB0\u5F55\u91CC\u5404\u884C\u3001\u601D\u8003\u6B63\u6587\u4E4B\u95F4\u7684\u5782\u76F4\u95F4\u8DDD\u3002",
+        answerRowGapName: "\u56DE\u7B54\u6BB5\u843D\u95F4\u8DDD",
+        answerRowGapDesc: "\u56DE\u7B54\u6B63\u6587\u91CC\u6BB5\u843D\u7B49\u6587\u672C\u5757\u4E4B\u95F4\u3001\u4EE5\u53CA\u56DE\u5408\u4E4B\u95F4\u7684\u5782\u76F4\u95F4\u8DDD\u3002",
         listSpacingName: "\u5217\u8868\u4E0A\u4E0B\u8FB9\u8DDD",
         listSpacingDesc: "\u7B54\u6848\u4E2D\u5217\u8868\u4E0A\u4E0B\u7684\u7559\u767D\u3002",
         listItemSpacingName: "\u5217\u8868\u9879\u95F4\u8DDD",
@@ -626,6 +628,8 @@
         featureSessionLink: "\u4F1A\u8BDD ID \u663E\u793A\u4E3A\u4EFB\u52A1\u540D\u94FE\u63A5",
         featureSessionLinkDesc: "\u63D0\u95EE\u4E0E\u56DE\u7B54\u91CC\u7684\u4F1A\u8BDD ID\uFF08sess_ / session_ \u5F00\u5934\uFF09\u663E\u793A\u4E3A\u4EFB\u52A1\u540D\uFF0C\u70B9\u51FB\u5207\u6362\u5230\u8BE5\u4F1A\u8BDD\uFF0C\u60AC\u505C\u53EF\u770B\u539F\u59CB ID\u3002",
         featureComposerProviderDesc: "\u6A21\u578B\u540D\u524D\u663E\u793A\u4F9B\u5E94\u5546\u540D\uFF08\u5982 BigModel-Max1 / glm-5.3\uFF09\uFF0C\u533A\u5206\u540C\u540D\u6A21\u578B\u3002",
+        featureComposerEditModel: "\u7F16\u8F91\u65F6\u4FDD\u6301\u5F53\u524D\u6A21\u578B",
+        featureComposerEditModelDesc: "\u70B9\u7F16\u8F91\u4E0A\u4E00\u6761\u6D88\u606F\u65F6\uFF0C\u4FDD\u6301\u4F60\u70B9\u7F16\u8F91\u524D\u9009\u7684\u6A21\u578B\uFF0C\u4E0D\u4F1A\u6362\u6210\u8FD9\u6761\u6D88\u606F\u5F53\u65F6\u7528\u7684\u6A21\u578B\uFF1B\u8FDB\u5165\u7F16\u8F91\u540E\u4ECD\u7136\u53EF\u4EE5\u518D\u6362\uFF0C\u91CD\u8DD1\u7528\u6700\u7EC8\u9009\u7684\u6A21\u578B\u3002",
         featureSessionImport: "\u5BFC\u5165\u4F1A\u8BDD",
         featureSessionImportDesc: "\u5728\u8BBE\u7F6E\u5F39\u7A97\u91CC\u628A Codex\u3001Claude Code\u3001dsh\u3001pi \u7684\u5386\u53F2\u4F1A\u8BDD\u5BFC\u5165\u6210 ZCode \u4EFB\u52A1\u3002",
         imageCopy: "\u590D\u5236\u56FE\u7247",
@@ -998,8 +1002,10 @@
         devToolsSwitchDesc: 'The official "Developer tools" side pane (Token debug / Network status), off by default. The change goes to the flag the official app polls every second.',
         devReloading: "Reloading\u2026",
         devReloadDesc: "Every ZCode window refreshes automatically within 2-3 seconds to load the new script.",
-        rowGapName: "Paragraph spacing",
-        rowGapDesc: "Vertical spacing between text blocks (turns, paragraphs inside answers).",
+        thinkingRowGapName: "Thinking paragraph spacing",
+        thinkingRowGapDesc: 'Vertical spacing between rows of the "Worked/Working" process view and thinking text.',
+        answerRowGapName: "Answer paragraph spacing",
+        answerRowGapDesc: "Vertical spacing between text blocks inside answers and between turns.",
         listSpacingName: "List spacing",
         listSpacingDesc: "Space above and below lists.",
         listItemSpacingName: "List item spacing",
@@ -1257,6 +1263,8 @@
         featureSessionLink: "Session ID links",
         featureSessionLinkDesc: "Shows session IDs (sess_ / session_) in chat as task names; click to switch to that session, hover for the raw ID.",
         featureComposerProviderDesc: "Shows the provider before the model name (e.g. BigModel-Max1 / glm-5.3).",
+        featureComposerEditModel: "Keep current model when editing",
+        featureComposerEditModelDesc: "Keeps the model you selected before clicking edit instead of switching to the model the message was sent with. You can still change it in the editor; the rerun uses the final selection.",
         featureSessionImport: "Session import",
         featureSessionImportDesc: "Import sessions from Codex, Claude Code, dsh and pi as ZCode tasks from the settings dialog.",
         imageCopy: "Copy image",
@@ -4809,10 +4817,10 @@
   function startImageMenu() {
     if (typeof window === "undefined") return;
     if (typeof navigator.clipboard?.write !== "function" || typeof window.ClipboardItem === "undefined") return;
-    let enabled15 = true;
+    let enabled16 = true;
     const refresh = () => {
       void getConfig().then((c) => {
-        enabled15 = !(c.features && c.features.imageCopy === false);
+        enabled16 = !(c.features && c.features.imageCopy === false);
       });
     };
     refresh();
@@ -4821,7 +4829,7 @@
       const img = copyTargetOf(e.target, e.clientX, e.clientY);
       if (!img) return;
       e.preventDefault();
-      if (enabled15) showMenu(e.clientX, e.clientY, img);
+      if (enabled16) showMenu(e.clientX, e.clientY, img);
       refresh();
     }, true);
   }
@@ -5333,8 +5341,10 @@
   // src/inject/features/styles.js
   init_core();
   var STYLE_DEFAULTS = {
-    rowGap: 20,
-    // 段落间距：会话内各块之间的垂直间距
+    thinkingRowGap: 20,
+    // 思考段落间距：“已工作/工作中”过程视图内各行之间的距离
+    answerRowGap: 20,
+    // 回答段落间距：回答正文内文本块、回合之间的垂直间距
     listSpacing: 12,
     // 列表上下留白（my-3）
     listItemSpacing: 6,
@@ -5387,43 +5397,57 @@
   var SEL_TABLE = `${CONV} .space-y-4 > div:has(table)`;
   function buildCss(styles) {
     const parts = [];
-    const n = styles.rowGap;
-    const rowGapSet = typeof n === "number" && Number.isFinite(n) && n >= 0;
-    if (rowGapSet) {
+    const num = (v) => typeof v === "number" && Number.isFinite(v) && v >= 0 ? v : null;
+    const tg = num(styles.thinkingRowGap);
+    const ag = num(styles.answerRowGap);
+    const thinkingSet = tg !== null;
+    const answerSet = ag !== null;
+    if (answerSet) {
       parts.push(
         // 回合内外各级容器（SECTION 自身或后代，二者都覆盖）
-        `${CONV}.pb-5,${CONV} .pb-5{padding-bottom:${n}px !important;}`,
-        `${CONV}.pt-5,${CONV} .pt-5{padding-top:${n}px !important;}`,
-        `${CONV} .flex.flex-col.gap-5{gap:${n}px !important;}`,
-        `${CONV} .flex.flex-col.gap-4{gap:${n}px !important;}`,
+        `${CONV}.pb-5,${CONV} .pb-5{padding-bottom:${ag}px !important;}`,
+        `${CONV}.pt-5,${CONV} .pt-5{padding-top:${ag}px !important;}`,
+        `${CONV} .flex.flex-col.gap-5{gap:${ag}px !important;}`,
+        `${CONV} .flex.flex-col.gap-4{gap:${ag}px !important;}`,
         // 答案内相邻文本块之间（特殊块除外，走各自间距项）
-        `${CONV} .space-y-4 > * + *:not(${SPECIAL}){margin-block-start:${n}px !important;margin-top:${n}px !important;}`,
+        `${CONV} .space-y-4 > * + *:not(${SPECIAL}){margin-block-start:${ag}px !important;margin-top:${ag}px !important;}`,
         // 特殊块后接文本块：去掉文本块的段落间距，避免与特殊块自身留白叠加
         `${CONV} .space-y-4 > ${SPECIAL} + *:not(${SPECIAL}){margin-block-start:0 !important;margin-top:0 !important;}`,
-        // 回合内部条目之间（思考触发条 ↔ 正文等）
-        `.history-message.flex.flex-col > * + *:not([data-slot="collapsible-content"]){margin-block-start:${n}px !important;margin-top:${n}px !important;}`,
+        // 历史回合里“已工作”展开块之后接回答正文：这段距离算回答间距
+        `.history-message.flex.flex-col > * + *[class~="group/assistant-row"]{margin-block-start:${ag}px !important;margin-top:${ag}px !important;}`,
         // 工具/状态卡片（“N 个文件已更改”等）上方间距下限 8px：
-        // 段落间距调到 0 时也不至于贴死（gap 与 margin 在弹性布局里相加）
-        `${CONV} .flex.flex-col.gap-5 > [data-slot="collapsible"]{margin-block-start:max(0px, calc(8px - ${n}px)) !important;margin-top:max(0px, calc(8px - ${n}px)) !important;}`,
-        // 3.18 的“工作中”槽位带 -8px 上边距（默认 gap 20 → 实际 12px）；行间距调小后
-        // 这层负边距会把槽位拉得贴住上面的内容（gap 7 → 实际 -1px）。清掉负边距，
-        // 让它跟其它块一样按设置的行间距排
-        `${CONV} .flex.flex-col.gap-5 > [data-zcode-chat-loading-slot]:not(:first-child){margin-block-start:0 !important;margin-top:0 !important;}`,
-        // 过程视图（思考/工具摘要/过程正文）的行块：应用给容器 4px gap + 每行
-        // 12px 上内边距（共 16px）。段落间距设置时直接接管：gap 归零、上内边距
-        // 按设置值，总间距等于设置值（设 0 就完全贴紧）
-        `${CONV} [data-conversation-work-items]{gap:0 !important;}`,
-        `${CONV} [data-conversation-work-items] > * + *{padding-top:${n}px !important;}`
+        // 回答段落间距调到 0 时也不至于贴死（gap 与 margin 在弹性布局里相加）
+        `${CONV} .flex.flex-col.gap-5 > [data-slot="collapsible"]{margin-block-start:max(0px, calc(8px - ${ag}px)) !important;margin-top:max(0px, calc(8px - ${ag}px)) !important;}`
       );
     }
-    const own = (v) => typeof v === "number" && Number.isFinite(v) && v >= 0 ? v : rowGapSet ? n : null;
+    if (thinkingSet) {
+      parts.push(
+        // 过程视图（思考/工具摘要/过程正文）的行块：应用给容器 4px gap + 每行
+        // 12px 上内边距（共 16px）。思考段落间距设置时直接接管：gap 归零、上内边距
+        // 按设置值，总间距等于设置值（设 0 就完全贴紧）
+        `${CONV} [data-conversation-work-items]{gap:0 !important;}`,
+        `${CONV} [data-conversation-work-items] > * + *{padding-top:${tg}px !important;}`,
+        // 过程视图里的叙述正文按思考算（比回答间距规则多一层容器限定，优先命中）
+        `${CONV} [data-conversation-work-items] .space-y-4 > * + *:not(${SPECIAL}){margin-block-start:${tg}px !important;margin-top:${tg}px !important;}`,
+        // 过程视图里特殊块后接文本块同样清零，避免与特殊块自身留白叠加（后写覆盖上一条）
+        `${CONV} [data-conversation-work-items] .space-y-4 > ${SPECIAL} + *:not(${SPECIAL}){margin-block-start:0 !important;margin-top:0 !important;}`,
+        // “已工作”展开块顶部留白（包裹层在历史内容容器内）
+        `${CONV} [data-testid^="chat-assistant-history-content"] .pt-5{padding-top:${tg}px !important;}`,
+        // 历史回合里“已工作”触发行等过程行之间；回答正文那一行走回答间距规则
+        `.history-message.flex.flex-col > * + *:not([data-slot="collapsible-content"]):not([class~="group/assistant-row"]){margin-block-start:${tg}px !important;margin-top:${tg}px !important;}`
+      );
+    }
+    if (thinkingSet || answerSet) {
+      parts.push(`${CONV} .flex.flex-col.gap-5 > [data-zcode-chat-loading-slot]:not(:first-child){margin-block-start:0 !important;margin-top:0 !important;}`);
+    }
+    const own = (v) => typeof v === "number" && Number.isFinite(v) && v >= 0 ? v : answerSet ? ag : null;
     const ls = own(styles.listSpacing);
     const qc = own(styles.quoteCodeSpacing);
     const tsp = own(styles.tableSpacing);
     const anySet = ls !== null || qc !== null || tsp !== null;
     if (ls !== null) parts.push(`${SEL_LIST}{margin-block:${ls}px !important;}`);
     if (qc !== null) parts.push(`${SEL_QUOTE}{margin-block:${qc}px !important;}`);
-    if (rowGapSet || anySet) {
+    if (thinkingSet || answerSet || anySet) {
       parts.push(`${CONV} .space-y-4 > :not(${SPECIAL}){margin-block-end:0 !important;margin-bottom:0 !important;}`);
     }
     if (tsp !== null) {
@@ -5571,7 +5595,8 @@
     });
   }
   var HL_SELECTORS = {
-    rowGap: `${CONV} .space-y-4 > *, ${CONV} .flex.flex-col.gap-5 > *`,
+    thinkingRowGap: `${CONV} [data-conversation-work-items] > * + *, .history-message.flex.flex-col > * + *:not([data-slot="collapsible-content"]):not([class~="group/assistant-row"])`,
+    answerRowGap: `${CONV} .space-y-4 > *, ${CONV} .flex.flex-col.gap-5 > *`,
     listSpacing: `${CONV} :is(ul, ol)`,
     listItemSpacing: `${CONV} :is(ul, ol) > li`,
     quoteCodeSpacing: SEL_QUOTE,
@@ -5589,7 +5614,8 @@
     sidebarTaskSpacing: "li[data-task-item-key]"
   };
   var HL_MARGIN = {
-    rowGap: { sel: `${CONV} .space-y-4 > * + *:not(${SPECIAL}):not(${SPECIAL} + *)`, top: true },
+    thinkingRowGap: { sel: `${CONV} [data-conversation-work-items] > * + *`, top: true, insideTop: true },
+    answerRowGap: { sel: `${CONV} .space-y-4 > * + *:not(${SPECIAL}):not(${SPECIAL} + *)`, top: true },
     listSpacing: { sel: SEL_LIST, top: true, bottom: true },
     listItemSpacing: { sel: `${CONV} :is(ul, ol) > li + li`, top: true },
     quoteCodeSpacing: { sel: SEL_QUOTE, top: true, bottom: true },
@@ -5613,7 +5639,7 @@
     if (margin) {
       const v = typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : 0;
       parts.push(`${margin.sel}{position:relative !important;}`);
-      if (margin.top) parts.push(`${margin.sel}::before{content:'' !important;position:absolute;left:0;right:0;bottom:100%;height:${v}px;background:${HL_AMBER};pointer-events:none;}`);
+      if (margin.top) parts.push(`${margin.sel}::before{content:'' !important;position:absolute;left:0;right:0;${margin.insideTop ? "top:0" : "bottom:100%"};height:${v}px;background:${HL_AMBER};pointer-events:none;}`);
       if (margin.bottom) parts.push(`${margin.sel}::after{content:'' !important;position:absolute;left:0;right:0;top:100%;height:${v}px;background:${HL_AMBER};pointer-events:none;}`);
     }
     hlEl.textContent = parts.join("");
@@ -7502,6 +7528,11 @@
               if (await setFeature("composerProvider", next)) f.composerProvider = next;
               refreshRows();
             }),
+            settingRow(L.featureComposerEditModel, L.featureComposerEditModelDesc, f.composerEditModel !== false, async () => {
+              const next = !(f.composerEditModel !== false);
+              if (await setFeature("composerEditModel", next)) f.composerEditModel = next;
+              refreshRows();
+            }),
             settingRow(L.featureSessionImport, L.featureSessionImportDesc, f.sessionImport !== false, async () => {
               const next = !(f.sessionImport !== false);
               if (await setFeature("sessionImport", next)) f.sessionImport = next;
@@ -7886,10 +7917,11 @@
           styleCell(L.sidebarProjectSpacingName, L.sidebarProjectSpacingDesc, "sidebarProjectSpacing", { max: 24 }),
           styleCell(L.sidebarTaskSpacingName, L.sidebarTaskSpacingDesc, "sidebarTaskSpacing", { max: 24 }),
           widthCell,
-          styleCell(L.rowGapName, L.rowGapDesc, "rowGap"),
           styleCell(L.userLineHeightName, L.userLineHeightDesc, "userLineHeight", { min: 1, max: 3, step: 0.05, unit: "x" }),
-          styleCell(L.lineHeightName, L.lineHeightDesc, "lineHeight", { min: 1, max: 3, step: 0.05, unit: "x" }),
           styleCell(L.thinkingLineHeightName, L.thinkingLineHeightDesc, "thinkingLineHeight", { min: 1, max: 3, step: 0.05, unit: "x" }),
+          styleCell(L.thinkingRowGapName, L.thinkingRowGapDesc, "thinkingRowGap"),
+          styleCell(L.lineHeightName, L.lineHeightDesc, "lineHeight", { min: 1, max: 3, step: 0.05, unit: "x" }),
+          styleCell(L.answerRowGapName, L.answerRowGapDesc, "answerRowGap"),
           styleCell(L.codeLineHeightName, L.codeLineHeightDesc, "codeLineHeight", { min: 1, max: 3, step: 0.05, unit: "x" }),
           styleCell(L.listSpacingName, L.listSpacingDesc, "listSpacing"),
           styleCell(L.listItemSpacingName, L.listItemSpacingDesc, "listItemSpacing"),
@@ -12559,11 +12591,11 @@
   async function injectHoverButtons() {
     const cfg = await getConfig();
     if (!cfg || !cfg.titleGen) return;
-    const enabled15 = cfg.titleGen.hoverBtn !== false;
+    const enabled16 = cfg.titleGen.hoverBtn !== false;
     const L = t();
     for (const area of document.querySelectorAll(ACTIONS_SEL)) {
       const existing = area.querySelector('[data-zcodepro-item="auto-rename"]');
-      if (!enabled15) {
+      if (!enabled16) {
         existing?.remove();
         continue;
       }
@@ -14206,6 +14238,273 @@
     apply4();
   }
 
+  // src/inject/features/composer-edit-model.js
+  init_core();
+  var TRIGGER_SEL2 = '[data-testid="chat-model-select-trigger"]';
+  var PROVIDER_TRIGGER_SEL = '[data-testid="composer-provider-trigger"]';
+  var EDIT_BAR_SEL = '[data-testid="v4-composer-edit-bar"]';
+  var EDIT_BTN_PREFIX = "v4-edit-";
+  var ITEM_PREFIX = "chat-model-select-item-";
+  var GROUP_PREFIX = "chat-model-select-group-";
+  var installed10 = false;
+  var enabled15 = true;
+  var modelBeforeEdit = null;
+  var pendingEdit = false;
+  var editRequestAt = 0;
+  var providerListAt = 0;
+  var applying = false;
+  function currentModelValue() {
+    const trigger = document.querySelector(TRIGGER_SEL2);
+    return trigger ? trigger.getAttribute("data-model-current-value") || "" : "";
+  }
+  function decodeProviderId(value) {
+    if (!value || !value.startsWith("custom:")) return null;
+    const body = value.slice("custom:".length);
+    const index = body.indexOf(":");
+    const encoded = index < 0 ? body : body.slice(0, index);
+    try {
+      return decodeURIComponent(encoded);
+    } catch {
+      return encoded;
+    }
+  }
+  function findByTestId(exact) {
+    return [...document.querySelectorAll("[data-testid]")].find(
+      (el) => el.getAttribute("data-testid") === exact
+    ) || null;
+  }
+  function clickModelItem(value) {
+    const item = findByTestId(ITEM_PREFIX + value);
+    if (!item) return false;
+    item.click();
+    return true;
+  }
+  function openProviderList() {
+    const trigger = document.querySelector(PROVIDER_TRIGGER_SEL);
+    if (!trigger) return false;
+    trigger.focus();
+    for (const name of ["pointerenter", "mouseenter", "mousemove"]) {
+      trigger.dispatchEvent(new MouseEvent(name, { bubbles: true, cancelable: true, view: window }));
+    }
+    trigger.click();
+    return true;
+  }
+  function openProviderGroup(providerId) {
+    const group = findByTestId(GROUP_PREFIX + "registry-provider:" + providerId);
+    if (!group) {
+      if (Date.now() - providerListAt > 400) {
+        providerListAt = Date.now();
+        openProviderList();
+      }
+      return false;
+    }
+    group.focus();
+    for (const name of ["pointerenter", "mouseenter", "mousemove"]) {
+      group.dispatchEvent(new MouseEvent(name, { bubbles: true, cancelable: true, view: window }));
+    }
+    group.click();
+    return true;
+  }
+  function menuIsOpen() {
+    return Boolean(
+      document.querySelector(`[data-testid^="${ITEM_PREFIX}"]`) || document.querySelector(`[data-testid^="${GROUP_PREFIX}"]`)
+    );
+  }
+  function openModelMenu() {
+    const trigger = document.querySelector(TRIGGER_SEL2);
+    if (!trigger || trigger.disabled || trigger.getAttribute("aria-disabled") === "true") {
+      return false;
+    }
+    if (trigger.getAttribute("aria-expanded") === "true" || menuIsOpen()) return true;
+    trigger.focus();
+    const base = {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      view: window,
+      button: 0,
+      pointerId: 1,
+      pointerType: "mouse",
+      isPrimary: true
+    };
+    trigger.dispatchEvent(new PointerEvent("pointerdown", { ...base, buttons: 1 }));
+    trigger.dispatchEvent(new PointerEvent("pointerup", { ...base, buttons: 0 }));
+    trigger.click();
+    return true;
+  }
+  function setModelDirect(value) {
+    const trigger = document.querySelector(TRIGGER_SEL2);
+    if (!trigger) return false;
+    const fiberKey = Object.keys(trigger).find((k) => k.startsWith("__reactFiber$"));
+    if (!fiberKey) return false;
+    let fiber = trigger[fiberKey];
+    for (let i = 0; fiber && i < 80; i += 1) {
+      const props = fiber.memoizedProps || {};
+      if (props.composerOptions && typeof props.composerOptions === "object" && typeof props.onValueChange === "function") {
+        try {
+          props.onValueChange(value);
+          return true;
+        } catch {
+          return false;
+        }
+      }
+      fiber = fiber.return;
+    }
+    return false;
+  }
+  function applyModel(value) {
+    if (!setModelDirect(value)) {
+      selectModel(value);
+      return;
+    }
+    setTimeout(() => {
+      if (!enabled15 || !document.querySelector(EDIT_BAR_SEL)) return;
+      if (currentModelValue() !== value) selectModel(value);
+    }, 300);
+  }
+  function closeModelMenu() {
+    const base = {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      view: window,
+      button: 0,
+      pointerId: 1,
+      pointerType: "mouse",
+      isPrimary: true
+    };
+    document.body.dispatchEvent(new PointerEvent("pointerdown", { ...base, buttons: 1 }));
+    document.body.dispatchEvent(new PointerEvent("pointerup", { ...base, buttons: 0 }));
+    document.body.dispatchEvent(new MouseEvent("click", { ...base, buttons: 0 }));
+  }
+  function selectModel(value) {
+    if (applying || !enabled15) return;
+    if (currentModelValue() === value) return;
+    applying = true;
+    let attempts = 0;
+    let groupOpened = false;
+    const step = () => {
+      if (!enabled15 || currentModelValue() === value) {
+        applying = false;
+        return;
+      }
+      if (!menuIsOpen()) {
+        openModelMenu();
+        groupOpened = false;
+      }
+      if (clickModelItem(value)) {
+        setTimeout(() => {
+          closeModelMenu();
+          applying = false;
+        }, 100);
+        return;
+      }
+      const providerId = decodeProviderId(value);
+      if (providerId) {
+        if (!groupOpened) groupOpened = openProviderGroup(providerId);
+      } else {
+        for (const group of document.querySelectorAll(`[data-testid^="${GROUP_PREFIX}"]`)) {
+          group.focus();
+          for (const name of ["pointerenter", "mouseenter", "mousemove"]) {
+            group.dispatchEvent(
+              new MouseEvent(name, { bubbles: true, cancelable: true, view: window })
+            );
+          }
+          group.click();
+          if (clickModelItem(value)) {
+            applying = false;
+            return;
+          }
+        }
+      }
+      attempts += 1;
+      if (attempts < 20) setTimeout(step, 120);
+      else {
+        applying = false;
+        console.warn("[zcodepro] composer-edit-model: \u6CA1\u80FD\u9009\u56DE\u6A21\u578B " + value);
+      }
+    };
+    if (!menuIsOpen() && !openModelMenu()) {
+      applying = false;
+      return;
+    }
+    setTimeout(step, 80);
+  }
+  function onEditClick(event) {
+    if (!enabled15) return;
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    if (!target.closest(`[data-testid^="${EDIT_BTN_PREFIX}"]`)) return;
+    const value = currentModelValue();
+    if (document.querySelector(EDIT_BAR_SEL)) return;
+    if (!value) return;
+    modelBeforeEdit = value;
+    pendingEdit = true;
+    editRequestAt = Date.now();
+  }
+  function onMutate() {
+    if (!enabled15) return;
+    const bar = document.querySelector(EDIT_BAR_SEL);
+    if (!bar) {
+      if (!pendingEdit || Date.now() - editRequestAt > 3e3) {
+        pendingEdit = false;
+        modelBeforeEdit = null;
+      }
+      applying = false;
+      return;
+    }
+    if (!pendingEdit || !modelBeforeEdit) return;
+    if (Date.now() - editRequestAt > 3e3) {
+      pendingEdit = false;
+      modelBeforeEdit = null;
+      return;
+    }
+    pendingEdit = false;
+    const target = modelBeforeEdit;
+    let checks = 0;
+    const tick7 = () => {
+      if (!enabled15 || !document.querySelector(EDIT_BAR_SEL)) return;
+      const current2 = currentModelValue();
+      if (current2 && current2 !== target) {
+        const official2 = current2;
+        applyModel(target);
+        const watch = (left) => {
+          if (!enabled15 || !document.querySelector(EDIT_BAR_SEL)) return;
+          if (currentModelValue() === official2 && left > 0) {
+            applyModel(target);
+            setTimeout(() => watch(left - 1), 400);
+          }
+        };
+        setTimeout(() => watch(2), 400);
+        return;
+      }
+      checks += 1;
+      if (checks < 16) setTimeout(tick7, 50);
+    };
+    setTimeout(tick7, 60);
+  }
+  function startComposerEditModel() {
+    if (installed10 || typeof document === "undefined") return;
+    installed10 = true;
+    void getConfig().then((cfg) => {
+      enabled15 = cfg.features ? cfg.features.composerEditModel !== false : true;
+    }).catch(() => {
+    });
+    window.addEventListener("zcodepro:config-changed", () => {
+      void getConfig(true).then((cfg) => {
+        enabled15 = cfg.features ? cfg.features.composerEditModel !== false : true;
+        if (!enabled15) {
+          pendingEdit = false;
+          modelBeforeEdit = null;
+        }
+      }).catch(() => {
+      });
+    });
+    document.addEventListener("click", onEditClick, true);
+    new MutationObserver(onMutate).observe(document.body, { childList: true, subtree: true });
+    onMutate();
+  }
+
   // src/inject/index.js
   init_ui();
   (function zcodeproInject() {
@@ -14348,6 +14647,10 @@
       }
       try {
         startComposerProvider();
+      } catch {
+      }
+      try {
+        startComposerEditModel();
       } catch {
       }
       try {

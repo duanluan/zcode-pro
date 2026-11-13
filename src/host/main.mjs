@@ -422,8 +422,8 @@ export async function run(argv) {
     server.close();
     process.exit(1);
   }
-  // 注入包按 mtime+size 缓存：npm run build 之后不用重启启动器——已打开页面
-  // 下次“调试-重新加载”、新页面首次注入都直接吃新构建的包。
+  // 注入包按 mtime+size 缓存（仅在开发模式下每 3 秒复查）：开发模式改完代码
+  // 重新构建后不用重启启动器，已打开页面下次“调试-重新加载”就吃新包。
   // shortcut: 同一毫秒内改写成相同字节数的内容检测不到，构建产物几乎不会出现，
   // 如真遇到可把缓存键换成内容哈希
   const injectCache = { mtime: 0, size: 0, source: '' };
@@ -555,7 +555,8 @@ export async function run(argv) {
   process.on('SIGTERM', () => { stopping = true; try { conn.close(); } catch {} try { helperMod.dispose?.(); } catch {} server.close(); process.exit(0); });
 
   // dist/inject.js 变更后把各页面的新文档脚本换成新包：已打开页面不打断，
-  // 下次“调试-重新加载”即跑新代码（新页面首次注入本来就是新包）
+  // 下次“调试-重新加载”即跑新代码（新页面首次注入本来就是新包）。
+  // 只在开发模式运行：普通用户的构建产物不会变，不必每 3 秒查一次。
   async function refreshInjectScripts() {
     if (!conn || conn.closed) return; // 断连时注册会失败、日志也记不准，跳过；重连后 handleAttach 全量注册
     let source;
@@ -635,7 +636,8 @@ export async function run(argv) {
   // helper.mjs 变更时热替换辅助服务：先导入新模块（语法错在这里抛出、旧服务
   // 不动），再关旧起新。每次热替换都是全新模块实例，helper 模块级状态
   //（rollout 解析缓存等）从零开始。shortcut: 只覆盖 helper.mjs
-  // 自身，它的依赖（settings.mjs、taskIndex.mjs 等）与 main.mjs 的改动仍需重启启动器
+  // 自身，它的依赖（settings.mjs、taskIndex.mjs 等）与 main.mjs 的改动仍需重启启动器。
+  // 只在开发模式运行：普通用户的 helper.mjs 不会在运行中变化，不必每 3 秒查一次。
   const helperStamp = () => {
     try { const st = statSync(join(here, 'helper.mjs')); return st.mtimeMs + ':' + st.size; } catch { return ''; }
   };
@@ -691,11 +693,23 @@ export async function run(argv) {
     }
   }
 
+  // 普通用户没有“调试”标签页，注入包也不会在运行中变化，热刷新只在开发模式开启。
+  const devActive = (() => {
+    if (process.env.ZCODEPRO_DEV === '1') return true;
+    try {
+      return JSON.parse(readFileSync(join(resolveDataRootDir(), 'zcodepro.json'), 'utf8')).devMode === true;
+    } catch {
+      return false;
+    }
+  })();
+
   while (!stopping) {
     await sleep(3000);
     if (stopping) break;
-    await refreshInjectScripts();
-    await maybeSwapHelper();
+    if (devActive) {
+      await refreshInjectScripts();
+      await maybeSwapHelper();
+    }
     if (!conn.closed) continue;
     // 连接断开：ZCode 退出则一并退出，否则重连
     if (!(await cdpAlive(args.cdpPort))) {

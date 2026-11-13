@@ -851,6 +851,23 @@ run('listActiveIdsCached 缓存与去重', async () => {
   }
 });
 
+// 5. composer-edit-model.js decodeProviderId：只解析 custom: 前缀
+run('decodeProviderId', () => {
+  const src = readSrc('../src/inject/features/composer-edit-model.js');
+  const fnSrc = extractBinding(src, 'decodeProviderId', makeMask(src));
+  if (!fnSrc) { assert(false, '截取 decodeProviderId 失败'); return; }
+  let decode = null;
+  try {
+    decode = new Function(fnSrc + '\nreturn decodeProviderId;')();
+  } catch (err) {
+    assert(false, '装配 decodeProviderId 失败: ' + (err && err.message));
+    return;
+  }
+  assert(decode('custom:p%3A1:model') === 'p:1', 'custom 值解出 provider');
+  assert(decode('custom:plain') === 'plain', '无模型名时整段是 provider');
+  assert(decode('deepseek-v4') === null, '非 custom 值返回 null');
+});
+
 await Promise.all(pendingRuns);
 console.log(failed ? 'FAILED' : 'all ok');
 process.exit(failed);

@@ -50,6 +50,14 @@ assert(loaded.features.projectMenu === true && loaded.features.taskOrder === tru
 assert(loaded.theme.bg.maskOpacity === 0.99, 'loadConfig 同样钳位');
 assert(typeof loaded.sync === 'object' && loaded.sync.type === 'webdav', 'sync 组补默认');
 
+// 旧段落间距（rowGap）拆分迁移：旧配置同时给到两项；新键显式出现过就不再迁移
+writeFileSync(configFile, JSON.stringify({ styles: { rowGap: 7 } }));
+const legacy = loadConfig(configFile);
+assert(legacy.styles.thinkingRowGap === 7 && legacy.styles.answerRowGap === 7 && !('rowGap' in legacy.styles), '旧 rowGap 迁移到思考/回答两项');
+writeFileSync(configFile, JSON.stringify({ styles: { rowGap: 7, thinkingRowGap: null } }));
+const resetOne = loadConfig(configFile);
+assert(resetOne.styles.thinkingRowGap === null && resetOne.styles.answerRowGap === null, '新键显式出现后不再用旧 rowGap 迁移');
+
 // 路径改写（切换文件夹）：只改三个引用字段、保留尾分隔符风格、子路径跟着改
 const remapped = remapSettingsPaths({
   recentProjects: ['/old/proj', '/old/proj/', '/old/proj/sub', '/other'],

@@ -28,6 +28,7 @@ import { startTheme } from './features/theme.js';
 import { startTableCopy } from './features/table-copy.js';
 import { startSessionLink } from './features/session-link.js';
 import { startComposerProvider } from './features/composer-provider.js';
+import { startComposerEditModel } from './features/composer-edit-model.js';
 import { startPluginUpdateCheck } from './features/plugin-updates.js';
 import { ensureStyle } from './ui.js';
 
@@ -95,6 +96,7 @@ import { ensureStyle } from './ui.js';
     try { startTableCopy(); } catch { /* ignore */ }
     try { startSessionLink(); } catch { /* ignore */ }
     try { startComposerProvider(); } catch { /* ignore */ }
+    try { startComposerEditModel(); } catch { /* ignore */ }
     try { startSettingsEntry(); } catch { /* ignore */ }
     // 插件更新检查慢（可能 git pull），异步进行，不阻塞其他功能
     try { void startPluginUpdateCheck(); } catch { /* ignore */ }

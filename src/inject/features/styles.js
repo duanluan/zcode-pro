@@ -11,7 +11,8 @@ import { getConfig } from '../core.js';
 
 // 各样式项的应用默认值（用于设置界面显示与“恢复默认”）
 export const STYLE_DEFAULTS = {
-  rowGap: 20,           // 段落间距：会话内各块之间的垂直间距
+  thinkingRowGap: 20,   // 思考段落间距：“已工作/工作中”过程视图内各行之间的距离
+  answerRowGap: 20,     // 回答段落间距：回答正文内文本块、回合之间的垂直间距
   listSpacing: 12,      // 列表上下留白（my-3）
   listItemSpacing: 6,   // 列表项之间的间距（space-y-1.5）
   quoteCodeSpacing: 16, // 引用块上下留白（my-4；代码块同规则）
@@ -56,38 +57,55 @@ const SEL_TABLE = `${CONV} .space-y-4 > div:has(table)`;
 
 function buildCss(styles) {
   const parts = [];
-  const n = styles.rowGap;
-  const rowGapSet = typeof n === 'number' && Number.isFinite(n) && n >= 0;
-  if (rowGapSet) {
+  const num = (v) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : null);
+  const tg = num(styles.thinkingRowGap);
+  const ag = num(styles.answerRowGap);
+  const thinkingSet = tg !== null;
+  const answerSet = ag !== null;
+  if (answerSet) {
     parts.push(
       // 回合内外各级容器（SECTION 自身或后代，二者都覆盖）
-      `${CONV}.pb-5,${CONV} .pb-5{padding-bottom:${n}px !important;}`,
-      `${CONV}.pt-5,${CONV} .pt-5{padding-top:${n}px !important;}`,
-      `${CONV} .flex.flex-col.gap-5{gap:${n}px !important;}`,
-      `${CONV} .flex.flex-col.gap-4{gap:${n}px !important;}`,
+      `${CONV}.pb-5,${CONV} .pb-5{padding-bottom:${ag}px !important;}`,
+      `${CONV}.pt-5,${CONV} .pt-5{padding-top:${ag}px !important;}`,
+      `${CONV} .flex.flex-col.gap-5{gap:${ag}px !important;}`,
+      `${CONV} .flex.flex-col.gap-4{gap:${ag}px !important;}`,
       // 答案内相邻文本块之间（特殊块除外，走各自间距项）
-      `${CONV} .space-y-4 > * + *:not(${SPECIAL}){margin-block-start:${n}px !important;margin-top:${n}px !important;}`,
+      `${CONV} .space-y-4 > * + *:not(${SPECIAL}){margin-block-start:${ag}px !important;margin-top:${ag}px !important;}`,
       // 特殊块后接文本块：去掉文本块的段落间距，避免与特殊块自身留白叠加
       `${CONV} .space-y-4 > ${SPECIAL} + *:not(${SPECIAL}){margin-block-start:0 !important;margin-top:0 !important;}`,
-      // 回合内部条目之间（思考触发条 ↔ 正文等）
-      `.history-message.flex.flex-col > * + *:not([data-slot="collapsible-content"]){margin-block-start:${n}px !important;margin-top:${n}px !important;}`,
+      // 历史回合里“已工作”展开块之后接回答正文：这段距离算回答间距
+      `.history-message.flex.flex-col > * + *[class~="group/assistant-row"]{margin-block-start:${ag}px !important;margin-top:${ag}px !important;}`,
       // 工具/状态卡片（“N 个文件已更改”等）上方间距下限 8px：
-      // 段落间距调到 0 时也不至于贴死（gap 与 margin 在弹性布局里相加）
-      `${CONV} .flex.flex-col.gap-5 > [data-slot="collapsible"]{margin-block-start:max(0px, calc(8px - ${n}px)) !important;margin-top:max(0px, calc(8px - ${n}px)) !important;}`,
-      // 3.18 的“工作中”槽位带 -8px 上边距（默认 gap 20 → 实际 12px）；行间距调小后
-      // 这层负边距会把槽位拉得贴住上面的内容（gap 7 → 实际 -1px）。清掉负边距，
-      // 让它跟其它块一样按设置的行间距排
-      `${CONV} .flex.flex-col.gap-5 > [data-zcode-chat-loading-slot]:not(:first-child){margin-block-start:0 !important;margin-top:0 !important;}`,
-      // 过程视图（思考/工具摘要/过程正文）的行块：应用给容器 4px gap + 每行
-      // 12px 上内边距（共 16px）。段落间距设置时直接接管：gap 归零、上内边距
-      // 按设置值，总间距等于设置值（设 0 就完全贴紧）
-      `${CONV} [data-conversation-work-items]{gap:0 !important;}`,
-      `${CONV} [data-conversation-work-items] > * + *{padding-top:${n}px !important;}`,
+      // 回答段落间距调到 0 时也不至于贴死（gap 与 margin 在弹性布局里相加）
+      `${CONV} .flex.flex-col.gap-5 > [data-slot="collapsible"]{margin-block-start:max(0px, calc(8px - ${ag}px)) !important;margin-top:max(0px, calc(8px - ${ag}px)) !important;}`,
     );
   }
-  // 特殊块（列表/引用块/表格）自身间距项未设置时跟随段落间距，
-  // 否则它们带的原生默认边距（12/16px）会与段落间距合并取大值，调小于该值无效
-  const own = (v) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : (rowGapSet ? n : null));
+  if (thinkingSet) {
+    parts.push(
+      // 过程视图（思考/工具摘要/过程正文）的行块：应用给容器 4px gap + 每行
+      // 12px 上内边距（共 16px）。思考段落间距设置时直接接管：gap 归零、上内边距
+      // 按设置值，总间距等于设置值（设 0 就完全贴紧）
+      `${CONV} [data-conversation-work-items]{gap:0 !important;}`,
+      `${CONV} [data-conversation-work-items] > * + *{padding-top:${tg}px !important;}`,
+      // 过程视图里的叙述正文按思考算（比回答间距规则多一层容器限定，优先命中）
+      `${CONV} [data-conversation-work-items] .space-y-4 > * + *:not(${SPECIAL}){margin-block-start:${tg}px !important;margin-top:${tg}px !important;}`,
+      // 过程视图里特殊块后接文本块同样清零，避免与特殊块自身留白叠加（后写覆盖上一条）
+      `${CONV} [data-conversation-work-items] .space-y-4 > ${SPECIAL} + *:not(${SPECIAL}){margin-block-start:0 !important;margin-top:0 !important;}`,
+      // “已工作”展开块顶部留白（包裹层在历史内容容器内）
+      `${CONV} [data-testid^="chat-assistant-history-content"] .pt-5{padding-top:${tg}px !important;}`,
+      // 历史回合里“已工作”触发行等过程行之间；回答正文那一行走回答间距规则
+      `.history-message.flex.flex-col > * + *:not([data-slot="collapsible-content"]):not([class~="group/assistant-row"]){margin-block-start:${tg}px !important;margin-top:${tg}px !important;}`,
+    );
+  }
+  if (thinkingSet || answerSet) {
+    // 3.18 的“工作中”槽位带 -8px 上边距（默认 gap 20 → 实际 12px）；行间距调小后
+    // 这层负边距会把槽位拉得贴住上面的内容（gap 7 → 实际 -1px）。清掉负边距，
+    // 让它跟其它块一样按设置的行间距排
+    parts.push(`${CONV} .flex.flex-col.gap-5 > [data-zcode-chat-loading-slot]:not(:first-child){margin-block-start:0 !important;margin-top:0 !important;}`);
+  }
+  // 特殊块（列表/引用块/表格）自身间距项未设置时跟随回答段落间距，
+  // 否则它们带的原生默认边距（12/16px）会与回答段落间距合并取大值，调小于该值无效
+  const own = (v) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : (answerSet ? ag : null));
   const ls = own(styles.listSpacing);
   const qc = own(styles.quoteCodeSpacing);
   const tsp = own(styles.tableSpacing);
@@ -97,7 +115,7 @@ function buildCss(styles) {
   // 文本块自带的底边距（应用给段落默认 16px）清零：相邻块的边距合并会取大值，
   // 不清零时段落间距调小于 16 无效，列表也会上边距大、下边距小。
   // 任一间距项设置时启用，间距完全由设置的起始边距决定
-  if (rowGapSet || anySet) {
+  if (thinkingSet || answerSet || anySet) {
     parts.push(`${CONV} .space-y-4 > :not(${SPECIAL}){margin-block-end:0 !important;margin-bottom:0 !important;}`);
   }
   if (tsp !== null) {
@@ -288,7 +306,8 @@ export function startStyleAdjustments() {
 // 边距，数值直观）；间距类项再把实际边距区域用淡黄色涂出，调值时黄条
 // 随设置实时变宽变窄。设置弹窗本身用透明遮罩，正好看得见后面的会话 ——
 const HL_SELECTORS = {
-  rowGap: `${CONV} .space-y-4 > *, ${CONV} .flex.flex-col.gap-5 > *`,
+  thinkingRowGap: `${CONV} [data-conversation-work-items] > * + *, .history-message.flex.flex-col > * + *:not([data-slot="collapsible-content"]):not([class~="group/assistant-row"])`,
+  answerRowGap: `${CONV} .space-y-4 > *, ${CONV} .flex.flex-col.gap-5 > *`,
   listSpacing: `${CONV} :is(ul, ol)`,
   listItemSpacing: `${CONV} :is(ul, ol) > li`,
   quoteCodeSpacing: SEL_QUOTE,
@@ -307,10 +326,11 @@ const HL_SELECTORS = {
 };
 
 // 间距类项的边距黄条：受影响元素与边距方向（与 buildCss 里的规则选择器保持一致）
-// rowGap 的黄条排除两种边距实际为零的元素：特殊块自身（走各自间距项）、
-// 紧跟特殊块的文本（其起始边距被清零，画了会失真）
+// 思考行间距落在行块的上内边距里，黄条画在元素内侧；回答间距排除两种边距实际
+// 为零的元素：特殊块自身（走各自间距项）、紧跟特殊块的文本（其起始边距被清零）
 const HL_MARGIN = {
-  rowGap: { sel: `${CONV} .space-y-4 > * + *:not(${SPECIAL}):not(${SPECIAL} + *)`, top: true },
+  thinkingRowGap: { sel: `${CONV} [data-conversation-work-items] > * + *`, top: true, insideTop: true },
+  answerRowGap: { sel: `${CONV} .space-y-4 > * + *:not(${SPECIAL}):not(${SPECIAL} + *)`, top: true },
   listSpacing: { sel: SEL_LIST, top: true, bottom: true },
   listItemSpacing: { sel: `${CONV} :is(ul, ol) > li + li`, top: true },
   quoteCodeSpacing: { sel: SEL_QUOTE, top: true, bottom: true },
@@ -341,7 +361,7 @@ export function showStyleHighlight(key, value = null) {
     // 伪元素画在边距所在的区域（元素边界外侧），高度跟随当前设置值；
     // 调值提交时调用方会带新值重进，黄条随之变宽变窄
     parts.push(`${margin.sel}{position:relative !important;}`);
-    if (margin.top) parts.push(`${margin.sel}::before{content:'' !important;position:absolute;left:0;right:0;bottom:100%;height:${v}px;background:${HL_AMBER};pointer-events:none;}`);
+    if (margin.top) parts.push(`${margin.sel}::before{content:'' !important;position:absolute;left:0;right:0;${margin.insideTop ? 'top:0' : 'bottom:100%'};height:${v}px;background:${HL_AMBER};pointer-events:none;}`);
     if (margin.bottom) parts.push(`${margin.sel}::after{content:'' !important;position:absolute;left:0;right:0;top:100%;height:${v}px;background:${HL_AMBER};pointer-events:none;}`);
   }
   hlEl.textContent = parts.join('');

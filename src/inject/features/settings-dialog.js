@@ -396,6 +396,11 @@ export function openSettingsDialog() {
             if (await setFeature('composerProvider', next)) f.composerProvider = next;
             refreshRows();
           }),
+          settingRow(L.featureComposerEditModel, L.featureComposerEditModelDesc, f.composerEditModel !== false, async () => {
+            const next = !(f.composerEditModel !== false);
+            if (await setFeature('composerEditModel', next)) f.composerEditModel = next;
+            refreshRows();
+          }),
           settingRow(L.featureSessionImport, L.featureSessionImportDesc, f.sessionImport !== false, async () => {
             const next = !(f.sessionImport !== false);
             if (await setFeature('sessionImport', next)) f.sessionImport = next;
@@ -729,10 +734,11 @@ export function openSettingsDialog() {
         styleCell(L.sidebarProjectSpacingName, L.sidebarProjectSpacingDesc, 'sidebarProjectSpacing', { max: 24 }),
         styleCell(L.sidebarTaskSpacingName, L.sidebarTaskSpacingDesc, 'sidebarTaskSpacing', { max: 24 }),
         widthCell,
-        styleCell(L.rowGapName, L.rowGapDesc, 'rowGap'),
         styleCell(L.userLineHeightName, L.userLineHeightDesc, 'userLineHeight', { min: 1, max: 3, step: 0.05, unit: 'x' }),
-        styleCell(L.lineHeightName, L.lineHeightDesc, 'lineHeight', { min: 1, max: 3, step: 0.05, unit: 'x' }),
         styleCell(L.thinkingLineHeightName, L.thinkingLineHeightDesc, 'thinkingLineHeight', { min: 1, max: 3, step: 0.05, unit: 'x' }),
+        styleCell(L.thinkingRowGapName, L.thinkingRowGapDesc, 'thinkingRowGap'),
+        styleCell(L.lineHeightName, L.lineHeightDesc, 'lineHeight', { min: 1, max: 3, step: 0.05, unit: 'x' }),
+        styleCell(L.answerRowGapName, L.answerRowGapDesc, 'answerRowGap'),
         styleCell(L.codeLineHeightName, L.codeLineHeightDesc, 'codeLineHeight', { min: 1, max: 3, step: 0.05, unit: 'x' }),
         styleCell(L.listSpacingName, L.listSpacingDesc, 'listSpacing'),
         styleCell(L.listItemSpacingName, L.listItemSpacingDesc, 'listItemSpacing'),

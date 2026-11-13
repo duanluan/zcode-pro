@@ -46,7 +46,7 @@ const r = applySyncDocs({
   docs: {
     zcodepro: {
       features: { projectMenu: true, wallpaper: false, titleLock: 'yes' },
-      styles: { rowGap: 8 },
+      styles: { thinkingRowGap: 8, answerRowGap: 12 },
       proxy: 'http://127.0.0.1:7890',
       sync: { login: 'evil', password: 'cloud-secret' },
       aliases: { '/cloud/proj': '云端别名' },
@@ -59,7 +59,7 @@ assert(r && !r.error && r.applied && r.applied.includes('zcodepro'), 'zcodepro �
 const after = loadConfig(configFile);
 assert(after.features.projectMenu === true && after.features.wallpaper === false, 'features 局部合并（云端值生效）');
 assert(typeof after.features.titleLock === 'boolean', '垃圾类型不进 features（titleLock: "yes" 被拒）');
-assert(after.styles.rowGap === 8, 'styles 应用云端值');
+assert(after.styles.thinkingRowGap === 8 && after.styles.answerRowGap === 12, 'styles 应用云端值');
 assert(after.proxy === 'http://127.0.0.1:7890', 'proxy 应用云端值');
 assert(after.aliases && after.aliases['/local/proj'] === '本机别名' && !after.aliases['/cloud/proj'], '别名保持本机、不导入云端');
 assert(after.sync.login === 'me' && after.sync.password === 'local-secret', 'sync 凭据保持本机');

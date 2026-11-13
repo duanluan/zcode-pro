@@ -316,6 +316,7 @@ export function defaultConfig() {
       tableCopy: true,        // 表格工具条"复制表格"按钮：富文本剪贴板，粘贴即表格（table-copy.js）
       sessionLink: true,      // 会话 ID 显示为任务名链接：聊天里的 sess_/session_ 显示为任务名，点击切换（session-link.js）
       composerProvider: true, // 输入框模型名前显示供应商名（composer-provider.js）
+      composerEditModel: true, // 编辑上一条消息时保持输入框当前模型（composer-edit-model.js）
       sessionImport: true,    // 导入会话：把 Codex/Claude Code/dsh/pi 的历史会话复制成 ZCode 任务
     },
     // 空闲项目内存回收的判定时长（分钟，1–1440）：项目无运行中会话、无后台命令
@@ -326,7 +327,8 @@ export function defaultConfig() {
     idleReclaimStartupMinutes: 5,
     // 样式调整（设置弹窗“样式调整”标签页）。null = 不覆盖，跟随应用默认。
     styles: {
-      rowGap: null,           // 段落间距：会话内各块之间的垂直间距（应用默认 20px）
+      thinkingRowGap: null,   // 思考段落间距：“已工作/工作中”过程视图内各行的垂直间距（应用默认 20px）
+      answerRowGap: null,     // 回答段落间距：回答正文与回合之间的垂直间距（应用默认 20px）
       listSpacing: null,      // 列表上下留白（应用默认 12px）
       listItemSpacing: null,  // 列表项之间的间距（应用默认 6px）
       quoteCodeSpacing: null, // 引用/代码块上下留白（应用默认 16px，my-4）
@@ -416,6 +418,22 @@ let configUnreadable = false;
 export function configFileUnreadable() {
   return configUnreadable;
 }
+// 旧版单一的“段落间距”（rowGap）已拆成思考/回答两项：读旧配置或旧同步文档时
+// 把旧值同时给到两项。新键显式出现过（哪怕是 null）就不再迁移，避免“恢复默认”
+// 之后又被旧值顶回去
+function migrateStyles(saved) {
+  const src = saved && typeof saved === 'object' && !Array.isArray(saved) ? saved : {};
+  const out = { ...defaultConfig().styles, ...src };
+  const legacy = src.rowGap;
+  if (typeof legacy === 'number' && Number.isFinite(legacy) && legacy >= 0
+      && !('thinkingRowGap' in src) && !('answerRowGap' in src)) {
+    out.thinkingRowGap = Math.round(legacy);
+    out.answerRowGap = Math.round(legacy);
+    delete out.rowGap;
+  }
+  return out;
+}
+
 export function loadConfig(configFile) {
   try {
     if (!existsSync(configFile)) { configUnreadable = false; return defaultConfig(); }
@@ -430,7 +448,7 @@ export function loadConfig(configFile) {
       idleReclaimMinutes: Number.isFinite(minutes) && minutes >= 1 ? Math.min(1440, Math.round(minutes)) : 30,
       idleReclaimStartupMinutes: Number.isFinite(startupMinutes) && startupMinutes >= 0 ? Math.min(1440, Math.round(startupMinutes)) : 5,
       features: { ...defaultConfig().features, ...(saved.features || {}) },
-      styles: { ...defaultConfig().styles, ...(saved.styles && typeof saved.styles === 'object' ? saved.styles : {}) },
+      styles: migrateStyles(saved.styles),
       aliases: { ...((saved.aliases && typeof saved.aliases === 'object') ? saved.aliases : {}) },
       headroomRoutes: { ...((saved.headroomRoutes && typeof saved.headroomRoutes === 'object' && !Array.isArray(saved.headroomRoutes)) ? saved.headroomRoutes : {}) },
       titleGen: mergeTitleGenConfig(saved.titleGen),
@@ -3615,7 +3633,11 @@ export async function classifyIdleBusyWindows(procs, paths, lookupTaskWs) {
 function applyStylesPartial(base, partial) {
   const out = (base && typeof base === 'object') ? base : {};
   if (!partial || typeof partial !== 'object') return out;
-  for (const key of ['rowGap', 'listSpacing', 'listItemSpacing', 'quoteCodeSpacing', 'tableSpacing', 'tableCellPaddingV', 'tableCellPaddingH', 'sidebarProjectSpacing', 'sidebarTaskSpacing']) {
+  // 旧客户端/旧同步文档仍发 rowGap：折算到拆开后的两项
+  if ('rowGap' in partial && !('thinkingRowGap' in partial) && !('answerRowGap' in partial)) {
+    partial = { ...partial, thinkingRowGap: partial.rowGap, answerRowGap: partial.rowGap };
+  }
+  for (const key of ['thinkingRowGap', 'answerRowGap', 'listSpacing', 'listItemSpacing', 'quoteCodeSpacing', 'tableSpacing', 'tableCellPaddingV', 'tableCellPaddingH', 'sidebarProjectSpacing', 'sidebarTaskSpacing']) {
     if (key in partial) {
       const v = partial[key];
       if (v === null) out[key] = null;
