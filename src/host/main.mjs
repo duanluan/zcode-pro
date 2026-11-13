@@ -254,14 +254,15 @@ function fileUrlUnderInstall(fileUrl, installDir) {
 }
 
 // 可注入判定：引导脚本内含 helper 鉴权 token，只能进 ZCode 应用自身的页面。
-// 规则：http(s) 只放行本机回环地址；file:// 只放行 ZCode 安装目录下的页面
-//（应用 UI 在 <安装目录>/resources/app.asar/ 里）；拦截外部网页与
-// data/blob/view-source/about 子文档，沙箱页同样不带 token；应用自有协议
-// 维持放行。refreshInjectScripts 重注册时目标可能已导航离开应用页，需重跑同款判定
+// 规则：只放行 ZCode 安装目录下的 file:// 页面（应用 UI 在
+// <安装目录>/resources/app.asar/ 里）；http(s) 一律不注入——本机回环地址也可能是
+// 用户自己打开的预览页/开发服务器（右侧预览就是这个形态），不能碰；拦截外部
+// 网页与 data/blob/view-source/about 子文档，沙箱页同样不带 token；应用自有
+// 协议维持放行。refreshInjectScripts 重注册时目标可能已导航离开应用页，需重跑同款判定
 export function isInjectableAppPage(url, installDir) {
   const u = String(url || '');
   if (/^zcode-sandbox:\/\//i.test(u)) return false;
-  if (/^https?:\/\//i.test(u) && !/^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?(\/|$|\?|#)/i.test(u)) return false;
+  if (/^https?:\/\//i.test(u)) return false;
   if (/^(data|blob|view-source|about):/i.test(u)) return false;
   // file: 不带双斜杠的形态（file:/etc/…）也要过前缀校验，别落到末尾的放行
   if (/^file:/i.test(u)) return fileUrlUnderInstall(u, installDir);
@@ -282,7 +283,7 @@ export function buildGuard(installDir) {
   return `if ((function () {
   var h = location.href;
   if (/^(zcode-sandbox|about|data|blob|view-source):/i.test(h)) return false;
-  if (/^https?:\\/\\//i.test(h)) return /^https?:\\/\\/(127\\.0\\.0\\.1|localhost)(:\\d+)?(\\/|$|\\?|#)/i.test(h);
+  if (/^https?:\\/\\//i.test(h)) return false;
   if (/^file:\\/\\//i.test(h)) {
     var raw = location.pathname, p;
     try { p = decodeURI(raw); } catch (e) { p = raw; }

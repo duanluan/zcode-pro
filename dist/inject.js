@@ -6042,13 +6042,26 @@
     return `html,body{background:rgba(${rgb},${veil}) !important}`;
   }
   function applyWebviewTransparency() {
+    const guestUrl = (w) => {
+      try {
+        return String(w.getURL ? w.getURL() : w.src || "");
+      } catch {
+        return "";
+      }
+    };
+    const maybeCard = (w) => {
+      const u = guestUrl(w);
+      return u === "" || /^zcode-sandbox:\/\//i.test(u);
+    };
     const hook = (w, css) => {
+      if (!maybeCard(w)) return;
       const on = document.documentElement.classList.contains("zcodepro-bg-on");
       const rec = wvStyled.find((r) => r.el === w);
       if (on && !rec) {
         const entry = { el: w, key: null, css, handler: null };
         entry.handler = () => {
           if (!wvStyled.includes(entry)) return;
+          if (!maybeCard(w)) return;
           const myCss = entry.css;
           try {
             void w.insertCSS(myCss).then((k) => {
@@ -6069,6 +6082,7 @@
         wvStyled.push(entry);
         entry.handler();
       } else if (on && rec && rec.css !== css) {
+        if (!maybeCard(w)) return;
         rec.css = css;
         const oldKey = rec.key;
         rec.key = null;

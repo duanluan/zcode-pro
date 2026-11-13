@@ -409,7 +409,15 @@ function cardVeilCss() {
   return `html,body{background:rgba(${rgb},${veil}) !important}`;
 }
 function applyWebviewTransparency() {
+  // 只处理插件卡片（zcode-sandbox 壳）的 webview：右侧预览等用户页面同样挂在
+  // <webview> 里，遮罩不能插进用户的页面。guest 未就绪（URL 为空）时先挂监听，
+  // dom-ready 拿到真实 URL 再判定
+  const guestUrl = (w) => {
+    try { return String(w.getURL ? w.getURL() : w.src || ''); } catch { return ''; }
+  };
+  const maybeCard = (w) => { const u = guestUrl(w); return u === '' || /^zcode-sandbox:\/\//i.test(u); };
   const hook = (w, css) => {
+    if (!maybeCard(w)) return; // 明确是用户页面（http/file 等）：不挂监听、不插样式
     // on 每次现读、css 每轮扫描现算：扫描定时器只启动一次、长期存活，闭包固化
     // 初值会让后建的 webview 拿到旧遮罩，还会每 2 秒把滑杆改后的新值覆盖回旧值
     const on = document.documentElement.classList.contains('zcodepro-bg-on');
@@ -418,6 +426,7 @@ function applyWebviewTransparency() {
       const entry = { el: w, key: null, css, handler: null };
       entry.handler = () => {
         if (!wvStyled.includes(entry)) return; // 已随关壁纸摘牌：别再插遮罩
+        if (!maybeCard(w)) return; // dom-ready 时是用户页面：不插（URL 空则只进空白文档，无影响）
         const myCss = entry.css; // 插入期间遮罩可能又变：结果回来只认自己这份
         try {
           void w.insertCSS(myCss).then((k) => {
@@ -431,6 +440,7 @@ function applyWebviewTransparency() {
       wvStyled.push(entry);
       entry.handler();
     } else if (on && rec && rec.css !== css) {
+      if (!maybeCard(w)) return; // 用户页面：不插遮罩
       // 遮罩滑杆变了：撤旧 key 重插新值（insertCSS 的 key 对应一份 CSS 文本）
       rec.css = css;
       const oldKey = rec.key;
