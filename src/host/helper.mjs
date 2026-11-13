@@ -34,6 +34,11 @@ function defaultVisionFile() {
   return join(homedir(), '.zcode', 'zcode-vision.json');
 }
 
+// auto-continue 插件（自动继续）的配置：插件钩子与本工具“自动继续”设置页共用同一文件
+function defaultAutoContinueFile() {
+  return join(homedir(), '.zcode', 'auto-continue.json');
+}
+
 // rtk 插件的状态目录（钩子按 ${RTK_DIR:-~/.zcode-rtk} 解析，这里保持一致）
 function defaultRtkDir() {
   return process.env.RTK_DIR || join(homedir(), '.zcode-rtk');
@@ -1722,6 +1727,266 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         json(res, 200, { ok: true, config: cfg });
         return;
       }
+      // auto-continue 配置已知键按类型收窄（文件缺失/键非法 → 跳过该项，由消费方回默认）
+      function sanitizeAutoContinueConfig(raw) {
+        const out = {};
+        if (typeof raw.enabled === 'boolean') out.enabled = raw.enabled;
+        if (typeof raw.continueText === 'string') out.continueText = raw.continueText.slice(0, 2000);
+        if (raw.maxRetries !== undefined) out.maxRetries = clampInt(raw.maxRetries, 1, 50, 8);
+        if (raw.cooldownBaseSec !== undefined) out.cooldownBaseSec = clampInt(raw.cooldownBaseSec, 0, 600, 10);
+        if (raw.cooldownFactor !== undefined) out.cooldownFactor = clampInt(raw.cooldownFactor, 1, 10, 2);
+        if (raw.cooldownMaxSec !== undefined) out.cooldownMaxSec = clampInt(raw.cooldownMaxSec, 1, 600, 60);
+        if (raw.stuckAfterMin !== undefined) out.stuckAfterMin = clampInt(raw.stuckAfterMin, 5, 720, 30);
+        if (raw.failedAfterMin !== undefined) out.failedAfterMin = clampInt(raw.failedAfterMin, 1, 60, 3);
+        if (typeof raw.failedAutoFix === 'boolean') out.failedAutoFix = raw.failedAutoFix;
+        for (const key of ['permanentPatterns', 'transientPatterns']) {
+          if (Array.isArray(raw[key])) out[key] = raw[key].filter((x) => typeof x === 'string').slice(0, 200);
+        }
+        return out;
+      }
+      // 悬空任务扫描：识别三类卡死——
+      // 终端：background_task.tracking.started 后一直等不到 terminal（只认 exec_*；
+      //   agent_* 从不发 terminal，按 spawned/completed 单独配对）。
+      // 子代理：subagent.spawned 后等不到 subagent.completed；失败的子代理只落
+      //   turn.failed，所以子会话的 turn.completed/turn.failed 也算这个子代理终结。
+      // 主轮：turn.started 后等不到 turn.completed/turn.failed；同一会话已经有
+      //   终端/子代理条目时不再报主轮（一个原因只出一张卡）。等用户回答或等审批
+      //   的回合没在跑，不算卡死。用户点停（v4.stop）会清掉该会话未完结的主轮。
+      // 每条带 ageSec（从开始算）与 silenceSec（对应会话最后一条日志距今），阈值
+      // 由前端按配置判断。按本地日期命名的当天与前一天两份日志都扫（跨天起步的
+      // 任务在昨天那份里）。
+      function findStuckTasks() {
+        const dir = join(homedir(), '.zcode', 'cli', 'log');
+        const openTasks = new Map(); // exec taskId -> { taskId, sessionId, startedAt }
+        const openTurns = new Map(); // `${sessionId}|${turnId}` -> { turnId, sessionId, startedAt }
+        const openSubs = new Map(); // agentId -> { agentId, sessionId, startedAt }
+        const lastEvent = new Map(); // sessionId -> { ts, name, toolName }
+        const turnFailed = new Map(); // sessionId -> 最近一次 turn.failed（附失败消息）
+        const lastFailMsg = new Map(); // sessionId -> 最近一次请求失败的 statusMessage
+        const lastStopMark = new Map(); // sessionId -> 最近一次 v4.stop.* 事件时间（用户点停的痕迹）
+        const now = Date.now();
+        const closeTurns = (sessionId, turnId) => {
+          if (turnId) openTurns.delete(`${sessionId}|${turnId}`);
+          else for (const [k, v] of openTurns) if (v.sessionId === sessionId) openTurns.delete(k);
+        };
+        for (const offset of [864e5, 0]) {
+          // 日志按本地日期命名（不是 UTC）：用本地日期拼文件名
+          const d = new Date(now - offset);
+          const name = `zcode-${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}.jsonl`;
+          const file = join(dir, name);
+          if (!existsSync(file)) continue;
+          for (const line of readFileSync(file, 'utf8').split('\n')) {
+            if (!line) continue;
+            const ts = line.match(/"timestamp":"([^"]+)"/)?.[1];
+            const sid = line.match(/"sessionId":"([^"]+)"/)?.[1];
+            const evName = line.match(/"event":"([^"]+)"/)?.[1];
+            const toolName = line.match(/"toolName":"([^"]+)"/)?.[1];
+            if (ts && sid) {
+              const cur = lastEvent.get(sid);
+              if (!cur || ts > cur.ts) lastEvent.set(sid, { ts, name: evName, toolName });
+            }
+            let e = null;
+            const parse = () => {
+              if (e === null) {
+                try { e = JSON.parse(line); } catch { e = {}; }
+              }
+              return e;
+            };
+            if (line.includes('background_task.tracking.')) {
+              const taskId = parse()?.context?.taskId;
+              if (taskId && taskId.startsWith('exec_')) {
+                if (evName === 'background_task.tracking.started') {
+                  openTasks.set(taskId, { taskId, sessionId: sid, startedAt: ts });
+                } else if (evName === 'background_task.tracking.terminal') {
+                  openTasks.delete(taskId);
+                }
+              }
+            }
+            if (line.includes('"event":"subagent.spawned"') || line.includes('"event":"subagent.completed"')) {
+              const agentId = parse()?.context?.agentId;
+              if (agentId) {
+                if (evName === 'subagent.spawned') openSubs.set(agentId, { agentId, sessionId: sid, startedAt: ts });
+                else if (evName === 'subagent.completed') openSubs.delete(agentId);
+              }
+            }
+            if (line.includes('"event":"turn.started"') || line.includes('"event":"turn.completed"') || line.includes('"event":"turn.failed"') || line.includes('"event":"model.request.failed"')) {
+              const p = parse();
+              const turnId = p?.turnId || p?.context?.turnId;
+              if (evName === 'turn.started' && sid && turnId) {
+                openTurns.set(`${sid}|${turnId}`, { turnId, sessionId: sid, startedAt: ts });
+              } else if (evName === 'turn.completed' || evName === 'turn.failed') {
+                if (sid) closeTurns(sid, turnId);
+                // 子代理会话的回合结束（成功或失败）也代表这个子代理结束了
+                if (sid) {
+                  const agentId = sid.startsWith('sess_subagent_') ? sid.slice('sess_subagent_'.length) : p?.context?.agentId;
+                  if (agentId) openSubs.delete(agentId);
+                }
+                if (evName === 'turn.failed' && sid) {
+                  // 失败前 10 秒内点过停止 = 用户主动终止，不列入待救
+                  const stopped = lastStopMark.has(sid)
+                    && Date.parse(ts) - lastStopMark.get(sid) <= 10_000;
+                  turnFailed.set(sid, { sessionId: sid, failedAt: ts, message: lastFailMsg.get(sid) || '', stopped });
+                }
+              } else if (evName === 'model.request.failed' && sid && p?.context?.statusMessage) {
+                lastFailMsg.set(sid, String(p.context.statusMessage));
+              }
+            }
+            if (line.includes('"event":"v4.stop')) {
+              const p = parse();
+              if (p?.sessionId) {
+                if (ts) lastStopMark.set(p.sessionId, Date.parse(ts));
+                closeTurns(p.sessionId); // 用户主动停止的回合不再算卡死
+              }
+            }
+          }
+        }
+        const out = [];
+        const lastTs = (sessionId, fallback) => Date.parse(lastEvent.get(sessionId)?.ts || fallback);
+        const addStuck = (kind, item, silenceSessionId = item.sessionId) => {
+          const ageSec = Math.round((now - Date.parse(item.startedAt)) / 1000);
+          const silenceSec = Math.round((now - lastTs(silenceSessionId, item.startedAt)) / 1000);
+          if (ageSec > 0 && ageSec < 24 * 3600) out.push({ ...item, kind, ageSec, silenceSec });
+        };
+        for (const t of openTasks.values()) addStuck('terminal', t);
+        for (const s of openSubs.values()) {
+          // 子代理自己的会话日志更能代表它是否还在动
+          addStuck('subagent', { ...s, taskId: `subagent:${s.agentId}` }, `sess_subagent_${s.agentId}`);
+        }
+        const busySessions = new Set(out.map((t) => t.sessionId));
+        for (const t of openTurns.values()) {
+          const le = lastEvent.get(t.sessionId);
+          // 等用户回答/等审批的回合没在跑，不算卡死
+          if (le && (le.name === 'tool.permission.evaluated'
+            || ((le.name === 'tool.call.started' || le.name === 'tool.call.completed')
+              && (le.toolName === 'AskUserQuestion' || le.toolName === 'ExitPlanMode')))) continue;
+          if (busySessions.has(t.sessionId)) continue;
+          addStuck('turn', { ...t, taskId: `turn:${t.turnId}` });
+        }
+        // 失败会话：turn.failed 之后该会话再无实质动静（横幅规则、人工都没把它续上）。
+        // 覆盖桌面当前视图之外的会话（手机端/后台的 v4 会话在界面里看不到横幅）。
+        // 静默判定留 60 秒宽限：失败瞬间会跟一大串清理事件（mcp 连接释放、生命周期
+        // 变更，实测能到 50+ 条、持续约 1 秒），把它们当“会话在动”会让这类失败永远
+        // 不进待救清单；用户点停的（stopped）不救。
+        const failed = [];
+        for (const f of turnFailed.values()) {
+          if (f.stopped) continue;
+          const ageSec = Math.round((now - Date.parse(f.failedAt)) / 1000);
+          const last = lastEvent.get(f.sessionId)?.ts || f.failedAt;
+          const quietMs = Date.parse(last) - Date.parse(f.failedAt);
+          if (ageSec > 0 && ageSec < 12 * 3600 && quietMs <= 60_000) failed.push({ ...f, ageSec });
+        }
+        return {
+          tasks: out.sort((a, b) => b.ageSec - a.ageSec),
+          failed: failed.sort((a, b) => b.ageSec - a.ageSec),
+        };
+      }
+      // 会话当前的权限模式存在会话库的 runtime/execution_state 条目里（切模式时原地
+      // 更新，一个会话一条）。无头 -p 不显式传 --mode 时默认 yolo（CLI 的
+      // DEFAULT_HEADLESS_PROMPT_MODE），会把 build/plan 会话的权限提上去；读出来
+      // 原样传给 --mode 才不改变用户设定的权限。读不到（旧会话、旧运行时没有
+      // node:sqlite）返回 null，调用方退回原来的默认行为。
+      async function readSessionMode(sessionId) {
+        try {
+          const dbFile = join(resolveDataRootDir(), 'cli', 'db', 'db.sqlite');
+          if (!existsSync(dbFile)) return null;
+          const { DatabaseSync } = await import('node:sqlite');
+          const db = new DatabaseSync(dbFile, { readOnly: true, timeout: 2000 });
+          try {
+            const row = db
+              .prepare(
+                "select json_extract(data, '$.mode') as mode from session_entry where session_id = ? and type = 'runtime/execution_state' order by time_created desc limit 1",
+              )
+              .get(sessionId);
+            return typeof row?.mode === 'string' ? row.mode : null;
+          } finally {
+            db.close();
+          }
+        } catch {
+          return null;
+        }
+      }
+      // —— auto-continue 插件（自动继续）：设置弹窗“自动继续”标签页读写（与插件钩子
+      //    共用 ~/.zcode/auto-continue.json，回合失败自动继续的开关与文案也在这里）——
+      if (req.method === 'GET' && url.pathname === '/auto-continue') {
+        const file = defaultAutoContinueFile();
+        const parsed = readJsonFile(file);
+        if (parsed === null && existsSync(file)) {
+          json(res, 500, { ok: false, code: 'ac-read', error: 'auto-continue.json 不是合法 JSON' });
+          return;
+        }
+        json(res, 200, { ok: true, config: parsed, file, pluginVersion: installedPluginVersion('auto-continue') });
+        return;
+      }
+      if (req.method === 'POST' && url.pathname === '/auto-continue') {
+        const body = await readBody(req);
+        const cfg = body?.config;
+        if (!cfg || typeof cfg !== 'object') {
+          json(res, 400, { ok: false, code: 'ac-invalid', error: '缺少 config 对象' });
+          return;
+        }
+        try {
+          const file = defaultAutoContinueFile();
+          // 已知键按类型收窄后与磁盘旧配置合并（面板不认识的键不动）
+          const merged = { ...(readJsonFile(file) || {}), ...sanitizeAutoContinueConfig(cfg) };
+          const tmp = file + '.tmp';
+          writeFileSync(tmp, JSON.stringify(merged, null, 2) + '\n', 'utf-8');
+          renameSync(tmp, file);
+        } catch (err2) {
+          json(res, 500, { ok: false, code: 'ac-write', error: '写入 auto-continue.json 失败: ' + (err2?.message || err2) });
+          return;
+        }
+        json(res, 200, { ok: true, config: cfg });
+        return;
+      }
+      // —— auto-continue 看门狗：回合卡死（工具执行器悬死、无失败横幅）时的探测数据，
+      //    返回悬空后台任务清单（started 后从未 terminal），注入层据此提示用户 ——
+      if (req.method === 'GET' && url.pathname === '/ac-stuck') {
+        const r = findStuckTasks();
+        json(res, 200, { ok: true, tasks: r.tasks, failed: r.failed });
+        return;
+      }
+      // —— auto-continue 无头续接：用 ZCode 核心运行时的 headless 模式（--resume + -p）
+      //    把指定会话续上一轮，不碰桌面界面——子代理/自动化同款驱动方式，手机端/后台
+      //    等界面外会话也能续。续接回合可能跑几分钟：启动即返回，成败由下一轮
+      //    /ac-stuck 的会话活跃度验证（续上 = 有新事件，失败 = 保持静默）——
+      if (req.method === 'POST' && url.pathname === '/ac-continue') {
+        const body = await readBody(req);
+        const sessionId = typeof body?.sessionId === 'string' ? body.sessionId : '';
+        const text = typeof body?.text === 'string' ? body.text.slice(0, 500) : '';
+        if (!/^(sess_|session_)[A-Za-z0-9_-]+$/.test(sessionId) || !text.trim()) {
+          json(res, 400, { ok: false, code: 'ac-continue-invalid', error: '缺少合法的 sessionId 或 text' });
+          return;
+        }
+        const bundle = zcodeCliBundleCandidates().find((c) => existsSync(c));
+        if (!bundle) {
+          json(res, 500, { ok: false, code: 'cli-not-found', error: '未找到 ZCode CLI（resources/glm/zcode.cjs）' });
+          return;
+        }
+        // 权限模式原样带过去：能读到的五种模式显式传 --mode，避免无头默认 yolo
+        // 把用户在 build/plan 下的限制提上去。auto 是保留未实现的模式（所有工具
+        // 一律拒绝），无头续接没有意义，直接告知调用方。
+        const sessionMode = await readSessionMode(sessionId);
+        if (sessionMode === 'auto') {
+          json(res, 400, { ok: false, code: 'ac-mode-unsupported', error: '会话处于 auto 权限模式（尚未实现），不自动续接' });
+          return;
+        }
+        const spawnArgs = [bundle, '--resume', sessionId, '-p', text, '--surface', 'terminal'];
+        if (['build', 'edit', 'plan', 'yolo', 'guarded'].includes(sessionMode)) spawnArgs.push('--mode', sessionMode);
+        try {
+          // zcode-pro 本就跑在 ZCode 二进制上：ELECTRON_RUN_AS_NODE=1 直接拿它当 node 用
+          spawn(process.execPath, spawnArgs, {
+            detached: true,
+            stdio: 'ignore',
+            env: { ...process.env, ...proxyEnv({}, 'none'), ELECTRON_RUN_AS_NODE: '1', ...zcodeBuiltinConfigEnv(bundle) },
+            windowsHide: true,
+          }).on('error', () => { /* 启动失败由活跃度验证兜底 */ }).unref();
+        } catch (err2) {
+          json(res, 500, { ok: false, code: 'ac-continue-spawn', error: '启动无头续接失败: ' + (err2?.message || err2) });
+          return;
+        }
+        json(res, 200, { ok: true, started: true });
+        return;
+      }
       // 供应商下拉取数（视觉代理“供应商”组合框用）：合并两张供应商表，只回 id/名称/别名，不含密钥
       if (req.method === 'GET' && url.pathname === '/vision/providers') {
         json(res, 200, { ok: true, providers: listVisionProviders() });
@@ -2668,7 +2933,9 @@ export function collectUsageStats(sessionId, wantTurns = true, treeTrace = '') {
 
 function readJsonFile(p) {
   try {
-    return JSON.parse(readFileSync(p, 'utf-8'));
+    // Windows 记事本/PowerShell 保存的 JSON 带 UTF-8 BOM，JSON.parse 不认：先剥掉
+    const text = readFileSync(p, 'utf-8');
+    return JSON.parse(text.charCodeAt(0) === 0xfeff ? text.slice(1) : text);
   } catch {
     return null;
   }
@@ -3423,7 +3690,6 @@ export async function scanIdleBusy(paths, dataRoot) {
   return SCAN_OFF;
 }
 
-// Linux：直接读取 /proc（comm 定位 CLI、cwd 定位项目、task/<pid>/children 拿子进程）
 // 后台 bash 任务扫描：运行中的任务进程把 /tmp/zcode-bash-*/<会话id>/call_*-stdout.log
 // 握在 stdout/stderr 上（实测 fd/1、fd/2），日志路径就带会话 id——按"有进程握着
 // 该文件"判定在跑，纯文件系统读取，不惊动会话进程。不能走会话快照：快照会把
@@ -3473,6 +3739,7 @@ export function scanBackgroundBash(tmpDir = '/tmp', procDir = '/proc') {
   return { ok: true, jobs: [...hit.values()] };
 }
 
+// Linux：直接读取 /proc（comm 定位 CLI、cwd 定位项目、task/<pid>/children 拿子进程）
 function scanIdleBusyLinux(paths) {
   let pids;
   try { pids = readdirSync('/proc').filter((d) => /^\d+$/.test(d)); }
@@ -5186,6 +5453,35 @@ function zcodeCliBundleCandidates() {
     process.env.LOCALAPPDATA ? join(process.env.LOCALAPPDATA, 'Programs', 'ZCode', 'resources', 'glm', 'zcode.cjs') : null,
     process.env.PROGRAMFILES ? join(process.env.PROGRAMFILES, 'ZCode', 'resources', 'glm', 'zcode.cjs') : null,
   ].filter(Boolean);
+}
+
+// ZCode 3.17+ 的安装不再自带 provider/zcode-builtin.json，无头 CLI 起步就报
+// “无法定位 CLI ZCode Built-in Provider Config”退出；官方环境变量
+// ZCODE_BUILTIN_PROVIDER_CONFIG_FILE 可以指到运行时生成的版本化副本
+// （~/.zcode/v2/runtime/provider/<平台>/<版本>/<endpoint>/zcode-builtin.json）。
+// 旧布局（bundle 旁有 provider/zcode-builtin.json）不需要这个变量。
+function zcodeBuiltinConfigEnv(bundle) {
+  try {
+    if (existsSync(join(dirname(bundle), 'provider', 'zcode-builtin.json'))) return {};
+    const root = join(homedir(), '.zcode', 'v2', 'runtime', 'provider');
+    if (!existsSync(root)) return {};
+    let newest = null;
+    const stack = [root];
+    while (stack.length) {
+      const d = stack.pop();
+      for (const e of readdirSync(d, { withFileTypes: true })) {
+        if (e.isDirectory()) stack.push(join(d, e.name));
+        else if (e.name === 'zcode-builtin.json') {
+          const f = join(d, e.name);
+          const m = statSync(f).mtimeMs;
+          if (!newest || m > newest.m) newest = { f, m };
+        }
+      }
+    }
+    return newest ? { ZCODE_BUILTIN_PROVIDER_CONFIG_FILE: newest.f } : {};
+  } catch {
+    return {};
+  }
 }
 
 // 运行 zcode CLI 子命令（plugins … 默认走 plugins 代理范围；智能起名的

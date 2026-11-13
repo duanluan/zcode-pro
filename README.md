@@ -50,6 +50,7 @@ ZCode 桌面版增强工具：壁纸引擎（图片/视频/网页）、皮肤主
 | Vision | 视觉代理 | 主模型不识图时自动交给视觉模型识别图片，识别描述带给主模型；可视化编辑代理链（zcode-vision 插件） |
 | Headroom | Headroom 压缩 | 管理压缩设备、省电切换与代理运行状态，headroom 本体检查更新与升级（headroom 插件） |
 | rtk | rtk 压缩 | 管理改写提醒与命令白名单，rtk 本体检查更新与一键升级（rtk 插件） |
+| 自动继续 | 回合失败自动继续 | 回合因请求故障失败（红色报错横幅）时自动发一条继续指令接上任务，重开会话（含重启后）没做完的任务也接上；手机端/后台等界面外会话失败没人续时也会自动接手（或弹卡一键处理），认证、余额等永久性错误与手动停止不打扰；截断回复也能接上；配置在 ~/.zcode/auto-continue.json |
 
 各项功能均可在设置弹窗中开关或调整，ZCode 3.16.1 与 3.15.x 均可使用。
 
@@ -196,6 +197,7 @@ bin\zcode-pro.cmd setup
 | 全局提示词 | `~/.zcode/AGENTS.md` |
 | ZCode 行为配置（技能清单预算等） | `~/.zcode/cli/config.json` |
 | 视觉代理（zcode-vision 插件） | `~/.zcode/zcode-vision.json` |
+| 自动继续 | `~/.zcode/auto-continue.json` |
 | rtk 压缩（rtk 插件） | `~/.zcode-rtk/` |
 | Headroom（headroom 插件） | `~/.zcode/headroom.json` |
 

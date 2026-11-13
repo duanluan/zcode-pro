@@ -657,6 +657,19 @@
         pluginsUpdateFailed: "\u63D2\u4EF6\u66F4\u65B0\u5931\u8D25",
         pluginsUpdatesAvailable: "zcode-plugins \u6709 {n} \u4E2A\u63D2\u4EF6\u53EF\u66F4\u65B0\uFF08ZCode Pro \u8BBE\u7F6E \u2192 \u529F\u80FD\uFF09",
         pluginsAutoUpdated: "zcode-plugins \u63D2\u4EF6\u5DF2\u66F4\u65B0",
+        tabAutoContinue: "\u81EA\u52A8\u7EE7\u7EED",
+        acDesc: "\u56DE\u5408\u56E0\u8BF7\u6C42\u6545\u969C\u76F4\u63A5\u5931\u8D25\uFF08\u7EA2\u8272\u62A5\u9519\u6A2A\u5E45\uFF09\u65F6\uFF0C\u81EA\u52A8\u53D1\u4E00\u6761\u7EE7\u7EED\u6307\u4EE4\u628A\u4EFB\u52A1\u63A5\u4E0A\u2014\u2014\u8FD9\u6761\u5931\u8D25\u8DEF\u5F84\u4E0D\u89E6\u53D1\u63D2\u4EF6\u94A9\u5B50\uFF0C\u7531 ZCode Pro \u8865\u4E0A\uFF1B\u8BA4\u8BC1\u3001\u4F59\u989D\u3001\u6A21\u578B\u4E0D\u5B58\u5728\u7B49\u6C38\u4E45\u6027\u9519\u8BEF\u4E0D\u6253\u6270\u3002\u4E0E auto-continue \u63D2\u4EF6\u5171\u7528\u914D\u7F6E\uFF08~/.zcode/auto-continue.json\uFF09\uFF0C\u63D2\u4EF6\u8D1F\u8D23\u56DE\u5408\u6B63\u5E38\u7ED3\u675F\u540E\u7684\u9519\u8BEF\u6A2A\u5E45\u3001\u622A\u65AD\u4E0E\u7A7A\u54CD\u5E94\u6062\u590D\u3002",
+        acEnabled: "\u542F\u7528",
+        acPrompt: "\u7EE7\u7EED\u63D0\u793A\u8BCD",
+        acMaxRetries: "\u6700\u591A\u7EE7\u7EED\u6B21\u6570",
+        acMaxRetriesHint: "30 \u5206\u949F\u5185\u81EA\u52A8\u7EE7\u7EED\u7684\u7D2F\u8BA1\u4E0A\u9650\uFF0C\u9632\u6B62\u6545\u969C\u53CD\u590D\u65F6\u5237\u5C4F",
+        acCooldown: "\u5BC6\u96C6\u5931\u8D25\u9000\u907F\u57FA\u6570\uFF08\u79D2\uFF09",
+        acCooldownHint: "2 \u5206\u949F\u5185\u5DF2\u7EE7\u7EED\u8FC7\u5C31\u89C6\u4E3A\u5BC6\u96C6\u5931\u8D25\uFF0C\u95F4\u9694\u6309 2 \u500D\u9012\u589E\u3001\u4E0A\u9650 60 \u79D2\uFF1B\u5355\u6B21\u5931\u8D25\u53EA\u7B49 3 \u79D2\u754C\u9762\u7A33\u5B9A",
+        acStuckAfterMin: "\u5361\u6B7B\u5224\u5B9A\uFF08\u5206\u949F\uFF09",
+        acStuckAfterMinHint: "\u540E\u53F0\u7EC8\u7AEF\u4EFB\u52A1\u3001\u5B50\u4EE3\u7406\u6216\u4E3B\u56DE\u5408\u591A\u4E45\u6CA1\u6709\u52A8\u9759\u624D\u5F39\u5361\u63D0\u793A\uFF1B\u4F1A\u8BDD\u672C\u8EAB\u4E5F\u8981\u9759\u9ED8\u540C\u6837\u4E45",
+        acFailedAfterMin: "\u5931\u8D25\u540E\u81EA\u52A8\u7EED\u63A5\uFF08\u5206\u949F\uFF09",
+        acFailedAfterMinHint: "\u56DE\u5408\u5931\u8D25\u591A\u4E45\u540E\u81EA\u52A8\u7EE7\u7EED\uFF1B\u4F1A\u5148\u7B49 60 \u79D2\u8DF3\u8FC7\u5931\u8D25\u540E\u7684\u6E05\u7406\u4E8B\u4EF6",
+        acLoadFailed: "\u8BFB\u53D6\u81EA\u52A8\u7EE7\u7EED\u914D\u7F6E\u5931\u8D25",
         tabVision: "Vision",
         visionDesc: "\u4E3B\u6A21\u578B\u4E0D\u652F\u6301\u56FE\u7247\u8F93\u5165\u65F6\uFF08\u5982 glm-5.3\uFF09\uFF0C\u81EA\u52A8\u628A\u6D88\u606F\u91CC\u7684\u56FE\u7247\u4EA4\u7ED9\u4E0B\u9762\u7684\u89C6\u89C9\u6A21\u578B\u8BC6\u522B\uFF0C\u628A\u63CF\u8FF0\u5E26\u7ED9\u4E3B\u6A21\u578B\uFF08zcode-vision \u63D2\u4EF6\uFF1B/vision-* \u547D\u4EE4\u7F16\u8F91\u540C\u4E00\u914D\u7F6E\uFF09\u3002",
         visionEnabled: "\u542F\u7528",
@@ -1292,6 +1305,19 @@
         pluginsUpdateFailed: "Plugin update failed",
         pluginsUpdatesAvailable: "{n} zcode-plugins update(s) available (ZCode Pro settings \u2192 Features)",
         pluginsAutoUpdated: "zcode-plugins updated",
+        tabAutoContinue: "Auto-continue",
+        acDesc: "When a turn dies from a request failure (red error banner), automatically send a continue prompt to pick the task back up \u2014 this failure path fires no plugin hooks, ZCode Pro covers it; permanent errors (auth, balance, missing model) are left alone. Shares one config with the auto-continue plugin (~/.zcode/auto-continue.json); the plugin covers error banners, truncation and empty responses after normally-ended turns.",
+        acEnabled: "Enable",
+        acPrompt: "Continue prompt",
+        acMaxRetries: "Max auto-continues",
+        acMaxRetriesHint: "Cap on auto-continues within 30 minutes, to avoid flooding on repeated failures",
+        acCooldown: "Backoff base for burst failures (s)",
+        acCooldownHint: "A continue within 2 minutes counts as a burst: interval doubles up to 60s; a single failure only waits 3s for the UI to settle",
+        acStuckAfterMin: "Stuck threshold (min)",
+        acStuckAfterMinHint: "How long a background terminal task, subagent or main turn may stay silent before the card appears; the session itself must also be silent this long",
+        acFailedAfterMin: "Auto-continue after failure (min)",
+        acFailedAfterMinHint: "How long after a failed turn to continue automatically; waits 60s first to skip post-failure cleanup events",
+        acLoadFailed: "Failed to load the auto-continue config",
         tabVision: "Vision",
         visionDesc: "When the main model cannot see images (e.g. glm-5.3), images in messages are recognized by the vision models below and passed to the main model as text (zcode-vision plugin; /vision-* commands edit the same file).",
         visionEnabled: "Enable",
@@ -1572,6 +1598,13 @@
         "protected-path": "Refused: the path points inside the ZCode data directory",
         "same-path": "The new location is the same as the current one",
         "export-cancelled": "Canceled",
+        // 自动续接（ac-*）
+        "ac-read": "auto-continue.json is not valid JSON",
+        "ac-invalid": "Missing config object",
+        "ac-write": "Failed to write auto-continue.json",
+        "ac-continue-invalid": "Missing a valid sessionId or text",
+        "ac-continue-spawn": "Failed to start the headless resume",
+        "ac-mode-unsupported": "Auto mode is reserved and unimplemented; not resumed automatically",
         // 其他
         "no-content": "This session has no Q&A content yet",
         "title-gen-disabled": "Auto rename is not enabled",
@@ -4898,7 +4931,7 @@
   function waitFor(getter, timeoutMs, step) {
     const start = Date.now();
     return new Promise((resolve, reject) => {
-      const tick7 = () => {
+      const tick8 = () => {
         let v = null;
         try {
           v = getter();
@@ -4912,9 +4945,9 @@
           reject(new Error(step));
           return;
         }
-        setTimeout(tick7, 120);
+        setTimeout(tick8, 120);
       };
-      tick7();
+      tick8();
     });
   }
   function setReactInputValue(input, value) {
@@ -6497,9 +6530,9 @@
         clearWallpaper();
         return;
       }
-      const tick7 = () => showFile(files[nextIdx(files.length)], "folder");
-      wpTickFn = tick7;
-      tick7();
+      const tick8 = () => showFile(files[nextIdx(files.length)], "folder");
+      wpTickFn = tick8;
+      tick8();
       armRotateTimer(bg);
       return;
     }
@@ -6594,8 +6627,8 @@
         clearInterval(st.timer);
         st.timer = null;
       }
-      const setState = (image, tick7) => {
-        regionState[region] = { sig, image, tick: tick7, timer: null, interval: 0 };
+      const setState = (image, tick8) => {
+        regionState[region] = { sig, image, tick: tick8, timer: null, interval: 0 };
         if (image) addRule(region, image);
       };
       const drop = () => {
@@ -7252,7 +7285,7 @@
       setState(L.upgradeFound.replaceAll("{v}", res.latest || ""));
       btn.textContent = L.upgradeNow;
     };
-    const tick7 = async () => {
+    const tick8 = async () => {
       const res = await rpc(endpoint + "/upgrade");
       if (!res.ok) {
         stopPoll();
@@ -7292,9 +7325,9 @@
       btn.textContent = L.upgradeStop;
       setState(L.upgradeRunning);
       timer = setInterval(() => {
-        void tick7();
+        void tick8();
       }, 1500);
-      void tick7();
+      void tick8();
     };
     void (async () => {
       const res = await rpc(endpoint + "/upgrade");
@@ -7777,9 +7810,10 @@
         const paneVision = h("div", { role: "tabpanel", style: "display:none" });
         const paneRtk = h("div", { role: "tabpanel", style: "display:none" });
         const paneHeadroom = h("div", { role: "tabpanel", style: "display:none" });
+        const paneAutoContinue = h("div", { role: "tabpanel", style: "display:none" });
         const paneTitleGen = h("div", { role: "tabpanel", style: "display:none" });
         const paneDebug = h("div", { role: "tabpanel", style: "display:none" });
-        const panes = { features: paneFeatures, shortcuts: paneShortcuts, styles: paneStyles, perf: panePerf, agents: paneAgents, proxy: paneProxy, sync: paneSync, import: paneImport, vision: paneVision, headroom: paneHeadroom, rtk: paneRtk, debug: paneDebug };
+        const panes = { features: paneFeatures, shortcuts: paneShortcuts, styles: paneStyles, perf: panePerf, agents: paneAgents, proxy: paneProxy, sync: paneSync, import: paneImport, vision: paneVision, headroom: paneHeadroom, rtk: paneRtk, autoContinue: paneAutoContinue, debug: paneDebug };
         const tabDefs = [
           ["features", L.tabFeatures],
           ["styles", L.tabStyles],
@@ -7792,6 +7826,7 @@
           ["vision", L.tabVision],
           ["headroom", L.tabHeadroom],
           ["rtk", L.tabRtk],
+          ["autoContinue", L.tabAutoContinue],
           // “调试”标签页只对开发模式生效的用户显示（配置开关或 ZCODEPRO_DEV=1），
           // 普通用户不可见
           ...config.devMode === true || config.devActive === true ? [["debug", L.tabDebug]] : []
@@ -11090,6 +11125,121 @@
           );
         };
         renderTitleGenPane();
+        let acRes = null;
+        let acCfg = null;
+        let acSaveTimer = null;
+        const persistAc = async () => {
+          const res = await rpc("/auto-continue", { method: "POST", body: { config: acCfg } });
+          if (!res.ok) showToast(L.failed + ": " + errText(res), "error");
+        };
+        const saveAcSoon = () => {
+          clearTimeout(acSaveTimer);
+          acSaveTimer = setTimeout(() => {
+            void persistAc();
+          }, 500);
+        };
+        const renderAutoContinue = () => {
+          if (!acRes || !acRes.ok) {
+            paneAutoContinue.replaceChildren(
+              h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.acDesc),
+              h("p", { class: "mt-2 text-ui-sm text-destructive" }, L.acLoadFailed + (acRes ? ": " + errText(acRes) : ""))
+            );
+            return;
+          }
+          if (!acCfg) {
+            const raw = acRes.config && typeof acRes.config === "object" ? acRes.config : {};
+            acCfg = {
+              enabled: raw.enabled !== false,
+              continueText: typeof raw.continueText === "string" && raw.continueText ? raw.continueText : isZhLocale() ? "\u7EE7\u7EED" : "continue",
+              maxRetries: Number.isFinite(raw.maxRetries) ? raw.maxRetries : 8,
+              cooldownBaseSec: Number.isFinite(raw.cooldownBaseSec) ? raw.cooldownBaseSec : 10,
+              stuckAfterMin: Number.isFinite(raw.stuckAfterMin) ? raw.stuckAfterMin : 30,
+              failedAfterMin: Number.isFinite(raw.failedAfterMin) ? raw.failedAfterMin : 3
+            };
+          }
+          const numRow = (labelText, hint, value, min, max, commit) => h(
+            "label",
+            {
+              class: "flex shrink-0 items-center gap-1.5",
+              title: hint
+            },
+            h("span", { class: "text-ui-xs text-foreground-subtle" }, labelText),
+            numberField({
+              value,
+              fallback: min,
+              min,
+              max,
+              onCommit: (v) => {
+                commit(v);
+                saveAcSoon();
+              }
+            }).el
+          );
+          const area = h("textarea", { class: "zcodepro-textarea zcodepro-textarea-sm", rows: "3", placeholder: L.acPrompt, title: L.acPrompt });
+          area.value = acCfg.continueText || "";
+          area.addEventListener("input", () => {
+            acCfg.continueText = area.value;
+            saveAcSoon();
+          });
+          const parts = [
+            h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.acDesc),
+            // 信息卡：插件版本 + 启用开关（与 Vision 面板同款布局）
+            h(
+              "div",
+              { class: "mt-3 rounded-xl border border-border p-2" },
+              h(
+                "div",
+                { class: "flex flex-wrap items-center gap-2" },
+                h("span", { class: "shrink-0 whitespace-nowrap text-ui-xs/relaxed text-foreground-subtle" }, `\u63D2\u4EF6 ${acRes.pluginVersion || "\u2014"}`),
+                h(
+                  "div",
+                  { class: "ml-auto" },
+                  settingRow(L.acEnabled, "", acCfg.enabled !== false, () => {
+                    acCfg.enabled = !(acCfg.enabled !== false);
+                    saveAcSoon();
+                    renderAutoContinue();
+                  })
+                )
+              )
+            )
+          ];
+          if (!acRes.pluginVersion) {
+            parts.push(pluginInstallCard("auto-continue", async () => {
+              const meta = await rpc("/auto-continue");
+              if (meta.ok) acRes = meta;
+              renderAutoContinue();
+            }));
+          }
+          parts.push(
+            h(
+              "div",
+              { class: "mt-3 rounded-xl border border-border p-2" },
+              h("div", { class: "mb-1 text-ui-xs font-medium text-foreground-subtle" }, L.acPrompt),
+              area
+            ),
+            h(
+              "div",
+              { class: "mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-xl border border-border p-2" },
+              numRow(L.acMaxRetries, L.acMaxRetriesHint, acCfg.maxRetries, 1, 50, (v) => {
+                acCfg.maxRetries = v;
+              }),
+              numRow(L.acCooldown, L.acCooldownHint, acCfg.cooldownBaseSec, 0, 600, (v) => {
+                acCfg.cooldownBaseSec = v;
+              }),
+              numRow(L.acStuckAfterMin, L.acStuckAfterMinHint, acCfg.stuckAfterMin, 5, 720, (v) => {
+                acCfg.stuckAfterMin = v;
+              }),
+              numRow(L.acFailedAfterMin, L.acFailedAfterMinHint, acCfg.failedAfterMin, 1, 60, (v) => {
+                acCfg.failedAfterMin = v;
+              })
+            )
+          );
+          paneAutoContinue.replaceChildren(...parts);
+        };
+        void (async () => {
+          acRes = await rpc("/auto-continue");
+          renderAutoContinue();
+        })();
         const subTabHost = h("div", { class: "mt-2" });
         for (const bar of Object.values(subTabBars)) {
           bar.style.display = "none";
@@ -11108,6 +11258,7 @@
           paneVision,
           paneHeadroom,
           paneRtk,
+          paneAutoContinue,
           paneDebug
         );
       }
@@ -12251,9 +12402,9 @@
   var mapRefreshTimer = 0;
   function refreshMapSoon() {
     if (mapRefreshTimer) return;
-    const tick7 = () => {
+    const tick8 = () => {
       if (document.hidden) {
-        mapRefreshTimer = setTimeout(tick7, 1e4);
+        mapRefreshTimer = setTimeout(tick8, 1e4);
         return;
       }
       mapRefreshTimer = 0;
@@ -12261,7 +12412,7 @@
         if (m) scan4();
       });
     };
-    mapRefreshTimer = setTimeout(tick7, MAP_REFRESH_MS);
+    mapRefreshTimer = setTimeout(tick8, MAP_REFRESH_MS);
   }
   var editingKey = null;
   var bootDelay = 0;
@@ -13424,6 +13575,492 @@
     }, SCAN_MS);
   }
 
+  // src/inject/features/auto-continue.js
+  init_core();
+  var SCAN_MS2 = 2e3;
+  var BANNER_SEL = '[data-testid="chat-error-banner"]';
+  var STOP_SEL = '[data-testid="v4-stop"]';
+  var INPUT_SEL = '[data-testid="v4-composer-input"]';
+  var SEND_SEL = '[data-testid="v4-composer-send"]';
+  var DEFAULT_CONTINUE_TEXT = isZhLocale() ? "\u7EE7\u7EED" : "continue";
+  var DEFAULT_TRUNCATION_CONTINUE_TEXT_ZH = "\u4E0A\u4E00\u6761\u56DE\u590D\u7591\u4F3C\u5728\u8F93\u51FA\u4E2D\u9014\u88AB\u622A\u65AD\u3002\u8BF7\u63A5\u7740\u5DF2\u751F\u6210\u7684\u5185\u5BB9\u7EE7\u7EED\u8F93\u51FA\uFF0C\u4ECE\u4E2D\u65AD\u5904\u5F80\u4E0B\u5199\uFF0C\u4E0D\u8981\u91CD\u590D\u4EFB\u4F55\u5DF2\u7ECF\u751F\u6210\u7684\u5185\u5BB9\u3002";
+  var DEFAULT_TRUNCATION_CONTINUE_TEXT_EN = "The previous reply appears to have been cut off. Continue from where it stopped, without repeating anything already generated.";
+  var DEFAULT_TRUNCATION_CONTINUE_TEXT = isZhLocale() ? DEFAULT_TRUNCATION_CONTINUE_TEXT_ZH : DEFAULT_TRUNCATION_CONTINUE_TEXT_EN;
+  var truncationTextFor = (value) => {
+    const text = String(value || "").trim();
+    return !text || text === DEFAULT_TRUNCATION_CONTINUE_TEXT_ZH || text === DEFAULT_TRUNCATION_CONTINUE_TEXT_EN ? DEFAULT_TRUNCATION_CONTINUE_TEXT : value;
+  };
+  var DEFAULTS = {
+    enabled: true,
+    continueText: DEFAULT_CONTINUE_TEXT,
+    maxRetries: 8,
+    cooldownBaseSec: 10,
+    cooldownFactor: 2,
+    cooldownMaxSec: 60,
+    stuckAfterMin: 30,
+    failedAfterMin: 3,
+    truncationContinueText: DEFAULT_TRUNCATION_CONTINUE_TEXT,
+    // 永久性错误关键词（正则，命中不自动继续），与插件引擎同一份配置可覆盖
+    permanentPatterns: [
+      "\\b40[123]\\b",
+      "unauthorized",
+      "forbidden",
+      "authentication",
+      "invalid[_ -]?api[_ -]?key",
+      "api[_ -]?key",
+      "credential",
+      "\u9274\u6743",
+      "\u8BA4\u8BC1\u5931\u8D25",
+      "\u51ED\u8BC1",
+      "\u65E0\u6548\u7684\u5BC6\u94A5",
+      "insufficient (balance|funds|quota)",
+      "\u4F59\u989D\u4E0D\u8DB3",
+      "\u6B20\u8D39",
+      "billing",
+      "payment required",
+      "quota exceeded",
+      "\u914D\u989D(\u4E0D\u8DB3|\u5DF2\u7528|\u7528\u5C3D)",
+      "\u514D\u8D39\u989D\u5EA6",
+      "\u4F7F\u7528\u4E0A\u9650",
+      "\u6BCF\u5468.{0,4}\u4E0A\u9650",
+      "\u6BCF\u6708.{0,4}\u4E0A\u9650",
+      "usage limit",
+      "rate limit reached",
+      "model not found",
+      "unknown model",
+      "no such model",
+      "\u6A21\u578B\u4E0D\u5B58\u5728",
+      "\u65E0\u53EF\u7528\u6A21\u578B",
+      "access denied",
+      "permission denied",
+      "context[_ -]length",
+      "prompt (is )?too long",
+      "\u4E0A\u4E0B\u6587(\u8D85|\u8FC7|\u957F\u5EA6)",
+      "\u8F93\u5165\u8FC7\u957F",
+      "token limit",
+      "exceeded the provider context window",
+      "param incorrect",
+      "invalid[_ -]?request",
+      "invalid[_ -]?parameter",
+      "\u53C2\u6570(\u9519\u8BEF|\u4E0D\u6B63\u786E|\u65E0\u6548)"
+    ]
+  };
+  var cachedCfg = null;
+  var cachedAt = 0;
+  async function getConfig2() {
+    const now = Date.now();
+    if (cachedCfg && now - cachedAt < 3e4) return cachedCfg;
+    const res = await rpc("/auto-continue");
+    const raw = res.ok && res.config && typeof res.config === "object" ? res.config : {};
+    cachedCfg = { ...DEFAULTS, ...raw };
+    cachedAt = now;
+    return cachedCfg;
+  }
+  function compile(patterns) {
+    return (Array.isArray(patterns) ? patterns : []).map((src) => {
+      try {
+        return new RegExp(src, "i");
+      } catch {
+        return null;
+      }
+    }).filter(Boolean);
+  }
+  function isPermanent(text, cfg) {
+    return compile(cfg.permanentPatterns).some((re) => re.test(text));
+  }
+  function isCancelled(text) {
+    return /\bcancel+ed?\b|已取消|已停止|手动停止/i.test(text);
+  }
+  function trailingBanner() {
+    const banners = [...document.querySelectorAll(`${BANNER_SEL}:not([data-zcodepro-ac])`)];
+    if (!banners.length) return null;
+    const rows = [...document.querySelectorAll('[data-testid^="v4-row-"]')];
+    const lastRow = rows.length ? rows[rows.length - 1] : null;
+    for (const b of banners) {
+      const row = b.closest('[data-testid^="v4-row-"]');
+      if (!row || !lastRow || row === lastRow) return b;
+    }
+    return null;
+  }
+  var continueTimes = [];
+  function pruneTimes() {
+    const cutoff = Date.now() - 30 * 60 * 1e3;
+    continueTimes = continueTimes.filter((t2) => t2 >= cutoff);
+  }
+  function recentWithin(ms) {
+    const cutoff = Date.now() - ms;
+    return continueTimes.filter((t2) => t2 >= cutoff).length;
+  }
+  function sleep3(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+  async function fillComposer(text) {
+    const input = document.querySelector(INPUT_SEL);
+    if (!input) return false;
+    input.focus();
+    const range = document.createRange();
+    range.selectNodeContents(input);
+    const sel = getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    try {
+      document.execCommand("delete");
+    } catch {
+    }
+    for (let i = 0; i < 10 && (input.textContent || "").length > 0; i += 1) await sleep3(50);
+    try {
+      document.execCommand("insertText", false, text);
+    } catch {
+    }
+    for (let i = 0; i < 12; i += 1) {
+      const cur = input.textContent || "";
+      if (cur.includes(text)) return true;
+      await sleep3(50);
+    }
+    input.dispatchEvent(new InputEvent("beforeinput", { bubbles: true, cancelable: true, inputType: "insertText", data: text }));
+    input.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: text }));
+    for (let i = 0; i < 10; i += 1) {
+      if ((input.textContent || "").includes(text)) return true;
+      await sleep3(50);
+    }
+    return false;
+  }
+  async function clickSend() {
+    for (let i = 0; i < 15; i += 1) {
+      const send = document.querySelector(SEND_SEL);
+      if (send && !send.disabled) {
+        send.click();
+        return true;
+      }
+      await sleep3(400);
+    }
+    return false;
+  }
+  function delayFor(dense, cfg) {
+    if (dense <= 1) return 3e3;
+    const secs = Math.min(cfg.cooldownBaseSec * Math.pow(cfg.cooldownFactor || 2, dense - 2), cfg.cooldownMaxSec);
+    return Math.round(secs * 1e3);
+  }
+  function brokenTail() {
+    const rows = [...document.querySelectorAll('[data-testid^="v4-row-"]')];
+    if (!rows.length) return null;
+    const last = rows[rows.length - 1];
+    if (!last.className.includes("assistant") || last.dataset.zcodeproAc) return null;
+    const text = (last.innerText || "").trim();
+    if (text.length < 300) return null;
+    const fences = (text.match(/```/g) || []).length;
+    if (fences % 2 === 1) return { el: last, kind: "truncation" };
+    if (/(\.\.\.|…)\s*$/.test(text)) return { el: last, kind: "truncation" };
+    return null;
+  }
+  var inflight = false;
+  async function tick7() {
+    if (inflight || document.querySelector(STOP_SEL) || Date.now() < rescueUntil) return;
+    const banner = trailingBanner();
+    const target = banner ? { el: banner, kind: "banner" } : brokenTail();
+    if (!target) return;
+    const el = target.el;
+    inflight = true;
+    try {
+      const cfg = await getConfig2();
+      if (cfg.enabled === false) return;
+      if (target.kind === "banner") {
+        const text = banner.innerText || "";
+        if (isPermanent(text, cfg) || isCancelled(text)) {
+          el.dataset.zcodeproAc = "skip";
+          return;
+        }
+      }
+      if (document.querySelector(STOP_SEL)) return;
+      const input = document.querySelector(INPUT_SEL);
+      if (!input || (input.textContent || "").trim()) return;
+      pruneTimes();
+      if (continueTimes.length >= (cfg.maxRetries || DEFAULTS.maxRetries)) {
+        el.dataset.zcodeproAc = "cap";
+        return;
+      }
+      el.dataset.zcodeproAc = "pending";
+      await sleep3(delayFor(recentWithin(2 * 60 * 1e3), cfg));
+      if (!el.isConnected || document.querySelector(STOP_SEL)) {
+        el.dataset.zcodeproAc = "skip";
+        return;
+      }
+      const input2 = document.querySelector(INPUT_SEL);
+      const want = target.kind === "truncation" ? truncationTextFor(cfg.truncationContinueText) : cfg.continueText || DEFAULT_CONTINUE_TEXT;
+      const current2 = (input2 && input2.textContent || "").trim();
+      if (current2 && !current2.includes(want.slice(0, 10))) {
+        el.dataset.zcodeproAc = "skip";
+        return;
+      }
+      if (!current2 && !await fillComposer(want)) {
+        el.dataset.zcodeproAc = "fail";
+        return;
+      }
+      if (!await clickSend()) {
+        el.dataset.zcodeproAc = "fail";
+        return;
+      }
+      el.dataset.zcodeproAc = "1";
+      continueTimes.push(Date.now());
+    } finally {
+      inflight = false;
+    }
+  }
+  var STUCK_POLL_MS = 60 * 1e3;
+  var stuckShown = /* @__PURE__ */ new Set();
+  var failedShown = /* @__PURE__ */ new Set();
+  var rescueTimes = /* @__PURE__ */ new Map();
+  var stuckQueue = [];
+  var stuckCardEl = null;
+  var rescueUntil = 0;
+  async function rescueStuck(task) {
+    rescueUntil = Date.now() + 3e4;
+    const switched = switchToTask(task.sessionId);
+    if (switched) {
+      await sleep3(800);
+      const stop = document.querySelector(STOP_SEL);
+      if (stop) {
+        stop.click();
+        await sleep3(3e3);
+      }
+    }
+    const cfg = await getConfig2();
+    const r = await rpc("/ac-continue", { method: "POST", body: { sessionId: task.sessionId, text: cfg.continueText || DEFAULT_CONTINUE_TEXT } });
+    if (!r.ok) rescueUntil = 0;
+    return r.ok;
+  }
+  function switchToTask(sessionId) {
+    const row = document.querySelector(`[data-testid="task-item-${sessionId}"]`);
+    if (!row) return false;
+    row.click();
+    return true;
+  }
+  function taskTitle(sessionId) {
+    const row = document.querySelector(`[data-testid="task-item-${sessionId}"]`);
+    const text = row ? (row.textContent || "").trim() : "";
+    return text ? text.split("\n")[0].slice(0, 30) : String(sessionId).slice(0, 20) + "\u2026";
+  }
+  function dequeueStuck(task) {
+    const i = stuckQueue.indexOf(task);
+    if (i >= 0) stuckQueue.splice(i, 1);
+  }
+  function pruneStuckQueue(scan6, threshold) {
+    const alive = /* @__PURE__ */ new Map();
+    for (const t2 of Array.isArray(scan6?.tasks) ? scan6.tasks : []) {
+      if (t2.ageSec < threshold || (t2.silenceSec ?? 0) < threshold) continue;
+      const arr = alive.get(t2.sessionId) || [];
+      arr.push(t2);
+      alive.set(t2.sessionId, arr);
+    }
+    const failedAlive = new Set((Array.isArray(scan6?.failed) ? scan6.failed : []).map((f) => `${f.sessionId}:${f.failedAt}`));
+    let removedCurrent = false;
+    for (let i = stuckQueue.length - 1; i >= 0; i -= 1) {
+      const q = stuckQueue[i];
+      let keep = false;
+      if (q.failedMsg) {
+        keep = failedAlive.has(`${q.sessionId}:${q.failedAt}`);
+      } else {
+        const remain = (alive.get(q.sessionId) || []).filter((t2) => q.taskIds.includes(t2.taskId));
+        if (remain.length) {
+          q.tasks = remain;
+          q.kinds = [...new Set(remain.map((t2) => t2.kind || "terminal"))];
+          q.ageSec = Math.max(...remain.map((t2) => t2.ageSec));
+          keep = true;
+        }
+      }
+      if (!keep) {
+        if (i === 0 && stuckCardEl) removedCurrent = true;
+        stuckQueue.splice(i, 1);
+      }
+    }
+    return removedCurrent;
+  }
+  function closeStuckCard() {
+    if (stuckCardEl) {
+      stuckCardEl.remove();
+      stuckCardEl = null;
+    }
+    if (!stuckQueue.length) return;
+    setTimeout(() => {
+      void (async () => {
+        try {
+          const res = await rpc("/ac-stuck");
+          const cfg = await getConfig2();
+          if (res.ok) pruneStuckQueue(res, (cfg.stuckAfterMin || DEFAULTS.stuckAfterMin) * 60);
+        } catch {
+        }
+        showNextStuckCard();
+      })();
+    }, 500);
+  }
+  function kindLabel(kind, zh2) {
+    if (kind === "subagent") return zh2 ? "\u5B50\u4EE3\u7406\u5361\u6B7B" : "Subagent stuck";
+    if (kind === "turn") return zh2 ? "\u4E3B\u8F6E\u5361\u6B7B" : "Main turn stuck";
+    return zh2 ? "\u7EC8\u7AEF\u5361\u6B7B" : "Terminal stuck";
+  }
+  function stuckDesc(task, zh2, mins) {
+    const title = taskTitle(task.sessionId);
+    const count = task.tasks ? task.tasks.length : 1;
+    const parts = [];
+    if (task.kinds.includes("terminal")) {
+      parts.push(zh2 ? `${count > 1 ? `${count} \u4E2A` : "1 \u4E2A"}\u540E\u53F0\u7EC8\u7AEF\u4EFB\u52A1\u5DF2 ${mins} \u5206\u949F\u6CA1\u6709\u56DE\u62A5` : `${count} background terminal task(s) silent for ${mins} min`);
+    }
+    if (task.kinds.includes("subagent")) {
+      parts.push(zh2 ? `${count > 1 ? `${count} \u4E2A` : ""}\u5B50\u4EE3\u7406\u5DF2 ${mins} \u5206\u949F\u6CA1\u6709\u56DE\u62A5` : `a subagent silent for ${mins} min`);
+    }
+    if (task.kinds.includes("turn")) {
+      parts.push(zh2 ? `\u4E3B\u56DE\u5408\u5DF2 ${mins} \u5206\u949F\u6CA1\u6709\u8FDB\u5C55` : `the main turn stalled for ${mins} min`);
+    }
+    return zh2 ? `\u4EFB\u52A1\u201C${title}\u201D\uFF1A${parts.join("\uFF1B")}\u3002\u786E\u5B9E\u5728\u8DD1\u7684\u957F\u4EFB\u52A1\uFF08\u5982\u6253\u5305\uFF09\u70B9\u201C\u77E5\u9053\u4E86\u201D\u5373\u53EF\u3002` : `Task \u201C${title}\u201D: ${parts.join("; ")}. Dismiss for long-running builds.`;
+  }
+  function showNextStuckCard() {
+    if (stuckCardEl) {
+      if (stuckCardEl.isConnected) return;
+      stuckCardEl = null;
+    }
+    if (!stuckQueue.length) return;
+    const task = stuckQueue[0];
+    const zh2 = isZhLocale();
+    const mins = Math.round(task.ageSec / 60);
+    const kinds = task.kinds && task.kinds.length ? task.kinds : ["terminal"];
+    const more = stuckQueue.length > 1;
+    const card = document.createElement("div");
+    card.style.cssText = "position:fixed;right:16px;bottom:16px;z-index:2147483000;max-width:360px;padding:12px;border-radius:12px;border:1px solid var(--color-border, #666);background:var(--color-surface, #222);color:var(--color-foreground, #eee);font-size:13px;line-height:1.5;box-shadow:0 4px 24px rgba(0,0,0,.4)";
+    const title = document.createElement("div");
+    title.style.cssText = "font-weight:600;margin-bottom:4px";
+    title.textContent = (task.failedMsg ? zh2 ? "\u56DE\u5408\u5931\u8D25\u672A\u7EED\u4E0A" : "Turn failed, not continued" : kinds.map((k) => kindLabel(k, zh2)).join(zh2 ? "\u3001" : ", ")) + (more ? zh2 ? `\uFF08\u961F\u5217\u4E2D\u8FD8\u6709 ${stuckQueue.length - 1} \u4E2A\uFF09` : ` (${stuckQueue.length - 1} more queued)` : "");
+    const desc = document.createElement("div");
+    desc.style.cssText = "opacity:.85";
+    desc.textContent = task.failedMsg ? zh2 ? `\u4EFB\u52A1\u201C${taskTitle(task.sessionId)}\u201D${mins} \u5206\u949F\u524D\u56DE\u5408\u5931\u8D25\uFF08${String(task.failedMsg).slice(0, 60)}\uFF09\uFF0C\u4E00\u76F4\u6CA1\u4EBA\u7EED\u4E0A\u3002` : `Task \u201C${taskTitle(task.sessionId)}\u201D failed ${mins} min ago (${String(task.failedMsg).slice(0, 60)}) and was never continued.` : stuckDesc(task, zh2, mins);
+    const row = document.createElement("div");
+    row.style.cssText = "display:flex;gap:8px;margin-top:10px";
+    const mkBtn = (label, primary) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = label;
+      b.style.cssText = primary ? "cursor:pointer;border:none;border-radius:8px;padding:5px 12px;background:var(--color-brand, #4a7cf7);color:#fff;font-size:12px" : "cursor:pointer;border-radius:8px;padding:5px 12px;background:transparent;border:1px solid var(--color-border, #666);color:inherit;font-size:12px";
+      return b;
+    };
+    const jump = mkBtn(zh2 ? "\u8DF3\u8F6C\u4EFB\u52A1" : "Go to task", false);
+    jump.addEventListener("click", () => {
+      switchToTask(task.sessionId);
+    });
+    const fix = mkBtn(zh2 ? "\u7EE7\u7EED" : "Continue", true);
+    fix.addEventListener("click", () => {
+      fix.disabled = true;
+      if (task.failedMsg) {
+        void (async () => {
+          const cfg = await getConfig2();
+          const r = await rpc("/ac-continue", { method: "POST", body: { sessionId: task.sessionId, text: cfg.continueText || DEFAULT_CONTINUE_TEXT } });
+          if (r.ok) {
+            dequeueStuck(task);
+            closeStuckCard();
+          } else {
+            fix.disabled = false;
+            desc.textContent = (zh2 ? "\u7EED\u63A5\u542F\u52A8\u5931\u8D25\uFF1A" : "Failed to start continue: ") + (r.error || "unknown");
+          }
+        })();
+        return;
+      }
+      void (async () => {
+        const ok = await rescueStuck(task);
+        if (ok) {
+          dequeueStuck(task);
+          closeStuckCard();
+        } else {
+          fix.disabled = false;
+          desc.textContent = zh2 ? "\u65E0\u5934\u7EED\u63A5\u542F\u52A8\u5931\u8D25\uFF0C\u8BF7\u7A0D\u540E\u518D\u8BD5\u6216\u624B\u52A8\u5904\u7406\u3002" : "Failed to start headless continue; retry or handle manually.";
+        }
+      })();
+    });
+    const dismiss = mkBtn(zh2 ? "\u77E5\u9053\u4E86" : "Dismiss", false);
+    dismiss.addEventListener("click", () => {
+      dequeueStuck(task);
+      closeStuckCard();
+    });
+    row.append(jump, fix, dismiss);
+    card.append(title, desc, row);
+    (document.body || document.documentElement).append(card);
+    stuckCardEl = card;
+  }
+  async function stuckTick() {
+    const res = await rpc("/ac-stuck");
+    const dbg = (m) => {
+      const a = window.__acDebug ||= [];
+      a.push(`${(/* @__PURE__ */ new Date()).toISOString().slice(11, 19)} ${m}`);
+      if (a.length > 50) a.splice(0, a.length - 50);
+    };
+    dbg(`scan ok=${res.ok} tasks=${Array.isArray(res.tasks) ? res.tasks.length : "x"} failed=${Array.isArray(res.failed) ? res.failed.length : "x"}`);
+    if (!res.ok || !Array.isArray(res.tasks)) return;
+    const cfg = await getConfig2();
+    if (cfg.enabled === false) return;
+    const threshold = (cfg.stuckAfterMin || DEFAULTS.stuckAfterMin) * 60;
+    for (const task of res.tasks) {
+      dbg(`task tid=${String(task.taskId).slice(0, 16)} kind=${task.kind} age=${task.ageSec} sil=${task.silenceSec} thr=${threshold} shown=${stuckShown.has(task.taskId)}`);
+      if (task.ageSec < threshold || (task.silenceSec ?? 0) < threshold || stuckShown.has(task.taskId)) continue;
+      stuckShown.add(task.taskId);
+      const kind = task.kind || "terminal";
+      let entry = stuckQueue.find((q) => !q.failedMsg && q.sessionId === task.sessionId);
+      if (!entry) {
+        entry = { sessionId: task.sessionId, taskIds: [], tasks: [], kinds: [], ageSec: 0 };
+        stuckQueue.push(entry);
+      }
+      entry.taskIds.push(task.taskId);
+      entry.tasks.push(task);
+      if (!entry.kinds.includes(kind)) entry.kinds.push(kind);
+      entry.ageSec = Math.max(entry.ageSec, task.ageSec);
+    }
+    const failedThreshold = (cfg.failedAfterMin ?? DEFAULTS.failedAfterMin) * 60;
+    for (const f of Array.isArray(res.failed) ? res.failed : []) {
+      const key = `${f.sessionId}:${f.failedAt}`;
+      dbg(`entry sid=${String(f.sessionId).slice(0, 20)} age=${f.ageSec} thr=${failedThreshold} shown=${failedShown.has(key)} perm=${isPermanent(f.message || "", cfg)} canc=${isCancelled(f.message || "")}`);
+      if (f.ageSec < failedThreshold || failedShown.has(key)) continue;
+      if (isPermanent(f.message || "", cfg) || isCancelled(f.message || "")) continue;
+      if (String(f.sessionId).includes("subagent")) continue;
+      failedShown.add(key);
+      const times = (rescueTimes.get(f.sessionId) || []).filter((t2) => t2 >= Date.now() - 30 * 60 * 1e3);
+      dbg(`pass sid=${String(f.sessionId).slice(0, 20)} times=${times.length} autoFix=${cfg.failedAutoFix}`);
+      if (cfg.failedAutoFix !== false && times.length < 3) {
+        let r;
+        try {
+          r = await rpc("/ac-continue", { method: "POST", body: { sessionId: f.sessionId, text: cfg.continueText || DEFAULT_CONTINUE_TEXT } });
+        } catch (e) {
+          dbg(`rpc threw ${String(e).slice(0, 80)}`);
+          r = null;
+        }
+        dbg(`rpc done ok=${r ? r.ok : "null"} err=${r && r.error ? String(r.error).slice(0, 60) : "-"}`);
+        if (r && r.ok) {
+          times.push(Date.now());
+          rescueTimes.set(f.sessionId, times);
+          continue;
+        }
+      }
+      stuckQueue.push({ ...f, taskId: key, failedMsg: f.message || "" });
+    }
+    stuckQueue.sort((a, b) => b.ageSec - a.ageSec);
+    const removedCurrent = pruneStuckQueue(res, threshold);
+    if (removedCurrent && stuckCardEl) {
+      stuckCardEl.remove();
+      stuckCardEl = null;
+    }
+    showNextStuckCard();
+  }
+  function startAutoContinue() {
+    if (typeof document === "undefined") return;
+    window.addEventListener("zcodepro:config-changed", () => {
+      cachedAt = 0;
+    });
+    setInterval(() => {
+      tick7().catch(() => {
+      });
+    }, SCAN_MS2);
+    setInterval(() => {
+      stuckTick().catch((e) => {
+        (window.__acDebug ||= []).push(`stuckTick threw ${String(e).slice(0, 100)}`);
+      });
+    }, STUCK_POLL_MS);
+  }
+
   // src/inject/features/toolbar-icons.js
   init_core();
   init_ui();
@@ -14462,7 +15099,7 @@
     pendingEdit = false;
     const target = modelBeforeEdit;
     let checks = 0;
-    const tick7 = () => {
+    const tick8 = () => {
       if (!enabled15 || !document.querySelector(EDIT_BAR_SEL)) return;
       const current2 = currentModelValue();
       if (current2 && current2 !== target) {
@@ -14479,9 +15116,9 @@
         return;
       }
       checks += 1;
-      if (checks < 16) setTimeout(tick7, 50);
+      if (checks < 16) setTimeout(tick8, 50);
     };
-    setTimeout(tick7, 60);
+    setTimeout(tick8, 60);
   }
   function startComposerEditModel() {
     if (installed10 || typeof document === "undefined") return;
@@ -14607,6 +15244,10 @@
       }
       try {
         startPluginCardRetry();
+      } catch {
+      }
+      try {
+        startAutoContinue();
       } catch {
       }
       try {
