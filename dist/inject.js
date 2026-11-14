@@ -11762,7 +11762,8 @@
       barEl.style.left = `${Math.round(hr.left - mr.left - mount.clientLeft)}px`;
       barEl.style.width = `${Math.round(hr.width)}px`;
       barEl.style.top = `${Math.round(hr.bottom - mr.top - mount.clientTop)}px`;
-      barEl.style.bottom = `${Math.round(mr.bottom - innerHeight)}px`;
+      const below = innerHeight - mr.bottom;
+      barEl.style.bottom = `${below >= 0 && below <= 8 ? Math.round(mr.bottom - innerHeight) : 0}px`;
       barEl.style.zIndex = "20";
       barEl.style.marginBottom = "0";
       barEl.style.paddingTop = "0";

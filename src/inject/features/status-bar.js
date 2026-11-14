@@ -348,7 +348,10 @@ function renderBar() {
     barEl.style.left = `${Math.round(hr.left - mr.left - mount.clientLeft)}px`;
     barEl.style.width = `${Math.round(hr.width)}px`;
     barEl.style.top = `${Math.round(hr.bottom - mr.top - mount.clientTop)}px`;
-    barEl.style.bottom = `${Math.round(mr.bottom - innerHeight)}px`;
+    // 紧挨窗底（下方只剩几像素留白）才补到窗口底；下方还有终端等面板时只贴
+    // 到列底，否则整条会伸进面板区被盖住，只剩上面那截留白
+    const below = innerHeight - mr.bottom;
+    barEl.style.bottom = `${below >= 0 && below <= 8 ? Math.round(mr.bottom - innerHeight) : 0}px`;
     barEl.style.zIndex = '20';
     barEl.style.marginBottom = '0';
     barEl.style.paddingTop = '0';
