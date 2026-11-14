@@ -40,6 +40,8 @@ packages = ["zcode_pro"]
 "cli.mjs" = "zcode_pro/app/cli.mjs"
 "src" = "zcode_pro/app/src"
 "dist" = "zcode_pro/app/dist"
+# helper 从这里读版本号（设置弹窗显示的就是它），缺了会回退 0.0.0
+"package.json" = "zcode_pro/app/package.json"
 
 [tool.hatch.build.targets.sdist]
 include = [

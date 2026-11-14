@@ -21,7 +21,14 @@ import { listImportSessions, runImport } from './session-import/index.mjs';
 
 // 会话导入（/import/list、/import/run）：把外部 CLI 的历史会话写成 ZCode 任务。
 
-const VERSION = '1.7.0';
+// 版本号以 package.json 为准：升版只改版本文件，这里不再单独维护一份
+//（此前固定写 1.7.0，之后一直没跟着升，设置弹窗显示的就是旧版）
+const VERSION = (() => {
+  try {
+    const pkg = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'package.json'), 'utf8'));
+    return String(pkg.version || '0.0.0');
+  } catch { return '0.0.0'; }
+})();
 
 // 全局提示词固定在用户主目录：官方加载器按 HOME/USERPROFILE 拼 .zcode/AGENTS.md，
 // 不读 ZCODE_DATA_BASE_DIR（数据根迁走时全局指令仍在原位）。
