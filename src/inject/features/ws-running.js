@@ -174,12 +174,12 @@ const ACTIVE_IDS_TTL_MS = 25_000;
 const ACTIVE_IDS_TIMEOUT_MS = 6_000;
 const activeIdsCache = new Map(); // base → { ids, doneAt, pending }
 
-export function listActiveIdsCached(base) {
+export function listActiveIdsCached(base, fresh = false) {
   const key = String(base).replace(/[\\/]+$/, '');
   const now = Date.now();
   const hit = activeIdsCache.get(key);
   if (hit && hit.pending) return hit.pending;
-  if (hit && now - hit.doneAt < ACTIVE_IDS_TTL_MS) return Promise.resolve(hit.ids);
+  if (!fresh && hit && now - hit.doneAt < ACTIVE_IDS_TTL_MS) return Promise.resolve(hit.ids);
   const services = findServices();
   const ts = services && services.zcodeTaskService;
   if (!ts || typeof ts.listActiveTaskIds !== 'function') return Promise.resolve(null);
@@ -282,6 +282,7 @@ function toggleNavSafe(head) {
 
 function scan() {
   wsWithRows = new Set();
+  const changed = new Set(); // 本轮运行状态有变化的工作区（用于立即催权威扫描）
   for (const el of document.querySelectorAll(TASK_SEL)) {
     const key = el.getAttribute('data-task-item-key') || '';
     const ws = workspaceOf(key);
@@ -291,10 +292,25 @@ function scan() {
     let set = runningByWs.get(ws);
     if (run) {
       if (!set) { set = new Set(); runningByWs.set(ws, set); }
+      if (!set.has(key)) changed.add(ws);
       set.add(key);
     } else if (set) {
-      set.delete(key);
+      if (set.delete(key)) changed.add(ws);
     }
+  }
+  // 行上的 loader 增减是应用自己给出的实时信号：立刻作废该工作区的活跃缓存
+  // 并催一次权威扫描。否则任务结束后项目/分区图标要等 30 秒周期 + 25 秒缓存
+  // 才熄灭（折叠项目更是要等 60 秒复核）。
+  if (changed.size) {
+    for (const ws of changed) activeIdsCache.delete(String(ws).replace(/[\\/]+$/, ''));
+    // 刚变空闲的工作区先从项目活跃集合里摘掉，图标当场熄灭，权威扫描回来再校正
+    for (const ws of changed) {
+      const set = runningByWs.get(ws);
+      if (set && set.size) continue;
+      const norm = (v) => String(v || '').replace(/[\\/]+$/, '');
+      for (const p of [...activeProjectPaths]) if (norm(p) === norm(ws)) activeProjectPaths.delete(p);
+    }
+    scheduleForceScan();
   }
   // 无条件复核探查调度：行从有到无（折叠/卸载）时 scan 本身看不到变化，
   // 但 wsWithRows 已更新，正是需要（重新）排复核的时机
@@ -433,13 +449,36 @@ let activeProjectPaths = new Set();
 let authActiveByWs = new Map();
 // 周期复查：缓存到期就无条件重扫（不看当前值）——只在 true 时扫会有两个缺口：
 // 空闲后新任务启动无人触发（折叠分区头不亮）；任务结束但数据库完成状态尚未
-// 写入的过渡窗口里旧值一直被沿用。每 30 秒全量一次，扫描本身是内存级过滤
-setInterval(() => {
-  if (document.hidden || !enabled) return; // 后台/功能关闭不扫，回前台下一轮补上
-  if (!anyActiveCache.busy && Date.now() - anyActiveCache.at >= 30_000) globalAnyActive();
-}, 30_000);
-function globalAnyActive() {
-  if (anyActiveCache.value !== null && Date.now() - anyActiveCache.at < 30_000) return anyActiveCache.value;
+// 写入的过渡窗口里旧值一直被沿用。有图标亮着时 10 秒一轮、空闲时 30 秒一轮：
+// 任务刚结束要尽快熄灭，空闲期不必高频扫（扫描本身是内存级过滤）
+function anySpinLit() {
+  return anyActiveCache.value === true || sectionActive.task || sectionActive.project
+    || sectionActive.pinned || activeProjectPaths.size > 0;
+}
+let globalScanTimer = 0;
+function scheduleGlobalScan() {
+  clearTimeout(globalScanTimer);
+  const wait = anySpinLit() ? 10_000 : 30_000;
+  globalScanTimer = setTimeout(() => {
+    if (!document.hidden && enabled && !anyActiveCache.busy) {
+      if (anySpinLit()) globalAnyActive(true);
+      else if (Date.now() - anyActiveCache.at >= 30_000) globalAnyActive();
+    }
+    scheduleGlobalScan();
+  }, wait);
+}
+scheduleGlobalScan();
+// DOM 看到运行状态变化后的立即重扫：合并 800 毫秒内的多次变化，绕过缓存
+let forceScanTimer = 0;
+function scheduleForceScan() {
+  if (forceScanTimer) return;
+  forceScanTimer = setTimeout(() => {
+    forceScanTimer = 0;
+    if (!document.hidden && enabled) globalAnyActive(true);
+  }, 800);
+}
+function globalAnyActive(force) {
+  if (!force && anyActiveCache.value !== null && Date.now() - anyActiveCache.at < 30_000) return anyActiveCache.value;
   if (anyActiveCache.busy) return anyActiveCache.value === true;
   anyActiveCache.busy = true;
   sectionActive.task = false;
@@ -489,9 +528,11 @@ function globalAnyActive() {
           projectPaths.set(proj.name, names);
         }
         // 各工作区并行查（串行 await 在几十个工作区时要跑数秒）：每区两种尾斜杠
-        // 各查一次，走共享缓存（subagent-icon 复用同一份结果）
+        // 各查一次，走共享缓存（subagent-icon 复用同一份结果）。强制重扫时，
+        // 当前亮着图标的工作区不吃缓存——它们正是可能刚结束、要尽快熄灭的
+        const hot = new Set([...activeProjectPaths, ...authActiveByWs.keys()]);
         const pairs = await Promise.all([...scanPaths].map(async (base) =>
-          [base, (await listActiveIdsCached(base)) || []]));
+          [base, (await listActiveIdsCached(base, force && hot.has(base))) || []]));
         for (const [base, ids] of pairs) {
           if (!ids.length) continue;
           byKindByPath.set(base, ids);
@@ -507,7 +548,21 @@ function globalAnyActive() {
         // 有动静的按真活跃；长期不动的才是 syncer 卡滞误报
         const TERMINAL = new Set(['completed', 'error', 'interrupted']);
         const recOf = (id) => (st && st.ok && st.available ? st.statuses[id] : undefined);
+        // 侧栏可见行就是应用自己的实时判定：行在场且没有 loader，说明这个会话
+        // 确实停了。刚结束时官方活跃集合可能还没清、DB 也还在终态宽限期里，
+        // 光靠 5 分钟窗口会让图标多转很久——可见行直接否决
+        const domIdle = new Set();
+        const domRunningIds = new Set();
+        for (const el of document.querySelectorAll(TASK_SEL)) {
+          const k = el.getAttribute('data-task-item-key') || '';
+          const id = k.slice(k.lastIndexOf(':') + 1);
+          if (!id) continue;
+          if (isRunningRow(el)) domRunningIds.add(id);
+          else domIdle.add(id);
+        }
+        for (const id of domRunningIds) domIdle.delete(id);
         const live = (id) => {
+          if (domIdle.has(id)) return false;
           const rec = recOf(id);
           if (rec === undefined) return true;
           if (!TERMINAL.has(rec.status)) return true;
@@ -518,6 +573,7 @@ function globalAnyActive() {
         // 满足的（listActiveTaskIds 混入的非会话标识、索引尚未记录的新会话）
         // 不进弹窗，否则会出现点了切不过去的幽灵行
         const liveSession = (id) => {
+          if (domIdle.has(id)) return false;
           const rec = recOf(id);
           if (rec === undefined) return !!domRowKeyOf(id);
           if (!TERMINAL.has(rec.status)) return true;

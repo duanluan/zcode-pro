@@ -2686,12 +2686,12 @@
       return null;
     }
   }
-  function listActiveIdsCached(base) {
+  function listActiveIdsCached(base, fresh = false) {
     const key = String(base).replace(/[\\/]+$/, "");
     const now = Date.now();
     const hit = activeIdsCache.get(key);
     if (hit && hit.pending) return hit.pending;
-    if (hit && now - hit.doneAt < ACTIVE_IDS_TTL_MS) return Promise.resolve(hit.ids);
+    if (!fresh && hit && now - hit.doneAt < ACTIVE_IDS_TTL_MS) return Promise.resolve(hit.ids);
     const services = findServices();
     const ts = services && services.zcodeTaskService;
     if (!ts || typeof ts.listActiveTaskIds !== "function") return Promise.resolve(null);
@@ -2760,6 +2760,7 @@
   }
   function scan() {
     wsWithRows = /* @__PURE__ */ new Set();
+    const changed = /* @__PURE__ */ new Set();
     for (const el of document.querySelectorAll(TASK_SEL)) {
       const key = el.getAttribute("data-task-item-key") || "";
       const ws = workspaceOf(key);
@@ -2772,10 +2773,21 @@
           set = /* @__PURE__ */ new Set();
           runningByWs.set(ws, set);
         }
+        if (!set.has(key)) changed.add(ws);
         set.add(key);
       } else if (set) {
-        set.delete(key);
+        if (set.delete(key)) changed.add(ws);
       }
+    }
+    if (changed.size) {
+      for (const ws of changed) activeIdsCache.delete(String(ws).replace(/[\\/]+$/, ""));
+      for (const ws of changed) {
+        const set = runningByWs.get(ws);
+        if (set && set.size) continue;
+        const norm3 = (v) => String(v || "").replace(/[\\/]+$/, "");
+        for (const p of [...activeProjectPaths]) if (norm3(p) === norm3(ws)) activeProjectPaths.delete(p);
+      }
+      scheduleForceScan();
     }
     syncPeeks();
     apply();
@@ -2863,8 +2875,29 @@
       return { head, cont: contOk ? cont : null, kind };
     }).filter((x) => x.head);
   }
-  function globalAnyActive() {
-    if (anyActiveCache.value !== null && Date.now() - anyActiveCache.at < 3e4) return anyActiveCache.value;
+  function anySpinLit() {
+    return anyActiveCache.value === true || sectionActive.task || sectionActive.project || sectionActive.pinned || activeProjectPaths.size > 0;
+  }
+  function scheduleGlobalScan() {
+    clearTimeout(globalScanTimer);
+    const wait = anySpinLit() ? 1e4 : 3e4;
+    globalScanTimer = setTimeout(() => {
+      if (!document.hidden && enabled2 && !anyActiveCache.busy) {
+        if (anySpinLit()) globalAnyActive(true);
+        else if (Date.now() - anyActiveCache.at >= 3e4) globalAnyActive();
+      }
+      scheduleGlobalScan();
+    }, wait);
+  }
+  function scheduleForceScan() {
+    if (forceScanTimer) return;
+    forceScanTimer = setTimeout(() => {
+      forceScanTimer = 0;
+      if (!document.hidden && enabled2) globalAnyActive(true);
+    }, 800);
+  }
+  function globalAnyActive(force) {
+    if (!force && anyActiveCache.value !== null && Date.now() - anyActiveCache.at < 3e4) return anyActiveCache.value;
     if (anyActiveCache.busy) return anyActiveCache.value === true;
     anyActiveCache.busy = true;
     sectionActive.task = false;
@@ -2911,7 +2944,8 @@
             }
             projectPaths.set(proj.name, names);
           }
-          const pairs = await Promise.all([...scanPaths].map(async (base) => [base, await listActiveIdsCached(base) || []]));
+          const hot = /* @__PURE__ */ new Set([...activeProjectPaths, ...authActiveByWs.keys()]);
+          const pairs = await Promise.all([...scanPaths].map(async (base) => [base, await listActiveIdsCached(base, force && hot.has(base)) || []]));
           for (const [base, ids] of pairs) {
             if (!ids.length) continue;
             byKindByPath.set(base, ids);
@@ -2922,13 +2956,25 @@
           const st = allIds.length ? await rpc("/task-statuses?ids=" + encodeURIComponent(allIds.join(","))).catch(() => null) : null;
           const TERMINAL = /* @__PURE__ */ new Set(["completed", "error", "interrupted"]);
           const recOf = (id) => st && st.ok && st.available ? st.statuses[id] : void 0;
+          const domIdle = /* @__PURE__ */ new Set();
+          const domRunningIds = /* @__PURE__ */ new Set();
+          for (const el of document.querySelectorAll(TASK_SEL)) {
+            const k = el.getAttribute("data-task-item-key") || "";
+            const id = k.slice(k.lastIndexOf(":") + 1);
+            if (!id) continue;
+            if (isRunningRow(el)) domRunningIds.add(id);
+            else domIdle.add(id);
+          }
+          for (const id of domRunningIds) domIdle.delete(id);
           const live = (id) => {
+            if (domIdle.has(id)) return false;
             const rec = recOf(id);
             if (rec === void 0) return true;
             if (!TERMINAL.has(rec.status)) return true;
             return Date.now() - rec.updatedAt < 3e5;
           };
           const liveSession = (id) => {
+            if (domIdle.has(id)) return false;
             const rec = recOf(id);
             if (rec === void 0) return !!domRowKeyOf(id);
             if (!TERMINAL.has(rec.status)) return true;
@@ -3284,7 +3330,7 @@
       if (row) wsTouchAt.set(row, Date.now());
     }, true);
   }
-  var installed, enabled2, SCAN_DEBOUNCE_MS, SCAN_FALLBACK_MS, PEEK_FIRST_MS, PEEK_REPEAT_MS, PEEK_SETTLE_MS, PEEK_MAX_MS, PEEK_UNMOUNT_WAIT_MS, CONFIG_POLL_MIN_MS, CONFIG_POLL_MAX_MS, TASK_SEL, WS_SEL, LOADER_FALLBACK_PATHS, runningByWs, peekTimers, activePeeks, peekedWs, wsWithRows, servicesRef, servicesMissAt, ACTIVE_IDS_TTL_MS, ACTIVE_IDS_TIMEOUT_MS, activeIdsCache, synthClick, headInfoCache, PROJECT_HEAD_TEXTS, TASK_HEAD_TEXTS, SEC_SPIN_CLASS, anyActiveCache, sectionActive, activeProjectPaths, authActiveByWs, peekChain, PEEK_EXEMPT_CLASS, cssAttr, TOUCH_WINDOW_MS, wsTouchAt, pollMs, scanDebounce;
+  var installed, enabled2, SCAN_DEBOUNCE_MS, SCAN_FALLBACK_MS, PEEK_FIRST_MS, PEEK_REPEAT_MS, PEEK_SETTLE_MS, PEEK_MAX_MS, PEEK_UNMOUNT_WAIT_MS, CONFIG_POLL_MIN_MS, CONFIG_POLL_MAX_MS, TASK_SEL, WS_SEL, LOADER_FALLBACK_PATHS, runningByWs, peekTimers, activePeeks, peekedWs, wsWithRows, servicesRef, servicesMissAt, ACTIVE_IDS_TTL_MS, ACTIVE_IDS_TIMEOUT_MS, activeIdsCache, synthClick, headInfoCache, PROJECT_HEAD_TEXTS, TASK_HEAD_TEXTS, SEC_SPIN_CLASS, anyActiveCache, sectionActive, activeProjectPaths, authActiveByWs, globalScanTimer, forceScanTimer, peekChain, PEEK_EXEMPT_CLASS, cssAttr, TOUCH_WINDOW_MS, wsTouchAt, pollMs, scanDebounce;
   var init_ws_running = __esm({
     "src/inject/features/ws-running.js"() {
       init_core();
@@ -3336,10 +3382,9 @@
       sectionActive = { task: false, project: false, pinned: false };
       activeProjectPaths = /* @__PURE__ */ new Set();
       authActiveByWs = /* @__PURE__ */ new Map();
-      setInterval(() => {
-        if (document.hidden || !enabled2) return;
-        if (!anyActiveCache.busy && Date.now() - anyActiveCache.at >= 3e4) globalAnyActive();
-      }, 3e4);
+      globalScanTimer = 0;
+      scheduleGlobalScan();
+      forceScanTimer = 0;
       peekChain = Promise.resolve();
       PEEK_EXEMPT_CLASS = "zcodepro-peek-exempt";
       cssAttr = (v) => String(v).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
