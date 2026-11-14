@@ -2,7 +2,7 @@
 
 [简体中文](README.md) | English
 
-ZCode Pro is an enhancement pack for the ZCode desktop app: a wallpaper engine (image / video / web), skins, quick session switching, status bar stats and 20+ UI and workflow improvements. No client files are modified; just launch via the ZCode Pro shortcut or the `zcode-pro` terminal command.
+ZCode Pro is an enhancement pack for the ZCode desktop app: a wallpaper engine (image / video / web), skins, quick session switching, status bar stats and 30+ UI and workflow improvements. No client files are modified; just launch via the ZCode Pro shortcut or the `zcode-pro` terminal command.
 
 [![npm](https://img.shields.io/npm/v/zcode-pro?logo=npm&logoColor=white)](https://www.npmjs.com/package/zcode-pro) [![PyPI](https://img.shields.io/pypi/v/zcode-pro?logo=pypi&logoColor=white)](https://pypi.org/project/zcode-pro/) [![AUR](https://img.shields.io/aur/version/zcode-pro?logo=archlinux&logoColor=white)](https://aur.archlinux.org/packages/zcode-pro) [![Windows](https://img.shields.io/badge/-Windows-0078D6?logo=data:image/svg%2Bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI2ZmZmZmZiIgZD0iTTAsMEgxMS4zNzdWMTEuMzcySDBaTTEyLjYyMywwSDI0VjExLjM3MkgxMi42MjNaTTAsMTIuNjIzSDExLjM3N1YyNEgwWm0xMi42MjMsMEgyNFYyNEgxMi42MjMiLz48L3N2Zz4%3D)](https://github.com/duanluan/zcode-pro#-windows) [![macOS](https://img.shields.io/badge/-macOS-000000?logo=apple&logoColor=white)](https://github.com/duanluan/zcode-pro#-linux--macos) [![Linux](https://img.shields.io/badge/-Linux-FCC624?logo=linux&logoColor=black)](https://github.com/duanluan/zcode-pro#-linux--macos) [![QQ](https://img.shields.io/badge/QQ-428403354-12B7F5?logo=qq&logoColor=white)](https://github.com/duanluan/zcode-pro#-community) [![WeChat](https://img.shields.io/badge/WeChat-ai4only-07C160?logo=wechat&logoColor=white)](https://github.com/duanluan/zcode-pro#-community)
 
@@ -10,74 +10,82 @@ ZCode Pro is an enhancement pack for the ZCode desktop app: a wallpaper engine (
 
 ## ✨ Features
 
-Grouped by topic: the category column is a settings tab, entries with `·` (e.g. "Behavior · Global prompt") are sub-tabs (the table and screenshots are ordered by topic, not necessarily by their order in the dialog).
+Grouped by topic: the category column is a settings tab, entries with `·` (e.g. "Behavior · Global prompt") are sub-tabs. Screenshots follow the tab order in the dialog.
 
 | Category | Feature | Description |
 | --- | --- | --- |
 | Features | Project menu actions (open folder / copy path) | Project "More" menu: open the project directory in the file manager, or copy its path |
-| | ~~Custom alias~~ (retired) | Show a custom name for a project in the sidebar; UI-only, revert anytime; renaming is built into ZCode ≥ 3.16.1 (project menu "Edit project") — the feature disables itself there and offers to migrate existing aliases |
-| | ~~Switch project folder~~ (retired) | Point a project at another folder; sidebar, tabs and task history follow. Stop running tasks before switching; historical checkpoints still reference the original path; retired on ZCode ≥ 3.16.1, where a project can hold multiple directories natively |
 | | Sidebar session drag ordering | Reorder sessions in Pinned, Projects and Groups; persists across refreshes |
 | | Session quick switch | `alt+z` toggles between the current and the last session; hold `alt` and press `x` (up) / `c` (down) to pick from recent sessions (10 shown initially, pressing `c` at the bottom loads 5 more), `alt+e` opens the last 10 directly, `alt+r` opens running / finished-but-unseen tasks; arrow keys also move the highlight, press `Enter` or click a row to switch; the five trigger keys are customizable in Settings → Shortcuts |
 | | Keep renamed session titles | Sessions you renamed keep their custom title; auto-generated titles no longer overwrite it in the sidebar |
 | | Collapsible Pinned section | The sidebar "Pinned" header collapses/expands its task list; the state is remembered |
 | | File menu actions | Adds "Open with default app" and "Reveal in file manager" to file links in chat |
 | | Copy image | Right-click an image in chat or the enlarged preview to copy it to the clipboard |
-| | Plugin card sandbox reclaim | Releases the oldest plugin-card sandboxes once the cap is hit (the one being viewed goes last), so new cards keep opening after the 64-slot pool fills up; released cards come back when their session is reopened (reclaim trigger threshold adjustable via the sandboxReclaimBudget config file key, default 60; the 64-slot cap is fixed) |
+| | Plugin card sandbox reclaim | Releases the oldest plugin-card sandboxes once the cap is hit (the one being viewed goes last), so new cards keep opening after the 64-slot pool fills up; released cards come back when their session is reopened |
 | | Plugin card auto-retry | Auto-clicks "Reload" on cards that hit the 64-slot cap, so they recover as soon as a slot frees up |
-| | Running indicator when collapsed | While any session is running, collapsed projects and the "Tasks" / "Pinned" section headers show the same loader the running task row uses; it disappears when all finish |
+| | Running indicator when collapsed | While any session is running, collapsed project rows and the "Projects" / "Tasks" / "Pinned" section headers show the same loader the running task row uses; it disappears when all finish |
+| | Subagent running indicator | Task rows show a robot icon while background subagents run and a terminal icon while background commands run (robot wins when both); the unread dot moves to the row end; running sessions always show a spinner; project unread badges ignore error rows |
 | | Plugin panels on the new tab page | The built-in "new tab page" only lists built-in panels and recommended official plugins; this adds cards for third-party marketplace plugin panels (headroom, rtk, …) that open in the side pane |
 | | Copy table | Adds a "Copy table" button to the table toolbar in answers: writes rich text to the clipboard so Excel / rich-text editors paste it as a real table (with separate cells, no borders or background colors); plain-text targets get tab-separated values |
 | | Session ID links | Session IDs (`sess_` / `session_`) in questions and answers render as task names; click to switch to that session, hover for the raw ID; IDs in code blocks are left as-is |
+| | Provider in model name | Shows the provider before the model name in the composer (e.g. BigModel-Max1 / glm-5.3), so models with the same name are distinguishable |
+| | Keep current model when editing | Keeps the model you selected before editing instead of the model the message was sent with; you can still change it in the editor |
 | | Session import | Copy sessions from Codex, Claude Code, dsh and pi into ZCode tasks: per-source tabs, search, project filter, multi-select import; the import is a snapshot that keeps text, thinking, tool calls and images without changing the source session |
-| | Auto-update | Check and update zcode-plugins marketplace plugins in one click, optional auto-update on startup |
+| | Auto-update | Check and update zcode-plugins marketplace plugins in one click; can be set to update automatically when the settings window is opened |
 | Shortcuts | Shortcut customization | Rebind the five session quick switch trigger keys (`alt+z` / `x` / `c` / `e` / `r` by default) one by one: click "Change" and press a new key (a single letter or digit only, conflicts rejected); reset all to defaults in one click |
 | Behavior · ZCode CLI | ZCode CLI | Skill listing check: counts the full listing against the listing budget, warns when it degrades to names and file paths only and suggests a budget; configure the skill system, listing budget, extra skill directories and feature switches; workspace memory stays in the official settings under Settings → Agent capabilities → Memory; changes apply to new sessions |
 | Behavior · Global prompt | Global prompt | Edit default instructions shared by all projects; applies to new sessions |
 | Behavior · Auto rename | Auto rename | When a new session starts answering, generates the task name with a provider and prompt you choose (provider follows the current session, model defaults to glm-5.3-flash; every question sent before the first answer counts), saved as a manual rename the built-in auto title never overrides; provider, model and prompt are editable in settings, with a test button; a hover button on task rows and a context-menu entry under "Rename task" rename manually from the recent Q&A, with toggles for each entry point and the round count in settings |
-| | Keep current model when editing | Keeps the model you selected before editing instead of the model the message was sent with; you can still change it in the editor |
-| Appearance · Styles | Sidebar menu in the top bar | Turns "New task / Search / Automations / Plugin store" into icon buttons in the top navigation bar, highlighted while its view is open|
+| Appearance · Styles | Sidebar menu in the top bar | Turns "New task / Search / Automations / Plugin store" into icon buttons in the top navigation bar, highlighted while its view is open |
 | | Font adjustment | Custom UI font (all interface text except the terminal), question font and answer font |
 | | Sidebar spacing | Fine-tune sidebar project spacing and task spacing |
 | | UI style adjustments | Fine-tune paragraph spacing, content width, line heights, list/quote/table spacing and cell padding; focusing an input highlights the affected areas |
-| Appearance · Status bar | Status bar statistics | Shows statistics at the bottom-right of the input box and at the end of each answer: recent output tokens/s (estimated from text growth and marked ≈ while streaming, switches to the official 60-second window value after the call completes, and holds the last rate after an answer ends), context usage (changes color when high), questions asked, today/total tokens and task count, mostly from official data; reorder or hide each item under Settings → Appearance → Status bar. Rate and per-turn usage are scoped to the session's own records; subagent calls live in separate session records and are not counted |
+| Appearance · Status bar | Status bar statistics | Shows statistics at the bottom-right of the input box: recent output tokens/s (estimated from text growth and marked ≈ while streaming, switches to the official 60-second window value after the call completes, and holds the last rate after an answer ends), average cache hit rate, cumulative input/output, context usage (changes color when high), main request count, today/total tokens and task count, mostly from official data; reorder or hide each item under Settings → Appearance → Status bar. Rate and per-turn usage are scoped to the session's own records; subagent calls live in separate session records and are not counted |
 | | Per-turn token usage | Shows that turn's in/out tokens and cache hit rate, shown after the timestamp in each answer's action row (local records keep only a recent window; older answers stay unlabeled) |
 | Appearance · Theme | Skins | Eleven well-known editor theme palettes (Dracula / Nord / Tokyo Night / Catppuccin / Gruvbox / One Dark / Solarized / Rosé Pine / Everforest / Night Owl / Kanagawa), auto-matching ZCode's light / dark mode; plus a custom theme: pick 5 colors each for light and dark to derive the whole palette, with live preview |
 | Appearance · Wallpaper | Wallpaper | Window-wide background from five sources: none / local library (upload many, pick the active one, delete freely) / folder (read in place, rotate on a timer, random or by filename) / URL (refresh on a timer for random-image APIs) / web page (sandboxed iframe behind the UI); the left, center and right panes can each get their own background (static images only, fit and mask settable per pane, or follow the global settings); four sliders — mask opacity (image fading toward the theme background color), image blur, panel opacity, plugin card veil (theme-colored layer behind plugin cards while the wallpaper shows through) — plus transition style, video volume/playback rate/FPS cap and pause conditions; the settings window is frosted over the wallpaper by default (can be turned off on that page), menus stay opaque; the library uploads with the zcode-pro WebDAV sync group (overwrite, no history versions) |
 | Performance | Idle project memory reclaim | Projects unused for a while with no running tasks release their memory automatically, and unused ones are reclaimed once after startup; sessions are untouched and reload when reopened (durations adjustable) |
-| Proxy | Software proxy | Set an HTTP proxy for plugin updates/installs and tool upgrades (WebDAV sync can optionally use it, off by default), with connectivity test |
+| Proxy | Software proxy | Set an HTTP proxy for marketplace updates/installs and for installing/upgrading headroom and rtk (WebDAV sync can optionally use it, off by default), with connectivity test |
 | Sync | Settings sync | Manually back up ZCode Pro settings and model settings to WebDAV, or restore them on a new computer; transfers only on click |
 | Vision | Vision proxy | Automatically hand images to vision models for recognition when the main model cannot see them, and feed the descriptions to the main model; visual chain editor (zcode-vision plugin) |
 | Headroom | Headroom | Manage compression device, power-save switching and proxy status; check and upgrade the headroom program (headroom plugin) |
 | rtk | rtk compression | Manage rewrite hints and the command whitelist; check and upgrade the rtk program (rtk plugin) |
 
-All features can be toggled or adjusted in the settings window; works on both ZCode 3.16.1 and 3.15.x.
+All features can be toggled or adjusted in the settings window; the latest ZCode version is recommended, as some features may not work on older versions.
 
 ## 🎛 Settings
 
 Right-click the settings button (gear) at the bottom of the ZCode sidebar to open the settings window:
 
-| Features | Shortcuts | Behavior · Global prompt |
+| Features | Appearance · Wallpaper | Appearance · Theme |
 | --- | --- | --- |
-| <img src="docs/settings/01-features.png" width="280"> | <img src="docs/settings/02-shortcuts.png" width="280"> | <img src="docs/settings/03-behavior-global-prompt.png" width="280"> |
+| <img src="docs/settings/01-features.png" width="280"> | <img src="docs/settings/02-appearance-wallpaper.png" width="280"> | <img src="docs/settings/03-appearance-theme.png" width="280"> |
 
-| Behavior · Auto rename | Appearance · Styles | Appearance · Status bar |
+| Appearance · Styles | Appearance · Status bar | Behavior · ZCode CLI |
 | --- | --- | --- |
-| <img src="docs/settings/04-behavior-task-title.png" width="280"> | <img src="docs/settings/05-style-tweaks.png" width="280"> | <img src="docs/settings/06-style-status-bar.png" width="280"> |
+| <img src="docs/settings/04-appearance-styles.png" width="280"> | <img src="docs/settings/05-appearance-status-bar.png" width="280"> | <img src="docs/settings/06-behavior-zcode-cli.png" width="280"> |
 
-| Performance | Proxy | Sync |
+| Behavior · Global prompt | Behavior · Auto rename | Performance |
 | --- | --- | --- |
-| <img src="docs/settings/07-performance.png" width="280"> | <img src="docs/settings/08-proxy.png" width="280"> | <img src="docs/settings/09-sync.png" width="280"> |
+| <img src="docs/settings/07-behavior-global-prompt.png" width="280"> | <img src="docs/settings/08-behavior-auto-rename.png" width="280"> | <img src="docs/settings/09-performance.png" width="280"> |
 
-| Vision | Headroom | rtk |
+| Shortcuts | Proxy | Sync |
 | --- | --- | --- |
-| <img src="docs/settings/10-vision.png" width="280"> | <img src="docs/settings/11-headroom.png" width="280"> | <img src="docs/settings/12-rtk.png" width="280"> |
+| <img src="docs/settings/10-shortcuts.png" width="280"> | <img src="docs/settings/11-proxy.png" width="280"> | <img src="docs/settings/12-sync.png" width="280"> |
 
-> The last three tabs (Vision / Headroom / rtk) come from the plugins of the same name; when a plugin is missing, the tab shows a one-click install card and switches to the full panel once installed.
+| Session import | Vision | Headroom |
+| --- | --- | --- |
+| <img src="docs/settings/13-session-import.png" width="280"> | <img src="docs/settings/14-vision.png" width="280"> | <img src="docs/settings/15-headroom.png" width="280"> |
+
+| rtk |
+| --- |
+| <img src="docs/settings/16-rtk.png" width="280"> |
+
+> The Vision / Headroom / rtk tabs come from the plugins of the same name; when a plugin is missing, the tab shows a one-click install card and switches to the full panel once installed.
 
 ## 📦 Installation
 
-> **Version match**: for ZCode ≥ 3.16.1 use **zcode-pro 1.1.0 or newer** (the latest is 1.8.1); for ZCode 3.15.x and earlier use **zcode-pro 0.20.3** (the previous release, still available).
+> **Version note**: the latest ZCode version is recommended; some features may not work on older versions.
 
 Once installed, launch ZCode via the "ZCode Pro" shortcut in your app menu / Start menu, or the `zcode-pro` command in a terminal — the enhancements are enabled automatically in this mode; launching ZCode through its original entry does not load them. After launching, right-click the settings button at the bottom of the ZCode sidebar to open the ZCode Pro settings window.
 
@@ -150,7 +158,7 @@ If you previously installed via `install.sh`, run `./scripts/install.sh --uninst
 
 ### 🚀 Run without installing
 
-No standalone Node.js required: the runtime bundled with ZCode is preferred and used even without a system Node; works whether ZCode is installed in the default directory or a custom one (auto-detected, falling back to the registry).
+No standalone Node.js required: the runtime bundled with ZCode is preferred; works whether ZCode is installed in the default directory or a custom one (auto-detected).
 
 ```bash
 git clone https://github.com/duanluan/zcode-pro.git && cd zcode-pro
@@ -180,21 +188,22 @@ Command-line options (see `zcode-pro --help` for all):
 | `--cdp-port` | Debug port, default 9333 |
 | `--helper-port` | Local helper port, default 47889 |
 | `--zcode-path` | Explicit path to the ZCode executable |
-| `--inject-only` | Attach to a running instance only; do not launch a new one |
-| `--verbose` | Verbose logging |
+| `--inject-only` (alias `--no-launch`) | Attach to a running instance only; do not launch a new one |
+| `--verbose`, `-v` | Verbose logging |
 | `setup [--desktop] [--uninstall]` | Install/undo local shortcuts (`--desktop` also adds a desktop one) |
 | `wallpaper <op>` | Wallpaper CLI: list / set / rotate / params / upload / delete (see `wallpaper -h`) |
 
-Only `--cdp-port`, `--helper-port` and `--zcode-path` also have a `ZCODEPRO_*` environment variable (`ZCODEPRO_CDP_PORT`, `ZCODEPRO_HELPER_PORT`, `ZCODEPRO_ZCODE_PATH`); the command-line option wins.
+Only `--cdp-port`, `--helper-port` and `--zcode-path` also have a `ZCODEPRO_*` environment variable (`ZCODEPRO_CDP_PORT`, `ZCODEPRO_HELPER_PORT`, `ZCODEPRO_ZCODE_PATH`); the command-line option wins. Other variables include `ZCODE_DATA_BASE_DIR` (ZCode data root) and `RTK_DIR` (rtk state directory); see `zcode-pro --help` for the full list.
 
 Configuration and data locations:
 
 | Content | Location |
 | --- | --- |
-| Feature switches, aliases, software proxy | `~/.zcode/zcodepro.json` |
-| Startup diagnostics log (silent shortcut launches, Windows) | `~/.zcode/zcodepro.log` |
+| Feature switches, appearance (theme / wallpaper / styles), shortcuts, proxy and sync settings | `~/.zcode/zcodepro.json` |
+| Startup diagnostics log | `~/.zcode/zcodepro.log` |
 | Global prompt | `~/.zcode/AGENTS.md` |
 | ZCode behavior settings (skill listing budget etc.) | `~/.zcode/cli/config.json` |
+| Wallpaper library | `~/.zcode/backgrounds/` |
 | Vision proxy (zcode-vision plugin) | `~/.zcode/zcode-vision.json` |
 | rtk compression (rtk plugin) | `~/.zcode-rtk/` |
 | Headroom (headroom plugin) | `~/.zcode/headroom.json` |
