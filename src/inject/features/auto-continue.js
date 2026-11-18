@@ -5,7 +5,7 @@
 // 接着跑——正在跑的失败当场接上，重开会话（含重启 ZCode 后）留着尾巴的任务也接上；
 // 认证、余额、模型不存在等永久性错误和用户手动停止（cancelled）不打扰。截断的回复
 // 也会接着写。开关与文案走 ~/.zcode/auto-continue.json。
-import { rpc, isZhLocale } from '../core.js';
+import { rpc, uiLocale, t, errText } from '../core.js';
 
 const SCAN_MS = 2000;
 const BANNER_SEL = '[data-testid="chat-error-banner"]';
@@ -13,33 +13,50 @@ const STOP_SEL = '[data-testid="v4-stop"]';
 const INPUT_SEL = '[data-testid="v4-composer-input"]';
 const SEND_SEL = '[data-testid="v4-composer-send"]';
 
-// 默认继续提示词按界面语言取值，与设置页显示的默认值一致
-const DEFAULT_CONTINUE_TEXT = isZhLocale() ? '继续' : 'continue';
-const DEFAULT_TRUNCATION_CONTINUE_TEXT_ZH =
-  '上一条回复疑似在输出中途被截断。请接着已生成的内容继续输出，从中断处往下写，不要重复任何已经生成的内容。';
-const DEFAULT_TRUNCATION_CONTINUE_TEXT_EN =
-  'The previous reply appears to have been cut off. Continue from where it stopped, without repeating anything already generated.';
-const DEFAULT_TRUNCATION_CONTINUE_TEXT = isZhLocale()
-  ? DEFAULT_TRUNCATION_CONTINUE_TEXT_ZH
-  : DEFAULT_TRUNCATION_CONTINUE_TEXT_EN;
-// 配置里存的是内置默认文案（旧版固定中文）时按当前语言重取；用户自己改过的不动
+// 默认提示词按 ZCode 的界面语言取值（官方支持 zh-CN / en-US / ja-JP / ko-KR / ru-RU），
+// 与设置页显示的默认值一致；界面文案同样跟随这五种语言
+const CONTINUE_TEXT_BY_LOCALE = {
+  'zh-CN': '继续',
+  'en-US': 'continue',
+  'ja-JP': '続けて',
+  'ko-KR': '계속',
+  'ru-RU': 'Продолжай',
+};
+export function defaultContinueText() {
+  return CONTINUE_TEXT_BY_LOCALE[uiLocale()] || CONTINUE_TEXT_BY_LOCALE['en-US'];
+}
+const TRUNCATION_CONTINUE_TEXT_BY_LOCALE = {
+  'zh-CN': '上一条回复疑似在输出中途被截断。请接着已生成的内容继续输出，从中断处往下写，不要重复任何已经生成的内容。',
+  'en-US': 'The previous reply appears to have been cut off. Continue from where it stopped, without repeating anything already generated.',
+  'ja-JP': '前回の回答は出力の途中で途切れた可能性があります。生成済みの内容の続きから、中断した箇所を書き進めてください。すでに出力した内容は繰り返さないでください。',
+  'ko-KR': '이전 답변이 출력 도중에 잘린 것 같습니다. 이미 생성된 내용에 이어서 중단된 지점부터 계속 작성해 주세요. 이미 생성된 내용은 반복하지 마세요.',
+  'ru-RU': 'Похоже, предыдущий ответ был обрезан на середине. Продолжите с того места, где он остановился, не повторяя уже сгенерированный текст.',
+};
+function defaultTruncationText() {
+  return TRUNCATION_CONTINUE_TEXT_BY_LOCALE[uiLocale()] || TRUNCATION_CONTINUE_TEXT_BY_LOCALE['en-US'];
+}
+
+// 没有保存过提示词时才用当前语言的默认值；已保存的值（包括旧语言的内置默认）保持不变。
+// 用户想换成当前语言的默认值，去设置页点“使用默认提示词”重新取。
 const truncationTextFor = (value) => {
   const text = String(value || '').trim();
-  return !text || text === DEFAULT_TRUNCATION_CONTINUE_TEXT_ZH || text === DEFAULT_TRUNCATION_CONTINUE_TEXT_EN
-    ? DEFAULT_TRUNCATION_CONTINUE_TEXT
-    : value;
+  return text || defaultTruncationText();
+};
+const continueTextFor = (value) => {
+  const text = String(value || '').trim();
+  return text || defaultContinueText();
 };
 
 const DEFAULTS = {
   enabled: true,
-  continueText: DEFAULT_CONTINUE_TEXT,
+  continueText: '',
   maxRetries: 8,
   cooldownBaseSec: 10,
   cooldownFactor: 2,
   cooldownMaxSec: 60,
   stuckAfterMin: 30,
   failedAfterMin: 3,
-  truncationContinueText: DEFAULT_TRUNCATION_CONTINUE_TEXT,
+  truncationContinueText: '',
   // 永久性错误关键词（正则，命中不自动继续），与插件引擎同一份配置可覆盖
   permanentPatterns: [
     '\\b40[123]\\b',
@@ -48,11 +65,22 @@ const DEFAULTS = {
     'insufficient (balance|funds|quota)', '余额不足', '欠费',
     'billing', 'payment required', 'quota exceeded', '配额(不足|已用|用尽)', '免费额度',
     '使用上限', '每周.{0,4}上限', '每月.{0,4}上限', 'usage limit', 'rate limit reached',
-    'model not found', 'unknown model', 'no such model', '模型不存在', '无可用模型',
+    'model not found', 'unknown model', 'no such model', 'no model available', 'current model is unavailable',
+    '模型不存在', '无可用模型', '当前模型不可用',
     'access denied', 'permission denied',
     'context[_ -]length', 'prompt (is )?too long', '上下文(超|过|长度)', '输入过长', 'token limit',
     'exceeded the provider context window',
     'param incorrect', 'invalid[_ -]?request', 'invalid[_ -]?parameter', '参数(错误|不正确|无效)',
+    // 官方会把已知错误本地化后再显示；补上日/韩/俄的同类措辞，避免一直续接永久失败
+    '認証(に失敗|エラー|が必要)', 'ログイン.*(期限|失効|必要)', 'サインイン.*(期限|失効|必要)',
+    'クォータ.*(使い切|超過|不足|上限)', '残高.*不足',
+    'モデル.*(見つかりません|利用できません|利用できなく|ありません|含まれていません)', 'コンテキスト.*(長|超過|上限)',
+    '인증.*(실패|오류|필요)', '로그인.*(만료|필요)',
+    '할당량.*(초과|부족|모두 사용|한도)', '잔액.*부족',
+    '모델.*(찾을 수 없|사용할 수 없|없습니다|포함되어 있지 않)', '컨텍스트.*(길|초과|한도)',
+    'аутентификац.*(ошиб|неудач|требуется)', 'сеанс.*(истёк|истек)', 'войд.*снова',
+    'квот.*(израсходован|превышен|недостаточно)', 'баланс.*недостаточно',
+    'модель.*(не найдена|недоступна|не входит)', 'нет доступной модели', 'контекст.*(длин|превыш)',
   ],
 };
 
@@ -81,7 +109,19 @@ function isPermanent(text, cfg) {
 
 // 用户手动停止 / 系统取消的失败横幅（如 “Model request was cancelled.”）不自动继续
 function isCancelled(text) {
-  return /\bcancel+ed?\b|已取消|已停止|手动停止/i.test(text);
+  return /\bcancel+ed?\b|已取消|已停止|手动停止|キャンセル|中止|취소|중지|отмен|остановлен/i.test(text);
+}
+
+// 官方横幅带 data-error-code（如 providerBusiness.1005）；这些码是重试也不会好的
+const PERMANENT_CODES = [
+  'model_config_missing',
+  'ZCODE_RUNTIME_MODEL_UNAVAILABLE',
+  'ZCODE_BIGMODEL_TEAM_PLAN_MEMBER_REQUIRED',
+];
+function isPermanentCode(code) {
+  const s = String(code || '').trim();
+  if (PERMANENT_CODES.some((n) => s === n || s.endsWith('.' + n) || s.endsWith(':' + n))) return true;
+  return /(?:^|[.\-_/:])(?:401|402|403|429|1005|1006|3001|3006)$/.test(s);
 }
 
 // 会话流收尾处的失败横幅：横幅所在的行是最后一行（任务死在收尾上）才算数；
@@ -201,7 +241,8 @@ async function tick() {
 
     if (target.kind === 'banner') {
       const text = (banner.innerText || '');
-      if (isPermanent(text, cfg) || isCancelled(text)) {
+      const code = banner.getAttribute('data-error-code') || '';
+      if (isPermanent(text, cfg) || isPermanentCode(code) || isCancelled(text)) {
         el.dataset.zcodeproAc = 'skip';
         return;
       }
@@ -226,7 +267,7 @@ async function tick() {
     const input2 = document.querySelector(INPUT_SEL);
     const want = target.kind === 'truncation'
       ? truncationTextFor(cfg.truncationContinueText)
-      : (cfg.continueText || DEFAULT_CONTINUE_TEXT);
+      : (continueTextFor(cfg.continueText));
     const current = ((input2 && input2.textContent) || '').trim();
     // 输入框有内容：是上次没发出去的继续提示词就只重试发送（不重复插入，
     // 同一目标重渲染再次触发也走到这里）；是用户起草的内容就不打扰
@@ -278,7 +319,7 @@ async function rescueStuck(task) {
     }
   }
   const cfg = await getConfig();
-  const r = await rpc('/ac-continue', { method: 'POST', body: { sessionId: task.sessionId, text: cfg.continueText || DEFAULT_CONTINUE_TEXT } });
+  const r = await rpc('/ac-continue', { method: 'POST', body: { sessionId: task.sessionId, text: continueTextFor(cfg.continueText) } });
   if (!r.ok) rescueUntil = 0;
   return r.ok;
 }
@@ -353,32 +394,28 @@ function closeStuckCard() {
   }, 500);
 }
 
-function kindLabel(kind, zh) {
-  if (kind === 'subagent') return zh ? '子代理卡死' : 'Subagent stuck';
-  if (kind === 'turn') return zh ? '主轮卡死' : 'Main turn stuck';
-  return zh ? '终端卡死' : 'Terminal stuck';
+function kindLabel(kind) {
+  const L = t();
+  if (kind === 'subagent') return L.acCardKindSubagent;
+  if (kind === 'turn') return L.acCardKindTurn;
+  return L.acCardKindTerminal;
 }
 
-function stuckDesc(task, zh, mins) {
+function stuckDesc(task, mins) {
+  const L = t();
   const title = taskTitle(task.sessionId);
   const count = task.tasks ? task.tasks.length : 1;
   const parts = [];
   if (task.kinds.includes('terminal')) {
-    parts.push(zh
-      ? `${count > 1 ? `${count} 个` : '1 个'}后台终端任务已 ${mins} 分钟没有回报`
-      : `${count} background terminal task(s) silent for ${mins} min`);
+    parts.push(L.acCardTerminalSilent.replaceAll('{count}', String(count)).replaceAll('{mins}', String(mins)));
   }
   if (task.kinds.includes('subagent')) {
-    parts.push(zh
-      ? `${count > 1 ? `${count} 个` : ''}子代理已 ${mins} 分钟没有回报`
-      : `a subagent silent for ${mins} min`);
+    parts.push(L.acCardSubagentSilent.replaceAll('{count}', String(count)).replaceAll('{mins}', String(mins)));
   }
   if (task.kinds.includes('turn')) {
-    parts.push(zh ? `主回合已 ${mins} 分钟没有进展` : `the main turn stalled for ${mins} min`);
+    parts.push(L.acCardTurnStalled.replaceAll('{mins}', String(mins)));
   }
-  return zh
-    ? `任务“${title}”：${parts.join('；')}。确实在跑的长任务（如打包）点“知道了”即可。`
-    : `Task “${title}”: ${parts.join('; ')}. Dismiss for long-running builds.`;
+  return L.acCardStuckDesc.replaceAll('{title}', title).replaceAll('{parts}', parts.join(L.acCardPartSep));
 }
 
 function showNextStuckCard() {
@@ -389,7 +426,7 @@ function showNextStuckCard() {
   }
   if (!stuckQueue.length) return;
   const task = stuckQueue[0];
-  const zh = isZhLocale();
+  const L = t();
   const mins = Math.round(task.ageSec / 60);
   const kinds = task.kinds && task.kinds.length ? task.kinds : ['terminal'];
   const more = stuckQueue.length > 1;
@@ -398,16 +435,17 @@ function showNextStuckCard() {
   const title = document.createElement('div');
   title.style.cssText = 'font-weight:600;margin-bottom:4px';
   title.textContent = (task.failedMsg
-    ? (zh ? '回合失败未续上' : 'Turn failed, not continued')
-    : kinds.map((k) => kindLabel(k, zh)).join(zh ? '、' : ', '))
-    + (more ? (zh ? `（队列中还有 ${stuckQueue.length - 1} 个）` : ` (${stuckQueue.length - 1} more queued)`) : '');
+    ? L.acCardFailedTitle
+    : kinds.map((k) => kindLabel(k)).join(L.acCardKindSep))
+    + (more ? L.acCardMore.replaceAll('{n}', String(stuckQueue.length - 1)) : '');
   const desc = document.createElement('div');
   desc.style.cssText = 'opacity:.85';
   desc.textContent = task.failedMsg
-    ? (zh
-      ? `任务“${taskTitle(task.sessionId)}”${mins} 分钟前回合失败（${String(task.failedMsg).slice(0, 60)}），一直没人续上。`
-      : `Task “${taskTitle(task.sessionId)}” failed ${mins} min ago (${String(task.failedMsg).slice(0, 60)}) and was never continued.`)
-    : stuckDesc(task, zh, mins);
+    ? L.acCardFailedDesc
+      .replaceAll('{title}', taskTitle(task.sessionId))
+      .replaceAll('{mins}', String(mins))
+      .replaceAll('{msg}', String(task.failedMsg).slice(0, 60))
+    : stuckDesc(task, mins);
   const row = document.createElement('div');
   row.style.cssText = 'display:flex;gap:8px;margin-top:10px';
   const mkBtn = (label, primary) => {
@@ -419,25 +457,25 @@ function showNextStuckCard() {
       : 'cursor:pointer;border-radius:8px;padding:5px 12px;background:transparent;border:1px solid var(--color-border, #666);color:inherit;font-size:12px';
     return b;
   };
-  const jump = mkBtn(zh ? '跳转任务' : 'Go to task', false);
+  const jump = mkBtn(L.acCardJump, false);
   jump.addEventListener('click', () => {
     switchToTask(task.sessionId);
     // 卡片留着：看完任务再决定“继续”还是“知道了”
   });
-  const fix = mkBtn(zh ? '继续' : 'Continue', true);
+  const fix = mkBtn(L.acCardContinue, true);
   fix.addEventListener('click', () => {
     fix.disabled = true;
     if (task.failedMsg) {
       // 失败会话：走无头续接，不切界面
       void (async () => {
         const cfg = await getConfig();
-        const r = await rpc('/ac-continue', { method: 'POST', body: { sessionId: task.sessionId, text: cfg.continueText || DEFAULT_CONTINUE_TEXT } });
+        const r = await rpc('/ac-continue', { method: 'POST', body: { sessionId: task.sessionId, text: continueTextFor(cfg.continueText) } });
         if (r.ok) {
           dequeueStuck(task);
           closeStuckCard();
         } else {
           fix.disabled = false;
-          desc.textContent = (zh ? '续接启动失败：' : 'Failed to start continue: ') + (r.error || 'unknown');
+          desc.textContent = L.acCardContinueStartFailed + (errText(r) || 'unknown');
         }
       })();
       return;
@@ -449,11 +487,11 @@ function showNextStuckCard() {
         closeStuckCard();
       } else {
         fix.disabled = false;
-        desc.textContent = zh ? '无头续接启动失败，请稍后再试或手动处理。' : 'Failed to start headless continue; retry or handle manually.';
+        desc.textContent = L.acCardHeadlessFailed;
       }
     })();
   });
-  const dismiss = mkBtn(zh ? '知道了' : 'Dismiss', false);
+  const dismiss = mkBtn(L.acCardDismiss, false);
   dismiss.addEventListener('click', () => {
     dequeueStuck(task);
     closeStuckCard();
@@ -507,7 +545,7 @@ async function stuckTick() {
     if (cfg.failedAutoFix !== false && times.length < 3) {
       let r;
       try {
-        r = await rpc('/ac-continue', { method: 'POST', body: { sessionId: f.sessionId, text: cfg.continueText || DEFAULT_CONTINUE_TEXT } });
+        r = await rpc('/ac-continue', { method: 'POST', body: { sessionId: f.sessionId, text: continueTextFor(cfg.continueText) } });
       } catch (e) {
         dbg(`rpc threw ${String(e).slice(0, 80)}`);
         r = null;

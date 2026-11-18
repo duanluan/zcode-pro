@@ -13,7 +13,7 @@
 //   并刷新锁定表，新名即刻上屏；
 // - 失败静默（一次生成失败不打扰用户），每个会话只尝试一次。
 // 扫描事件驱动（任务行相关变动去抖 300ms）+ 低频兜底轮询，选法同 title-lock。
-import { rpc, getConfig } from '../core.js';
+import { rpc, getConfig, uiLocale, t } from '../core.js';
 import { setRowTitle, refreshPinnedTitles } from './title-lock.js';
 
 const CONV = '[class*="@md/conversation"]';
@@ -148,7 +148,7 @@ async function onNewTaskRow(key) {
       if (currentKey() !== key) continue;
       const a = assistantText();
       if (a && a.length > 80) {
-        texts.push(`（首轮回答摘要）${a}`);
+        texts.push(t().titleGenAssistantSummary + a);
         break;
       }
     }
@@ -157,7 +157,7 @@ async function onNewTaskRow(key) {
   // 失败静默但重试（模型调用偶发失败不应让本次会话永远失去标题）：5 秒一次
   // 错开瞬时抖动；20 秒一次兜住“会话刚建的几秒内索引模型信息未写定”
   //（实测新会话 8 秒时解析到的模型不存在，稍后即正常）
-  const callTitleGen = () => rpc('/title-gen/run', { method: 'POST', body: { sessId, text: texts.join('\n') } }).catch(() => null);
+  const callTitleGen = () => rpc('/title-gen/run', { method: 'POST', body: { sessId, text: texts.join('\n'), locale: uiLocale() } }).catch(() => null);
   let res = await callTitleGen();
   for (const delay of [5000, 20000]) {
     if (res && res.ok) break;

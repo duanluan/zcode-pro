@@ -267,16 +267,22 @@ const readSrc = (p) => readFileSync(new URL(p, import.meta.url), 'utf8');
 const turnSrc = readSrc('../src/inject/features/turn-usage.js');
 const sbSrc = readSrc('../src/inject/features/status-bar.js');
 const ssSrc = readSrc('../src/inject/features/session-switch.js');
+const coreSrc = readSrc('../src/inject/core.js');
+const acSrc = readSrc('../src/inject/features/auto-continue.js');
 const toSrc = readSrc('../src/host/taskOrder.mjs');
 const turnMask = makeMask(turnSrc);
 const sbMask = makeMask(sbSrc);
 const ssMask = makeMask(ssSrc);
+const coreMask = makeMask(coreSrc);
+const acMask = makeMask(acSrc);
 const toMask = makeMask(toSrc);
 
 const fmtSrc = extractBinding(turnSrc, 'fmt', turnMask);
 assert(!!fmtSrc, '截取 turn-usage.js fmt 成功');
 const rowTimeTsSrc = extractBinding(turnSrc, 'rowTimeTs', turnMask);
 assert(!!rowTimeTsSrc, '截取 turn-usage.js rowTimeTs 成功');
+const datePairSrc = extractBinding(turnSrc, 'datePair', turnMask);
+assert(!!datePairSrc, '截取 turn-usage.js datePair 成功');
 const findRowsSrc = extractBinding(turnSrc, 'findRows', turnMask);
 assert(!!findRowsSrc, '截取 turn-usage.js findRows 成功');
 const curSidSrc = extractBinding(turnSrc, 'currentSessionId', turnMask);
@@ -289,6 +295,8 @@ const fmtTokensSrc = extractBinding(sbSrc, 'fmtTokens', sbMask);
 assert(!!fmtTokensSrc, '截取 status-bar.js fmtTokens 成功');
 const fmtNumSrc = extractBinding(sbSrc, 'fmtNum', sbMask);
 assert(!!fmtNumSrc, '截取 status-bar.js fmtNum 成功');
+const parseCtxTitleSrc = extractBinding(sbSrc, 'parseCtxTitle', sbMask);
+assert(!!parseCtxTitleSrc, '截取 status-bar.js parseCtxTitle 成功');
 const spliceSrc = extractBinding(toSrc, 'spliceSubset', toMask);
 assert(!!spliceSrc, '截取 taskOrder.mjs spliceSubset 成功');
 const idOfSrc = extractBinding(ssSrc, 'idOf', ssMask);
@@ -305,6 +313,24 @@ const switchTargetSrc = extractBinding(ssSrc, 'switchTarget', ssMask);
 assert(!!switchTargetSrc, '截取 session-switch.js switchTarget 成功');
 const isLocalPathSrc = extractBinding(ssSrc, 'isLocalPath', ssMask);
 assert(!!isLocalPathSrc, '截取 session-switch.js isLocalPath 成功');
+const normalizeUiLocaleSrc = extractBinding(coreSrc, 'normalizeUiLocale', coreMask);
+assert(!!normalizeUiLocaleSrc, '截取 core.js normalizeUiLocale 成功');
+const renameLabelsSrc = extractBinding(coreSrc, 'RENAME_LABELS', coreMask);
+assert(!!renameLabelsSrc, '截取 core.js RENAME_LABELS 成功');
+const isRenameLabelSrc = extractBinding(coreSrc, 'isRenameLabel', coreMask);
+assert(!!isRenameLabelSrc, '截取 core.js isRenameLabel 成功');
+const acDefaultsSrc = extractBinding(acSrc, 'DEFAULTS', acMask);
+assert(!!acDefaultsSrc, '截取 auto-continue.js DEFAULTS 成功');
+const acCompileSrc = extractBinding(acSrc, 'compile', acMask);
+assert(!!acCompileSrc, '截取 auto-continue.js compile 成功');
+const acIsPermanentSrc = extractBinding(acSrc, 'isPermanent', acMask);
+assert(!!acIsPermanentSrc, '截取 auto-continue.js isPermanent 成功');
+const acIsCancelledSrc = extractBinding(acSrc, 'isCancelled', acMask);
+assert(!!acIsCancelledSrc, '截取 auto-continue.js isCancelled 成功');
+const acPermanentCodesSrc = extractBinding(acSrc, 'PERMANENT_CODES', acMask);
+assert(!!acPermanentCodesSrc, '截取 auto-continue.js PERMANENT_CODES 成功');
+const acIsPermanentCodeSrc = extractBinding(acSrc, 'isPermanentCode', acMask);
+assert(!!acIsPermanentCodeSrc, '截取 auto-continue.js isPermanentCode 成功');
 const recordSrc = extractBinding(ssSrc, 'record', ssMask);
 assert(!!recordSrc, '截取 session-switch.js record 成功');
 const mruLimitSrc = extractBinding(ssSrc, 'MRU_LIMIT', ssMask);
@@ -333,7 +359,7 @@ assert(!!idsCacheSrc, '截取 ws-running.js activeIdsCache 成功');
 // turn-usage.js 的 fmt/rowTimeTs/findRows/currentSessionId/injectRow/scan 一组
 function makeTurnBundle() {
   const factory = new Function(
-    'document', 't', 'isZhLocale', 'icon', 'tick',
+    'document', 't', 'isZhLocale', 'isCjkLocale', 'uiLocale', 'icon', 'tick',
     [
       'let enabled = true;',
       'let rounds = [];',
@@ -341,6 +367,7 @@ function makeTurnBundle() {
       "let lastSid = '';",
       "let turnCfg = [{ id: 'turnIn', on: true }, { id: 'turnOut', on: true }, { id: 'turnTps', on: true }, { id: 'turnCache', on: true }];",
       fmtSrc,
+      datePairSrc,
       rowTimeTsSrc,
       findRowsSrc,
       curSidSrc,
@@ -366,16 +393,17 @@ const tStub = () => ({ sbLabelIn: 'IN', sbLabelOut: 'OUT', sbLabelTps: 'TPS', sb
 const iconStub = (name) => '<' + name + '/>';
 const tickStub = () => { tickState.calls++; };
 
-// 2. rowTimeTs：四种时间形态 + 跨年回拨（假 Date 固定在 2026-06-15 12:00）
+// 2. rowTimeTs：五种界面语言的时间形态 + 跨年回拨（假 Date 固定在 2026-06-15 12:00）
 run('rowTimeTs', () => {
   if (!rowTimeTsSrc) return;
   const FIXED = new Date(2026, 5, 15, 12, 0, 0).getTime();
   class FakeDate extends Date {
     constructor(...a) { super(...(a.length ? a : [FIXED])); }
   }
+  const locState = { loc: 'zh-CN' };
   let rt = null;
   try {
-    rt = new Function('Date', rowTimeTsSrc + '\nreturn rowTimeTs;')(FakeDate);
+    rt = new Function('Date', 'uiLocale', datePairSrc + '\n' + rowTimeTsSrc + '\nreturn rowTimeTs;')(FakeDate, () => locState.loc);
   } catch (err) {
     assert(false, '装配 rowTimeTs 失败: ' + (err && err.message));
     return;
@@ -383,11 +411,28 @@ run('rowTimeTs', () => {
   const at = (y, mo, d, h, mi) => new Date(y, mo, d, h, mi).getTime();
   assert(rt('18:16') === at(2026, 5, 15, 18, 16), '今天形态 HH:MM');
   assert(rt('9:05') === at(2026, 5, 15, 9, 5), '今天形态单位数小时');
+  assert(rt('5:41 PM') === at(2026, 5, 15, 17, 41), '英语 12 小时制 PM');
+  assert(rt('12:05 AM') === at(2026, 5, 15, 0, 5), '英语 12 小时制 AM 的 12 点');
   assert(rt('昨天 18:16') === at(2026, 5, 14, 18, 16), '昨天形态');
   assert(rt('Yesterday 0:05') === at(2026, 5, 14, 0, 5), 'Yesterday 形态');
+  assert(rt('昨日 18:16') === at(2026, 5, 14, 18, 16), '日语昨日形态');
+  assert(rt('Вчера 18:16') === at(2026, 5, 14, 18, 16), '俄语 Вчера 形态');
+  locState.loc = 'ko-KR';
+  assert(rt('어제 오후 5:41') === at(2026, 5, 14, 17, 41), '韩语 어제/오후 形态');
+  locState.loc = 'zh-CN';
   assert(rt('1/1 08:30') === at(2026, 0, 1, 8, 30), '月日形态（过去的日子不回拨）');
   assert(rt('12/25 17:41') === at(2025, 11, 25, 17, 41), '月日形态（未来的日子回拨上一年）');
   assert(rt('6/15 12:00') === at(2026, 5, 15, 12, 0), '月日形态（恰好等于当前时刻不回拨）');
+  assert(rt('10/21, 5:41 PM') === at(2025, 9, 21, 17, 41), '英语月日 + 12 小时制（未来回拨上一年）');
+  assert(rt('10/21/2025, 5:41 PM') === at(2025, 9, 21, 17, 41), '英语带年份');
+  assert(rt('10月21日 17:41') === at(2025, 9, 21, 17, 41), '日语年月日写法');
+  assert(rt('2025年10月21日 17:41') === at(2025, 9, 21, 17, 41), '日语带年份');
+  locState.loc = 'ko-KR';
+  assert(rt('10. 21. 오후 5:41') === at(2025, 9, 21, 17, 41), '韩语月日 + 오후');
+  locState.loc = 'ru-RU';
+  assert(rt('21.10, 17:41') === at(2025, 9, 21, 17, 41), '俄语日.月');
+  assert(rt('21.10.2025, 17:41') === at(2025, 9, 21, 17, 41), '俄语带年份');
+  locState.loc = 'zh-CN';
   assert(rt('abc') === null && rt('') === null, '无法识别的文本返回 null');
   assert(rt('18:16:30') === null && rt('10-21 17:41') === null, '非官方形态返回 null');
 });
@@ -449,13 +494,36 @@ run('fmtNum/fmtTokens', () => {
   assert(fmtTokens(1e9) === '1.0B', 'fmtTokens 1.0B');
 });
 
+// 上下文 title 的五种语言形态：韩语总量在前，其余已用在前；非上下文 title 返回 null
+run('parseCtxTitle', () => {
+  if (!parseCtxTitleSrc) return;
+  let parse = null;
+  try {
+    parse = new Function(parseCtxTitleSrc + '\nreturn parseCtxTitle;')();
+  } catch (err) {
+    assert(false, '装配 parseCtxTitle 失败: ' + (err && err.message));
+    return;
+  }
+  const eq = (text, used, size) => {
+    const r = parse(text);
+    assert(r && r.used === used && r.size === size, text + ' → ' + used + '/' + size);
+  };
+  eq('上下文已用 61,400 / 总量 1,000,000', 61400, 1000000);
+  eq('Context usage 61,400 of 1,000,000', 61400, 1000000);
+  eq('コンテキスト使用量 61,400 / 1,000,000', 61400, 1000000);
+  eq('컨텍스트 사용량 1,000,000 중 61,400', 61400, 1000000);
+  eq('Использование контекста: 61\u00A0400 из 1\u00A0000\u00A0000', 61400, 1000000);
+  eq('Использование контекста: 61 400 из 1 000 000', 61400, 1000000);
+  assert(parse('没有数字的上下文') === null && parse('Current task 1 of 2') === null, '非上下文或数字不足返回 null');
+});
+
 // 1 + 3 的 DOM 部分：假 DOM 跑真实 scan，验区间归属与注入内容
 run('scan', () => {
   if (!fmtSrc || !rowTimeTsSrc || !findRowsSrc || !curSidSrc || !injectRowSrc || !scanSrc) return;
   const fdoc = makeDoc();
   let bun = null;
   try {
-    bun = makeTurnBundle()(fdoc, tStub, () => zhState.zh, iconStub, tickStub);
+    bun = makeTurnBundle()(fdoc, tStub, () => zhState.zh, () => zhState.zh, () => 'zh-CN', iconStub, tickStub);
   } catch (err) {
     assert(false, '装配 turn-usage 测试函数失败: ' + (err && err.message));
     return;
@@ -756,6 +824,75 @@ run('草稿伪键/切换目标', () => {
   assert(f.isLocalPath('/home/u/.zcode/workspace/draft-1') === true, 'Unix 绝对路径算本地路径');
   assert(f.isLocalPath('C:\\Users\\u\\.zcode\\workspace\\draft-1') === true, 'Windows 盘符路径算本地路径');
   assert(f.isLocalPath('ssh://host/w') === false && f.isLocalPath('') === false, '远程标识与空串不算本地路径');
+});
+
+// 5. 界面语言归一：ZCode 支持 zh-CN / en-US / ja-JP / ko-KR / ru-RU，
+//    未支持的语言返回空串（调用方回退英文）
+run('界面语言归一', () => {
+  if (!normalizeUiLocaleSrc) return;
+  let n = null;
+  try {
+    n = new Function(normalizeUiLocaleSrc + '\nreturn normalizeUiLocale;')();
+  } catch (err) {
+    assert(false, '装配 normalizeUiLocale 失败: ' + (err && err.message));
+    return;
+  }
+  assert(n('zh-CN') === 'zh-CN' && n('zh-Hans-CN') === 'zh-CN' && n('zh_CN') === 'zh-CN', '中文变体归一到 zh-CN');
+  assert(n('ja-JP') === 'ja-JP' && n('ja_JP') === 'ja-JP', '日语变体归一到 ja-JP');
+  assert(n('ko-KR') === 'ko-KR' && n('ko') === 'ko-KR', '韩语变体归一到 ko-KR');
+  assert(n('ru-RU') === 'ru-RU' && n('ru') === 'ru-RU', '俄语变体归一到 ru-RU');
+  assert(n('en-US') === 'en-US' && n('en-GB') === 'en-US', '英语变体归一到 en-US');
+  assert(n('fr-FR') === '' && n('system') === '' && n('') === '' && n(null) === '', '未支持语言、system、空值返回空串');
+});
+
+// 6. 官方“重命名任务”菜单项的五种语言标签：右键菜单注入与改名弹窗预填都靠它
+run('重命名菜单标签', () => {
+  if (!renameLabelsSrc || !isRenameLabelSrc) return;
+  let f = null;
+  try {
+    f = new Function(renameLabelsSrc + '\n' + isRenameLabelSrc + '\nreturn isRenameLabel;')();
+  } catch (err) {
+    assert(false, '装配 isRenameLabel 失败: ' + (err && err.message));
+    return;
+  }
+  for (const label of ['重命名任务', 'Rename task', 'タスクの名前を変更', '작업 이름 바꾸기', 'Переименовать задачу']) {
+    assert(f(label) === true, label + ' 能识别');
+  }
+  assert(f('重命名任务…') === true && f('  Rename task  ') === true, '允许尾随省略号与空白');
+  assert(f('归档任务') === false && f('Rename group') === false && f('Переименовать группу') === false && f('') === false, '其它菜单项不误判');
+});
+
+// 7. 自动继续的永久失败/取消识别：五种语言的报错与官方 data-error-code
+run('auto-continue 错误识别', () => {
+  if (!acDefaultsSrc || !acCompileSrc || !acIsPermanentSrc || !acIsCancelledSrc || !acIsPermanentCodeSrc) return;
+  let f = null;
+  try {
+    f = new Function(
+      acDefaultsSrc + '\n' + acCompileSrc + '\n' + acIsPermanentSrc + '\n'
+      + acIsCancelledSrc + '\n' + acPermanentCodesSrc + '\n' + acIsPermanentCodeSrc
+      + '\nreturn { isPermanent, isCancelled, isPermanentCode, DEFAULTS };'
+    )();
+  } catch (err) {
+    assert(false, '装配 auto-continue 错误识别失败: ' + (err && err.message));
+    return;
+  }
+  const cfg = f.DEFAULTS;
+  assert(f.isPermanent('本日の無料プランのクォータを使い切りました。', cfg), '日语额度用完');
+  assert(f.isPermanent('現在のモデルは利用できなくなりました。', cfg), '日语模型不可用');
+  assert(f.isPermanent('モデルがありません', cfg), '日语无可用模型');
+  assert(f.isPermanent('로그인 세션이 만료되었습니다. 다시 로그인하세요.', cfg), '韩语登录失效');
+  assert(f.isPermanent('모델이 없습니다', cfg), '韩语无可用模型');
+  assert(f.isPermanent('Текущая модель не входит в этот тариф.', cfg), '俄语模型不在套餐内');
+  assert(f.isPermanent('Нет доступной модели', cfg), '俄语无可用模型');
+  assert(f.isPermanent('The current model is unavailable.', cfg), '英语模型不可用');
+  assert(f.isPermanent('当前模型不可用', cfg), '中文模型不可用');
+  assert(f.isPermanent('model request failed, retry later', cfg) === false, '普通失败不误判');
+  assert(f.isCancelled('生成を中止しました') && f.isCancelled('사용자가 중지했습니다') && f.isCancelled('Запрос отменён'), '日/韩/俄取消措辞');
+  assert(f.isPermanentCode('providerBusiness.1005') && f.isPermanentCode('zcode.error.providerBusiness.1006'), '官方错误码');
+  assert(f.isPermanentCode('1005') && f.isPermanentCode('providerBusiness.3006'), '纯数字与带前缀错误码');
+  assert(f.isPermanentCode('model_config_missing') && f.isPermanentCode('zcode.error.ZCODE_RUNTIME_MODEL_UNAVAILABLE'), '模型配置缺失/运行时不可用错误码');
+  assert(f.isPermanentCode('ZCODE_BIGMODEL_TEAM_PLAN_MEMBER_REQUIRED'), '团队计划成员错误码');
+  assert(f.isPermanentCode('providerBusiness.3002') === false && f.isPermanentCode('') === false, '临时错误码不误判');
 });
 
 // 4. "运行结束记 unseen" 的规则：截取 session-switch.js 真实的 collectEndedUnseen

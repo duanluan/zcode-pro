@@ -1,6 +1,6 @@
 // “ZCode Pro 增强设置”弹窗：功能开关 + 外观 + 运行状态。
 // 顶部标签页切换（视觉参考侧栏“分组/项目”切换）；配置写入 helper（~/.zcode/zcodepro.json）。
-import { h, t, rpc, getConfig, clearConfigCache, errText, HELPER_URL, liveBoot, isZhLocale, isNewProjectSidebar, DEFAULT_SHORTCUTS, DEFAULT_STATUS_ITEMS, DEFAULT_TURN_ITEMS, STATUS_SESSION_IDS, STATUS_GLOBAL_IDS } from '../core.js';
+import { h, t, rpc, getConfig, clearConfigCache, errText, HELPER_URL, liveBoot, isZhLocale, uiLocale, isCjkLocale, isNewProjectSidebar, DEFAULT_SHORTCUTS, DEFAULT_STATUS_ITEMS, DEFAULT_TURN_ITEMS, STATUS_SESSION_IDS, STATUS_GLOBAL_IDS } from '../core.js';
 import { openDialog, dialogFooter, btnPrimary, btnSecondary, btnSmall, settingRow, ensureStyle, showToast, numberField, unitField } from '../ui.js';
 import { comboField, providerOptionsOf, modelOptionsOf, modelPlaceholderOf, isManualConn } from '../provider-fields.js';
 import { refreshAliases } from './alias.js';
@@ -9,6 +9,7 @@ import { applyStyles, STYLE_DEFAULTS, showStyleHighlight, hideStyleHighlight } f
 import { THEME_SKINS, CUSTOM_DEFAULTS } from './theme.js';
 import { copyToClipboard, hCopyIcon } from './copy-path.js';
 import { claimAutoUpdateRun } from './plugin-updates.js';
+import { defaultContinueText } from './auto-continue.js';
 import { createSessionImportPane } from './session-import.js';
 
 // 调宿主桥在系统浏览器打开外链；宿主没暴露该能力时静默忽略
@@ -222,7 +223,7 @@ export function openSettingsDialog() {
         getConfig(true),
         rpc('/agents'),
         rpc('/vision'),
-        rpc('/title-gen'),
+        rpc('/title-gen?locale=' + encodeURIComponent(uiLocale())),
         rpc('/title-gen/providers'),
         rpc('/rtk'),
         rpc('/headroom'),
@@ -1104,7 +1105,8 @@ export function openSettingsDialog() {
             },
               h('div', { class: 'zcodepro-skin-swatches' },
                 ...skin.preview.map((c) => h('span', { style: `background:${c}` }))),
-              h('span', { class: 'text-ui-xs text-foreground' }, isZhLocale() ? skin.zh : skin.en))),
+              h('span', { class: 'text-ui-xs text-foreground' },
+                isZhLocale() ? skin.zh : (skin.id === 'default' ? L.themeSkinDefault : skin.en)))),
             h('button', {
               type: 'button', class: 'zcodepro-skin-card',
               'data-state': themeCfg.skin === 'custom' ? 'active' : 'inactive',
@@ -1752,7 +1754,7 @@ export function openSettingsDialog() {
           `${t.name} ${t.ok ? '✓ ' + (t.ms != null ? t.ms + 'ms' : '') : '✗ ' + (t.error || t.httpCode || '')}`.trim());
         const allOk = (res.targets || []).length > 0 && (res.targets || []).every((t) => t.ok);
         proxyTestState.className = 'mt-2 text-ui-xs/relaxed ' + (allOk ? 'text-foreground-subtle' : 'text-amber-500');
-        proxyTestState.textContent = `${res.proxy}：${parts.join(' · ')}`;
+        proxyTestState.textContent = `${res.proxy}${isCjkLocale() ? '：' : ': '}${parts.join(' · ')}`;
       };
       // 代理生效范围（即时保存，每个开关只改自己那项）：插件市场更新与插件依赖
       // 软件默认开，同步默认关——国内网盘直连即可，代理停了同步会跟着失败
@@ -1958,8 +1960,10 @@ export function openSettingsDialog() {
         let host = syncUrlInput.value.trim();
         try { host = new URL(host).host; } catch { /* 非法输入保留原文 */ }
         syncTestState.className = 'mt-2 text-ui-xs/relaxed ' + (allOk ? 'text-foreground-subtle' : 'text-amber-500');
-        syncTestState.textContent = `${host}：${parts.join(' · ')}`
-          + (allOk && res.fileCount != null ? `（${L.syncTestFilesFound.replace('{n}', res.fileCount)}）` : '');
+        syncTestState.textContent = `${host}${isCjkLocale() ? '：' : ': '}${parts.join(' · ')}`
+          + (allOk && res.fileCount != null
+            ? `${isCjkLocale() ? '（' : ' ('}${L.syncTestFilesFound.replace('{n}', res.fileCount)}${isCjkLocale() ? '）' : ')'}`
+            : '');
       };
       // 坚果云推荐行：外链经宿主 openExternal 打开系统浏览器（无该能力时只出纯文字）
       const JIANGUO_HELP = 'https://help.jianguoyun.com/?p=2064';
@@ -2080,7 +2084,7 @@ export function openSettingsDialog() {
                 const history = group.filter((f) => f !== latest)
                   .sort((a, b) => ((b.lastModified || 0) - (a.lastModified || 0)) || b.name.localeCompare(a.name));
                 parts.push(h('div', { class: 'px-1 pt-2 text-ui-xs font-medium text-foreground-subtle' },
-                  `${label}${isZhLocale() ? '（' : ' ('}${group.length}${isZhLocale() ? '）' : ')'}`));
+                  `${label}${isCjkLocale() ? '（' : ' ('}${group.length}${isCjkLocale() ? '）' : ')'}`));
                 for (const f of [latest, ...history]) {
                   if (f) parts.push(versionRow(f));
                 }
@@ -2124,8 +2128,10 @@ export function openSettingsDialog() {
               renderToolbarSwitch();
               const names = (res.applied || [])
                 .map((k) => (k === 'model' ? L.syncIncludeModel : L.syncIncludeZcp))
-                .join(isZhLocale() ? '、' : ', ');
-              showToast(names ? `${L.syncDownloaded}（${names}）` : L.syncDownloaded, 'success');
+                .join(isCjkLocale() ? '、' : ', ');
+              showToast(names
+                ? `${L.syncDownloaded}${isCjkLocale() ? '（' : ' ('}${names}${isCjkLocale() ? '）' : ')'}`
+                : L.syncDownloaded, 'success');
             };
             const confirmDelete = (f, rowBtns, isLatest) => {
               openDialog({
@@ -2190,7 +2196,7 @@ export function openSettingsDialog() {
           return;
         }
         renderSyncStatus(res.sync || {});
-        showToast(res.pruned ? L.syncUploaded + (isZhLocale() ? '；' : '; ') + L.syncPruned.replace('{n}', res.pruned) : L.syncUploaded, 'success');
+        showToast(res.pruned ? L.syncUploaded + (isCjkLocale() ? '；' : '; ') + L.syncPruned.replace('{n}', res.pruned) : L.syncUploaded, 'success');
       };
       paneSync.append(
         h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.syncDesc),
@@ -2282,15 +2288,16 @@ export function openSettingsDialog() {
       // 默认单级链与 zcode-vision 插件 DEFAULT_CONFIG 保持一致：session（跟随会话供应商、
       // 模型留空=会话当前模型）。需要兜底级可手动加 GLM 订阅直连。
       // 赠送额度级 trust-build 暂不进默认：ZCode 网关不放行无人值守调用（ADR-0002）。
-      const VISION_DEFAULT_PROMPT_ZH = '请详细描述这张图片的全部内容。若是界面或图表截图，请先把所有错误、警告、异常状态逐字引用出来（含完整原文），再描述整体布局、文字与关键数据。';
-      const VISION_DEFAULT_PROMPT_EN = 'Describe the entire content of this image in detail. If it is a UI or chart screenshot, first quote every error, warning, and abnormal state verbatim (including the full text), then describe the overall layout, text, and key data.';
-      const VISION_DEFAULT_PROMPT = isZhLocale() ? VISION_DEFAULT_PROMPT_ZH : VISION_DEFAULT_PROMPT_EN;
-      // 已保存的配置里如果是内置默认提示词（旧版固定中文），按当前语言重新取：
-      // 否则切到英文后老配置仍然发中文提示词。用户自己改过的提示词不动。
-      const isBuiltinVisionPrompt = (p) => {
-        const text = String(p || '').trim();
-        return text === VISION_DEFAULT_PROMPT_ZH || text === VISION_DEFAULT_PROMPT_EN;
+      // 默认识别提示词跟着 ZCode 的界面语言走（官方支持 zh-CN / en-US / ja-JP / ko-KR / ru-RU），
+      // 与 zcode-vision 插件的 DEFAULT_PROMPT 保持一致
+      const VISION_DEFAULT_PROMPTS = {
+        'zh-CN': '请详细描述这张图片的全部内容。若是界面或图表截图，请先把所有错误、警告、异常状态逐字引用出来（含完整原文），再描述整体布局、文字与关键数据。',
+        'en-US': 'Describe the entire content of this image in detail. If it is a UI or chart screenshot, first quote every error, warning, and abnormal state verbatim (including the full text), then describe the overall layout, text, and key data.',
+        'ja-JP': 'この画像の内容を詳しく説明してください。UI やグラフのスクリーンショットの場合は、まずエラー、警告、異常状態をすべて原文のまま（全文を含めて）引用し、そのうえで全体のレイアウト、文字、主要なデータを説明してください。',
+        'ko-KR': '이 이미지의 전체 내용을 자세히 설명해 주세요. UI나 차트 스크린샷이라면 먼저 모든 오류, 경고, 비정상 상태를 원문 그대로(전체 문구 포함) 인용한 다음, 전체 레이아웃과 텍스트, 핵심 데이터를 설명해 주세요.',
+        'ru-RU': 'Подробно опишите всё содержимое этого изображения. Если это скриншот интерфейса или графика, сначала дословно процитируйте все ошибки, предупреждения и аномальные состояния (включая полный текст), а затем опишите общую компоновку, текст и ключевые данные.',
       };
+      const VISION_DEFAULT_PROMPT = VISION_DEFAULT_PROMPTS[uiLocale()] || VISION_DEFAULT_PROMPTS['en-US'];
       const VISION_DEFAULT_CFG = {
         enabled: true,
         chainMode: 'fallback',
@@ -2308,11 +2315,6 @@ export function openSettingsDialog() {
       let visionCfg = visionRes.ok && visionRes.config && typeof visionRes.config === 'object'
         ? structuredClone(visionRes.config)
         : null;
-      if (visionCfg && Array.isArray(visionCfg.proxies)) {
-        for (const proxy of visionCfg.proxies) {
-          if (isBuiltinVisionPrompt(proxy.prompt)) proxy.prompt = VISION_DEFAULT_PROMPT;
-        }
-      }
       // 自动初始化只试一次（每次打开弹窗）：写盘失败回退手动“添加代理”卡
       let visionAutoInitTried = false;
       let visionSaveTimer = null;
@@ -2909,10 +2911,10 @@ export function openSettingsDialog() {
             const doneMsg = isStart ? L.hrStarted : L.hrStopped;
             const timeoutMs = isStart ? 90 * 1000 : 30 * 1000;
             const t0 = Date.now();
-            const timerSpan = h('span', { class: 'text-ui-sm text-foreground-subtle/70' }, msg + (isZhLocale() ? '（0s）' : ' (0s)'));
+            const timerSpan = h('span', { class: 'text-ui-sm text-foreground-subtle/70' }, msg + (isCjkLocale() ? '（0s）' : ' (0s)'));
             hrStatusLine.replaceChildren(timerSpan);
             timerIv = setInterval(() => {
-              timerSpan.textContent = msg + (isZhLocale() ? `（${Math.round((Date.now() - t0) / 1000)}s）` : ` (${Math.round((Date.now() - t0) / 1000)}s)`);
+              timerSpan.textContent = msg + (isCjkLocale() ? `（${Math.round((Date.now() - t0) / 1000)}s）` : ` (${Math.round((Date.now() - t0) / 1000)}s)`);
             }, 1000);
             // RPC 完成后进入轮询（RPC 执行实际的 stop/start，可能要 3-10 秒）。
             // 轮询出结果前 hrBusy 一直占着：期间再点开关或按钮直接忽略，否则
@@ -2983,7 +2985,7 @@ export function openSettingsDialog() {
             ...(s.port ? [h('span', { class: 'text-ui-xs text-foreground-subtle' }, `127.0.0.1:${s.port}`)] : []),
           );
           const fact = (label, value) => h('div', { class: 'min-w-0 truncate text-ui-xs text-foreground-subtle' },
-            h('span', { class: 'text-foreground-subtle/70' }, label + '：'),
+            h('span', { class: 'text-foreground-subtle/70' }, label + (isCjkLocale() ? '：' : ': ')),
             String(value ?? '—'));
           hrFacts.replaceChildren(
             fact(L.headroomCurrentBackend, hrDevLabel(s.backend)),
@@ -3302,10 +3304,17 @@ export function openSettingsDialog() {
         promptArea.value = titleGenCfg.prompt || '';
         promptArea.addEventListener('input', () => { titleGenCfg.prompt = promptArea.value; saveTitleGenSoon(); });
         // 测试：用示例首条消息实际生成一次（不写库），验证供应商/模型/提示词
-        // 连通；示例文本随界面语言取中英文版
-        const sampleText = isZhLocale()
+        // 连通；示例文本随界面语言取对应版本
+        const sampleLocale = uiLocale();
+        const sampleText = sampleLocale === 'zh-CN'
           ? '帮我看下这个报错是什么原因：NullPointerException at com.example.OrderService.calculate(OrderService.java:87)'
-          : 'Why does my Spring Boot app throw NullPointerException intermittently in OrderService.calculate?';
+          : sampleLocale === 'ja-JP'
+            ? 'このエラーの原因を教えてください：NullPointerException at com.example.OrderService.calculate(OrderService.java:87)'
+            : sampleLocale === 'ko-KR'
+              ? '이 오류의 원인을 알려 주세요: NullPointerException at com.example.OrderService.calculate(OrderService.java:87)'
+              : sampleLocale === 'ru-RU'
+                ? 'Помогите понять причину этой ошибки: NullPointerException at com.example.OrderService.calculate(OrderService.java:87)'
+                : 'Why does my Spring Boot app throw NullPointerException intermittently in OrderService.calculate?';
         const sampleInput = h('input', {
           type: 'text', class: inputCls + ' min-w-0 flex-1',
           value: sampleText,
@@ -3318,7 +3327,7 @@ export function openSettingsDialog() {
           testState.textContent = L.titleGenTesting;
           const res = await rpc('/title-gen/run', {
             method: 'POST',
-            body: { text: sampleInput.value, test: true },
+            body: { text: sampleInput.value, test: true, locale: uiLocale() },
           });
           testBtn.disabled = false;
           testBtn.textContent = L.titleGenTest;
@@ -3413,7 +3422,9 @@ export function openSettingsDialog() {
           const raw = acRes.config && typeof acRes.config === 'object' ? acRes.config : {};
           acCfg = {
             enabled: raw.enabled !== false,
-            continueText: typeof raw.continueText === 'string' && raw.continueText ? raw.continueText : (isZhLocale() ? '继续' : 'continue'),
+            // 空的已保存值保持为空：改其它开关时不能把当前语言的默认提示词写进配置，
+            // 否则之后切换语言就不会再跟随（运行时空值才取当前语言默认）
+            continueText: typeof raw.continueText === 'string' && raw.continueText.trim() ? raw.continueText : '',
             maxRetries: Number.isFinite(raw.maxRetries) ? raw.maxRetries : 8,
             cooldownBaseSec: Number.isFinite(raw.cooldownBaseSec) ? raw.cooldownBaseSec : 10,
             stuckAfterMin: Number.isFinite(raw.stuckAfterMin) ? raw.stuckAfterMin : 30,
@@ -3429,7 +3440,7 @@ export function openSettingsDialog() {
             onCommit: (v) => { commit(v); saveAcSoon(); },
           }).el);
         const area = h('textarea', { class: 'zcodepro-textarea zcodepro-textarea-sm', rows: '3', placeholder: L.acPrompt, title: L.acPrompt });
-        area.value = acCfg.continueText || '';
+        area.value = acCfg.continueText || defaultContinueText(); // 空值显示当前语言默认，但保存时仍为空
         area.addEventListener('input', () => { acCfg.continueText = area.value; saveAcSoon(); });
 
         const parts = [

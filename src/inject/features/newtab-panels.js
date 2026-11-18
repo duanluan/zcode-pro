@@ -5,11 +5,17 @@
 // openSidePane（App 层注入 Context Provider 的 handleOpenPluginUi，从 React
 // fiber 里按函数源码特征串挖出）在侧边面板打开 tab——与插件市场页“打开”同一条
 // 调用路径，不绕开官方逻辑。
-import { t, getConfig, isZhLocale } from '../core.js';
+import { t, getConfig, uiLocale } from '../core.js';
 import { ensureStyle, showToast } from '../ui.js';
 
-// 官方“新标签页”终端模块的描述片段（界面中英文），作为网格识别特征
-const GRID_HINTS = ['运行命令和查看输出', 'Run commands and view output'];
+// 官方“新标签页”终端模块的描述片段（ZCode 支持的五种界面语言），作为网格识别特征
+const GRID_HINTS = [
+  '运行命令和查看输出',
+  'Run commands and view output',
+  'コマンドを実行して出力を確認します',
+  '명령을 실행하고 출력을 확인합니다',
+  'Выполнять команды и смотреть вывод',
+];
 // 官方市场的 pluginId 后缀：这些面板已有云端推荐入口，不注入
 const OFFICIAL_SUFFIX = '@zcode-plugins-official';
 // handleOpenPluginUi（useCallback 产物）源码里的 logger 字符串，压缩不改动
@@ -150,7 +156,7 @@ async function injectPanels(grid) {
   if (!surfaces.length) { grid.dataset.zcodeproPanels = '1'; return; }
   grid.dataset.zcodeproPanels = '1';
   const L = t();
-  const locale = isZhLocale() ? 'zh-CN' : 'en-US';
+  const locale = uiLocale();
   for (const s of surfaces) {
     // 官方卡片整卡即 button：克隆同款，去掉官方标识，挂我们的标识与点击
     const card = template.cloneNode(true);

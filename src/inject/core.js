@@ -1,4 +1,8 @@
 // 注入脚本公共工具：与 helper 通信、DOM 构建、多语言文案。
+import ja, { jaErrors } from './locales/ja.js';
+import ko, { koErrors } from './locales/ko.js';
+import ru, { ruErrors } from './locales/ru.js';
+
 export const BOOT = typeof window !== 'undefined' ? (window.__ZCODEPRO__ || {}) : {};
 export const HELPER_URL = BOOT.helperUrl || 'http://127.0.0.1:47889';
 
@@ -331,6 +335,7 @@ const zh = {
   titleGenPrompt: '提示词',
   titleGenPromptPlaceholder: '留空使用内置默认提示词（点击下方按钮可查看）',
   titleGenPromptReset: '使用默认提示词',
+  titleGenAssistantSummary: '（首轮回答摘要）',
   titleGenSample: '测试消息',
   titleGenTest: '测试生成',
   titleGenTesting: '生成中…',
@@ -413,6 +418,7 @@ const zh = {
   themeBgPane: '壁纸',
   themeSkinTitle: '皮肤',
   themeSkinDesc: '知名编辑器主题配色，自动匹配 ZCode 的浅色 / 深色模式；默认保持 ZCode 原样，自定义在下方自行调色。',
+  themeSkinDefault: '默认',
   themeSkinCustom: '自定义',
   themeCustomTitle: '自定义主题',
   themeCustomHint: '改颜色即实时生效（自动切到自定义皮肤）；浅色、深色各配一次，选好 5 个颜色即可生成整套界面配色。',
@@ -481,6 +487,10 @@ const zh = {
   tableCopied: '表格已复制',
   sbItemCtx: '上下文占用',
   sbItemTokRate: '最近输出 tokens/s',
+  sbTokRateStreaming: '流式生成中，按文本增长估算（约 2 字符/token）',
+  sbTokRateNet: '（官方净生成口径，本会话树）',
+  sbTokRateNoData: '无 usage 数据，按文本增长估算',
+  sbTokRateSessionSuffix: '（本会话）：',
   sbItemQuestions: '主请求数（本会话）',
   sbItemInOut: '累计输入/输出（本会话主轮请求）',
   sbItemHit: '平均缓存命中率（本会话）',
@@ -584,6 +594,23 @@ const zh = {
   acFailedAfterMin: '失败后自动续接（分钟）',
   acFailedAfterMinHint: '回合失败多久后自动继续；会先等 60 秒跳过失败后的清理事件',
   acLoadFailed: '读取自动继续配置失败',
+  acCardKindSubagent: '子代理卡死',
+  acCardKindTurn: '主轮卡死',
+  acCardKindTerminal: '终端卡死',
+  acCardFailedTitle: '回合失败未续上',
+  acCardMore: '（队列中还有 {n} 个）',
+  acCardFailedDesc: '任务“{title}”{mins} 分钟前回合失败（{msg}），一直没人续上。',
+  acCardTerminalSilent: '{count} 个后台终端任务已 {mins} 分钟没有回报',
+  acCardSubagentSilent: '{count} 个子代理已 {mins} 分钟没有回报',
+  acCardTurnStalled: '主回合已 {mins} 分钟没有进展',
+  acCardStuckDesc: '任务“{title}”：{parts}。确实在跑的长任务（如打包）点“知道了”即可。',
+  acCardKindSep: '、',
+  acCardPartSep: '；',
+  acCardJump: '跳转任务',
+  acCardContinue: '继续',
+  acCardDismiss: '知道了',
+  acCardContinueStartFailed: '续接启动失败：',
+  acCardHeadlessFailed: '无头续接启动失败，请稍后再试或手动处理。',
   tabVision: 'Vision',
   visionDesc: '主模型不支持图片输入时（如 glm-5.3），自动把消息里的图片交给下面的视觉模型识别，把描述带给主模型（zcode-vision 插件；/vision-* 命令编辑同一配置）。',
   visionEnabled: '启用',
@@ -983,6 +1010,7 @@ const en = {
   titleGenPrompt: 'Prompt',
   titleGenPromptPlaceholder: 'Leave empty for the built-in default prompt (the button below shows it)',
   titleGenPromptReset: 'Use default prompt',
+  titleGenAssistantSummary: ' (first answer summary)',
   titleGenSample: 'Test message',
   titleGenTest: 'Test',
   titleGenTesting: 'Generating…',
@@ -1064,6 +1092,7 @@ const en = {
   themeBgPane: 'Wallpaper',
   themeSkinTitle: 'Skins',
   themeSkinDesc: 'Well-known editor theme palettes, auto-matching ZCode\'s light / dark mode; "Default" keeps ZCode as-is, "Custom" is tuned below.',
+  themeSkinDefault: 'Default',
   themeSkinCustom: 'Custom',
   themeCustomTitle: 'Custom theme',
   themeCustomHint: 'Color changes apply live (auto-switches to the custom skin); set light and dark separately — pick 5 colors and the whole palette is derived.',
@@ -1132,6 +1161,10 @@ const en = {
   tableCopied: 'Table copied',
   sbItemCtx: 'Context usage',
   sbItemTokRate: 'Recent output tokens/s',
+  sbTokRateStreaming: 'streaming; estimated from text growth (~2 chars/token)',
+  sbTokRateNet: ' (net generation, session tree)',
+  sbTokRateNoData: 'no usage data, estimated from text growth',
+  sbTokRateSessionSuffix: ' (this session): ',
   sbItemQuestions: 'Main requests (this session)',
   sbItemInOut: 'Total input/output (main requests, this session)',
   sbItemHit: 'Average cache hit rate (this session)',
@@ -1235,6 +1268,23 @@ const en = {
   acFailedAfterMin: 'Auto-continue after failure (min)',
   acFailedAfterMinHint: 'How long after a failed turn to continue automatically; waits 60s first to skip post-failure cleanup events',
   acLoadFailed: 'Failed to load the auto-continue config',
+  acCardKindSubagent: 'Subagent stuck',
+  acCardKindTurn: 'Main turn stuck',
+  acCardKindTerminal: 'Terminal stuck',
+  acCardFailedTitle: 'Turn failed, not continued',
+  acCardMore: ' ({n} more queued)',
+  acCardFailedDesc: 'Task “{title}” failed {mins} min ago ({msg}) and was never continued.',
+  acCardTerminalSilent: '{count} background terminal task(s) silent for {mins} min',
+  acCardSubagentSilent: '{count} subagent(s) silent for {mins} min',
+  acCardTurnStalled: 'The main turn has stalled for {mins} min',
+  acCardStuckDesc: 'Task “{title}”: {parts}. Dismiss long-running builds with “Dismiss”.',
+  acCardKindSep: ', ',
+  acCardPartSep: '; ',
+  acCardJump: 'Go to task',
+  acCardContinue: 'Continue',
+  acCardDismiss: 'Dismiss',
+  acCardContinueStartFailed: 'Failed to start continue: ',
+  acCardHeadlessFailed: 'Failed to start headless continue; retry later or handle manually.',
   tabVision: 'Vision',
   visionDesc: 'When the main model cannot see images (e.g. glm-5.3), images in messages are recognized by the vision models below and passed to the main model as text (zcode-vision plugin; /vision-* commands edit the same file).',
   visionEnabled: 'Enable',
@@ -1432,12 +1482,24 @@ const en = {
 };
 
 // 界面语言：与官方 IntlProvider 的解析一致——先读应用的 localStorage 偏好
-// （zcode-locale-preference：zh-CN/en-US/system），显式偏好直接生效；'system' 或未设置时
-// 官方在主进程用系统首选语言解析（macOS 上可能与渲染进程的 navigator.language 不一致：
-// 系统是中文而 Chromium 报 en-US，导致注入界面误判成英文）。这里通过 preload 暴露的
-// window.zcode.getSystemLocale()（IPC，异步）取主进程结果并缓存；取回前先按
-// navigator.language 兜底，避免阻塞首次渲染。
-let cachedSystemLocale = null; // 'zh-CN' | 'en-US' | null（尚未取回）
+// （zcode-locale-preference：zh-CN/en-US/ja-JP/ko-KR/ru-RU/system），显式偏好直接生效；
+// 'system' 或未设置时官方在主进程用系统首选语言解析（macOS 上可能与渲染进程的
+// navigator.language 不一致：系统是中文而 Chromium 报 en-US，导致注入界面误判成英文）。
+// 这里通过 preload 暴露的 window.zcode.getSystemLocale()（IPC，异步）取主进程结果并缓存；
+// 取回前先按 navigator.language 兜底，避免阻塞首次渲染。
+// 语言代码按前缀归一：zh/ja/ko/ru/en → 官方支持的五种，其余视为未知。
+export function normalizeUiLocale(raw) {
+  const s = String(raw || '').trim().toLowerCase().replace(/_/g, '-');
+  if (!s || s === 'system') return '';
+  if (s.startsWith('zh')) return 'zh-CN';
+  if (s.startsWith('en')) return 'en-US';
+  if (s.startsWith('ja')) return 'ja-JP';
+  if (s.startsWith('ko')) return 'ko-KR';
+  if (s.startsWith('ru')) return 'ru-RU';
+  return '';
+}
+
+let cachedSystemLocale = null; // 'zh-CN' | 'en-US' | 'ja-JP' | 'ko-KR' | 'ru-RU' | null（尚未取回）
 
 export function startLocaleResolver() {
   if (cachedSystemLocale !== null) return; // 已取回则跳过，避免重复 IPC（index.js 会调用两次）
@@ -1446,33 +1508,54 @@ export function startLocaleResolver() {
   Promise.resolve(get())
     .then((locale) => {
       if (typeof locale === 'string' && locale) {
-        // 与主进程解析一致：zh 开头视为中文，其余视为英文（兼容 'zh-Hans-CN' 等原始格式）
-        cachedSystemLocale = locale.toLowerCase().startsWith('zh') ? 'zh-CN' : 'en-US';
+        // 兼容 'zh-Hans-CN'、'ja_JP' 等原始格式，按前缀归一到官方语言代码
+        cachedSystemLocale = normalizeUiLocale(locale) || 'en-US';
       }
     })
     .catch(() => { /* 取回失败：沿用 navigator.language 兜底 */ });
 }
 
-let zhCache = { at: 0, v: null };
-export function isZhLocale() {
+let uiLocaleCache = { at: 0, v: null };
+export function uiLocale() {
   // 结果缓存 3 秒：一轮渲染里要调十几次，localStorage 每次读有成本；
   // 语言切换本来就会重载界面，短缓存跟得上
-  if (zhCache.v != null && Date.now() - zhCache.at < 3000) return zhCache.v;
+  if (uiLocaleCache.v && Date.now() - uiLocaleCache.at < 3000) return uiLocaleCache.v;
   let pref = null;
   try { pref = window.localStorage.getItem('zcode-locale-preference'); } catch { /* ignore */ }
-  const v = (pref === 'zh-CN' || pref === 'en-US') ? pref === 'zh-CN'
-    : cachedSystemLocale ? cachedSystemLocale === 'zh-CN'
-    : /^zh/i.test(navigator.language || 'zh-CN');
-  zhCache = { at: Date.now(), v };
+  const v = normalizeUiLocale(pref)
+    || normalizeUiLocale(cachedSystemLocale)
+    || normalizeUiLocale(navigator.language)
+    || 'en-US';
+  uiLocaleCache = { at: Date.now(), v };
   return v;
 }
 
-export function t() {
-  return isZhLocale() ? zh : en;
+export function isZhLocale() {
+  // 中文界面判断：只用于中文标点、数字单位等格式差异；界面文案由 t() 按五种语言取
+  return uiLocale() === 'zh-CN';
 }
 
-// helper 错误消息的英文映射（code → 文案）：helper 原文为中文，非中文界面按 code 显示英文，
-// 无映射或中文界面回退 helper 原文
+// 中文/日文共用全角标点（括号、冒号、顿号、分号）
+export function isCjkLocale() {
+  const loc = uiLocale();
+  return loc === 'zh-CN' || loc === 'ja-JP';
+}
+
+// 官方任务菜单“重命名任务”的五种语言标签；右键菜单注入与重命名弹窗预填都按它识别
+const RENAME_LABELS = ['重命名任务', 'rename task', 'タスクの名前を変更', '작업 이름 바꾸기', 'переименовать задачу'];
+export function isRenameLabel(text) {
+  const s = String(text || '').trim().toLowerCase();
+  return RENAME_LABELS.some((label) => s.includes(label.toLowerCase()));
+}
+
+// 界面文案：ZCode 支持的五种语言各一套；未识别的语言回退英文
+const LOCALE_DICTS = { 'zh-CN': zh, 'en-US': en, 'ja-JP': ja, 'ko-KR': ko, 'ru-RU': ru };
+export function t() {
+  return LOCALE_DICTS[uiLocale()] || en;
+}
+
+// helper 错误消息的本地化映射（code → 文案）：helper 原文为中文，非中文界面按 code
+// 显示对应语言；无映射或中文界面回退 helper 原文
 const errEn = {
   'invalid-path': 'Invalid project path',
   'not-found': 'The folder does not exist',
@@ -1566,14 +1649,22 @@ const errEn = {
   // 其他
   'no-content': 'This session has no Q&A content yet',
   'title-gen-disabled': 'Auto rename is not enabled',
+  'title-gen-empty': 'The title model returned no text',
+  'title-gen-thinking': 'The title model used the whole output budget on thinking and returned no title',
+  'title-gen-timeout': 'The title model request timed out',
+  'title-gen-no-title': 'The title model returned no usable title',
   'headroom-provider-config': 'ZCode provider config not found (v2/config.json)',
 };
 
+const LOCALE_ERR_DICTS = { 'en-US': errEn, 'ja-JP': jaErrors, 'ko-KR': koErrors, 'ru-RU': ruErrors };
+
 export function errText(res) {
   if (!res) return '';
-  if (!isZhLocale()) {
-    const en = res.code && errEn[res.code];
-    if (en) return en;
+  const loc = uiLocale();
+  if (loc !== 'zh-CN') {
+    // 本地语言缺该错误码时回退英文，不要露出 helper 的中文原文
+    const msg = res.code && ((LOCALE_ERR_DICTS[loc] || {})[res.code] || errEn[res.code]);
+    if (msg) return msg;
   }
   return res.error || '';
 }

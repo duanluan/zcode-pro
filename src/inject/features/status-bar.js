@@ -3,7 +3,7 @@
 // 全局项（今日 / 累计 token、任务总数）优先取官方使用统计（云端，5 分钟刷新），
 // 回退本地聚合。数据 2 秒刷新一次；上下文占用读官方输入框工具栏的窗口显示
 //（“已用 497,101 / 总量 1,000,000”），按官方同款格式渲染。
-import { t, rpc, getConfig, isZhLocale, DEFAULT_STATUS_ITEMS } from '../core.js';
+import { t, rpc, getConfig, isZhLocale, isCjkLocale, DEFAULT_STATUS_ITEMS } from '../core.js';
 import { ensureStyle } from '../ui.js';
 
 let enabled = true;
@@ -67,21 +67,27 @@ function selectedSessionId() {
 
 // 官方输入框工具栏的上下文显示：title 形如“上下文已用 61,400 / 总量 1,000,000”，
 // 解析出已用与总量；读不到返回 null（ctx 项回退按会话记录估算 token 数）。
+// 各语言模板不同：en“Context usage 61,400 of 1,000,000”、ja“コンテキスト使用量
+// 61,400 / 1,000,000”、ko 总量在前“컨텍스트 사용량 1,000,000 중 61,400”、
+// ru“Использование контекста: 61,400 из 1,000,000”。模板只有两个数，按大小
+// 取小的为已用，兼容韩语的倒序。
+function parseCtxTitle(text) {
+  if (!/上下文|context|コンテキスト|컨텍스트|контекст/i.test(text)) return null;
+  // 数字分隔符跟随 Intl.NumberFormat：en/zh/ja 用逗号，ru/ko 用空格（含 NBSP）
+  const nums = [...String(text).matchAll(/\d[\d,\s\u00A0\u202F\u2009']*/g)]
+    .map((m) => Number(m[0].replace(/[^\d]/g, '')));
+  if (nums.length < 2) return null;
+  const used = Math.min(nums[0], nums[1]);
+  const size = Math.max(nums[0], nums[1]);
+  return used > 0 && size >= used ? { used, size } : null;
+}
+
 // 直接在全文档找（该显示全局唯一），排除自己渲染的 title。
 // 命中过的元素记下来：每轮全文档扫 [title] 太贵，元素还在就直接读它
 let ctxEl = null;
 let ctxMissAt = 0; // 全档扫落空后的时刻：30 秒内不再扫（每 2 秒一轮照扫太贵）
 function readCtx() {
-  const parse = (el) => {
-    const text = el.getAttribute('title') || el.getAttribute('aria-label') || '';
-    if (!/上下文|context/i.test(text)) return null;
-    // 格式为“已用 497,101 / 总量 1,000,000”：斜杠后可能带“总量”等文字再接数字
-    const m = text.match(/([\d][\d,]*)\s*\/[^0-9]*([\d][\d,]*)/);
-    if (!m) return null;
-    const used = Number(m[1].replace(/,/g, ''));
-    const size = Number(m[2].replace(/,/g, ''));
-    return used > 0 && size > used ? { used, size } : null;
-  };
+  const parse = (el) => parseCtxTitle(el.getAttribute('title') || el.getAttribute('aria-label') || '');
   if (ctxEl && ctxEl.isConnected) {
     const hit = parse(ctxEl);
     if (hit) return hit;
@@ -235,16 +241,15 @@ function itemContent(id, L) {
       const useEst = streaming && est != null;
       const shown = useEst ? est : (tps != null ? tps : est);
       if (shown == null) return null;
-      const zh = isZhLocale();
       const estMark = useEst || tps == null ? '≈' : '';
       const detail = useEst
-        ? (zh ? '流式生成中，按文本增长估算（约 2 字符/token）' : 'streaming; estimated from text growth (~2 chars/token)')
+        ? L.sbTokRateStreaming
         : tps != null
-          ? `${L.sbLabelOut} ${tps.toLocaleString()} tok/s${zh ? '（官方净生成口径，本会话树）' : ' (net generation, session tree)'}`
-          : (zh ? '无 usage 数据，按文本增长估算' : 'no usage data, estimated from text growth');
+          ? `${L.sbLabelOut} ${tps.toLocaleString()} tok/s${L.sbTokRateNet}`
+          : L.sbTokRateNoData;
       return {
         html: sbIcon('tokRate') + label(L.sbLabelOut) + `<b>${estMark}${fmtNum(Math.round(shown * 10) / 10)} tok/s</b>`,
-        title: `${L.sbItemTokRate}${zh ? '（本会话）：' : ' (this session): '}${detail}`,
+        title: `${L.sbItemTokRate}${L.sbTokRateSessionSuffix}${detail}`,
         tone: '',
       };
     }
@@ -254,8 +259,8 @@ function itemContent(id, L) {
         const pct = Math.round((dom.used / dom.size) * 1000) / 10;
         const tone = pct >= 95 ? 'danger' : pct >= 80 ? 'warn' : '';
         return {
-          html: sbIcon('ctx') + label(L.sbLabelCtx) + `<b>${fmtNum(dom.used)}/${fmtNum(dom.size)}${isZhLocale() ? '（' : '('}${pct}%${isZhLocale() ? '）' : ')'}</b>`,
-          title: `${L.sbItemCtx}${isZhLocale() ? '：' : ': '}${dom.used.toLocaleString()} / ${dom.size.toLocaleString()}`,
+          html: sbIcon('ctx') + label(L.sbLabelCtx) + `<b>${fmtNum(dom.used)}/${fmtNum(dom.size)}${isCjkLocale() ? '（' : '('}${pct}%${isCjkLocale() ? '）' : ')'}</b>`,
+          title: `${L.sbItemCtx}${isCjkLocale() ? '：' : ': '}${dom.used.toLocaleString()} / ${dom.size.toLocaleString()}`,
           tone,
         };
       }
@@ -270,14 +275,14 @@ function itemContent(id, L) {
       const s = (lastStats && statsSid === selectedSessionId()) ? lastStats.sessionSummary : null;
       return s && s.totalIn + s.totalOut > 0 ? {
         html: sbIcon('inOut') + label(L.sbLabelInOut) + `${fmtNum(s.totalIn)}/${fmtNum(s.totalOut)}`,
-        title: `${L.sbItemInOut}${isZhLocale() ? '：' : ': '}${s.totalIn.toLocaleString()} / ${s.totalOut.toLocaleString()}`,
+        title: `${L.sbItemInOut}${isCjkLocale() ? '：' : ': '}${s.totalIn.toLocaleString()} / ${s.totalOut.toLocaleString()}`,
       } : null;
     }
     case 'avgHit': {
       const s = (lastStats && statsSid === selectedSessionId()) ? lastStats.sessionSummary : null;
       return s && s.hitRate != null ? {
         html: sbIcon('hit') + label(L.sbLabelHit) + `${(s.hitRate * 100).toFixed(2)}%`,
-        title: `${L.sbItemHit}${isZhLocale() ? '：' : ': '}${(s.hitRate * 100).toFixed(2)}%`,
+        title: `${L.sbItemHit}${isCjkLocale() ? '：' : ': '}${(s.hitRate * 100).toFixed(2)}%`,
       } : null;
     }
     case 'todayTokens': {

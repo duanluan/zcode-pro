@@ -1550,7 +1550,10 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
       }
       // —— 智能起名：配置读写 + 供应商列表 + 生成并写库 ——
       if (req.method === 'GET' && url.pathname === '/title-gen') {
-        json(res, 200, { ok: true, titleGen: loadConfig(configFile).titleGen, defaultPrompt: titleGenDefaultPrompt() });
+        // 注入层带上它当前实际使用的界面语言：官方 setting.json 的语言切换有时
+        // 不会立刻落盘，只靠文件判断会把日语界面当成英文
+        const loc = titleGenLocaleKey(url.searchParams.get('locale')) || titleGenLocale();
+        json(res, 200, { ok: true, titleGen: loadConfig(configFile).titleGen, defaultPrompt: titleGenDefaultPrompt(loc) });
         return;
       }
       if (req.method === 'POST' && url.pathname === '/title-gen') {
@@ -1618,9 +1621,10 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         // 会话 id 有 sess_ 与 session_ 两种前缀（新版应用为 session_），两种都认，
         // 否则新形式会话的标题永远不会写入数据库
         const sessId = typeof body?.sessId === 'string' && /^(?:sess|session)_[A-Za-z0-9._-]+$/.test(body.sessId) ? body.sessId : '';
+        const loc = titleGenLocaleKey(body?.locale) || '';
         let title;
         try {
-          title = await generateTitleWith(cfg, text, dataRoot, sessId);
+          title = await generateTitleWith(cfg, text, dataRoot, sessId, loc);
         } catch (err) {
           titleGenLog(dataRoot, `generate-failed sess=${sessId.slice(0, 13)} err=${err?.message || err}`);
           throw err; // 交给外层统一 500
@@ -1669,8 +1673,9 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
           return;
         }
         let title;
+        const loc = titleGenLocaleKey(body?.locale) || '';
         try {
-          title = await generateTitleWith(cfg, material, dataRoot, sessId);
+          title = await generateTitleWith(cfg, material, dataRoot, sessId, loc);
         } catch (err) {
           titleGenLog(dataRoot, `rename-generate-failed sess=${sessId.slice(0, 13)} err=${err?.message || err}`);
           throw err; // 交给外层统一 500
@@ -2613,7 +2618,7 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
     } catch (err) {
       // 完整错误只进日志；响应里的消息抹掉主目录前缀，别把本机路径结构带出去
       console.error('[zcodepro] 路由处理出错:', err);
-      json(res, 500, { ok: false, error: String(err?.message || err).split(homedir()).join('~') });
+      json(res, 500, { ok: false, code: err?.code, error: String(err?.message || err).split(homedir()).join('~') });
     }
   });
 
@@ -3962,8 +3967,8 @@ export function listVisionProviders() {
 
 // —— 智能起名：供应商取数、模型调用与标题清洗 ——
 
-// 内置默认提示词（用户可在设置弹窗覆盖），按界面语言取中文或英文版。
-// 英文版的词数上限比中文版紧：英文单词更长，3~15 个词在会话列表里放不下
+// 内置默认提示词（用户可在设置弹窗覆盖），按界面语言取对应语言版本。
+// 英文/韩文/俄文按词数限制，中文和日文按字数/词数习惯收紧，保证会话列表里放得下
 const TITLE_GEN_DEFAULT_PROMPTS = {
   zh: [
     '为下面的会话生成一个简短的标题。',
@@ -3987,21 +3992,80 @@ const TITLE_GEN_DEFAULT_PROMPTS = {
     '- Do not copy or truncate the user\'s message as the title',
     '- Output only the title itself: no explanation, no quotes, no trailing punctuation, no markdown',
   ].join('\n'),
+  ja: [
+    '以下のセッションに短いタイトルを付けてください。',
+    '要件：',
+    '- ユーザーのメッセージで使われている主な言語に合わせる（日本語のメッセージなら日本語のタイトル）',
+    '- ユーザーが行おうとしている主な作業やテーマを要約する（回答や結果は書かない）',
+    '- 通常10〜20文字程度で、セッション一覧でひと目で分かる長さにする',
+    '- 重要な固有名詞（ファイル名、製品名、技術用語などがあれば）は残す',
+    '- `ユーザーの依頼`、`新しいタスク`、`質問`のような曖昧なタイトルは使わない',
+    '- ユーザーのメッセージをそのまま繰り返したり、一部を切り取ったりしない',
+    '- タイトルだけを出力する：説明、引用符、末尾の句読点、Markdown は付けない',
+  ].join('\n'),
+  ko: [
+    '아래 세션에 짧은 제목을 붙여 주세요.',
+    '요구 사항:',
+    '- 사용자 메시지의 주된 언어를 사용하세요(한국어 메시지면 한국어 제목).',
+    '- 사용자가 하려는 주요 작업이나 주제를 요약하고, 답이나 결과는 쓰지 마세요.',
+    '- 보통 3~8단어로, 세션 목록에서 한눈에 알아볼 수 있는 길이로 하세요.',
+    '- 중요한 고유명사(파일명, 제품명, 기술 용어 등)는 유지하세요.',
+    '- `사용자 요청`, `새 작업`, `질문` 같은 두루뭉술한 제목은 쓰지 마세요.',
+    '- 사용자 메시지를 그대로 반복하거나 잘라서 제목으로 쓰지 마세요.',
+    '- 제목만 출력하세요. 설명, 따옴표, 끝 문장부호, 마크다운은 붙이지 마세요.',
+  ].join('\n'),
+  ru: [
+    'Придумайте короткое название для сессии ниже.',
+    'Требования:',
+    '- Используйте основной язык сообщения пользователя (для сообщения на русском — название на русском).',
+    '- Кратко передайте основную задачу или тему пользователя; не приводите ответ или результат.',
+    '- Обычно 3–8 слов, чтобы название легко узнавалось в списке сессий.',
+    '- Сохраняйте важные имена собственные (имена файлов, названия продуктов, технические термины), если они есть.',
+    '- Избегайте общих названий вроде «Запрос пользователя», «Новая задача» или «Вопрос».',
+    '- Не копируйте и не обрезайте сообщение пользователя как название.',
+    '- Выводите только само название: без пояснений, кавычек, завершающей пунктуации и Markdown.',
+  ].join('\n'),
 };
 
-// 界面语言：桌面设置（v2/setting.json 的 localePreference）为 en-US / zh-CN 时
-// 直接采用；system 或未设置时按系统环境语言判断（中文环境 → 中文，其余 → 英文）
+// 界面语言：桌面设置（v2/setting.json 的 localePreference）为官方五种语言时直接采用；
+// system 或未设置时优先用官方已解析的 locale，再按系统环境语言判断，未识别的回退英文
+const titleGenLocaleKey = (v) => {
+  const s = String(v || '').trim().toLowerCase();
+  return s.startsWith('zh') ? 'zh'
+    : s.startsWith('ja') ? 'ja'
+    : s.startsWith('ko') ? 'ko'
+    : s.startsWith('ru') ? 'ru'
+    : s.startsWith('en') ? 'en' : '';
+};
+// 3.18.2 起真正的五种语言写在 uiLocale*；旧字段 locale/localePreference 只保留
+// zh-CN / en-US 兼容值（ja/ko/ru 会写成 en-US），必须优先读新字段
+export function titleGenLocaleFromSettings(s) {
+  const byUiPref = titleGenLocaleKey(s && s.uiLocalePreference);
+  if (byUiPref) return byUiPref;
+  const byUi = titleGenLocaleKey(s && s.uiLocale);
+  if (byUi) return byUi;
+  const byPref = titleGenLocaleKey(s && s.localePreference);
+  if (byPref) return byPref;
+  const byResolved = titleGenLocaleKey(s && s.locale);
+  if (byResolved) return byResolved;
+  return '';
+}
 function titleGenLocale() {
   const s = readJsonFile(join(resolveDataRootDir(), 'v2', 'setting.json')); // 官方 v2 配置跟数据根迁移（同 startHelper 的 settingsFile）
-  const pref = String((s && s.localePreference) || '').toLowerCase();
-  if (pref.startsWith('en')) return 'en';
-  if (pref.startsWith('zh')) return 'zh';
-  const lang = String(process.env.LC_ALL || process.env.LC_MESSAGES || process.env.LANG || '').toLowerCase();
-  return lang.startsWith('zh') ? 'zh' : 'en';
+  return titleGenLocaleFromSettings(s)
+    || titleGenLocaleKey(process.env.LC_ALL || process.env.LC_MESSAGES || process.env.LANG)
+    || 'en';
 }
 
-function titleGenDefaultPrompt() {
-  return TITLE_GEN_DEFAULT_PROMPTS[titleGenLocale()] || TITLE_GEN_DEFAULT_PROMPTS.en;
+function titleGenDefaultPrompt(locale) {
+  return TITLE_GEN_DEFAULT_PROMPTS[locale || titleGenLocale()] || TITLE_GEN_DEFAULT_PROMPTS.en;
+}
+
+// 没有保存过提示词时才用当前语言的默认值；已保存的值（包括旧语言的内置默认）保持不变。
+// 用户想换成当前语言的默认值，在设置页点“使用默认提示词”重新取。
+function titleGenPromptFor(value, locale) {
+  const text = String(value || '');
+  return text.trim() ? text : titleGenDefaultPrompt(locale);
 }
 
 const TITLE_GEN_MAX_TEXT = 1200;  // 用户消息送入模型的长度上限（与官方起名一致）
@@ -4140,11 +4204,19 @@ async function callAnthropicText(baseUrl, apiKey, model, content) {
     const doc = JSON.parse(body);
     const text = Array.isArray(doc.content)
       ? doc.content.filter((b) => b && b.type === 'text').map((b) => b.text || '').join('') : '';
-    if (!text) throw new Error(doc.stop_reason === 'max_tokens'
-      ? '模型的思考用完了输出上限，仍未给出标题' : '响应中没有文本内容');
+    if (!text) {
+      const e = new Error(doc.stop_reason === 'max_tokens'
+        ? '模型的思考用完了输出上限，仍未给出标题' : '响应中没有文本内容');
+      e.code = doc.stop_reason === 'max_tokens' ? 'title-gen-thinking' : 'title-gen-empty';
+      throw e;
+    }
     return text;
   } catch (err) {
-    if (err && err.name === 'AbortError') throw new Error(`请求超时（${Math.round(TITLE_GEN_TIMEOUT_MS / 1000)} 秒）`);
+    if (err && err.name === 'AbortError') {
+      const e = new Error(`请求超时（${Math.round(TITLE_GEN_TIMEOUT_MS / 1000)} 秒）`);
+      e.code = 'title-gen-timeout';
+      throw e;
+    }
     throw err;
   } finally { clearTimeout(timer); }
 }
@@ -4165,10 +4237,18 @@ async function callOpenAiText(baseUrl, apiKey, model, content) {
     if (!resp.ok) throw new Error(`HTTP ${resp.status} [model=${model}]: ${body.slice(0, 300)}`);
     const doc = JSON.parse(body);
     const text = doc.choices?.[0]?.message?.content || '';
-    if (typeof text !== 'string' || !text.trim()) throw new Error('响应中没有文本内容');
+    if (typeof text !== 'string' || !text.trim()) {
+      const e = new Error('响应中没有文本内容');
+      e.code = 'title-gen-empty';
+      throw e;
+    }
     return text;
   } catch (err) {
-    if (err && err.name === 'AbortError') throw new Error(`请求超时（${Math.round(TITLE_GEN_TIMEOUT_MS / 1000)} 秒）`);
+    if (err && err.name === 'AbortError') {
+      const e = new Error(`请求超时（${Math.round(TITLE_GEN_TIMEOUT_MS / 1000)} 秒）`);
+      e.code = 'title-gen-timeout';
+      throw e;
+    }
     throw err;
   } finally { clearTimeout(timer); }
 }
@@ -4231,21 +4311,35 @@ export async function writeGeneratedTitle(dataRoot, configFile, sessId, title, {
   return { written, store };
 }
 
+// 起名提示词里的固定上下文（日期行、用户消息标签）也跟随界面语言，
+// 避免非中文用户看到中文包装文本
+const TITLE_GEN_PROMPT_LABELS = {
+  zh: { date: (d, m) => `当前日期（Asia/Shanghai）：${d}（MMDD 即 ${m}）`, user: '会话的用户消息：' },
+  en: { date: (d, m) => `Current date (Asia/Shanghai): ${d} (MMDD = ${m})`, user: "The session's user messages:" },
+  ja: { date: (d, m) => `現在の日付（Asia/Shanghai）：${d}（MMDD は ${m}）`, user: 'セッションのユーザーメッセージ：' },
+  ko: { date: (d, m) => `현재 날짜(Asia/Shanghai): ${d} (MMDD = ${m})`, user: '세션의 사용자 메시지:' },
+  ru: { date: (d, m) => `Текущая дата (Asia/Shanghai): ${d} (MMDD = ${m})`, user: 'Сообщения пользователя в сессии:' },
+};
+
 // 生成标题。provider 三种取值：
 // - 'session'：跟随当前会话——从任务索引解析该会话正在用的供应商与模型
 //   （model 已填时用填写的），供应商需在可直连列表内；
 // - ''：不跟随，用配置里的 baseUrl/apiKey/format 直连；
 // - 供应商 id：按列表解析直连；id 已被删时退回保存时留下的地址/密钥副本。
 // 输出统一清洗为单行短标题。导出以便测试
-export async function generateTitleWith(cfg, rawText, dataRoot = '', sessId = '') {
+export async function generateTitleWith(cfg, rawText, dataRoot = '', sessId = '', locale = '') {
   const text = String(rawText || '').trim().replace(/\s+/g, ' ').slice(0, TITLE_GEN_MAX_TEXT);
-  const prompt = (cfg.prompt && cfg.prompt.trim()) || titleGenDefaultPrompt();
+  const loc = titleGenLocaleKey(locale) || titleGenLocale();
+  const prompt = titleGenPromptFor(cfg.prompt, loc);
   // 注入当前日期（上海时区）：起名模型是无状态的，自定义提示词里要求
   // “MMDD 取对话创建日期”时它无从得知，只能留字面量 MMDD
   const now = new Date(Date.now() + 8 * 3600 * 1000);
   const pad = (n) => String(n).padStart(2, '0');
-  const dateLine = `当前日期（Asia/Shanghai）：${now.getUTCFullYear()}-${pad(now.getUTCMonth() + 1)}-${pad(now.getUTCDate())}（MMDD 即 ${pad(now.getUTCMonth() + 1)}${pad(now.getUTCDate())}）`;
-  const userContent = `${prompt}\n\n${dateLine}\n\n会话的用户消息：\n${text}`;
+  const labels = TITLE_GEN_PROMPT_LABELS[loc] || TITLE_GEN_PROMPT_LABELS.en;
+  const ymd = `${now.getUTCFullYear()}-${pad(now.getUTCMonth() + 1)}-${pad(now.getUTCDate())}`;
+  const md = `${pad(now.getUTCMonth() + 1)}${pad(now.getUTCDate())}`;
+  const dateLine = labels.date(ymd, md);
+  const userContent = `${prompt}\n\n${dateLine}\n\n${labels.user}\n${text}`;
   const providerId = (cfg.provider || '').trim();
   const model = (cfg.model || '').trim();
   const conn = await resolveTitleGenConnection(cfg, providerId, model, dataRoot, sessId);
@@ -4253,7 +4347,11 @@ export async function generateTitleWith(cfg, rawText, dataRoot = '', sessId = ''
     ? await callAnthropicText(conn.baseUrl, conn.apiKey, conn.model, userContent)
     : await callOpenAiText(conn.baseUrl, conn.apiKey, conn.model, userContent);
   const title = cleanGeneratedTitle(raw);
-  if (!title) throw new Error('模型未返回可用标题');
+  if (!title) {
+    const e = new Error('模型未返回可用标题');
+    e.code = 'title-gen-no-title';
+    throw e;
+  }
   return title;
 }
 

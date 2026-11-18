@@ -2,7 +2,7 @@
 // 后面追加“竖线 + 输入/输出/TPS/缓存”标注（段顺序与显隐可在设置里调）。
 // 数据来自官方 model_usage（Token 调试同源，含首 token 时机），按“本条提问到
 // 下一条提问”的区间归属到回答行；只统计主轮请求，辅助小调用不计。
-import { t, rpc, getConfig, isZhLocale } from '../core.js';
+import { t, rpc, getConfig, isZhLocale, isCjkLocale, uiLocale } from '../core.js';
 
 let enabled = true;
 let rounds = []; // 官方主轮请求 [{idx, at, in, out, cacheRead, genMs, tps…}] 按完成时间升序
@@ -65,7 +65,8 @@ function findRows() {
     if (!row || seen.has(row)) continue;
     seen.add(row);
     if (!row.querySelector('[data-testid^="v4-feedback-"]')) continue;
-    const timeEl = [...row.querySelectorAll('span')].find((s) => /\d{1,2}:\d{2}$/.test((s.textContent || '').trim()));
+    // 时间文本可能是“18:16”“5:41 PM”“오후 5:41”，不要求时间在末尾
+    const timeEl = [...row.querySelectorAll('span')].find((s) => /\d{1,2}:\d{2}/.test((s.textContent || '').trim()));
     if (timeEl) { const ts = rowTimeTs((timeEl.textContent || '').trim()); if (ts != null) rows.push({ row, ts }); }
   }
   return rows;
@@ -130,7 +131,7 @@ function injectRow(row, bucket) {
   el.style.gap = '4px'; // 组与 · 分隔之间的间距
   el.style.marginLeft = '10px'; // 与左侧时间拉开
   el.innerHTML = html;
-  el.title = `${L.turnUsageTitle}${isZhLocale() ? '：' : ': '}${L.sbLabelIn} ${bucket.in.toLocaleString()} / ${L.sbLabelOut} ${bucket.out.toLocaleString()}`
+  el.title = `${L.turnUsageTitle}${isCjkLocale() ? '：' : ': '}${L.sbLabelIn} ${bucket.in.toLocaleString()} / ${L.sbLabelOut} ${bucket.out.toLocaleString()}`
     + (tps != null ? ` / ${L.sbLabelOut} ${Math.round(tps * 10) / 10} tok/s` : '')
     + (bucket.cacheRead > 0 ? ` / ${L.sbLabelCache} ${bucket.cacheRead.toLocaleString()}` : '');
   row.dataset.zcodeproTurn = '1';
@@ -138,23 +139,56 @@ function injectRow(row, bucket) {
 }
 
 // 回答行时间文本 → 当年本地时间的时间戳（毫秒）。
-// 官方三种形态：今天“18:16”、昨天“昨天 18:16”/“Yesterday 18:16”、更早“10/21 17:41”。
+// 官方五种界面语言的形态：今天“18:16”/“5:41 PM”、昨天“昨天 18:16”/“Yesterday
+// 18:16”/“昨日 18:16”/“어제 오후 5:41”/“Вчера 18:16”、更早“10/21 17:41”/
+// “10/21, 5:41 PM”/“10. 21. 오후 5:41”/“21.10, 17:41”（含年份时多一段）。
 // 行时间是提问时刻，调用桶是完成时刻——一轮的用量按“本条提问到下一条
 // 提问之间”的区间归属（见 scan），因此这里只取可比时间戳
+function datePair(nums, loc) {
+  const [a, b] = nums;
+  if (a > 12) return [b, a]; // 大于 12 的只能是日
+  if (b > 12) return [a, b];
+  return loc === 'ru-RU' ? [b, a] : [a, b]; // 俄语是日.月，其余界面是月/日
+}
 function rowTimeTs(text) {
   const now = new Date();
-  let m = text.match(/^(\d{1,2}):(\d{2})$/);
-  if (m) return new Date(now.getFullYear(), now.getMonth(), now.getDate(), +m[1], +m[2]).getTime();
-  m = text.match(/^(昨天|Yesterday)\s*(\d{1,2}):(\d{2})$/);
-  if (m) { const y = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1); return new Date(y.getFullYear(), y.getMonth(), y.getDate(), +m[2], +m[3]).getTime(); }
-  m = text.match(/^(\d{1,2})\/(\d{1,2})\s*(\d{1,2}):(\d{2})$/);
-  if (m) {
-    // 月日形态不带年份：算出来在未来的按上一年（1 月看到 12 月的行）
-    let ts = new Date(now.getFullYear(), +m[1] - 1, +m[2], +m[3], +m[4]).getTime();
-    if (ts > now.getTime()) ts = new Date(now.getFullYear() - 1, +m[1] - 1, +m[2], +m[3], +m[4]).getTime();
-    return ts;
+  const raw = String(text || '').trim();
+  if (!raw) return null;
+  // 时间可能带前置或后置的 AM/PM、午前/午後、오전/오후（韩语是“오후 5:41”）
+  const m = raw.match(/(?:(AM|PM|午前|午後|오전|오후)\s*)?(\d{1,2}):(\d{2})(?:\s*(AM|PM|午前|午後|오전|오후))?/i);
+  if (!m) return null;
+  const marker = (m[1] || m[4] || '').toLowerCase();
+  let hour = +m[2];
+  const minute = +m[3];
+  if (marker === 'pm' || marker === '午後' || marker === '오후') { if (hour < 12) hour += 12; }
+  else if (marker) { if (hour === 12) hour = 0; }
+  const timeText = (raw.slice(0, m.index) + ' ' + raw.slice(m.index + m[0].length)).trim();
+  // 昨天/昨日/어제/Вчера：官方在时间前加语言对应的“昨天”
+  if (/昨天|昨日|Yesterday|어제|Вчера/i.test(timeText)) {
+    const y = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+    return new Date(y.getFullYear(), y.getMonth(), y.getDate(), hour, minute).getTime();
   }
-  return null;
+  // 只剩时间 = 今天
+  const dateText = timeText.replace(/[^\d./年月日년월일]+/g, ' ').trim();
+  if (!dateText) return new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, minute).getTime();
+  // 日期分隔符只认官方 Intl 输出的 / 和 .（以及年月日写法）；10-21 这类不猜
+  if (!/[./年月日년월일]/.test(timeText)) return null;
+  const nums = (dateText.match(/\d+/g) || []).map(Number);
+  if (nums.length < 2 || nums.length > 3) return null;
+  let year = now.getFullYear();
+  let md = nums;
+  if (nums.length === 3) {
+    const yi = nums.findIndex((n) => n >= 1000);
+    if (yi === 0) { year = nums[0]; md = [nums[1], nums[2]]; }
+    else if (yi === 2) { year = nums[2]; md = [nums[0], nums[1]]; }
+    else return null;
+  }
+  const [month, day] = datePair(md, uiLocale());
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  let ts = new Date(year, month - 1, day, hour, minute).getTime();
+  // 不带年份的月日：算出来在未来的按上一年（1 月看到 12 月的行）
+  if (nums.length === 2 && ts > now.getTime()) ts = new Date(year - 1, month - 1, day, hour, minute).getTime();
+  return ts;
 }
 
 let lastSid = '';

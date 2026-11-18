@@ -17,7 +17,7 @@
 //   点中重命名菜单项后把预填值换成锁定名兜住这个口子（见 prefillRenameDialog）。
 // 扫描事件驱动（任务行相关变动去抖 150ms；characterData 必须订阅——React
 // 改标题文本走 nodeValue，只产生 characterData 变动）+ 低频兜底轮询。
-import { rpc } from '../core.js';
+import { rpc, isRenameLabel } from '../core.js';
 
 const TASK_SEL = '[data-task-item-key]';
 const SCAN_DEBOUNCE_MS = 150;    // 相关 DOM 变动后的去抖，合并连续变动
@@ -304,7 +304,7 @@ export function startTitleLock() {
   document.addEventListener('click', (e) => {
     if (!renameCtx || renameCtx.armed) return;
     const item = e.target instanceof Element && e.target.closest('[role="menuitem"], [data-radix-collection-item]');
-    if (item && /重命名|rename/i.test(item.textContent || '')) {
+    if (item && isRenameLabel(item.textContent || '')) {
       renameCtx.armed = true;
       renameCtx.at = Date.now();
     }

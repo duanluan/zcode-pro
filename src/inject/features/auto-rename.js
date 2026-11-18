@@ -6,7 +6,7 @@
 //   先记下会话键，菜单出现后克隆官方菜单项样式插入。
 // 生成成功即更新侧栏行并刷新标题锁定表（同 title-gen.js）；手动动作失败弹提示
 //（不再静默）。入口各有开关、素材轮数可调，都在“自动重命名”tab 下。
-import { rpc, getConfig, itemsOf, itemText, closeRadixMenu, t, errText } from '../core.js';
+import { rpc, getConfig, itemsOf, itemText, closeRadixMenu, t, errText, uiLocale, isRenameLabel } from '../core.js';
 import { showToast } from '../ui.js';
 import { setRowTitle, refreshPinnedTitles } from './title-lock.js';
 
@@ -32,7 +32,7 @@ async function runAutoRename(key) {
   runningKeys.add(key);
   showToast(L.autoRenameWorking, 'info');
   try {
-    const res = await rpc('/title-gen/rename', { method: 'POST', body: { sessId } }).catch(() => null);
+    const res = await rpc('/title-gen/rename', { method: 'POST', body: { sessId, locale: uiLocale() } }).catch(() => null);
     if (res && res.ok && res.title) {
       setRowTitle(key, res.title);
       void refreshPinnedTitles();
@@ -109,7 +109,7 @@ async function injectHoverButtons() {
 export function handleTaskRowMenu(content) {
   if (!ctxKey || Date.now() - ctxAt > RENAME_CTX_VALID_MS) return;
   if (content.querySelector('[data-zcodepro-item="auto-rename"]')) return;
-  const anchor = itemsOf(content).find((el) => /^重命名|^rename/i.test(itemText(el)));
+  const anchor = itemsOf(content).find((el) => isRenameLabel(itemText(el)));
   if (!anchor) return;
   const key = ctxKey;
   void getConfig().then((cfg) => {
