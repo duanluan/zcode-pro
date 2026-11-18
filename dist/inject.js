@@ -475,6 +475,8 @@
         assistantFontDesc: "\u4F1A\u8BDD\u4E2D\u56DE\u7B54\u6B63\u6587\u7684\u5B57\u4F53\uFF08\u4EE3\u7801\u5757\u4ECD\u7528\u7B49\u5BBD\u5B57\u4F53\uFF09\uFF1B\u9009\u201C\u9ED8\u8BA4\u201D\u65F6\u8DDF\u968F\u754C\u9762\u5B57\u4F53\u3002",
         switcherHint: "{prev} / {next} \u6216 \u2191 / \u2193 \u9009\u62E9\uFF0CEnter \u6216\u70B9\u51FB\u884C\u5207\u6362\uFF0CEsc \u53D6\u6D88",
         switcherCurrent: "\u5F53\u524D",
+        switcherNewTask: "\u65B0\u5EFA\u4EFB\u52A1",
+        switcherTaskDraft: "\u4E0D\u5728\u9879\u76EE\u4E2D",
         switcherEmpty: "\u6682\u65E0\u4E0A\u6B21\u4F1A\u8BDD\uFF08\u5207\u6362\u8FC7\u4F1A\u8BDD\u540E\u53EF\u7528\uFF09",
         switcherFailed: "\u672A\u80FD\u5207\u6362\u5230\u8BE5\u4F1A\u8BDD\uFF08\u53EF\u80FD\u5DF2\u5220\u9664\uFF09",
         switcherMore: "\u8FD8\u6709 {n} \u6761 \xB7 \u6309 c \u52A0\u8F7D",
@@ -1110,6 +1112,8 @@
         assistantFontDesc: 'Font of answer text in conversations (code blocks stay monospaced); "default" follows the UI font.',
         switcherHint: "{prev} / {next} or \u2191 / \u2193 to choose, Enter or click a row to switch, Esc to cancel",
         switcherCurrent: "current",
+        switcherNewTask: "new task",
+        switcherTaskDraft: "no project",
         switcherEmpty: "No previous session yet (available after you switch sessions)",
         switcherFailed: "Failed to switch to that session (it may have been deleted)",
         switcherMore: "{n} more \xB7 press c to load",
@@ -3424,6 +3428,81 @@
   function findCurrent() {
     return document.querySelector("[data-task-item-key].bg-selected");
   }
+  function draftWorkspacePath() {
+    const focused = document.querySelector('[data-pane-id="workspace-main"][data-focused="true"]');
+    const pane = focused && focused.querySelector('[data-testid="v4-session-pane-workspace-main"]') || document.querySelector('[data-testid="v4-session-pane-workspace-main"]');
+    if (!pane || pane.getAttribute("data-session-id") !== "draft") return "";
+    if (!pane.getClientRects().length) return "";
+    const trig = pane.querySelector('[data-testid="composer-workspace-trigger"]');
+    const fk = trig && Object.keys(trig).find((k) => k.startsWith("__reactFiber$"));
+    let f = fk ? trig[fk] : null;
+    for (let i = 0; f && i < 40; i++, f = f.return) {
+      const p = f.memoizedProps;
+      if (p && typeof p.workspacePath === "string" && p.workspacePath.trim()) {
+        return p.workspacePath.trim();
+      }
+    }
+    return "";
+  }
+  function currentViewKey() {
+    const row = findCurrent();
+    if (row) return row.getAttribute("data-task-item-key");
+    const ws = draftWorkspacePath();
+    return ws ? newTaskKeyOf(ws) : null;
+  }
+  function switchTarget(list, viewKey) {
+    if (!viewKey) return list[0] || null;
+    return list.find((k) => k !== viewKey) || null;
+  }
+  async function loadProjectRoots() {
+    if (Date.now() - projectRootsCache.at <= PROJECT_ROOTS_TTL_MS) return projectRootsCache.map;
+    if (projectRootsInflight) return projectRootsInflight;
+    projectRootsInflight = (async () => {
+      const now = Date.now();
+      const res = await rpc("/projects-v2").catch(() => null);
+      if (res && res.ok && res.available && Array.isArray(res.projects)) {
+        const map = /* @__PURE__ */ new Map();
+        for (const p of res.projects) {
+          for (const r of p.roots || []) {
+            const path = normWs(r && r.path);
+            if (path && p.id && r.primary) map.set(path, String(p.id));
+          }
+        }
+        for (const p of res.projects) {
+          for (const r of p.roots || []) {
+            const path = normWs(r && r.path);
+            if (path && p.id && !map.has(path)) map.set(path, String(p.id));
+          }
+        }
+        projectRootsCache = { at: now, map, ok: true };
+      } else {
+        projectRootsCache = { at: now, map: projectRootsCache.map, ok: projectRootsCache.ok };
+      }
+      return projectRootsCache.map;
+    })().finally(() => {
+      projectRootsInflight = null;
+    });
+    return projectRootsInflight;
+  }
+  async function projectIdOfRoot(ws) {
+    const want = normWs(ws);
+    if (!want) return "";
+    const map = await loadProjectRoots();
+    return map.get(want) || "";
+  }
+  async function noteDraftWorkspace(ws) {
+    const want = normWs(ws);
+    if (!want || !isLocalPath(want)) return;
+    await loadProjectRoots();
+    if (!projectRootsCache.ok) return;
+    if (!projectRootsCache.map.has(want)) lastTaskDraftPath = want;
+  }
+  async function findProjectSection(ws) {
+    const row = findProjectRow(ws);
+    if (row) return row;
+    const id = await projectIdOfRoot(ws);
+    return id ? document.querySelector(`section[data-project-id="${CSS.escape(id)}"]`) : null;
+  }
   function record(key) {
     if (key) {
       for (const k of unseen) if (idOf(k) === idOf(key)) unseen.delete(k);
@@ -3449,6 +3528,13 @@
   function scan2() {
     const cur = findCurrent();
     if (cur) record(cur.getAttribute("data-task-item-key"));
+    else {
+      const ws = draftWorkspacePath();
+      if (ws) {
+        record(newTaskKeyOf(ws));
+        void noteDraftWorkspace(ws);
+      }
+    }
     const seen2 = /* @__PURE__ */ new Set();
     for (const el of document.querySelectorAll("[data-task-item-key]")) {
       const key = el.getAttribute("data-task-item-key");
@@ -3484,6 +3570,22 @@
     }, SCAN_DEBOUNCE_MS2);
   }
   async function switchTo(key) {
+    if (isNewTaskKey(key)) {
+      const ws = workspaceOf2(key);
+      const curWs = draftWorkspacePath();
+      if (curWs && normWs(curWs) === normWs(ws)) return true;
+      const sec = await findProjectSection(ws);
+      const btn = sec && sec.querySelector('[data-testid="virtual-project-create-task"]');
+      if (btn) {
+        btn.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+        return true;
+      }
+      if (!lastTaskDraftPath || lastTaskDraftPath !== normWs(ws)) return false;
+      const taskBtn = document.querySelector('[data-testid="virtual-project-new-task"]');
+      if (!taskBtn) return false;
+      taskBtn.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+      return true;
+    }
     const id = key.slice(key.lastIndexOf(":") + 1);
     const find = () => document.querySelector(`[data-task-item-key="${CSS.escape(key)}"]`) || (id ? document.querySelector(`[data-task-item-key$=":${CSS.escape(id)}"]`) : null);
     let item = find();
@@ -3507,6 +3609,7 @@
     const listed = /* @__PURE__ */ new Set();
     const head = [];
     for (const k of mru) {
+      if (isNewTaskKey(k)) continue;
       const id = idOf(k);
       if (listed.has(id)) continue;
       const runForm = runKeyById.get(id);
@@ -3517,6 +3620,7 @@
     }
     const tail = [];
     const push = (k) => {
+      if (isNewTaskKey(k)) return;
       const id = idOf(k);
       if (listed.has(id)) return;
       listed.add(id);
@@ -3543,6 +3647,7 @@
     }
   }
   function findTitle(key) {
+    if (isNewTaskKey(key)) return t().switcherNewTask;
     const item = document.querySelector(`[data-task-item-key="${CSS.escape(key)}"]`);
     if (item) titles.set(key, firstLineOf(item));
     const id = key.slice(key.lastIndexOf(":") + 1);
@@ -3551,6 +3656,7 @@
   async function fetchMissingTitles(keys) {
     const sessIdOf4 = (k) => k.slice(k.lastIndexOf(":") + 1);
     const missing = keys.filter((k) => {
+      if (isNewTaskKey(k)) return false;
       const id = sessIdOf4(k);
       return id && !titles.get(k) && !document.querySelector(`[data-task-item-key$=":${CSS.escape(id)}"]`);
     });
@@ -3565,6 +3671,9 @@
   function projLabelOf(key, aliases2) {
     const ws = workspaceOf2(key);
     if (!ws) return "";
+    if (isNewTaskKey(key) && projectRootsCache.ok && !projectRootsCache.map.has(normWs(ws))) {
+      return t().switcherTaskDraft;
+    }
     return aliases2[ws] || ws.replace(/[\\/]+$/, "").split(/[\\/]/).pop();
   }
   function renderPopup() {
@@ -3680,6 +3789,7 @@
   function startSessionSwitch() {
     scan2();
     void loadHotkeys();
+    void loadProjectRoots();
     window.addEventListener("zcodepro:config-changed", () => {
       void loadHotkeys();
     });
@@ -3700,7 +3810,14 @@
     }, 1e4);
     document.addEventListener("click", (e) => {
       const item = e.target instanceof Element && e.target.closest("[data-task-item-key]");
-      if (item) record(item.getAttribute("data-task-item-key"));
+      if (item) {
+        record(item.getAttribute("data-task-item-key"));
+        return;
+      }
+      if (e.target instanceof Element && e.target.closest('[data-testid="virtual-project-create-task"], [data-testid="virtual-project-new-task"], [data-testid="task-new-button"]')) {
+        scheduleScan();
+        setTimeout(scan2, 400);
+      }
     }, true);
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && popupEl) {
@@ -3739,9 +3856,9 @@
         if (k === hotkeys.switchLast) {
           if (e.repeat) return;
           closePopup(false);
-          const live = findCurrent();
-          if (live) record(live.getAttribute("data-task-item-key"));
-          const target = live ? mru[0] === current ? mru[1] : mru.find((mk) => mk !== current) : mru[0];
+          const live = currentViewKey();
+          if (live) record(live);
+          const target = switchTarget(mru, live);
           if (!target) {
             showToast(t().switcherEmpty, "warning");
             return;
@@ -3788,7 +3905,7 @@
     }, true);
     window.addEventListener("blur", () => closePopup(false));
   }
-  var MRU_LIMIT, SCAN_DEBOUNCE_MS2, SCAN_FALLBACK_MS2, INITIAL_COUNT, PAGE_SIZE, UNSEEN_LIMIT, mru, current, titles, popupEl, popupList, aliasesCache, highlight, scanDebounce2, popupMode, visibleCount, unseen, lastRunKeys, hotkeys, featureOn, idOf, rowSel2, inTaskRow, openPopupInflight;
+  var MRU_LIMIT, SCAN_DEBOUNCE_MS2, SCAN_FALLBACK_MS2, INITIAL_COUNT, PAGE_SIZE, UNSEEN_LIMIT, NEW_TASK_ID, PROJECT_ROOTS_TTL_MS, mru, current, titles, popupEl, popupList, aliasesCache, highlight, scanDebounce2, popupMode, visibleCount, unseen, lastRunKeys, hotkeys, featureOn, idOf, normWs, newTaskKeyOf, isNewTaskKey, projectRootsCache, projectRootsInflight, lastTaskDraftPath, isLocalPath, rowSel2, inTaskRow, openPopupInflight;
   var init_session_switch = __esm({
     "src/inject/features/session-switch.js"() {
       init_core();
@@ -3801,6 +3918,8 @@
       INITIAL_COUNT = 10;
       PAGE_SIZE = 5;
       UNSEEN_LIMIT = 50;
+      NEW_TASK_ID = "__new_task__";
+      PROJECT_ROOTS_TTL_MS = 6e4;
       mru = [];
       current = null;
       titles = /* @__PURE__ */ new Map();
@@ -3819,6 +3938,13 @@
         const s = String(k || "");
         return s.slice(s.lastIndexOf(":") + 1);
       };
+      normWs = (ws) => String(ws || "").replace(/[\\/]+$/, "");
+      newTaskKeyOf = (ws) => normWs(ws) + ":" + NEW_TASK_ID;
+      isNewTaskKey = (k) => idOf(k) === NEW_TASK_ID;
+      projectRootsCache = { at: 0, map: /* @__PURE__ */ new Map(), ok: false };
+      projectRootsInflight = null;
+      lastTaskDraftPath = "";
+      isLocalPath = (p) => /^(?:[A-Za-z]:[\\/]|\/)/.test(String(p || ""));
       rowSel2 = "[data-task-item-key]";
       inTaskRow = (node) => node instanceof Element && !!node.closest && !!node.closest(rowSel2);
       openPopupInflight = null;
@@ -12930,7 +13056,7 @@
   var projectTrueUnread = /* @__PURE__ */ new Map();
   var wsCandidatesCache = /* @__PURE__ */ new Map();
   var projRootsCache = { at: 0, map: null };
-  function normWs(v) {
+  function normWs2(v) {
     return String(v || "").replace(/[\\/]+$/, "");
   }
   function withTimeout(p, ms, fallback) {
@@ -13025,7 +13151,7 @@
         if (end && end >= at) continue;
         live.add(c.root);
         const ws = candidates.get(c.root);
-        if (ws) liveWs.add(normWs(ws));
+        if (ws) liveWs.add(normWs2(ws));
       }
       liveSessions = live;
       liveByWs = liveWs;
@@ -13037,7 +13163,7 @@
         const sid = cut > 1 ? key.slice(cut + 1) : "";
         const slot = rowIconSlot(el);
         const unread = slot && slot.querySelector("[data-unread-indicator]");
-        if (live.has(sid) || unread) needBusyWs.add(normWs(key.slice(0, cut)));
+        if (live.has(sid) || unread) needBusyWs.add(normWs2(key.slice(0, cut)));
       }
       await Promise.all([...needBusyWs].map(async (ws) => {
         const ids = await withTimeout(listActiveIdsCached(ws), CALL_TIMEOUT_MS, null);
@@ -13052,7 +13178,7 @@
         if (!sid || !candidates.has(sid)) continue;
         term.add(sid);
         const ws = candidates.get(sid);
-        if (ws) termWs.add(normWs(ws));
+        if (ws) termWs.add(normWs2(ws));
       }
       liveTermSessions = term;
       liveTermByWs = termWs;
@@ -13085,8 +13211,8 @@
       const paths = projectPathsOf(row, roots);
       setProjectIcon(
         row,
-        enabled7 && collapsed && paths.some((p) => liveByWs.has(normWs(p))),
-        enabled7 && collapsed && paths.some((p) => liveTermByWs.has(normWs(p)))
+        enabled7 && collapsed && paths.some((p) => liveByWs.has(normWs2(p))),
+        enabled7 && collapsed && paths.some((p) => liveTermByWs.has(normWs2(p)))
       );
       const pid = row.getAttribute("data-project-id");
       row.classList.toggle(UNREAD_IGNORE_CLASS, enabled7 && pid !== null && projectTrueUnread.get(pid) === 0);

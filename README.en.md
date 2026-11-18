@@ -16,7 +16,7 @@ Grouped by topic: the category column is a settings tab, entries with `·` (e.g.
 | --- | --- | --- |
 | Features | Project menu actions (open folder / copy path) | Project "More" menu: open the project directory in the file manager, or copy its path |
 | | Sidebar session drag ordering | Reorder sessions in Pinned, Projects and Groups; persists across refreshes |
-| | Session quick switch | `alt+z` toggles between the current and the last session; hold `alt` and press `x` (up) / `c` (down) to pick from recent sessions (10 shown initially, pressing `c` at the bottom loads 5 more), `alt+e` opens the last 10 directly, `alt+r` opens running / finished-but-unseen tasks; arrow keys also move the highlight, press `Enter` or click a row to switch; the five trigger keys are customizable in Settings → Shortcuts |
+| | Session quick switch | `alt+z` toggles between the current and the last session / new-task draft; hold `alt` and press `x` (up) / `c` (down) to pick from recent sessions (10 shown initially, pressing `c` at the bottom loads 5 more), `alt+e` opens the last 10 directly, `alt+r` opens running / finished-but-unseen tasks; arrow keys also move the highlight, press `Enter` or click a row to switch; the five trigger keys are customizable in Settings → Shortcuts |
 | | Keep renamed session titles | Sessions you renamed keep their custom title; auto-generated titles no longer overwrite it in the sidebar |
 | | Collapsible Pinned section | The sidebar "Pinned" header collapses/expands its task list; the state is remembered |
 | | File menu actions | Adds "Open with default app" and "Reveal in file manager" to file links in chat |

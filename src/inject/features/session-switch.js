@@ -7,6 +7,10 @@
 // 事件驱动扫描（会话行增删/选中标记移动才触发）+ 低频兜底轮询——
 // 点击、新建任务自动跳转等任何方式的切换都能捕捉，聊天区流式输出不产生扫描。
 // 目标条目在折叠项目下时先展开项目行再点击（展开先例见 pinned-expand.js）。
+// 新建任务草稿（项目内或“任务”分区）没有会话行，单独记为伪键
+// <工作区路径>:__new_task__；草稿属于哪个工作区从输入框工作区按钮的
+// React fiber（workspacePath）读取，切回时点对应入口的“新建任务”按钮。
+// 这样会话 ↔ 新建任务、不同项目 / 任务分区的新建任务之间都能用 alt+z 来回切。
 import { h, t, rpc, getConfig, DEFAULT_SHORTCUTS } from '../core.js';
 import { ensureStyle, showToast } from '../ui.js';
 import { findProjectRow } from './ws-rows.js';
@@ -18,6 +22,8 @@ const SCAN_FALLBACK_MS = 5000;  // 兜底轮询周期：仅补观察器覆盖不
 const INITIAL_COUNT = 10;       // 弹窗初始渲染条数（alt+e“最近 10 条”同此）
 const PAGE_SIZE = 5;            // c 到底再按时加载的条数
 const UNSEEN_LIMIT = 50;
+const NEW_TASK_ID = '__new_task__'; // 伪会话 id：新建任务草稿视图（项目内 / 任务分区）
+const PROJECT_ROOTS_TTL_MS = 60_000; // /projects-v2 工作区→项目 id 映射的缓存时长
 
 let mru = [];          // 会话键（data-task-item-key），最近使用的在最前
 let current = null;    // 当前会话键
@@ -67,8 +73,115 @@ function findCurrent() {
 
 // 会话 id（键的最后一段）：同一会话的键有“权威拼键/DOM 行键”两种形态，
 // unseen 的增删与当前会话比较都按 id，别按整键。入参容 null/undefined——
-// current 在新建任务视图（无选中行）时一直是 null
+// current 在未知视图（面板等）里可能仍是上一次的键
 const idOf = (k) => { const s = String(k || ''); return s.slice(s.lastIndexOf(':') + 1); };
+
+// 工作区路径归一（去尾分隔符）：草稿键用归一后的路径拼，切换时两边都归一比较
+const normWs = (ws) => String(ws || '').replace(/[\\/]+$/, '');
+// 新建任务草稿伪键：<工作区路径>:__new_task__，与会话键同一套“前缀 + id”结构
+const newTaskKeyOf = (ws) => normWs(ws) + ':' + NEW_TASK_ID;
+const isNewTaskKey = (k) => idOf(k) === NEW_TASK_ID;
+
+// 当前新建任务草稿属于哪个工作区。主面板的 data-session-id="draft" 是草稿
+// 视图的稳定标记；工作区路径从输入框工作区按钮向上走 React fiber 取
+// workspacePath（按钮上的文字是项目名，可能是别名/重名，不能拿来对路径）。
+// 面板不可见或取不到路径时返回空串——调用方按“未知视图”处理，保持旧行为
+function draftWorkspacePath() {
+  const focused = document.querySelector('[data-pane-id="workspace-main"][data-focused="true"]');
+  const pane = (focused && focused.querySelector('[data-testid="v4-session-pane-workspace-main"]'))
+    || document.querySelector('[data-testid="v4-session-pane-workspace-main"]');
+  if (!pane || pane.getAttribute('data-session-id') !== 'draft') return '';
+  if (!pane.getClientRects().length) return '';
+  const trig = pane.querySelector('[data-testid="composer-workspace-trigger"]');
+  const fk = trig && Object.keys(trig).find((k) => k.startsWith('__reactFiber$'));
+  let f = fk ? trig[fk] : null;
+  for (let i = 0; f && i < 40; i++, f = f.return) {
+    const p = f.memoizedProps;
+    if (p && typeof p.workspacePath === 'string' && p.workspacePath.trim()) {
+      return p.workspacePath.trim();
+    }
+  }
+  return '';
+}
+
+// 当前视图键：选中的会话行优先；没有选中行时看是不是新建任务草稿。
+// 返回 null = 未知视图（自动化/插件面板等），此时不记录也不改 current
+function currentViewKey() {
+  const row = findCurrent();
+  if (row) return row.getAttribute('data-task-item-key');
+  const ws = draftWorkspacePath();
+  return ws ? newTaskKeyOf(ws) : null;
+}
+
+// MRU 里除当前视图外最近的一条；没有当前视图（面板等）时沿用旧行为取最近一条
+function switchTarget(list, viewKey) {
+  if (!viewKey) return list[0] || null;
+  return list.find((k) => k !== viewKey) || null;
+}
+
+// 工作区路径 → 项目 id（/projects-v2 的 roots 映射），用于折起/从未展开、
+// DOM 里拿不到路径的项目行定位。失败沿用上一份映射，60 秒后再试
+let projectRootsCache = { at: 0, map: new Map(), ok: false };
+let projectRootsInflight = null;
+async function loadProjectRoots() {
+  if (Date.now() - projectRootsCache.at <= PROJECT_ROOTS_TTL_MS) return projectRootsCache.map;
+  if (projectRootsInflight) return projectRootsInflight;
+  projectRootsInflight = (async () => {
+    const now = Date.now();
+    const res = await rpc('/projects-v2').catch(() => null);
+    if (res && res.ok && res.available && Array.isArray(res.projects)) {
+      const map = new Map();
+      // 同一目录可能同时是多个项目的 root（一个主目录、一个附加目录）：
+      // 先收主 root，再补附加 root 且不覆盖，草稿才能落到项目的主归属上
+      for (const p of res.projects) {
+        for (const r of p.roots || []) {
+          const path = normWs(r && r.path);
+          if (path && p.id && r.primary) map.set(path, String(p.id));
+        }
+      }
+      for (const p of res.projects) {
+        for (const r of p.roots || []) {
+          const path = normWs(r && r.path);
+          if (path && p.id && !map.has(path)) map.set(path, String(p.id));
+        }
+      }
+      projectRootsCache = { at: now, map, ok: true };
+    } else {
+      projectRootsCache = { at: now, map: projectRootsCache.map, ok: projectRootsCache.ok };
+    }
+    return projectRootsCache.map;
+  })().finally(() => { projectRootsInflight = null; });
+  return projectRootsInflight;
+}
+async function projectIdOfRoot(ws) {
+  const want = normWs(ws);
+  if (!want) return '';
+  const map = await loadProjectRoots();
+  return map.get(want) || '';
+}
+
+// “任务”分区的草稿（不在任何项目里，工作区是 ~/.zcode/workspace/draft-*）：
+// 任务分区头的新建任务按钮会回到最近这一份草稿，没有别的入口能按路径打开它。
+// 记住最近一次见到的任务草稿路径，目标不是它时不要乱点（按钮只会打开最近的）
+let lastTaskDraftPath = '';
+const isLocalPath = (p) => /^(?:[A-Za-z]:[\\/]|\/)/.test(String(p || ''));
+async function noteDraftWorkspace(ws) {
+  const want = normWs(ws);
+  if (!want || !isLocalPath(want)) return;
+  await loadProjectRoots();
+  if (!projectRootsCache.ok) return; // 映射取不到：判断不了归属，不记
+  if (!projectRootsCache.map.has(want)) lastTaskDraftPath = want;
+}
+
+// 草稿键对应的项目行：先按任务行/缓存里的路径找；折叠且从未展开过的项目
+// 拿不到路径，改查 /projects-v2 的 roots → 项目 id。没有别的猜测路径——
+// 按目录名猜可能把“任务”分区的草稿误当同名项目，切到错误的视图
+async function findProjectSection(ws) {
+  const row = findProjectRow(ws);
+  if (row) return row;
+  const id = await projectIdOfRoot(ws);
+  return id ? document.querySelector(`section[data-project-id="${CSS.escape(id)}"]`) : null;
+}
 
 // 记录一次“切到 key”；顺带刷新在场条目的标题缓存。切入即视为已查看
 function record(key) {
@@ -105,6 +218,11 @@ function collectEndedUnseen(prevKeys, nowKeys, currentKey, unseenSet) {
 function scan() {
   const cur = findCurrent();
   if (cur) record(cur.getAttribute('data-task-item-key'));
+  else {
+    // 新建任务草稿没有选中行：按工作区记伪键，MRU 才能把草稿当作可切回的视图
+    const ws = draftWorkspacePath();
+    if (ws) { record(newTaskKeyOf(ws)); void noteDraftWorkspace(ws); }
+  }
   const seen = new Set();
   for (const el of document.querySelectorAll('[data-task-item-key]')) {
     const key = el.getAttribute('data-task-item-key');
@@ -149,6 +267,27 @@ function scheduleScan() {
 // 切到指定会话：条目不在 DOM（项目折叠）时先展开项目行，等条目出现再点击
 //（session-link.js 的会话 ID 链接也走这里切换）
 export async function switchTo(key) {
+  // 新建任务草稿：项目草稿点项目的“新建任务”按钮回到该项目草稿（项目行折叠
+  // 也可见）；“任务”分区草稿没有项目行，点任务分区头的新建任务按钮（应用会
+  // 回到最近那一份任务草稿）。已经在这个草稿里时直接返回，避免重复点击清掉
+  // 已输入的内容
+  if (isNewTaskKey(key)) {
+    const ws = workspaceOf(key);
+    const curWs = draftWorkspacePath();
+    if (curWs && normWs(curWs) === normWs(ws)) return true;
+    const sec = await findProjectSection(ws);
+    const btn = sec && sec.querySelector('[data-testid="virtual-project-create-task"]');
+    if (btn) {
+      btn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+      return true;
+    }
+    // 任务草稿的按钮只会打开最近一份：目标不是它时没有可用的入口，别切错
+    if (!lastTaskDraftPath || lastTaskDraftPath !== normWs(ws)) return false;
+    const taskBtn = document.querySelector('[data-testid="virtual-project-new-task"]');
+    if (!taskBtn) return false;
+    taskBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    return true;
+  }
   // 权威扫描拼出的键（工作区前缀无尾斜杠）可能与行键（可能带尾斜杠）不同形，
   // 精确匹配落空时按会话 id 后缀兜底（会话 id 全局唯一，不会命中别的会话）
   const id = key.slice(key.lastIndexOf(':') + 1);
@@ -186,13 +325,20 @@ function attentionList() {
   const listed = new Set();
   const head = [];
   for (const k of mru) {
+    if (isNewTaskKey(k)) continue; // 草稿视图不会运行，也不存在“未查看”
     const id = idOf(k);
     if (listed.has(id)) continue;
     const runForm = runKeyById.get(id);
     if (run.has(k) || unseen.has(k) || runForm) { head.push(runForm || k); listed.add(id); }
   }
   const tail = [];
-  const push = (k) => { const id = idOf(k); if (listed.has(id)) return; listed.add(id); tail.push(k); };
+  const push = (k) => {
+    if (isNewTaskKey(k)) return;
+    const id = idOf(k);
+    if (listed.has(id)) return;
+    listed.add(id);
+    tail.push(k);
+  };
   for (const k of run) push(k);
   for (const k of unseen) push(k);
   return [...head, ...tail];
@@ -219,6 +365,8 @@ function closePopup(commit) {
 }
 
 function findTitle(key) {
+  // 草稿视图没有标题：显示固定文案，项目名由行下的工作区标签给出
+  if (isNewTaskKey(key)) return t().switcherNewTask;
   const item = document.querySelector(`[data-task-item-key="${CSS.escape(key)}"]`);
   if (item) titles.set(key, firstLineOf(item));
   const id = key.slice(key.lastIndexOf(':') + 1);
@@ -230,6 +378,7 @@ function findTitle(key) {
 async function fetchMissingTitles(keys) {
   const sessIdOf = (k) => k.slice(k.lastIndexOf(':') + 1);
   const missing = keys.filter((k) => {
+    if (isNewTaskKey(k)) return false; // 草稿标题是固定文案，不用查任务索引
     const id = sessIdOf(k);
     return id && !titles.get(k) && !document.querySelector(`[data-task-item-key$=":${CSS.escape(id)}"]`);
   });
@@ -246,6 +395,10 @@ async function fetchMissingTitles(keys) {
 function projLabelOf(key, aliases) {
   const ws = workspaceOf(key);
   if (!ws) return '';
+  // 任务分区的草稿不属于任何项目：显示固定文案，不显示 draft-<uuid> 目录名
+  if (isNewTaskKey(key) && projectRootsCache.ok && !projectRootsCache.map.has(normWs(ws))) {
+    return t().switcherTaskDraft;
+  }
   return aliases[ws] || ws.replace(/[\\/]+$/, '').split(/[\\/]/).pop();
 }
 
@@ -352,6 +505,8 @@ function moveDown() {
 export function startSessionSwitch() {
   scan();
   void loadHotkeys();
+  // 提前取工作区→项目映射：草稿归属判断（项目草稿 / 任务草稿）要用
+  void loadProjectRoots();
   window.addEventListener('zcodepro:config-changed', () => { void loadHotkeys(); });
   // 事件驱动为主：任务条目相关变动（去抖 150ms）立即重扫
   new MutationObserver((muts) => { if (taskRowMutations(muts)) scheduleScan(); })
@@ -374,7 +529,14 @@ export function startSessionSwitch() {
   // 点击兜底：bg-selected 标记不可用/未出现时，点条目（含本功能派发的合成点击）即记录
   document.addEventListener('click', (e) => {
     const item = e.target instanceof Element && e.target.closest('[data-task-item-key]');
-    if (item) record(item.getAttribute('data-task-item-key'));
+    if (item) { record(item.getAttribute('data-task-item-key')); return; }
+    // 点“新建任务”（项目行按钮 / 顶栏入口）后主视图进草稿，这个变化不在任务行
+    // 变动过滤里：主动补扫两次，草稿挂载后立即记入 MRU（不等 5 秒兜底轮询）
+    if (e.target instanceof Element
+      && e.target.closest('[data-testid="virtual-project-create-task"], [data-testid="virtual-project-new-task"], [data-testid="task-new-button"]')) {
+      scheduleScan();
+      setTimeout(scan, 400);
+    }
   }, true);
 
   document.addEventListener('keydown', (e) => {
@@ -423,14 +585,11 @@ export function startSessionSwitch() {
       if (e.repeat) return;
       // 即时切换：关掉可能开着的弹窗，切到最近使用的会话（上次使用的会话）
       closePopup(false);
-      // 先按侧栏选中标记实时识别当前会话：新建任务视图里没有选中行，
-      // 此时“当前”视为空，直接回最近使用的会话（新开应用点开过一个会话、
-      // 进了新建任务再按 alt+z 也能切回去）
-      const live = findCurrent();
-      if (live) record(live.getAttribute('data-task-item-key'));
-      const target = live
-        ? (mru[0] === current ? mru[1] : mru.find((mk) => mk !== current))
-        : mru[0];
+      // 先按侧栏选中标记实时识别当前视图；新建任务草稿没有选中行，按草稿的
+      // 工作区识别。识别不出（面板等）时“当前视图”为空，直接回最近一条
+      const live = currentViewKey();
+      if (live) record(live);
+      const target = switchTarget(mru, live);
       if (!target) { showToast(t().switcherEmpty, 'warning'); return; }
       void switchTo(target).then((ok) => { if (!ok) showToast(t().switcherFailed, 'error'); });
       return;

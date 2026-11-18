@@ -22,6 +22,8 @@
 //   一起删）、MRU 去重置顶与条数上限。"运行结束记 unseen" 的规则在
 //   collectEndedUnseen（从 setInterval 抽出的具名函数）里：截取真实函数跑
 //   假输入（按 id 判消失、当前会话不记、current 为 null 不抛、超上限留最后 N 条）。
+//   新建任务草稿的伪键 newTaskKeyOf/isNewTaskKey 与 alt+z 目标选择 switchTarget
+//   同样截取真实函数：路径归一、有当前视图时跳过它、未知视图退回最近一条。
 // - taskOrder.mjs spliceSubset：拖动子集按新顺序插回其原有最小位置，未拖动
 //   的键保持相对次序。任务里写的是 session-switch.js，实际函数在 host 的
 //   taskOrder.mjs（session-switch.js 里没有 spliceSubset），这里测真实现。
@@ -291,6 +293,18 @@ const spliceSrc = extractBinding(toSrc, 'spliceSubset', toMask);
 assert(!!spliceSrc, '截取 taskOrder.mjs spliceSubset 成功');
 const idOfSrc = extractBinding(ssSrc, 'idOf', ssMask);
 assert(!!idOfSrc, '截取 session-switch.js idOf 成功');
+const newTaskIdSrc = extractBinding(ssSrc, 'NEW_TASK_ID', ssMask);
+assert(!!newTaskIdSrc, '截取 session-switch.js NEW_TASK_ID 成功');
+const normWsSrc = extractBinding(ssSrc, 'normWs', ssMask);
+assert(!!normWsSrc, '截取 session-switch.js normWs 成功');
+const newTaskKeySrc = extractBinding(ssSrc, 'newTaskKeyOf', ssMask);
+assert(!!newTaskKeySrc, '截取 session-switch.js newTaskKeyOf 成功');
+const isNewTaskSrc = extractBinding(ssSrc, 'isNewTaskKey', ssMask);
+assert(!!isNewTaskSrc, '截取 session-switch.js isNewTaskKey 成功');
+const switchTargetSrc = extractBinding(ssSrc, 'switchTarget', ssMask);
+assert(!!switchTargetSrc, '截取 session-switch.js switchTarget 成功');
+const isLocalPathSrc = extractBinding(ssSrc, 'isLocalPath', ssMask);
+assert(!!isLocalPathSrc, '截取 session-switch.js isLocalPath 成功');
 const recordSrc = extractBinding(ssSrc, 'record', ssMask);
 assert(!!recordSrc, '截取 session-switch.js record 成功');
 const mruLimitSrc = extractBinding(ssSrc, 'MRU_LIMIT', ssMask);
@@ -714,6 +728,34 @@ run('idOf/record', () => {
   // 上限：超出后留最近的 MRU_LIMIT 条
   for (let i = 0; i < MRU_LIMIT + 9; i++) rec('/w:sess_' + i);
   assert(handles.getMru().length === MRU_LIMIT && handles.getMru()[0] === '/w:sess_' + (MRU_LIMIT + 8), 'MRU 超上限截尾留最近的');
+});
+
+// 4. 新建任务草稿伪键与 alt+z 目标选择：草稿不是会话行，靠 <路径>:__new_task__
+// 记进 MRU；切换目标必须跳过当前视图，没有当前视图时退回最近一条
+run('草稿伪键/切换目标', () => {
+  if (!idOfSrc || !newTaskIdSrc || !normWsSrc || !newTaskKeySrc || !isNewTaskSrc || !switchTargetSrc || !isLocalPathSrc) return;
+  let f = null;
+  try {
+    f = new Function(
+      idOfSrc + '\n' + newTaskIdSrc + '\n' + normWsSrc + '\n' + newTaskKeySrc + '\n'
+      + isNewTaskSrc + '\n' + switchTargetSrc + '\n' + isLocalPathSrc
+      + '\nreturn { newTaskKeyOf, isNewTaskKey, switchTarget, isLocalPath };'
+    )();
+  } catch (err) {
+    assert(false, '装配草稿伪键测试函数失败: ' + (err && err.message));
+    return;
+  }
+  assert(f.newTaskKeyOf('/w/a/') === '/w/a:__new_task__', '草稿键用归一后的路径拼');
+  assert(f.newTaskKeyOf('/w/a') === '/w/a:__new_task__', '有无尾斜杠得到同一个草稿键');
+  assert(f.isNewTaskKey('/w/a:__new_task__') === true, '草稿键能被识别');
+  assert(f.isNewTaskKey('/w/a:sess_1') === false && f.isNewTaskKey('') === false, '会话键与空键不算草稿');
+  assert(f.switchTarget(['/w/a:__new_task__', '/w/b:sess_2'], '/w/a:__new_task__') === '/w/b:sess_2', '有当前视图时跳过它取最近一条');
+  assert(f.switchTarget(['/w/a:sess_1'], '/w/a:sess_1') === null, '只有一个视图时没有可切目标');
+  assert(f.switchTarget(['/w/a:sess_1', '/w/b:sess_2'], null) === '/w/a:sess_1', '未知视图（面板等）时退回最近一条');
+  assert(f.switchTarget([], '/w/a:sess_1') === null, '空 MRU 返回 null');
+  assert(f.isLocalPath('/home/u/.zcode/workspace/draft-1') === true, 'Unix 绝对路径算本地路径');
+  assert(f.isLocalPath('C:\\Users\\u\\.zcode\\workspace\\draft-1') === true, 'Windows 盘符路径算本地路径');
+  assert(f.isLocalPath('ssh://host/w') === false && f.isLocalPath('') === false, '远程标识与空串不算本地路径');
 });
 
 // 4. "运行结束记 unseen" 的规则：截取 session-switch.js 真实的 collectEndedUnseen
