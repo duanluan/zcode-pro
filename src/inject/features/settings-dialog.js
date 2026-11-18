@@ -612,6 +612,7 @@ export function openSettingsDialog() {
       const paneVision = h('div', { role: 'tabpanel', style: 'display:none' });
       const paneRtk = h('div', { role: 'tabpanel', style: 'display:none' });
       const paneHeadroom = h('div', { role: 'tabpanel', style: 'display:none' });
+      const paneAutoContinue = h('div', { role: 'tabpanel', style: 'display:none' });
       const paneTitleGen = h('div', { role: 'tabpanel', style: 'display:none' });
       const paneDebug = h('div', { role: 'tabpanel', style: 'display:none' });
       const panes = { features: paneFeatures, shortcuts: paneShortcuts, styles: paneStyles, perf: panePerf, agents: paneAgents, proxy: paneProxy, sync: paneSync, import: paneImport, vision: paneVision, headroom: paneHeadroom, rtk: paneRtk, debug: paneDebug };
@@ -1680,13 +1681,14 @@ export function openSettingsDialog() {
         h('div', { class: 'mt-3 flex justify-end' }, agentsSaveBtn),
       );
       let agentsSubTab = 'zcode';
-      const agentsSubPanes = { zcode: paneZcode, prompt: agentsPromptPane, titleGen: paneTitleGen };
+      const agentsSubPanes = { zcode: paneZcode, prompt: agentsPromptPane, titleGen: paneTitleGen, autoContinue: paneAutoContinue };
       const agentsSubList = h('div', { role: 'tablist', 'aria-orientation': 'horizontal', class: 'zcodepro-tablist' });
       const renderAgentsSubTabs = () => {
         agentsSubList.replaceChildren(...[
           ['zcode', L.tabZcode],
           ['prompt', L.tabAgents],
           ['titleGen', L.tabTitleGen],
+          ['autoContinue', L.tabAutoContinue],
         ].map(([id, label]) => h('button', {
           type: 'button', role: 'tab', class: 'zcodepro-tab',
           'aria-selected': String(agentsSubTab === id),
@@ -1701,7 +1703,7 @@ export function openSettingsDialog() {
       for (const [pid, pane] of Object.entries(agentsSubPanes)) pane.style.display = pid === agentsSubTab ? '' : 'none';
       renderAgentsSubTabs();
       subTabBars.agents = agentsSubList;
-      paneAgents.append(paneZcode, agentsPromptPane, paneTitleGen);
+      paneAgents.append(paneZcode, agentsPromptPane, paneTitleGen, paneAutoContinue);
 
       // “代理”：为 helper 发起的网络访问（插件市场更新/安装、headroom 本体升级）设
       // HTTP 代理；保存即生效（helper 子进程环境变量注入），不影响 ZCode 应用与模型请求。
@@ -3385,6 +3387,77 @@ export function openSettingsDialog() {
         );
       };
       renderTitleGenPane();
+
+      // —— auto-continue（自动继续）设置页：回合失败/截断自动续接的开关与文案，
+      //    配置在 ~/.zcode/auto-continue.json ——
+      let acRes = null;
+      let acCfg = null;
+      let acSaveTimer = null;
+      const persistAc = async () => {
+        const res = await rpc('/auto-continue', { method: 'POST', body: { config: acCfg } });
+        if (!res.ok) showToast(L.failed + ': ' + errText(res), 'error');
+      };
+      const saveAcSoon = () => {
+        clearTimeout(acSaveTimer);
+        acSaveTimer = setTimeout(() => { void persistAc(); }, 500);
+      };
+      const renderAutoContinue = () => {
+        if (!acRes || !acRes.ok) {
+          paneAutoContinue.replaceChildren(
+            h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.acDesc),
+            h('p', { class: 'mt-2 text-ui-sm text-destructive' }, L.acLoadFailed + (acRes ? ': ' + errText(acRes) : '')),
+          );
+          return;
+        }
+        if (!acCfg) {
+          const raw = acRes.config && typeof acRes.config === 'object' ? acRes.config : {};
+          acCfg = {
+            enabled: raw.enabled !== false,
+            continueText: typeof raw.continueText === 'string' && raw.continueText ? raw.continueText : (isZhLocale() ? '继续' : 'continue'),
+            maxRetries: Number.isFinite(raw.maxRetries) ? raw.maxRetries : 8,
+            cooldownBaseSec: Number.isFinite(raw.cooldownBaseSec) ? raw.cooldownBaseSec : 10,
+            stuckAfterMin: Number.isFinite(raw.stuckAfterMin) ? raw.stuckAfterMin : 30,
+            failedAfterMin: Number.isFinite(raw.failedAfterMin) ? raw.failedAfterMin : 3,
+          };
+        }
+        // numberField 返回 { el, set, reset, get }，取 .el 嵌入
+        const numRow = (labelText, hint, value, min, max, commit) => h('label', {
+          class: 'flex shrink-0 items-center gap-1.5', title: hint,
+        }, h('span', { class: 'text-ui-xs text-foreground-subtle' }, labelText),
+          numberField({
+            value, fallback: min, min, max,
+            onCommit: (v) => { commit(v); saveAcSoon(); },
+          }).el);
+        const area = h('textarea', { class: 'zcodepro-textarea zcodepro-textarea-sm', rows: '3', placeholder: L.acPrompt, title: L.acPrompt });
+        area.value = acCfg.continueText || '';
+        area.addEventListener('input', () => { acCfg.continueText = area.value; saveAcSoon(); });
+
+        const parts = [
+          // 信息卡：一句话简介在左，启用开关右对齐（与自动重命名页同款）
+          h('div', { class: 'mt-3 flex items-center justify-between gap-2 rounded-xl border border-border p-2' },
+            h('span', { class: 'min-w-0 text-ui-sm/relaxed text-foreground-subtle' }, L.acDesc),
+            h('div', { class: 'shrink-0' }, settingRow(L.acEnabled, '', acCfg.enabled !== false, () => {
+              acCfg.enabled = !(acCfg.enabled !== false);
+              saveAcSoon();
+              renderAutoContinue();
+            }))),
+        ];
+        parts.push(
+          h('div', { class: 'mt-3 rounded-xl border border-border p-2' },
+            h('div', { class: 'mb-1 text-ui-xs font-medium text-foreground-subtle' }, L.acPrompt),
+            area),
+          h('div', { class: 'mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-xl border border-border p-2' },
+            numRow(L.acMaxRetries, L.acMaxRetriesHint, acCfg.maxRetries, 1, 50, (v) => { acCfg.maxRetries = v; }),
+            numRow(L.acCooldown, L.acCooldownHint, acCfg.cooldownBaseSec, 0, 600, (v) => { acCfg.cooldownBaseSec = v; }),
+            numRow(L.acStuckAfterMin, L.acStuckAfterMinHint, acCfg.stuckAfterMin, 5, 720, (v) => { acCfg.stuckAfterMin = v; }),
+            numRow(L.acFailedAfterMin, L.acFailedAfterMinHint, acCfg.failedAfterMin, 1, 60, (v) => { acCfg.failedAfterMin = v; })),
+        );
+        paneAutoContinue.replaceChildren(...parts);
+      };
+      void (async () => {
+        acRes = await rpc('/auto-continue');
+        renderAutoContinue();
+      })();
 
       // 一级 / 二级 tab 放到滚动区（body）之上的固定区：内容滚动时标题、
       // 版本行（已并入标题行）与两级 tab 始终可见

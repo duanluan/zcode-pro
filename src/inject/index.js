@@ -21,6 +21,7 @@ import { startSubagentIcon } from './features/subagent-icon.js';
 import { startIdleReclaim } from './features/idle-reclaim.js';
 import { startSandboxReclaim } from './features/sandbox-reclaim.js';
 import { startPluginCardRetry } from './features/plugin-card-retry.js';
+import { startAutoContinue } from './features/auto-continue.js';
 import { startToolbarIcons } from './features/toolbar-icons.js';
 import { startPinnedCollapse } from './features/pinned-collapse.js';
 import { startStyleAdjustments } from './features/styles.js';
@@ -86,6 +87,7 @@ import { ensureStyle } from './ui.js';
     try { startIdleReclaim(); } catch { /* ignore */ }
     try { startSandboxReclaim(); } catch { /* ignore */ }
     try { startPluginCardRetry(); } catch { /* ignore */ }
+    try { startAutoContinue(); } catch { /* ignore */ }
     try { startToolbarIcons(); } catch { /* ignore */ }
     try { startNewtabPanels(); } catch { /* ignore */ }
     try { startStatusBar(); } catch { /* ignore */ }
