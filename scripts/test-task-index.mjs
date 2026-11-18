@@ -108,15 +108,18 @@ const root3 = mkdtempSync(join(tmpdir(), 'zcodepro-taskindex-subagent-'));
 mkdirSync(join(root3, 'cli', 'db'), { recursive: true });
 mkdirSync(join(root3, 'v2'), { recursive: true });
 const cli3 = new DatabaseSync(join(root3, 'cli', 'db', 'db.sqlite'));
-cli3.exec('CREATE TABLE session (id TEXT PRIMARY KEY, time_updated INT DEFAULT 0, parent_id TEXT, task_type TEXT DEFAULT \'interactive\');');
+cli3.exec('CREATE TABLE session (id TEXT PRIMARY KEY, time_updated INT DEFAULT 0, parent_id TEXT, task_type TEXT DEFAULT \'interactive\', last_outcome TEXT);');
 cli3.prepare('INSERT INTO session (id, time_updated) VALUES (?, ?)').run('sess_a', 1111);
 cli3.prepare('INSERT INTO session (id, time_updated) VALUES (?, ?)').run("sess_'q", 2222); // 引号 id 不崩
-const addChild3 = (id, parent, at, type = 'subagent_child') => cli3.prepare(
-  'INSERT INTO session (id, time_updated, parent_id, task_type) VALUES (?, ?, ?, ?)').run(id, at, parent, type);
+const addChild3 = (id, parent, at, type = 'subagent_child', outcome = null) => cli3.prepare(
+  'INSERT INTO session (id, time_updated, parent_id, task_type, last_outcome) VALUES (?, ?, ?, ?, ?)').run(id, at, parent, type, outcome);
 addChild3('child_1', 'sess_a', 3333);
 addChild3('grand_1', 'child_1', 4444);              // 嵌套子代理，根归 sess_a
 addChild3('child_side', 'sess_other_root', 5555);   // 别的会话的子代理不掺进来
 addChild3('not_sub', 'sess_a', 6666, 'interactive'); // 非子代理会话不算
+addChild3('child_err', 'sess_a', 7777, 'subagent_child', 'error');       // 执行失败：不算在跑
+addChild3('child_int', 'sess_a', 8888, 'subagent_child', 'interrupted'); // 中断：不算在跑
+addChild3('child_done', 'sess_a', 9999, 'subagent_child', 'completed');  // 结束仍返回，交应用结束记录判死
 const idx3 = new DatabaseSync(join(root3, 'v2', 'tasks-index.sqlite'));
 idx3.exec(`CREATE TABLE tasks (task_id TEXT PRIMARY KEY, workspace_path TEXT,
   updated_at INT DEFAULT 0, deleted INT DEFAULT 0,
@@ -157,7 +160,21 @@ assert(kidMap.child_1 && kidMap.child_1.root === 'sess_a' && kidMap.child_1.at =
 assert(kidMap.grand_1 && kidMap.grand_1.root === 'sess_a', '嵌套子代理递归归到最初会话');
 assert(!kidMap.child_side, '别的会话的子代理不掺进来');
 assert(!kidMap.not_sub, '非子代理会话不算');
+assert(!kidMap.child_err && !kidMap.child_int, '失败/中断的子代理不算在跑');
+assert(kidMap.child_done && kidMap.child_done.at === 9999, 'completed 子代理仍返回（交给应用结束记录判死）');
 assert((await listSubagentChildrenActivity(root3, [])).length === 0, '空输入返回空');
+
+// 旧库没有 last_outcome 列：退回原查询，不按结果筛
+const rootOld = mkdtempSync(join(tmpdir(), 'zcodepro-taskindex-subagent-old-'));
+mkdirSync(join(rootOld, 'cli', 'db'), { recursive: true });
+const cliOld = new DatabaseSync(join(rootOld, 'cli', 'db', 'db.sqlite'));
+cliOld.exec('CREATE TABLE session (id TEXT PRIMARY KEY, time_updated INT DEFAULT 0, parent_id TEXT, task_type TEXT DEFAULT \'interactive\');');
+cliOld.prepare('INSERT INTO session (id, time_updated, parent_id, task_type) VALUES (?, ?, ?, ?)')
+  .run('old_child', 1234, 'sess_old_root', 'subagent_child');
+cliOld.close();
+const oldKids = await listSubagentChildrenActivity(rootOld, ['sess_old_root']);
+assert(oldKids.length === 1 && oldKids[0].id === 'old_child', '缺 last_outcome 的旧库按原逻辑返回');
+rmSync(rootOld, { recursive: true, force: true });
 
 // —— listProjectsUnread（项目未读徽标忽略错误行）——
 const pu = await listProjectsUnread(root3, ['P1', 'P2', 'P3', "P'q"]);

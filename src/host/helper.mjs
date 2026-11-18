@@ -1461,7 +1461,8 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
       }
       if (req.method === 'GET' && url.pathname === '/subagent-children') {
         // 会话的子代理子会话及最近活动时间（含嵌套）：子代理判活的主信号——
-        // 应用的运行记录会把还在跑的长跑子代理误记为结束（subagent-icon.js）
+        // 应用的运行记录会把还在跑的长跑子代理误记为结束；已失败/中断的子代理
+        // 不返回（last_outcome），否则中断后图标会一直亮着（subagent-icon.js）
         const ids = (url.searchParams.get('ids') || '')
           .split(',').map((s) => s.trim()).filter(Boolean).slice(0, 300);
         const children = ids.length ? await listSubagentChildrenActivity(dataRoot, ids) : [];

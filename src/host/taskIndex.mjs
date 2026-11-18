@@ -350,7 +350,11 @@ export async function listSessionsActivity(dataRoot, ids) {
 // 指定会话的子代理会话及最近活动时间（含嵌套子代理，根归属到最初的那个会话）：
 // [{ id, root, at }]。子代理判活以这里写入会话库的活动时间为准——应用的运行记录两头都
 // 不可靠：长跑子代理会被误记为失败/结束（实测 48 分钟、60 分钟的都在跑着时被
-// 记 end），崩溃残留的又永远挂"运行中"（subagent-icon.js）
+// 记 end），崩溃残留的又永远挂"运行中"（subagent-icon.js）。
+// 已失败/中断的子代理（last_outcome 为 error/interrupted）不再返回：中断时父回合
+// 被打断，工具的结束记录没有写入，只靠活动时间会让机器人图标一直亮着。completed
+// 仍返回，继续交给应用的结束记录判死——子代理可以被再次唤起继续跑，不能凭上一次
+// 的 completed 提前熄灭。老库没有 last_outcome 列时退回原查询。
 export async function listSubagentChildrenActivity(dataRoot, ids) {
   const out = [];
   const wanted = [...new Set((ids || []).map(String).filter(Boolean))];
@@ -361,13 +365,32 @@ export async function listSubagentChildrenActivity(dataRoot, ids) {
   if (!driver) return out;
   const esc = (v) => "'" + String(v).replace(/'/g, "''") + "'";
   const inList = wanted.map((id) => esc(id)).join(', ');
+  // last_outcome 由 CLI 在回合结束时写入（completed/error/interrupted），缺列
+  // 说明是旧库，按老逻辑不筛
+  let outcomeFilter = '';
+  try {
+    if (driver.kind === 'node') {
+      const db = new driver.DatabaseSync(dbFile, { readOnly: true });
+      try {
+        const cols = db.prepare("PRAGMA table_info('session')").all();
+        if (cols.some((c) => String(c.name) === 'last_outcome')) {
+          outcomeFilter = "AND (s.last_outcome IS NULL OR s.last_outcome = 'completed')";
+        }
+      } finally { db.close(); }
+    } else {
+      const cols = runCli(dbFile, "PRAGMA table_info('session');").stdout;
+      if (cols.split(/\r?\n/).some((l) => l.split('|')[1] === 'last_outcome')) {
+        outcomeFilter = "AND (s.last_outcome IS NULL OR s.last_outcome = 'completed')";
+      }
+    }
+  } catch { /* 列名查不到按旧库处理 */ }
   const sql = `WITH RECURSIVE fam(id, root) AS (
     SELECT id, parent_id FROM session WHERE parent_id IN (${inList})
     UNION
     SELECT s.id, f.root FROM session s JOIN fam f ON s.parent_id = f.id
   ) SELECT fam.root AS root, s.id AS id, s.time_updated AS at
     FROM session s JOIN fam ON s.id = fam.id
-    WHERE s.task_type = 'subagent_child'`;
+    WHERE s.task_type = 'subagent_child' ${outcomeFilter}`;
   try {
     let rows;
     if (driver.kind === 'node') {
