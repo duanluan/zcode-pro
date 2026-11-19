@@ -109,17 +109,31 @@ mkdirSync(join(root3, 'cli', 'db'), { recursive: true });
 mkdirSync(join(root3, 'v2'), { recursive: true });
 const cli3 = new DatabaseSync(join(root3, 'cli', 'db', 'db.sqlite'));
 cli3.exec('CREATE TABLE session (id TEXT PRIMARY KEY, time_updated INT DEFAULT 0, parent_id TEXT, task_type TEXT DEFAULT \'interactive\', last_outcome TEXT);');
+cli3.exec('CREATE TABLE turn_usage (session_id TEXT, completed_at INT);');
 cli3.prepare('INSERT INTO session (id, time_updated) VALUES (?, ?)').run('sess_a', 1111);
 cli3.prepare('INSERT INTO session (id, time_updated) VALUES (?, ?)').run("sess_'q", 2222); // 引号 id 不崩
 const addChild3 = (id, parent, at, type = 'subagent_child', outcome = null) => cli3.prepare(
   'INSERT INTO session (id, time_updated, parent_id, task_type, last_outcome) VALUES (?, ?, ?, ?, ?)').run(id, at, parent, type, outcome);
+const addTurn3 = (id, done) => cli3.prepare(
+  'INSERT INTO turn_usage (session_id, completed_at) VALUES (?, ?)').run(id, done);
 addChild3('child_1', 'sess_a', 3333);
 addChild3('grand_1', 'child_1', 4444);              // 嵌套子代理，根归 sess_a
 addChild3('child_side', 'sess_other_root', 5555);   // 别的会话的子代理不掺进来
 addChild3('not_sub', 'sess_a', 6666, 'interactive'); // 非子代理会话不算
-addChild3('child_err', 'sess_a', 7777, 'subagent_child', 'error');       // 执行失败：不算在跑
-addChild3('child_int', 'sess_a', 8888, 'subagent_child', 'interrupted'); // 中断：不算在跑
-addChild3('child_done', 'sess_a', 9999, 'subagent_child', 'completed');  // 结束仍返回，交应用结束记录判死
+addChild3('child_err', 'sess_a', 7777, 'subagent_child', 'error');       // 执行失败且没有后续活动：不算在跑
+addTurn3('child_err', 7777);
+addChild3('child_int', 'sess_a', 8888, 'subagent_child', 'interrupted'); // 中断且没有后续活动：不算在跑
+addTurn3('child_int', 8888);
+addChild3('child_done', 'sess_a', 9999, 'subagent_child', 'completed');  // 结束且没有后续活动：不算在跑
+addTurn3('child_done', 9999);
+addChild3('child_done_nousage', 'sess_a', 12345, 'subagent_child', 'completed'); // 缺轮次记录但已结束：不算在跑
+addChild3('child_grace', 'sess_a', 25000, 'subagent_child', 'completed'); // 结束 5 秒内：仍按结束处理
+addTurn3('child_grace', 20000);
+addChild3('child_resumed', 'sess_a', 30000, 'subagent_child', 'completed'); // 结束超过 5 秒后又有活动：继续跑了
+addTurn3('child_resumed', 20000);
+addChild3('child_resumed_err', 'sess_a', 30000, 'subagent_child', 'error'); // 上轮失败，继续唤起后仍算在跑
+addTurn3('child_resumed_err', 20000);
+addChild3('child_running', 'sess_a', 23456);        // 第一轮还没结束：算在跑
 const idx3 = new DatabaseSync(join(root3, 'v2', 'tasks-index.sqlite'));
 idx3.exec(`CREATE TABLE tasks (task_id TEXT PRIMARY KEY, workspace_path TEXT,
   updated_at INT DEFAULT 0, deleted INT DEFAULT 0,
@@ -160,8 +174,12 @@ assert(kidMap.child_1 && kidMap.child_1.root === 'sess_a' && kidMap.child_1.at =
 assert(kidMap.grand_1 && kidMap.grand_1.root === 'sess_a', '嵌套子代理递归归到最初会话');
 assert(!kidMap.child_side, '别的会话的子代理不掺进来');
 assert(!kidMap.not_sub, '非子代理会话不算');
-assert(!kidMap.child_err && !kidMap.child_int, '失败/中断的子代理不算在跑');
-assert(kidMap.child_done && kidMap.child_done.at === 9999, 'completed 子代理仍返回（交给应用结束记录判死）');
+assert(!kidMap.child_err && !kidMap.child_int, '失败/中断且没有后续活动的子代理不算在跑');
+assert(!kidMap.child_done && !kidMap.child_done_nousage, '已结束且没有后续活动的子代理不算在跑');
+assert(!kidMap.child_grace, '轮次结束后 5 秒内的活动仍按结束处理');
+assert(kidMap.child_running, '第一轮还没结束的子代理算在跑');
+assert(kidMap.child_resumed, '结束超过 5 秒后又有活动（继续对话）的子代理算在跑');
+assert(kidMap.child_resumed_err, '上轮失败但继续唤起后有新活动的子代理算在跑');
 assert((await listSubagentChildrenActivity(root3, [])).length === 0, '空输入返回空');
 
 // 旧库没有 last_outcome 列：退回原查询，不按结果筛
@@ -175,6 +193,24 @@ cliOld.close();
 const oldKids = await listSubagentChildrenActivity(rootOld, ['sess_old_root']);
 assert(oldKids.length === 1 && oldKids[0].id === 'old_child', '缺 last_outcome 的旧库按原逻辑返回');
 rmSync(rootOld, { recursive: true, force: true });
+
+// 有 last_outcome、没有 turn_usage 表：退回“失败/中断不返回、completed 返回”
+const rootNoTurn = mkdtempSync(join(tmpdir(), 'zcodepro-taskindex-subagent-noturn-'));
+mkdirSync(join(rootNoTurn, 'cli', 'db'), { recursive: true });
+const cliNoTurn = new DatabaseSync(join(rootNoTurn, 'cli', 'db', 'db.sqlite'));
+cliNoTurn.exec('CREATE TABLE session (id TEXT PRIMARY KEY, time_updated INT DEFAULT 0, parent_id TEXT, task_type TEXT DEFAULT \'interactive\', last_outcome TEXT);');
+const addNoTurn = (id, outcome) => cliNoTurn.prepare(
+  'INSERT INTO session (id, time_updated, parent_id, task_type, last_outcome) VALUES (?, ?, ?, ?, ?)')
+  .run(id, 1000, 'sess_no_turn', 'subagent_child', outcome);
+addNoTurn('no_turn_done', 'completed');
+addNoTurn('no_turn_err', 'error');
+addNoTurn('no_turn_live', null);
+cliNoTurn.close();
+const noTurnKids = await listSubagentChildrenActivity(rootNoTurn, ['sess_no_turn']);
+const noTurnMap = Object.fromEntries(noTurnKids.map((k) => [k.id, k]));
+assert(noTurnMap.no_turn_done && noTurnMap.no_turn_live, '缺 turn_usage 表时 completed / 未结束的子代理仍返回');
+assert(!noTurnMap.no_turn_err, '缺 turn_usage 表时失败子代理仍排除');
+rmSync(rootNoTurn, { recursive: true, force: true });
 
 // —— listProjectsUnread（项目未读徽标忽略错误行）——
 const pu = await listProjectsUnread(root3, ['P1', 'P2', 'P3', "P'q"]);

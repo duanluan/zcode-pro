@@ -20,6 +20,9 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
 const BUSY_TIMEOUT_MS = 5000;
+// 子代理轮次结束与 session.time_updated 的写入先后有几毫秒差；超过这段时长的新活动
+// 才算下一轮已经开始（继续对话），见 listSubagentChildrenActivity
+const SUBAGENT_TURN_START_GRACE_MS = 5000;
 
 export function taskIndexPath(dataRoot) {
   return join(dataRoot, 'v2', 'tasks-index.sqlite');
@@ -351,10 +354,12 @@ export async function listSessionsActivity(dataRoot, ids) {
 // [{ id, root, at }]。子代理判活以这里写入会话库的活动时间为准——应用的运行记录两头都
 // 不可靠：长跑子代理会被误记为失败/结束（实测 48 分钟、60 分钟的都在跑着时被
 // 记 end），崩溃残留的又永远挂"运行中"（subagent-icon.js）。
-// 已失败/中断的子代理（last_outcome 为 error/interrupted）不再返回：中断时父回合
-// 被打断，工具的结束记录没有写入，只靠活动时间会让机器人图标一直亮着。completed
-// 仍返回，继续交给应用的结束记录判死——子代理可以被再次唤起继续跑，不能凭上一次
-// 的 completed 提前熄灭。老库没有 last_outcome 列时退回原查询。
+// “还在跑”按轮次判定：turn_usage 里每个已结束轮次的 completed_at 是最后一片记录
+// 的写入时间，会话的 time_updated 晚于它（留写入先后余量）说明之后又开了新轮
+// （继续对话），才算在跑；没有轮次记录且 last_outcome 为空（第一轮还没结束）也算。
+// 已结束且没有后续活动的子代理不返回：中断时父回合被打断，工具的结束记录没有写入；
+// 被继续唤起过的子代理，应用记的结束时间还停在最初那次，只靠活动时间会让机器人
+// 图标一直亮着。老库缺 last_outcome 列或 turn_usage 表时退回原查询。
 export async function listSubagentChildrenActivity(dataRoot, ids) {
   const out = [];
   const wanted = [...new Set((ids || []).map(String).filter(Boolean))];
@@ -365,43 +370,61 @@ export async function listSubagentChildrenActivity(dataRoot, ids) {
   if (!driver) return out;
   const esc = (v) => "'" + String(v).replace(/'/g, "''") + "'";
   const inList = wanted.map((id) => esc(id)).join(', ');
-  // last_outcome 由 CLI 在回合结束时写入（completed/error/interrupted），缺列
-  // 说明是旧库，按老逻辑不筛
-  let outcomeFilter = '';
+  // last_outcome 列（0.16.9+）与 turn_usage 表（0.15.0+）：旧库缺哪个就退回对应的老逻辑
+  let hasOutcome = false;
+  let hasTurnUsage = false;
   try {
     if (driver.kind === 'node') {
       const db = new driver.DatabaseSync(dbFile, { readOnly: true });
       try {
         const cols = db.prepare("PRAGMA table_info('session')").all();
-        if (cols.some((c) => String(c.name) === 'last_outcome')) {
-          outcomeFilter = "AND (s.last_outcome IS NULL OR s.last_outcome = 'completed')";
-        }
+        hasOutcome = cols.some((c) => String(c.name) === 'last_outcome');
+        hasTurnUsage = !!db.prepare(
+          "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'turn_usage'").get();
       } finally { db.close(); }
     } else {
       const cols = runCli(dbFile, "PRAGMA table_info('session');").stdout;
-      if (cols.split(/\r?\n/).some((l) => l.split('|')[1] === 'last_outcome')) {
-        outcomeFilter = "AND (s.last_outcome IS NULL OR s.last_outcome = 'completed')";
-      }
+      hasOutcome = cols.split(/\r?\n/).some((l) => l.split('|')[1] === 'last_outcome');
+      const tables = runCli(dbFile,
+        "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'turn_usage';").stdout;
+      hasTurnUsage = tables.trim() === 'turn_usage';
     }
-  } catch { /* 列名查不到按旧库处理 */ }
+  } catch { /* 探测失败按旧库处理 */ }
+  const outcomeCol = hasOutcome ? ', s.last_outcome AS outcome' : '';
+  const doneCol = hasTurnUsage
+    ? ', (SELECT max(t.completed_at) FROM turn_usage t WHERE t.session_id = s.id) AS done'
+    : '';
   const sql = `WITH RECURSIVE fam(id, root) AS (
     SELECT id, parent_id FROM session WHERE parent_id IN (${inList})
     UNION
     SELECT s.id, f.root FROM session s JOIN fam f ON s.parent_id = f.id
-  ) SELECT fam.root AS root, s.id AS id, s.time_updated AS at
+  ) SELECT fam.root AS root, s.id AS id, s.time_updated AS at${outcomeCol}${doneCol}
     FROM session s JOIN fam ON s.id = fam.id
-    WHERE s.task_type = 'subagent_child' ${outcomeFilter}`;
+    WHERE s.task_type = 'subagent_child'`;
   try {
     let rows;
     if (driver.kind === 'node') {
       const db = new driver.DatabaseSync(dbFile, { readOnly: true });
       try { rows = db.prepare(sql).all(); } finally { db.close(); }
     } else {
+      const fields = ["'root', root", "'id', id", "'at', at"];
+      if (hasOutcome) fields.push("'outcome', outcome");
+      if (hasTurnUsage) fields.push("'done', done");
       const agg = runCli(dbFile,
-        `SELECT coalesce(json_group_array(json_object('root', root, 'id', id, 'at', at)), '[]') FROM (${sql});`);
+        `SELECT coalesce(json_group_array(json_object(${fields.join(', ')})), '[]') FROM (${sql});`);
       rows = JSON.parse(agg.stdout.trim() || '[]');
     }
-    for (const r of rows) out.push({ id: String(r.id), root: String(r.root), at: Number(r.at) || 0 });
+    for (const r of rows) {
+      const at = Number(r.at) || 0;
+      if (hasOutcome && hasTurnUsage) {
+        const done = Number(r.done) || 0;
+        // 已结束轮次之后没有新活动：不在跑。第一轮还没结束（done=0、outcome 空）算在跑
+        if (done > 0 ? !(at > done + SUBAGENT_TURN_START_GRACE_MS) : !!r.outcome) continue;
+      } else if (hasOutcome && r.outcome && r.outcome !== 'completed') {
+        continue;
+      }
+      out.push({ id: String(r.id), root: String(r.root), at });
+    }
     return out;
   } catch {
     return out;
