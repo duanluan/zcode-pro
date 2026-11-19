@@ -5,7 +5,7 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { loadConfig, mergeThemeConfig } from '../src/host/helper.mjs';
+import { loadConfig, saveConfig, mergeThemeConfig } from '../src/host/helper.mjs';
 import { remapSettingsPaths } from '../src/host/settings.mjs';
 
 const root = mkdtempSync(join(tmpdir(), 'zcodepro-config-test-'));
@@ -49,6 +49,34 @@ const loaded = loadConfig(configFile);
 assert(loaded.features.projectMenu === true && loaded.features.taskOrder === true, '缺字段补默认、已有值保留');
 assert(loaded.theme.bg.maskOpacity === 0.99, 'loadConfig 同样钳位');
 assert(typeof loaded.sync === 'object' && loaded.sync.type === 'webdav', 'sync 组补默认');
+
+// 空闲回收默认值迁移：旧版默认 30 会随保存落盘，没有迁移标记时按新默认 10；
+// 带标记的 30 视为用户显式设置，保留
+writeFileSync(configFile, JSON.stringify({ idleReclaimMinutes: 30 }));
+assert(loadConfig(configFile).idleReclaimMinutes === 10, '旧版落盘的 30 迁移到新默认 10');
+writeFileSync(configFile, JSON.stringify({ idleReclaimMinutes: 30, idleReclaimMinutesMigrated: true }));
+assert(loadConfig(configFile).idleReclaimMinutes === 30, '迁移后用户显式设的 30 保留');
+writeFileSync(configFile, JSON.stringify({ idleReclaimMinutes: 5 }));
+assert(loadConfig(configFile).idleReclaimMinutes === 5, '用户显式设的 5 保留');
+writeFileSync(configFile, JSON.stringify({ idleReclaimMinutes: 0 }));
+assert(loadConfig(configFile).idleReclaimMinutes === 10, '非法值回退 10');
+
+// subagentFreshMinutes：合法值保留、0 回退 60、越界钳到 1440、小数四舍五入
+writeFileSync(configFile, JSON.stringify({ subagentFreshMinutes: 5 }));
+assert(loadConfig(configFile).subagentFreshMinutes === 5, 'subagentFreshMinutes 合法值保留');
+writeFileSync(configFile, JSON.stringify({ subagentFreshMinutes: 0 }));
+assert(loadConfig(configFile).subagentFreshMinutes === 60, 'subagentFreshMinutes 非法值回退 60');
+writeFileSync(configFile, JSON.stringify({ subagentFreshMinutes: 9999 }));
+assert(loadConfig(configFile).subagentFreshMinutes === 1440, 'subagentFreshMinutes 越界钳到 1440');
+writeFileSync(configFile, JSON.stringify({ subagentFreshMinutes: 5.6 }));
+assert(loadConfig(configFile).subagentFreshMinutes === 6, 'subagentFreshMinutes 四舍五入');
+
+// 迁移标记的保存往返：迁移过一次后标记落盘，用户显式设回 30 不会再被迁移
+writeFileSync(configFile, JSON.stringify({ idleReclaimMinutes: 30 }));
+const migrated = loadConfig(configFile);
+migrated.idleReclaimMinutes = 30; // 模拟用户在迁移后显式设回 30
+saveConfig(configFile, migrated);
+assert(loadConfig(configFile).idleReclaimMinutes === 30, '保存往返后显式 30 保留（标记已落盘）');
 
 // 旧段落间距（rowGap）拆分迁移：旧配置同时给到两项；新键显式出现过就不再迁移
 writeFileSync(configFile, JSON.stringify({ styles: { rowGap: 7 } }));

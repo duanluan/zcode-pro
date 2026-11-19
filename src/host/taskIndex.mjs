@@ -960,6 +960,79 @@ export async function listTaskWorkspaceMap(dataRoot) {
   return out;
 }
 
+// 会话 ID → 祖先会话 ID 列表（自身在前，沿 CLI 会话库的 parent_id 逐级上溯，
+// 最多 32 级防环）。子代理会话（sess_subagent_agent_*）不在任务索引里，只有
+// 上溯到根会话才查得到它属于哪个项目；查不到的 id 不出现在结果里。
+export async function listSessionAncestors(dataRoot, ids) {
+  const out = {};
+  const wanted = [...new Set((ids || []).map(String).filter(Boolean))];
+  if (!wanted.length) return out;
+  const dbFile = join(dataRoot, 'cli', 'db', 'db.sqlite');
+  if (!existsSync(dbFile)) return out;
+  const driver = await loadDriver();
+  if (!driver) return out;
+  const esc = (v) => "'" + String(v).replace(/'/g, "''") + "'";
+  const inList = wanted.map((id) => esc(id)).join(', ');
+  const sql = `WITH RECURSIVE up(id, node, lvl) AS (
+    SELECT id, id, 0 FROM session WHERE id IN (${inList})
+    UNION
+    SELECT u.id, s.parent_id, u.lvl + 1 FROM up u JOIN session s ON s.id = u.node
+     WHERE u.lvl < 32
+  ) SELECT id, node FROM up WHERE node IS NOT NULL AND node <> '' ORDER BY id, lvl`;
+  try {
+    let rows;
+    if (driver.kind === 'node') {
+      const db = new driver.DatabaseSync(dbFile, { readOnly: true });
+      try { rows = db.prepare(sql).all(); } finally { db.close(); }
+    } else {
+      const agg = runCli(dbFile,
+        `SELECT coalesce(json_group_array(json_object('id', id, 'node', node)), '[]') FROM (${sql});`);
+      rows = JSON.parse(agg.stdout.trim() || '[]');
+    }
+    for (const r of rows) {
+      const id = String(r.id);
+      if (!out[id]) out[id] = [];
+      const node = String(r.node);
+      if (!out[id].includes(node)) out[id].push(node);
+    }
+    return out;
+  } catch {
+    return out;
+  }
+}
+
+// 工作区内子代理会话的最近活动时间（毫秒）：空闲回收的子代理保护用。
+// 按会话库的 directory 直查，不受 /workspace-sessions 的 30 条/7 天限制。
+// directory 的分隔符/尾斜杠/大小写在各平台写法不一（Linux 带尾 /，Windows 可能
+// 带尾 \ 或大小写不同），SQL 内双侧归一后比较。
+// 返回 0 = 无子代理活动（含会话库不存在：确定没有）；null = 读库失败/驱动不可用
+//（调用方按未知处理，不当作没有）
+export async function listWorkspaceSubagentActivity(dataRoot, path) {
+  const norm = String(path || '').replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase();
+  if (!norm) return 0;
+  const dbFile = join(dataRoot, 'cli', 'db', 'db.sqlite');
+  if (!existsSync(dbFile)) return 0;
+  const driver = await loadDriver();
+  if (!driver) return null;
+  const esc = (v) => "'" + String(v).replace(/'/g, "''") + "'";
+  const sql = `SELECT max(time_updated) AS at FROM session
+    WHERE task_type = 'subagent_child'
+      AND lower(rtrim(replace(directory, ${esc('\\')}, '/'), '/')) = ${esc(norm)}`;
+  try {
+    let row;
+    if (driver.kind === 'node') {
+      const db = new driver.DatabaseSync(dbFile, { readOnly: true });
+      try { row = db.prepare(sql).get(); } finally { db.close(); }
+    } else {
+      const agg = runCli(dbFile, `SELECT coalesce(json_object('at', at), 'null') FROM (${sql});`);
+      row = JSON.parse(agg.stdout.trim() || 'null');
+    }
+    return Number(row && row.at) || 0;
+  } catch {
+    return null;
+  }
+}
+
 function runCli(dbFile, script) {
   const r = spawnSync('sqlite3', ['-bail', '-batch', dbFile], {
     windowsHide: true,

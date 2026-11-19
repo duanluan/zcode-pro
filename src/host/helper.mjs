@@ -11,7 +11,7 @@ import { basename, delimiter, dirname, isAbsolute, join, resolve, sep } from 'no
 import { homedir, tmpdir, userInfo } from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { readSettings, remapSettingsPathsAtomic, isProjectOpenInTabs } from './settings.mjs';
-import { taskIndexPath, probeTaskIndexWritable, remapTaskIndexPaths, taskIndexDriverAvailable, listOverriddenTitles, listTaskWorkspaceMap, listTaskStatuses, listSessionsActivity, listSessionsTrace, listSessionModelUsage, listSessionTurnUsage, listSubagentChildrenActivity, listProjectsUnread, listWorkspaceTaskIds, setTaskTitleIfNotOverridden, setCustomSessionTitle, isTaskTitleOverridden, reconcileCustomTitles, getTaskProviderModel, listVirtualProjects, countTasks, readRecentQa } from './taskIndex.mjs';
+import { taskIndexPath, probeTaskIndexWritable, remapTaskIndexPaths, taskIndexDriverAvailable, listOverriddenTitles, listTaskWorkspaceMap, listTaskStatuses, listSessionsActivity, listSessionsTrace, listSessionModelUsage, listSessionTurnUsage, listSubagentChildrenActivity, listSessionAncestors, listWorkspaceSubagentActivity, listProjectsUnread, listWorkspaceTaskIds, setTaskTitleIfNotOverridden, setCustomSessionTitle, isTaskTitleOverridden, reconcileCustomTitles, getTaskProviderModel, listVirtualProjects, countTasks, readRecentQa } from './taskIndex.mjs';
 import { pickFolderSystem } from './pickFolder.mjs';
 import { reorderTasks } from './taskOrder.mjs';
 import { webdavRequest, webdavPutWithMkcol, webdavHttpText, parseWebdavListing, findCurl } from './webdav.mjs';
@@ -333,10 +333,16 @@ export function defaultConfig() {
     },
     // 空闲项目内存回收的判定时长（分钟，1–1440）：项目无运行中会话、无后台命令
     // 且非当前选中，持续满该时长后释放其会话进程
-    idleReclaimMinutes: 30,
+    idleReclaimMinutes: 10,
+    // 旧版的默认 30 会随任意一次保存写进文件：用这个标记区分“旧默认落盘”和
+    // 用户显式设置的 30。首次读到没有标记的 30 时迁移到新默认 10
+    idleReclaimMinutesMigrated: true,
     // 启动一次性回收的延后分钟（0–1440）：应用启动会为每个恢复的项目预热进程，
     // 到点把当时符合条件的项目一次收掉；0 = 启动后尽快回收一次
     idleReclaimStartupMinutes: 5,
+    // 子代理活动判定时长（分钟，1–1440）：超过该时长没有子代理活动视为结束，
+    // 不再查询官方结束记录、不亮机器人图标（subagent-icon.js）
+    subagentFreshMinutes: 60,
     // 样式调整（设置弹窗“样式调整”标签页）。null = 不覆盖，跟随应用默认。
     styles: {
       thinkingRowGap: null,   // 思考段落间距：“已工作/工作中”过程视图内各行的垂直间距（应用默认 20px）
@@ -454,11 +460,16 @@ export function loadConfig(configFile) {
     configUnreadable = false; // 解析成功就复位：修好文件后自动恢复可写
     const minutes = Number(saved.idleReclaimMinutes);
     const startupMinutes = Number(saved.idleReclaimStartupMinutes);
+    const subagentFresh = Number(saved.subagentFreshMinutes);
+    // 旧版默认 30 落盘后没有标记：迁移到新默认 10。带标记的 30 是用户显式设置，保留
+    const legacyIdle30 = Number(saved.idleReclaimMinutes) === 30 && saved.idleReclaimMinutesMigrated !== true;
     return {
       ...defaultConfig(),
       ...saved,
-      idleReclaimMinutes: Number.isFinite(minutes) && minutes >= 1 ? Math.min(1440, Math.round(minutes)) : 30,
+      idleReclaimMinutes: legacyIdle30 ? 10 : (Number.isFinite(minutes) && minutes >= 1 ? Math.min(1440, Math.round(minutes)) : 10),
+      idleReclaimMinutesMigrated: true,
       idleReclaimStartupMinutes: Number.isFinite(startupMinutes) && startupMinutes >= 0 ? Math.min(1440, Math.round(startupMinutes)) : 5,
+      subagentFreshMinutes: Number.isFinite(subagentFresh) && subagentFresh >= 1 ? Math.min(1440, Math.round(subagentFresh)) : 60,
       features: { ...defaultConfig().features, ...(saved.features || {}) },
       styles: migrateStyles(saved.styles),
       aliases: { ...((saved.aliases && typeof saved.aliases === 'object') ? saved.aliases : {}) },
@@ -976,6 +987,9 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
           if (body && typeof body === 'object' && typeof body.idleReclaimStartupMinutes === 'number' && Number.isFinite(body.idleReclaimStartupMinutes)) {
             current.idleReclaimStartupMinutes = Math.min(1440, Math.max(0, Math.round(body.idleReclaimStartupMinutes)));
           }
+          if (body && typeof body === 'object' && typeof body.subagentFreshMinutes === 'number' && Number.isFinite(body.subagentFreshMinutes)) {
+            current.subagentFreshMinutes = Math.min(1440, Math.max(1, Math.round(body.subagentFreshMinutes)));
+          }
           if (body && typeof body === 'object' && body.styles && typeof body.styles === 'object') {
             current.styles = applyStylesPartial(current.styles, body.styles);
           }
@@ -1457,6 +1471,15 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         const path = url.searchParams.get('path') || '';
         const ids = path ? await listWorkspaceTaskIds(dataRoot, path) : [];
         json(res, 200, { ok: true, ids });
+        return;
+      }
+      if (req.method === 'GET' && url.pathname === '/workspace-subagent-activity') {
+        // 工作区内子代理会话的最近活动时间（毫秒）：空闲回收的子代理保护。
+        // 按会话库 directory 直查，不受 /workspace-sessions 的 30 条/7 天限制；
+        // 读库失败返回 ok:false（调用方按“未知”处理，不当作没有活动）
+        const at = await listWorkspaceSubagentActivity(dataRoot, url.searchParams.get('path') || '');
+        if (at === null) json(res, 200, { ok: false });
+        else json(res, 200, { ok: true, at });
         return;
       }
       if (req.method === 'GET' && url.pathname === '/subagent-children') {
@@ -3641,9 +3664,9 @@ function applyFeaturesPartial(base, partial) {
   return out;
 }
 
-// 空闲回收的后台命令判定：项目会话进程（zcode-cli）的子进程里，插件/MCP 与应用
-// 自身的基础设施不算活动；其余（应用的 shell 包装 exec/、用户直接启动的进程）
-// 一律视为仍在运行的后台命令。
+// 空闲回收的后台命令判定：项目会话进程（zcode-cli）的子进程里，插件/MCP、应用
+// 自身组件与会话自己拉起的空闲 worker 不算活动；其余（应用的 shell 包装 exec/、
+// 用户直接启动的进程）一律视为仍在运行的后台命令。
 // 匹配前把命令行的反斜杠统一为正斜杠，一份模式通吃三平台。
 const IDLE_INFRA_CMDLINE = [
   '/.zcode/cli/plugins/',    // 插件市场安装的 MCP/hooks（vision、headroom、rtk 等）
@@ -3657,6 +3680,12 @@ const IDLE_INFRA_CMDLINE = [
 ];
 
 const SCAN_OFF = { ok: true, scan: false, busy: [] };
+
+// worker CPU 采样：两次采样之间的墙钟时长不固定（扫描本身也要时间），按实际
+// 窗口折算成“占单核一半”的阈值。固定 tick 数在慢机器上会变得过于敏感
+const WORKER_CPU_RATIO = 0.5;   // 采样窗口内累计 CPU 超过墙钟的一半 = 判忙
+const WORKER_CPU_WINDOW_MS = 400; // Linux 采样窗口
+const WORKER_CPU_DARWIN_WINDOW_MS = 1500; // macOS ps 的 time 精度是秒，窗口要够长
 
 function normCmdline(s) {
   return String(s || '').replace(/\\/g, '/');
@@ -3753,8 +3782,93 @@ export function scanBackgroundBash(tmpDir = '/tmp', procDir = '/proc') {
   return { ok: true, jobs: [...hit.values()] };
 }
 
+// 会话进程会拉起若干 cmdline 为 zcode-cli 的子进程（预热的子代理/会话 worker）。
+// 它们不是用户命令：只要没有在跑的非基础设施子进程、采样窗口内 CPU 时间也没
+// 增长，就按基础设施跳过。否则项目一旦用过（拉起过 worker）就会永远被判“有后台
+// 命令”，空闲回收再也释放不掉。
+function isAgentWorkerName(name) {
+  return /(^|\/)zcode-cli(\.exe)?$/i.test(String(name || '').trim());
+}
+
+// 命令行兜底：进程名不一定保留（可能被改成 node/完整路径），看 argv[0] 是否为
+// zcode-cli。带引号的路径（含空格）按引号边界取 argv[0]。只用于识别 worker，
+// 不用于判断用户命令——用户手动跑的 zcode-cli 也会被当成 worker（宁可放过也
+// 不把空闲项目永远判忙的取舍，见上方注释）
+export function isAgentWorkerCmdline(cmdline) {
+  const s = String(cmdline || '').trim();
+  let first;
+  if (s.startsWith('"')) {
+    const end = s.indexOf('"', 1);
+    first = end > 0 ? s.slice(1, end) : s.slice(1);
+  } else {
+    first = s.split(/\s+/)[0] || '';
+  }
+  return isAgentWorkerName(first);
+}
+
+function procCpuTicks(pid) {
+  try {
+    const stat = readFileSync(`/proc/${pid}/stat`, 'utf8');
+    const rest = stat.slice(stat.lastIndexOf(')') + 2).split(' ');
+    return (Number(rest[11]) || 0) + (Number(rest[12]) || 0);
+  } catch { return null; }
+}
+
+function procChildren(pid) {
+  try {
+    return readFileSync(`/proc/${pid}/task/${pid}/children`, 'utf8')
+      .split(/\s+/).filter(Boolean).map(Number).filter(Number.isFinite);
+  } catch { return null; }
+}
+
+function procZombie(pid) {
+  try {
+    // 状态字段在最后一个 ')' 之后：comm 允许空格和括号，整行找 ") Z " 会被进程名误触发
+    const stat = readFileSync(`/proc/${pid}/stat`, 'utf8');
+    const rest = stat.slice(stat.lastIndexOf(')') + 2).trim();
+    return rest.startsWith('Z');
+  } catch { return false; }
+}
+
+// 收集 worker 子树里所有 agent worker 的 pid；遇到非基础设施、非 worker 的
+// 子进程返回 true（有用户命令在跑）。嵌套子代理也是 zcode-cli，按同一规则递归；
+// worker 先按名字认（命令行可能为空或含应用安装路径），认不出才看命令行；
+// 深度超限时保守判忙。
+function collectAgentWorkerSubtree(pid, out, depth = 0) {
+  if (depth > 4) return true;
+  const kids = procChildren(pid);
+  if (kids === null) return true;
+  for (const kid of kids) {
+    if (procZombie(kid)) continue;
+    let cmd = '';
+    let comm = '';
+    try {
+      cmd = normCmdline(readFileSync(`/proc/${kid}/cmdline`, 'utf8').replace(/\0/g, ' ').trim());
+      comm = readFileSync(`/proc/${kid}/comm`, 'utf8').trim();
+    } catch { continue; }
+    if (isAgentWorkerName(comm) || isAgentWorkerCmdline(cmd)) {
+      out.push(kid);
+      if (collectAgentWorkerSubtree(kid, out, depth + 1)) return true;
+      continue;
+    }
+    if (isInfraCmdline(cmd)) continue;
+    return true;
+  }
+  return false;
+}
+
+function sumCpuTicks(pids) {
+  let sum = 0;
+  let seen = false;
+  for (const pid of pids) {
+    const t = procCpuTicks(pid);
+    if (t !== null) { sum += t; seen = true; }
+  }
+  return seen ? sum : null;
+}
+
 // Linux：直接读取 /proc（comm 定位 CLI、cwd 定位项目、task/<pid>/children 拿子进程）
-function scanIdleBusyLinux(paths) {
+async function scanIdleBusyLinux(paths) {
   let pids;
   try { pids = readdirSync('/proc').filter((d) => /^\d+$/.test(d)); }
   catch { return SCAN_OFF; }
@@ -3771,44 +3885,117 @@ function scanIdleBusyLinux(paths) {
     } catch { /* 进程退出/权限：跳过 */ }
   }
   const busy = new Set();
+  const workers = []; // 暂无活动的 agent worker：稍后采样 CPU 再定
   for (const [cwd, cliPids] of cliPidByCwd) {
     const wantedPaths = wantedByCwd.get(cwd);
     if (!wantedPaths) continue;
     for (const pid of cliPids) {
-      let children = '';
-      try { children = readFileSync(`/proc/${pid}/task/${pid}/children`, 'utf8'); }
-      catch { continue; }
-      for (const childPidStr of children.split(/\s+/)) {
-        const childPid = Number(childPidStr);
-        if (!Number.isFinite(childPid)) continue;
+      const children = procChildren(pid);
+      if (children === null) {
+        // /proc/<pid> 还在但拿不到子进程列表（内核未开 CONFIG_PROC_CHILDREN 等）：
+        // 不能当成“没有子进程”，本轮整体放弃扫描
+        if (existsSync(`/proc/${pid}`)) return SCAN_OFF;
+        continue; // 进程已退出
+      }
+      for (const childPid of children) {
+        if (procZombie(childPid)) continue;
         let cmdline = '';
-        let zombie = false;
+        let comm = '';
         try {
           cmdline = normCmdline(readFileSync(`/proc/${childPid}/cmdline`, 'utf8').replace(/\0/g, ' ').trim());
-          const stat = readFileSync(`/proc/${childPid}/stat`, 'utf8');
-          zombie = /\) Z /.test(stat);
+          comm = readFileSync(`/proc/${childPid}/comm`, 'utf8').trim();
         } catch { continue; }
-        if (zombie) continue;
-        if (!cmdline || !isInfraCmdline(cmdline)) {
-          for (const wp of wantedPaths) busy.add(wp); // 认不出的进程宁可误判为忙，也不回收可能在跑命令的项目
+        if (isAgentWorkerName(comm) || isAgentWorkerCmdline(cmdline)) {
+          const workerPids = [childPid];
+          if (collectAgentWorkerSubtree(childPid, workerPids)) {
+            for (const wp of wantedPaths) busy.add(wp);
+            break;
+          }
+          const ticks = sumCpuTicks(workerPids);
+          if (ticks !== null) workers.push({ pids: workerPids, ticks, wantedPaths, at: Date.now() });
+          continue;
+        }
+        if (isInfraCmdline(cmdline)) continue;
+        if (!cmdline) {
+          for (const wp of wantedPaths) busy.add(wp); // 认不出的进程宁可误判为忙
           break;
         }
+        for (const wp of wantedPaths) busy.add(wp); // 认不出的进程宁可误判为忙，也不回收可能在跑命令的项目
+        break;
       }
+    }
+  }
+  // 空闲 worker 的 CPU 时间应保持不变；按每个 worker 自己的采样窗口折算，
+  // 超过半核才判忙
+  if (workers.length) {
+    await new Promise((resolve) => setTimeout(resolve, WORKER_CPU_WINDOW_MS));
+    for (const w of workers) {
+      const elapsedMs = Math.max(1, Date.now() - w.at);
+      const needTicks = Math.max(1, Math.ceil((elapsedMs / 1000) * 100 * WORKER_CPU_RATIO));
+      const now = sumCpuTicks(w.pids);
+      if (now !== null && now - w.ticks > needTicks) for (const wp of w.wantedPaths) busy.add(wp);
     }
   }
   return { ok: true, scan: true, busy: [...busy] };
 }
 
-// macOS：ps 拿进程表（pid/父 pid/状态/名称/命令行），lsof 拿 CLI 进程的工作目录。
+export function parsePsTime(s) {
+  // [[dd-]hh:]mm:ss：macOS ps 的 time 字段。天数前缀单独处理，Number('1-02') 会变 NaN
+  let text = String(s || '').trim();
+  if (!text) return 0;
+  let days = 0;
+  const dash = text.indexOf('-');
+  if (dash > 0) {
+    days = Number(text.slice(0, dash)) || 0;
+    text = text.slice(dash + 1);
+  }
+  const parts = text.split(':');
+  if (!parts.length || parts.length > 3) return 0;
+  let secs = 0;
+  for (const part of parts) {
+    const n = Number(part);
+    if (!Number.isFinite(n)) return 0;
+    secs = secs * 60 + n;
+  }
+  return days * 86400 + secs;
+}
+
+function collectDarwinWorkerSubtree(pid, procs, cmdByPid, out, depth = 0) {
+  if (depth > 4) return true;
+  for (const g of procs) {
+    if (g.ppid !== pid || g.stat.includes('Z')) continue;
+    const gc = normCmdline(cmdByPid.get(g.pid) || '');
+    if (isAgentWorkerName(g.comm) || isAgentWorkerCmdline(gc)) {
+      out.push(g.pid);
+      if (collectDarwinWorkerSubtree(g.pid, procs, cmdByPid, out, depth + 1)) return true;
+      continue;
+    }
+    if (isInfraCmdline(gc)) continue;
+    return true;
+  }
+  return false;
+}
+
+function sumDarwinCpu(cpuByPid, pids) {
+  let sum = 0;
+  let seen = false;
+  for (const pid of pids) {
+    const v = cpuByPid.get(pid);
+    if (v !== undefined) { sum += v; seen = true; }
+  }
+  return seen ? sum : null;
+}
+
+// macOS：ps 拿进程表（pid/父 pid/状态/CPU 时间/名称/命令行），lsof 拿 CLI 进程的工作目录。
 // 都是系统自带工具、本用户进程无需提权。任何一个 CLI 的工作目录取不到就本轮放弃
 // （scan=false），宁可不动也不猜
 async function scanIdleBusyDarwin(paths) {
-  const psInfo = await runCmd('ps', ['-axo', 'pid=,ppid=,stat=,comm=']);
+  const psInfo = await runCmd('ps', ['-axo', 'pid=,ppid=,stat=,time=,comm=']);
   if (psInfo.err) return SCAN_OFF;
   const procs = [];
   for (const line of psInfo.stdout.split('\n')) {
-    const m = line.trim().match(/^(\d+)\s+(\d+)\s+(\S+)\s+(.+)$/);
-    if (m) procs.push({ pid: Number(m[1]), ppid: Number(m[2]), stat: m[3], comm: m[4].trim() });
+    const m = line.trim().match(/^(\d+)\s+(\d+)\s+(\S+)\s+(\S+)\s+(.+)$/);
+    if (m) procs.push({ pid: Number(m[1]), ppid: Number(m[2]), stat: m[3], cpu: parsePsTime(m[4]), comm: m[5].trim() });
   }
   const clis = procs.filter((p) => /(^|\/)zcode-cli$/.test(p.comm));
   if (!clis.length) return SCAN_OFF; // 定位不到会话进程：可能名称对不上，不猜
@@ -3820,7 +4007,12 @@ async function scanIdleBusyDarwin(paths) {
     if (m) cmdByPid.set(Number(m[1]), m[2]);
   }
   const wantedByCwd = buildWantedByCwd(paths);
+  // 快照第一次 ps 的时刻作为所有 worker 的首次采样时间：逐 CLI 的 lsof 可能
+  // 耗时很久，用 push 时刻会低估采样窗口、放大偶发 CPU 的判定
+  const sampleAt = Date.now();
+  const cpuByPid = new Map(procs.map((p) => [p.pid, p.cpu]));
   const busy = new Set();
+  const workers = [];
   for (const cli of clis) {
     const lsof = await runCmd('lsof', ['-a', '-p', String(cli.pid), '-d', 'cwd', '-Fn', '-w']);
     // 与注释的约定一致：任一 CLI 的工作目录取不到就整轮放弃（scan=false）——
@@ -3833,9 +4025,38 @@ async function scanIdleBusyDarwin(paths) {
     for (const child of procs) {
       if (child.ppid !== cli.pid || child.stat.includes('Z')) continue;
       const cmdline = normCmdline(cmdByPid.get(child.pid) || '');
-      if (!cmdline || !isInfraCmdline(cmdline)) {
-        for (const wp of wantedPaths) busy.add(wp);
-        break;
+      if (isAgentWorkerName(child.comm) || isAgentWorkerCmdline(cmdline)) {
+        const workerPids = [child.pid];
+        if (collectDarwinWorkerSubtree(child.pid, procs, cmdByPid, workerPids)) {
+          for (const wp of wantedPaths) busy.add(wp);
+          break;
+        }
+        const cpu = sumDarwinCpu(cpuByPid, workerPids);
+        if (cpu !== null) workers.push({ pids: workerPids, cpu, wantedPaths, at: sampleAt });
+        continue;
+      }
+      if (isInfraCmdline(cmdline)) continue;
+      for (const wp of wantedPaths) busy.add(wp);
+      break;
+    }
+  }
+  if (workers.length) {
+    await new Promise((resolve) => setTimeout(resolve, WORKER_CPU_DARWIN_WINDOW_MS));
+    const again = await runCmd('ps', ['-axo', 'pid=,time=']);
+    if (again.err) {
+      // 二次采样失败：不能确认空闲，保守判忙
+      for (const w of workers) for (const wp of w.wantedPaths) busy.add(wp);
+    } else {
+      const after = new Map();
+      for (const line of again.stdout.split('\n')) {
+        const m = line.trim().match(/^(\d+)\s+(\S+)$/);
+        if (m) after.set(Number(m[1]), parsePsTime(m[2]));
+      }
+      for (const w of workers) {
+        const elapsed = Math.max(0.001, (Date.now() - w.at) / 1000);
+        const needSec = elapsed * WORKER_CPU_RATIO;
+        const now = sumDarwinCpu(after, w.pids);
+        if (now !== null && now - w.cpu > needSec) for (const wp of w.wantedPaths) busy.add(wp);
       }
     }
   }
@@ -3865,36 +4086,116 @@ async function scanIdleBusyWindows(paths, dataRoot) {
       name: String(p.Name || ''),
       cmdline: normCmdline(p.CommandLine || ''),
     }));
-  let wsMap = null; // 懒加载：任务 ID → 规范化工作区
-  const lookupTaskWs = async (taskId) => {
-    if (wsMap === null) {
-      const raw = await listTaskWorkspaceMap(dataRoot);
-      wsMap = {};
-      for (const [k, v] of Object.entries(raw)) wsMap[k] = normCmdline(v).replace(/\/+$/, '').toLowerCase();
+  let wsRaw = null; // 懒加载：任务 ID → 原样工作区（整表缓存，不在每次查询时重读）
+  // 先扫一遍命令行里出现的会话 id，一次批量问祖先链：CLI 驱动下每个 id 一次
+  // sqlite3 进程，串行查会在多子代理并行时拖慢整轮扫描。只收 zcode-cli 会话
+  // 进程的后代，浏览器/编辑器等无关进程命令行里的 sess_ 字样不进库
+  const cliPids = new Set(procs.filter((p) => /^zcode-cli(\.exe)?$/i.test(p.name)).map((p) => p.pid));
+  const sessIds = new Set();
+  if (cliPids.size) {
+    const ppidByPid = new Map(procs.map((p) => [p.pid, p.ppid]));
+    const underCli = (pid) => {
+      for (let i = 0, cur = pid; i < 8; i++) {
+        if (cliPids.has(cur)) return true;
+        cur = ppidByPid.get(cur) || 0;
+        if (!cur) return false;
+      }
+      return false;
+    };
+    for (const p of procs) {
+      if (!underCli(p.pid)) continue;
+      const m = p.cmdline && p.cmdline.match(/(?:sess|session)_[A-Za-z0-9._-]+/);
+      if (m) sessIds.add(m[0]);
+      if (sessIds.size >= 300) break;
     }
-    return wsMap[taskId];
+  }
+  const ancestorMap = sessIds.size ? await listSessionAncestors(dataRoot, [...sessIds]) : {};
+  const normWs = (v) => {
+    const base = normWinPath(v);
+    try {
+      const real = realpathSync.native(v);
+      if (real) return normWinPath(real);
+    } catch { /* 目录不存在或平台不支持 */ }
+    return base;
+  };
+  const lookupTaskWs = async (taskId) => {
+    if (wsRaw === null) wsRaw = await listTaskWorkspaceMap(dataRoot);
+    if (wsRaw[taskId]) return normWs(wsRaw[taskId]);
+    // 直接查不到（子代理会话、已删根会话）：沿父链逐级上溯，取第一个有工作区的
+    for (const node of ancestorMap[taskId] || []) {
+      if (wsRaw[node]) return normWs(wsRaw[node]);
+    }
+    return undefined;
   };
   return classifyIdleBusyWindows(procs, paths, lookupTaskWs);
 }
 
-// Windows 判定逻辑（与进程表获取解耦，可直接喂真实 CIM 数据测试）
+// Windows 路径归一：大小写、分隔符、尾斜杠、\\?\ 长路径前缀。junction/映射盘
+// 这类别名靠 realpath 兜一层（目录不存在时忽略）
+export function normWinPath(p) {
+  let s = normCmdline(p).replace(/\/+$/, '').toLowerCase();
+  if (s.startsWith('//?/')) s = s.slice(4);
+  return s;
+}
+
+// Windows 判定逻辑（与进程表获取解耦，可直接喂真实 CIM 数据测试）。
+// 这里只有进程结构可用：拿不到其他进程的工作目录，worker 自己的 CPU 时间也无法
+// 归属到具体项目，所以不做 CPU 采样（做了只能全量判忙）。worker 正在处理回合但
+// 没有子进程时与空闲无法区分，这一层依靠调用方的官方活跃会话判定兜底。
 export async function classifyIdleBusyWindows(procs, paths, lookupTaskWs) {
   const clis = procs.filter((p) => /^zcode-cli(\.exe)?$/i.test(p.name));
   if (!clis.length) return SCAN_OFF; // 定位不到会话进程：可能名称对不上，不猜
   const reqByNorm = new Map();
-  for (const p of paths) reqByNorm.set(normCmdline(p).replace(/\/+$/, '').toLowerCase(), p);
+  for (const p of paths) {
+    reqByNorm.set(normWinPath(p), p);
+    try {
+      const real = realpathSync.native(p);
+      if (real) reqByNorm.set(normWinPath(real), p);
+    } catch { /* 目录不存在或平台不支持 */ }
+  }
   let unattributed = false;
   const busy = new Set();
   const markByTask = async (taskId) => {
     const normWs = await lookupTaskWs(taskId);
-    const req = normWs ? reqByNorm.get(normWs) : undefined;
+    // 归属明确但不在本轮请求的项目里（Windows 会扫全机所有会话进程）：与本轮
+    // 判定无关，不能据此把其他项目全部判忙
+    if (!normWs) { unattributed = true; return; }
+    const req = reqByNorm.get(normWs);
     if (req) busy.add(req);
-    else unattributed = true; // 索引里查不到该会话：归属不明，保守处理
+  };
+  // worker 子树里的用户命令（嵌套子代理也是 zcode-cli，按同一规则递归）；
+  // null = 读不到命令行，按归属不明处理
+  const collectWorkerCommands = (worker, out, depth = 0) => {
+    if (depth > 4) { out.push(null); return; }
+    for (const g of procs) {
+      if (g.ppid !== worker.pid) continue;
+      // 先按名字认 worker：命令行可能为空，也可能是带安装路径（含 Programs/ZCode）的完整路径
+      if (/^zcode-cli(\.exe)?$/i.test(String(g.name || '').trim()) || isAgentWorkerCmdline(g.cmdline)) {
+        collectWorkerCommands(g, out, depth + 1);
+        continue;
+      }
+      if (!g.cmdline) { out.push(null); continue; }
+      if (isInfraCmdline(g.cmdline)) continue;
+      out.push(g.cmdline);
+    }
   };
   for (const cli of clis) {
     for (const child of procs) {
       if (child.ppid !== cli.pid) continue;
-      if (isInfraCmdline(child.cmdline)) continue;
+      // 会话自己的 zcode-cli worker：子树里没有在跑的用户命令时不算用户命令；
+      // 有的话按命令里的会话 id 归属（worker 自己的命令行通常只剩进程名）
+      if (/^zcode-cli(\.exe)?$/i.test(String(child.name || '').trim()) || isAgentWorkerCmdline(child.cmdline)) {
+        const active = [];
+        collectWorkerCommands(child, active);
+        for (const cmd of active) {
+          if (cmd === null) { unattributed = true; continue; }
+          const s = cmd.match(/(?:sess|session)_[A-Za-z0-9._-]+/);
+          if (s) await markByTask(s[0]);
+          else unattributed = true;
+        }
+        continue;
+      }
+      if (isInfraCmdline(child.cmdline || '')) continue;
       if (!child.cmdline) { unattributed = true; continue; }
       // 会话 id 有 sess_ 与 session_ 两种前缀（新版应用为 session_）；字符集与
       // 路由校验的 id 白名单一致（含 . 和 _）——字符类偏窄会在这些字符处截断成

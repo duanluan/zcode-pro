@@ -1800,8 +1800,9 @@ export function openSettingsDialog() {
         h('div', { class: 'mt-3 divide-y divide-border rounded-xl border border-border' }, proxyScopeWrap),
       );
 
-      // “性能”：空闲项目内存回收（开关 + 两个时长）。idleReclaimStartupMinutes
-      // 允许 0（启动后立即回收一次），取值不能用“|| 默认值”的写法回退
+      // “性能”：空闲项目内存回收（开关 + 两个时长）与子代理活动判定时长。
+      // idleReclaimStartupMinutes 允许 0（启动后立即回收一次），取值不能用
+      // “|| 默认值”的写法回退
       const perfToggleWrap = h('div');
       const renderPerfToggle = () => {
         const f = config.features || {};
@@ -1846,8 +1847,9 @@ export function openSettingsDialog() {
         h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.perfDesc),
         h('div', { class: 'mt-3 divide-y divide-border rounded-xl border border-border' },
           perfToggleWrap,
-          perfNumberRow(L.idleReclaimMinutesLabel, null, 'idleReclaimMinutes', 30, 1),
-          perfNumberRow(L.idleReclaimStartupLabel, L.idleReclaimStartupHint, 'idleReclaimStartupMinutes', 5, 0)),
+          perfNumberRow(L.idleReclaimMinutesLabel, null, 'idleReclaimMinutes', 10, 1),
+          perfNumberRow(L.idleReclaimStartupLabel, L.idleReclaimStartupHint, 'idleReclaimStartupMinutes', 5, 0),
+          perfNumberRow(L.subagentFreshLabel, L.subagentFreshHint, 'subagentFreshMinutes', 60, 1)),
       );
 
       // “同步”：把 ZCode Pro 设置与模型设置手动备份到 WebDAV / 从 WebDAV 恢复

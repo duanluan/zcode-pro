@@ -8,12 +8,16 @@
 // 2) 有运行中会话的项目（含子智能体/工作流，它们都在会话回合内运行）——先用
 //    折叠项目运行检测（ws-running）的现场记录，回收前再无感展开复核一次兜底；
 // 3) 有仍在运行的后台命令的项目——helper 扫描会话进程的子进程（/idle-busy，
-//    Linux/macOS/Windows 各走系统自带工具），插件/MCP 基础设施子进程除外，
-//    剩余视为用户命令；扫描不可用时整个功能停用，不做盲回收。
+//    Linux/macOS/Windows 各走系统自带工具），插件/MCP 基础设施与会话自己拉起
+//    的空闲 worker 除外，剩余视为用户命令；扫描不可用时整个功能停用，不做盲回收。
+// 4) 最近仍有子代理活动的项目——后台子代理可能在会话行不显示运行状态时继续跑，
+//    等待模型返回时没有子进程、CPU 也低；用 helper 直查会话库的子代理活动时间
+//    兜底（只读数据库，不会启动进程）。活动窗口跟 subagentFreshMinutes 共用，
+//    查询失败按“仍有活动”处理。
 // 定时/闲时任务由宿主进程调度、触发时自动重建会话进程，无需排除。
 //
 // 开关：features.idleReclaim（默认开）。
-// 两个时长：idleReclaimMinutes 常规空闲判定（默认 30，1–1440）；
+// 两个时长：idleReclaimMinutes 常规空闲判定（默认 10，1–1440）；
 // idleReclaimStartupMinutes 启动一次性回收的延后分钟（默认 5，0–1440，0 = 启动后
 // 尽快收一次，不受常规空闲时长限制——应用启动会为每个恢复的项目预热进程，这次
 // 回收专治启动瞬间的内存高峰）。
@@ -52,6 +56,18 @@ async function sidebarWorkspaces() {
     }
   }
   return out;
+}
+
+// 最近仍有子代理活动的项目不算空闲：后台子代理可能在会话行不显示运行状态时
+// 继续跑，等待模型返回时既没有子进程、CPU 也很低，单靠进程扫描会误判。
+// /workspace-subagent-activity 由 helper 按会话库 directory 直查（不受
+// /workspace-sessions 的 30 条/7 天限制），不会启动进程；查询失败按“仍有活动”
+// 处理——宁可漏回收也不掐正在跑的子代理
+async function hasFreshSubagentActivity(ws, windowMs) {
+  const res = await rpc('/workspace-subagent-activity?path=' + encodeURIComponent(ws)).catch(() => null);
+  if (!res || res.ok !== true) return true; // 查询失败 = 未知，按忙处理
+  const at = Number(res.at) || 0;
+  return at > 0 && Date.now() - at <= windowMs;
 }
 
 async function reclaim(ws) {
@@ -130,8 +146,13 @@ async function tick() {
     idleSince.clear();
     return;
   }
-  const minutes = Math.min(MAX_MINUTES, Math.max(MIN_MINUTES, Number(cfg.idleReclaimMinutes) || 30));
+  const minutes = Math.min(MAX_MINUTES, Math.max(MIN_MINUTES, Number(cfg.idleReclaimMinutes) || 10));
   const threshold = minutes * 60_000;
+  // 子代理保护窗口与空闲阈值解耦：单个长工具调用可静默 20 分钟上下，回收阈值
+  // 最小可到 1 分钟，用它当保护窗口等于没有保护。跟 subagent-icon 的“无活动多久
+  // 算结束”共用一个配置（subagentFreshMinutes，默认 60）
+  const freshMinutes = Number(cfg.subagentFreshMinutes);
+  const subagentGuardMs = (Number.isFinite(freshMinutes) && freshMinutes >= 1 ? Math.min(1440, Math.round(freshMinutes)) : 60) * 60_000;
   let startupMinutes = Number(cfg.idleReclaimStartupMinutes);
   if (!Number.isFinite(startupMinutes)) startupMinutes = 5;
   startupMinutes = Math.min(MAX_MINUTES, Math.max(0, startupMinutes));
@@ -174,7 +195,7 @@ async function tick() {
     }
     // 启动扫不因失败反复重试：否则每个巡检周期（30 秒）都重新扫——扫描不可用
     // 还每 30 秒拉一次 PowerShell 全进程枚举，正是要消除的常驻开销。下一次
-    // 尝试回到空闲阈值节奏（默认 30 分钟），扫描恢复后仍能自动接上
+    // 尝试回到空闲阈值节奏（idleReclaimMinutes），扫描恢复后仍能自动接上
     if (startupDue) startupSweepDone = true;
     idleSince.clear();
     return;
@@ -182,7 +203,12 @@ async function tick() {
   if (startupDue) startupSweepDone = true;
   const procBusy = new Set(res.busy || []);
   for (const ws of due) {
+    // 有后台命令 = 项目仍在活动，空闲计时归零。单次 CPU 采样误判由 helper 侧的
+    // 阈值和窗口控制；这里保留“忙就重计”的语义，不把长命令计入空闲时长
     if (procBusy.has(ws)) { idleSince.delete(ws); continue; }
+    // 后台子代理可能在等模型返回（没有子进程、CPU 也低），进程扫描看不到；
+    // 会话库里有最近活动就先不回收，避免把正在跑的代理掐掉
+    if (await hasFreshSubagentActivity(ws, subagentGuardMs)) { idleSince.delete(ws); continue; }
     await tryReclaim(ws, threshold);
   }
 }

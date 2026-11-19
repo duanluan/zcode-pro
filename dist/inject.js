@@ -238,6 +238,8 @@
         "featureSubagentIconDesc": "\u30D0\u30C3\u30AF\u30B0\u30E9\u30A6\u30F3\u30C9\u306E\u30B5\u30D6\u30A8\u30FC\u30B8\u30A7\u30F3\u30C8\u5B9F\u884C\u4E2D\u306F\u30ED\u30DC\u30C3\u30C8\u306E\u30A2\u30A4\u30B3\u30F3\u3001\u30D0\u30C3\u30AF\u30B0\u30E9\u30A6\u30F3\u30C9\u306E\u30BF\u30FC\u30DF\u30CA\u30EB\u30B3\u30DE\u30F3\u30C9\u5B9F\u884C\u4E2D\u306F\u30BF\u30FC\u30DF\u30CA\u30EB\u306E\u30A2\u30A4\u30B3\u30F3\u3092\u8868\u793A\u3057\u307E\u3059\uFF08\u4E21\u65B9\u306E\u3068\u304D\u306F\u30ED\u30DC\u30C3\u30C8\u3092\u512A\u5148\uFF09\u3002\u672A\u8AAD\u30C9\u30C3\u30C8\u306F\u884C\u672B\u306B\u79FB\u52D5\u3057\u3066\u5E38\u306B\u8868\u793A\u3055\u308C\u307E\u3059\u3002\u30BB\u30C3\u30B7\u30E7\u30F3\u306E\u5B9F\u884C\u4E2D\u306F\u5E38\u306B\u56DE\u8EE2\u30A2\u30A4\u30B3\u30F3\u304C\u8868\u793A\u3055\u308C\u307E\u3059\u3002\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u672A\u8AAD\u30D0\u30C3\u30B8\u306F\u30A8\u30E9\u30FC\u884C\u3092\u6570\u3048\u307E\u305B\u3093\u3002",
         "subagentRobotTip": "\u30B5\u30D6\u30A8\u30FC\u30B8\u30A7\u30F3\u30C8\u5B9F\u884C\u4E2D",
         "subagentTermTip": "\u30D0\u30C3\u30AF\u30B0\u30E9\u30A6\u30F3\u30C9\u30B3\u30DE\u30F3\u30C9\u5B9F\u884C\u4E2D",
+        "subagentFreshLabel": "\u30B5\u30D6\u30A8\u30FC\u30B8\u30A7\u30F3\u30C8\u306E\u7121\u6D3B\u52D5\u304C\u7D42\u4E86\u6271\u3044\u306B\u306A\u308B\u307E\u3067\u306E\u6642\u9593\uFF08\u5206\uFF09",
+        "subagentFreshHint": "\u3053\u306E\u6642\u9593\u3092\u8D85\u3048\u3066\u30B5\u30D6\u30A8\u30FC\u30B8\u30A7\u30F3\u30C8\u306E\u6D3B\u52D5\u304C\u306A\u3044\u5834\u5408\u306F\u7D42\u4E86\u3068\u307F\u306A\u3057\u3001\u30ED\u30DC\u30C3\u30C8\u30A2\u30A4\u30B3\u30F3\u3092\u6D88\u3057\u3066\u516C\u5F0F\u306E\u7D42\u4E86\u8A18\u9332\u3082\u7167\u4F1A\u3057\u307E\u305B\u3093\u3002\u7167\u4F1A\u306F\u6700\u8FD1\u6D3B\u52D5\u306E\u3042\u308B\u30BB\u30C3\u30B7\u30E7\u30F3\u3060\u3051\u306B\u5BFE\u3057\u3066\u884C\u3044\u3001\u30A2\u30A4\u30C9\u30EB\u72B6\u614B\u306E\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u3067\u30BB\u30C3\u30B7\u30E7\u30F3\u30D7\u30ED\u30BB\u30B9\u304C\u8D77\u52D5\u3055\u308C\u308B\u306E\u3092\u9632\u304E\u307E\u3059\u3002",
         "tabPerformance": "\u30D1\u30D5\u30A9\u30FC\u30DE\u30F3\u30B9",
         "perfDesc": "ZCode \u306F\u958B\u3044\u305F\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u3054\u3068\u306B\u30BB\u30C3\u30B7\u30E7\u30F3\u30D7\u30ED\u30BB\u30B9\u3092\u5E38\u99D0\u3055\u305B\u3001\u30A2\u30D7\u30EA\u81EA\u8EAB\u306F\u305D\u308C\u3092\u89E3\u653E\u3057\u307E\u305B\u3093\u3002\u305D\u306E\u305F\u3081\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u304C\u5897\u3048\u308B\u3068\u30E1\u30E2\u30EA\u4F7F\u7528\u91CF\u3082\u5897\u3048\u307E\u3059\u3002\u6709\u52B9\u306B\u3059\u308B\u3068\u3001\u9577\u6642\u9593\u4F7F\u7528\u3055\u308C\u3066\u304A\u3089\u305A\u5B9F\u884C\u4E2D\u306E\u30BF\u30B9\u30AF\u3082\u306A\u3044\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u304C\u81EA\u52D5\u7684\u306B\u89E3\u653E\u3055\u308C\u307E\u3059\u3002\u30BB\u30C3\u30B7\u30E7\u30F3\u306E\u8A18\u9332\u306F\u5F71\u97FF\u3092\u53D7\u3051\u305A\u3001\u518D\u5EA6\u958B\u3044\u305F\u3068\u304D\u306B\u81EA\u52D5\u3067\u5FA9\u5143\u3055\u308C\u307E\u3059\u304C\u3001\u6700\u521D\u306E\u5FDC\u7B54\u306B\u6570\u79D2\u304B\u304B\u308A\u307E\u3059\u3002\u4F7F\u7528\u4E2D\u306E\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u3001\u5B9F\u884C\u4E2D\u306E\u30BB\u30C3\u30B7\u30E7\u30F3\u3068\u30D0\u30C3\u30AF\u30B0\u30E9\u30A6\u30F3\u30C9\u30B3\u30DE\u30F3\u30C9\u3001\u30B9\u30B1\u30B8\u30E5\u30FC\u30EB\u3055\u308C\u305F\u30BF\u30B9\u30AF\u306F\u89E3\u653E\u3055\u308C\u307E\u305B\u3093\u3002\u30D0\u30C3\u30AF\u30B0\u30E9\u30A6\u30F3\u30C9\u30B3\u30DE\u30F3\u30C9\u306E\u691C\u51FA\u306F\u30B7\u30B9\u30C6\u30E0\u306E\u30D7\u30ED\u30BB\u30B9\u60C5\u5831\u306B\u4F9D\u5B58\u3057\u307E\u3059\uFF08Linux / macOS / Windows \u306F\u305D\u308C\u305E\u308C\u30B7\u30B9\u30C6\u30E0\u6A19\u6E96\u306E\u30C4\u30FC\u30EB\u3092\u4F7F\u7528\uFF09\u3002\u691C\u51FA\u3092\u5229\u7528\u3067\u304D\u306A\u3044\u5834\u5408\u3001\u3053\u306E\u6A5F\u80FD\u306F\u81EA\u52D5\u7684\u306B\u7121\u52B9\u306B\u306A\u308A\u307E\u3059\u3002",
         "featureIdleReclaim": "\u30A2\u30A4\u30C9\u30EB\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u30E1\u30E2\u30EA\u89E3\u653E",
@@ -1012,6 +1014,8 @@
         "featureSubagentIconDesc": "\uBC31\uADF8\uB77C\uC6B4\uB4DC \uC11C\uBE0C\uC5D0\uC774\uC804\uD2B8\uAC00 \uC2E4\uD589 \uC911\uC774\uBA74 \uB85C\uBD07 \uC544\uC774\uCF58, \uBC31\uADF8\uB77C\uC6B4\uB4DC \uD130\uBBF8\uB110 \uBA85\uB839\uC774 \uC2E4\uD589 \uC911\uC774\uBA74 \uD130\uBBF8\uB110 \uC544\uC774\uCF58\uC744 \uD45C\uC2DC\uD569\uB2C8\uB2E4(\uB458 \uB2E4\uBA74 \uB85C\uBD07 \uC6B0\uC120). \uC77D\uC9C0 \uC54A\uC74C \uD45C\uC2DC\uB294 \uD589 \uB05D\uC73C\uB85C \uC62E\uACA8 \uD56D\uC0C1 \uD45C\uC2DC\uB429\uB2C8\uB2E4. \uC138\uC158\uC774 \uC2E4\uD589 \uC911\uC774\uBA74 \uD56D\uC0C1 \uD68C\uC804\uD558\uB294 \uB85C\uB529 \uC544\uC774\uCF58\uC774 \uD45C\uC2DC\uB429\uB2C8\uB2E4. \uD504\uB85C\uC81D\uD2B8\uC758 \uC77D\uC9C0 \uC54A\uC74C \uBC30\uC9C0\uB294 \uC624\uB958 \uD589\uC744 \uBB34\uC2DC\uD569\uB2C8\uB2E4.",
         "subagentRobotTip": "\uC11C\uBE0C\uC5D0\uC774\uC804\uD2B8 \uC2E4\uD589 \uC911",
         "subagentTermTip": "\uBC31\uADF8\uB77C\uC6B4\uB4DC \uBA85\uB839 \uC2E4\uD589 \uC911",
+        "subagentFreshLabel": "\uC11C\uBE0C\uC5D0\uC774\uC804\uD2B8 \uD65C\uB3D9\uC774 \uC5C6\uC744 \uB54C \uC885\uB8CC\uB85C \uAC04\uC8FC\uD558\uB294 \uC2DC\uAC04(\uBD84)",
+        "subagentFreshHint": "\uC774 \uC2DC\uAC04\uC744 \uB118\uB3C4\uB85D \uC11C\uBE0C\uC5D0\uC774\uC804\uD2B8 \uD65C\uB3D9\uC774 \uC5C6\uC73C\uBA74 \uC885\uB8CC\uB85C \uBCF4\uACE0 \uB85C\uBD07 \uC544\uC774\uCF58\uC744 \uB044\uBA70 \uACF5\uC2DD \uC885\uB8CC \uAE30\uB85D\uB3C4 \uC870\uD68C\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4. \uC870\uD68C\uB294 \uCD5C\uADFC \uD65C\uB3D9\uC774 \uC788\uB294 \uC138\uC158\uC5D0\uB9CC \uC218\uD589\uD558\uC5EC \uC720\uD734 \uD504\uB85C\uC81D\uD2B8\uC5D0\uC11C \uC138\uC158 \uD504\uB85C\uC138\uC2A4\uAC00 \uC2DC\uC791\uB418\uB294 \uAC83\uC744 \uB9C9\uC2B5\uB2C8\uB2E4.",
         "tabPerformance": "\uC131\uB2A5",
         "perfDesc": "ZCode\uB294 \uC5F0 \uD504\uB85C\uC81D\uD2B8\uB9C8\uB2E4 \uC138\uC158 \uD504\uB85C\uC138\uC2A4\uB97C \uC0C1\uC8FC\uC2DC\uD0A4\uBA70 \uC571 \uC790\uCCB4\uB294 \uC774\uB97C \uD68C\uC218\uD558\uC9C0 \uC54A\uC73C\uBBC0\uB85C, \uD504\uB85C\uC81D\uD2B8\uAC00 \uB9CE\uC544\uC9C0\uBA74 \uBA54\uBAA8\uB9AC \uC0AC\uC6A9\uB7C9\uC774 \uB192\uC544\uC9D1\uB2C8\uB2E4. \uC774 \uAE30\uB2A5\uC744 \uCF1C\uBA74 \uC624\uB7AB\uB3D9\uC548 \uC0AC\uC6A9\uD558\uC9C0 \uC54A\uC558\uACE0 \uC2E4\uD589 \uC911\uC778 \uC791\uC5C5\uC774 \uC5C6\uB294 \uD504\uB85C\uC81D\uD2B8\uC758 \uBA54\uBAA8\uB9AC\uAC00 \uC790\uB3D9\uC73C\uB85C \uD68C\uC218\uB429\uB2C8\uB2E4. \uC138\uC158 \uAE30\uB85D\uC740 \uC601\uD5A5\uC744 \uBC1B\uC9C0 \uC54A\uC73C\uBA70 \uB2E4\uC2DC \uC5F4\uBA74 \uC790\uB3D9\uC73C\uB85C \uBCF5\uC6D0\uB418\uACE0, \uCCAB \uC751\uB2F5\uC5D0 \uBA87 \uCD08\uB9CC \uAE30\uB2E4\uB9AC\uBA74 \uB429\uB2C8\uB2E4. \uC0AC\uC6A9 \uC911\uC778 \uD504\uB85C\uC81D\uD2B8, \uC2E4\uD589 \uC911\uC778 \uC138\uC158\uACFC \uBC31\uADF8\uB77C\uC6B4\uB4DC \uBA85\uB839, \uC608\uC57D\uB41C \uC791\uC5C5\uC740 \uD68C\uC218\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4. \uBC31\uADF8\uB77C\uC6B4\uB4DC \uBA85\uB839 \uAC10\uC9C0\uB294 \uC2DC\uC2A4\uD15C \uD504\uB85C\uC138\uC2A4 \uC815\uBCF4\uC5D0 \uC758\uC874\uD558\uBA70(Linux / macOS / Windows \uAC01\uAC01 \uC2DC\uC2A4\uD15C \uAE30\uBCF8 \uB3C4\uAD6C \uC0AC\uC6A9), \uAC10\uC9C0\uB97C \uC0AC\uC6A9\uD560 \uC218 \uC5C6\uC73C\uBA74 \uAE30\uB2A5\uC774 \uC790\uB3D9\uC73C\uB85C \uBE44\uD65C\uC131\uD654\uB429\uB2C8\uB2E4.",
         "featureIdleReclaim": "\uC720\uD734 \uD504\uB85C\uC81D\uD2B8 \uBA54\uBAA8\uB9AC \uD68C\uC218",
@@ -1786,6 +1790,8 @@
         "featureSubagentIconDesc": "\u041F\u043E\u043A\u0430 \u0440\u0430\u0431\u043E\u0442\u0430\u044E\u0442 \u0444\u043E\u043D\u043E\u0432\u044B\u0435 \u0441\u0443\u0431\u0430\u0433\u0435\u043D\u0442\u044B, \u043F\u043E\u043A\u0430\u0437\u044B\u0432\u0430\u0435\u0442\u0441\u044F \u0437\u043D\u0430\u0447\u043E\u043A \u0440\u043E\u0431\u043E\u0442\u0430; \u043F\u0440\u0438 \u0432\u044B\u043F\u043E\u043B\u043D\u0435\u043D\u0438\u0438 \u0444\u043E\u043D\u043E\u0432\u044B\u0445 \u043A\u043E\u043C\u0430\u043D\u0434 \u0442\u0435\u0440\u043C\u0438\u043D\u0430\u043B\u0430 \u2014 \u0437\u043D\u0430\u0447\u043E\u043A \u0442\u0435\u0440\u043C\u0438\u043D\u0430\u043B\u0430 (\u0435\u0441\u043B\u0438 \u0438 \u0442\u043E \u0438 \u0434\u0440\u0443\u0433\u043E\u0435, \u043F\u0440\u0438\u043E\u0440\u0438\u0442\u0435\u0442 \u0443 \u0440\u043E\u0431\u043E\u0442\u0430). \u0422\u043E\u0447\u043A\u0430 \u043D\u0435\u043F\u0440\u043E\u0447\u0438\u0442\u0430\u043D\u043D\u043E\u0433\u043E \u043F\u0435\u0440\u0435\u043D\u043E\u0441\u0438\u0442\u0441\u044F \u0432 \u043A\u043E\u043D\u0435\u0446 \u0441\u0442\u0440\u043E\u043A\u0438 \u0438 \u0432\u0438\u0434\u043D\u0430 \u0432\u0441\u0435\u0433\u0434\u0430. \u0423 \u0432\u044B\u043F\u043E\u043B\u043D\u044F\u044E\u0449\u0438\u0445\u0441\u044F \u0441\u0435\u0441\u0441\u0438\u0439 \u043F\u043E\u0441\u0442\u043E\u044F\u043D\u043D\u043E \u043F\u043E\u043A\u0430\u0437\u044B\u0432\u0430\u0435\u0442\u0441\u044F \u0438\u043D\u0434\u0438\u043A\u0430\u0442\u043E\u0440 \u0437\u0430\u0433\u0440\u0443\u0437\u043A\u0438. \u0417\u043D\u0430\u0447\u043A\u0438 \u043D\u0435\u043F\u0440\u043E\u0447\u0438\u0442\u0430\u043D\u043D\u043E\u0433\u043E \u043F\u0440\u043E\u0435\u043A\u0442\u0430 \u043D\u0435 \u0443\u0447\u0438\u0442\u044B\u0432\u0430\u044E\u0442 \u0441\u0442\u0440\u043E\u043A\u0438 \u0441 \u043E\u0448\u0438\u0431\u043A\u0430\u043C\u0438.",
         "subagentRobotTip": "\u0421\u0443\u0431\u0430\u0433\u0435\u043D\u0442\u044B \u0440\u0430\u0431\u043E\u0442\u0430\u044E\u0442",
         "subagentTermTip": "\u0424\u043E\u043D\u043E\u0432\u044B\u0435 \u043A\u043E\u043C\u0430\u043D\u0434\u044B \u0432\u044B\u043F\u043E\u043B\u043D\u044F\u044E\u0442\u0441\u044F",
+        "subagentFreshLabel": "\u041C\u0438\u043D\u0443\u0442 \u0431\u0435\u0437 \u0430\u043A\u0442\u0438\u0432\u043D\u043E\u0441\u0442\u0438 \u0441\u0443\u0431\u0430\u0433\u0435\u043D\u0442\u0430 \u0434\u043E \u043F\u0440\u0438\u0437\u043D\u0430\u043D\u0438\u044F \u0437\u0430\u0432\u0435\u0440\u0448\u0451\u043D\u043D\u044B\u043C",
+        "subagentFreshHint": "\u0415\u0441\u043B\u0438 \u0430\u043A\u0442\u0438\u0432\u043D\u043E\u0441\u0442\u0438 \u0441\u0443\u0431\u0430\u0433\u0435\u043D\u0442\u0430 \u043D\u0435\u0442 \u0434\u043E\u043B\u044C\u0448\u0435 \u044D\u0442\u043E\u0433\u043E \u0432\u0440\u0435\u043C\u0435\u043D\u0438, \u043E\u043D \u0441\u0447\u0438\u0442\u0430\u0435\u0442\u0441\u044F \u0437\u0430\u0432\u0435\u0440\u0448\u0451\u043D\u043D\u044B\u043C: \u0437\u043D\u0430\u0447\u043E\u043A \u0440\u043E\u0431\u043E\u0442\u0430 \u0441\u043A\u0440\u044B\u0432\u0430\u0435\u0442\u0441\u044F, \u043E\u0444\u0438\u0446\u0438\u0430\u043B\u044C\u043D\u044B\u0435 \u0437\u0430\u043F\u0438\u0441\u0438 \u043E \u0437\u0430\u0432\u0435\u0440\u0448\u0435\u043D\u0438\u0438 \u0431\u043E\u043B\u044C\u0448\u0435 \u043D\u0435 \u0437\u0430\u043F\u0440\u0430\u0448\u0438\u0432\u0430\u044E\u0442\u0441\u044F. \u0417\u0430\u043F\u0440\u043E\u0441\u044B \u0438\u0434\u0443\u0442 \u0442\u043E\u043B\u044C\u043A\u043E \u043F\u043E \u0441\u0435\u0441\u0441\u0438\u044F\u043C \u0441 \u043D\u0435\u0434\u0430\u0432\u043D\u0435\u0439 \u0430\u043A\u0442\u0438\u0432\u043D\u043E\u0441\u0442\u044C\u044E, \u0447\u0442\u043E\u0431\u044B \u043D\u0435 \u0437\u0430\u043F\u0443\u0441\u043A\u0430\u0442\u044C \u043F\u0440\u043E\u0446\u0435\u0441\u0441\u044B \u0441\u0435\u0441\u0441\u0438\u0439 \u0434\u043B\u044F \u043F\u0440\u043E\u0441\u0442\u0430\u0438\u0432\u0430\u044E\u0449\u0438\u0445 \u043F\u0440\u043E\u0435\u043A\u0442\u043E\u0432.",
         "tabPerformance": "\u041F\u0440\u043E\u0438\u0437\u0432\u043E\u0434\u0438\u0442\u0435\u043B\u044C\u043D\u043E\u0441\u0442\u044C",
         "perfDesc": "ZCode \u0434\u0435\u0440\u0436\u0438\u0442 \u043F\u0440\u043E\u0446\u0435\u0441\u0441 \u0441\u0435\u0441\u0441\u0438\u0438 \u0434\u043B\u044F \u043A\u0430\u0436\u0434\u043E\u0433\u043E \u043E\u0442\u043A\u0440\u044B\u0442\u043E\u0433\u043E \u043F\u0440\u043E\u0435\u043A\u0442\u0430 \u0438 \u0441\u0430\u043C \u0435\u0433\u043E \u043D\u0435 \u043E\u0441\u0432\u043E\u0431\u043E\u0436\u0434\u0430\u0435\u0442, \u043F\u043E\u044D\u0442\u043E\u043C\u0443 \u0447\u0435\u043C \u0431\u043E\u043B\u044C\u0448\u0435 \u043F\u0440\u043E\u0435\u043A\u0442\u043E\u0432, \u0442\u0435\u043C \u0432\u044B\u0448\u0435 \u0440\u0430\u0441\u0445\u043E\u0434 \u043F\u0430\u043C\u044F\u0442\u0438. \u0415\u0441\u043B\u0438 \u0432\u043A\u043B\u044E\u0447\u0438\u0442\u044C \u044D\u0442\u0443 \u0444\u0443\u043D\u043A\u0446\u0438\u044E, \u043F\u0440\u043E\u0435\u043A\u0442\u044B, \u043A\u043E\u0442\u043E\u0440\u044B\u0435 \u0434\u0430\u0432\u043D\u043E \u043D\u0435 \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u043B\u0438\u0441\u044C \u0438 \u0432 \u043A\u043E\u0442\u043E\u0440\u044B\u0445 \u043D\u0438\u0447\u0435\u0433\u043E \u043D\u0435 \u0432\u044B\u043F\u043E\u043B\u043D\u044F\u0435\u0442\u0441\u044F, \u0431\u0443\u0434\u0443\u0442 \u043E\u0441\u0432\u043E\u0431\u043E\u0436\u0434\u0430\u0442\u044C \u043F\u0430\u043C\u044F\u0442\u044C \u0430\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u0438: \u0437\u0430\u043F\u0438\u0441\u0438 \u0441\u0435\u0441\u0441\u0438\u0439 \u043D\u0435 \u0437\u0430\u0442\u0440\u0430\u0433\u0438\u0432\u0430\u044E\u0442\u0441\u044F \u0438 \u0432\u043E\u0441\u0441\u0442\u0430\u043D\u0430\u0432\u043B\u0438\u0432\u0430\u044E\u0442\u0441\u044F \u043F\u0440\u0438 \u043F\u043E\u0432\u0442\u043E\u0440\u043D\u043E\u043C \u043E\u0442\u043A\u0440\u044B\u0442\u0438\u0438, \u0442\u043E\u043B\u044C\u043A\u043E \u043F\u0435\u0440\u0432\u044B\u0439 \u043E\u0442\u0432\u0435\u0442 \u043F\u0440\u0438\u0434\u0451\u0442\u0441\u044F \u043F\u043E\u0434\u043E\u0436\u0434\u0430\u0442\u044C \u043D\u0435\u0441\u043A\u043E\u043B\u044C\u043A\u043E \u0441\u0435\u043A\u0443\u043D\u0434. \u0418\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u0435\u043C\u044B\u0439 \u043F\u0440\u043E\u0435\u043A\u0442, \u0437\u0430\u043F\u0443\u0449\u0435\u043D\u043D\u044B\u0435 \u0441\u0435\u0441\u0441\u0438\u0438 \u0438 \u0444\u043E\u043D\u043E\u0432\u044B\u0435 \u043A\u043E\u043C\u0430\u043D\u0434\u044B, \u0430 \u0442\u0430\u043A\u0436\u0435 \u0437\u0430\u0434\u0430\u0447\u0438 \u043F\u043E \u0440\u0430\u0441\u043F\u0438\u0441\u0430\u043D\u0438\u044E \u043D\u0435 \u043E\u0441\u0432\u043E\u0431\u043E\u0436\u0434\u0430\u044E\u0442\u0441\u044F. \u041E\u0431\u043D\u0430\u0440\u0443\u0436\u0435\u043D\u0438\u0435 \u0444\u043E\u043D\u043E\u0432\u044B\u0445 \u043A\u043E\u043C\u0430\u043D\u0434 \u043E\u043F\u0438\u0440\u0430\u0435\u0442\u0441\u044F \u043D\u0430 \u0441\u0438\u0441\u0442\u0435\u043C\u043D\u0443\u044E \u0438\u043D\u0444\u043E\u0440\u043C\u0430\u0446\u0438\u044E \u043E \u043F\u0440\u043E\u0446\u0435\u0441\u0441\u0430\u0445 (\u0432 Linux / macOS / Windows \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u044E\u0442\u0441\u044F \u0432\u0441\u0442\u0440\u043E\u0435\u043D\u043D\u044B\u0435 \u0441\u0440\u0435\u0434\u0441\u0442\u0432\u0430); \u0435\u0441\u043B\u0438 \u043E\u0431\u043D\u0430\u0440\u0443\u0436\u0435\u043D\u0438\u0435 \u043D\u0435\u0434\u043E\u0441\u0442\u0443\u043F\u043D\u043E, \u0444\u0443\u043D\u043A\u0446\u0438\u044F \u0430\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u0438 \u043E\u0442\u043A\u043B\u044E\u0447\u0430\u0435\u0442\u0441\u044F.",
         "featureIdleReclaim": "\u041E\u0441\u0432\u043E\u0431\u043E\u0436\u0434\u0435\u043D\u0438\u0435 \u043F\u0430\u043C\u044F\u0442\u0438 \u043F\u0440\u043E\u0441\u0442\u0430\u0438\u0432\u0430\u044E\u0449\u0438\u0445 \u043F\u0440\u043E\u0435\u043A\u0442\u043E\u0432",
@@ -2789,6 +2795,8 @@
         featureSubagentIconDesc: "\u540E\u53F0\u5B50\u4EE3\u7406\u5728\u8DD1\u663E\u673A\u5668\u4EBA\u3001\u540E\u53F0\u7EC8\u7AEF\u547D\u4EE4\u5728\u8DD1\u663E\u7EC8\u7AEF\u56FE\u6807\uFF08\u540C\u65F6\u5728\u8DD1\u673A\u5668\u4EBA\u4F18\u5148\uFF09\uFF1B\u672A\u8BFB\u5706\u70B9\u8BA9\u4F4D\u5230\u884C\u5C3E\u5E38\u663E\uFF1B\u4F1A\u8BDD\u8FD0\u884C\u4E2D\u59CB\u7EC8\u663E\u793A\u8F6C\u5708\u56FE\u6807\uFF1B\u9879\u76EE\u672A\u8BFB\u5FBD\u6807\u5FFD\u7565\u9519\u8BEF\u884C\u3002",
         subagentRobotTip: "\u5B50\u4EE3\u7406\u8FD0\u884C\u4E2D",
         subagentTermTip: "\u540E\u53F0\u547D\u4EE4\u8FD0\u884C\u4E2D",
+        subagentFreshLabel: "\u5B50\u4EE3\u7406\u65E0\u6D3B\u52A8\u591A\u4E45\u7B97\u7ED3\u675F\uFF08\u5206\u949F\uFF09",
+        subagentFreshHint: "\u8D85\u8FC7\u8FD9\u4E2A\u65F6\u957F\u6CA1\u6709\u5B50\u4EE3\u7406\u6D3B\u52A8\u89C6\u4E3A\u7ED3\u675F\uFF1A\u4E0D\u518D\u4EAE\u673A\u5668\u4EBA\u56FE\u6807\uFF0C\u4E5F\u4E0D\u518D\u67E5\u8BE2\u5B98\u65B9\u7ED3\u675F\u8BB0\u5F55\u3002\u67E5\u8BE2\u53EA\u5BF9\u6700\u8FD1\u4ECD\u6709\u6D3B\u52A8\u7684\u4F1A\u8BDD\u53D1\u8D77\uFF0C\u907F\u514D\u4E3A\u7A7A\u95F2\u9879\u76EE\u542F\u52A8\u4F1A\u8BDD\u8FDB\u7A0B\u3002",
         tabPerformance: "\u6027\u80FD",
         perfDesc: "ZCode \u4E3A\u6BCF\u4E2A\u6253\u5F00\u8FC7\u7684\u9879\u76EE\u5E38\u9A7B\u4E00\u4E2A\u4F1A\u8BDD\u8FDB\u7A0B\uFF0C\u5E94\u7528\u81EA\u8EAB\u4E0D\u4F1A\u56DE\u6536\uFF0C\u9879\u76EE\u591A\u4E86\u5185\u5B58\u5360\u7528\u5C31\u9AD8\u3002\u5F00\u542F\u540E\uFF0C\u957F\u65F6\u95F4\u672A\u4F7F\u7528\u4E14\u6CA1\u6709\u4EFB\u52A1\u5728\u8DD1\u7684\u9879\u76EE\u4F1A\u88AB\u81EA\u52A8\u91CA\u653E\uFF1A\u4F1A\u8BDD\u8BB0\u5F55\u4E0D\u53D7\u5F71\u54CD\uFF0C\u518D\u6B21\u6253\u5F00\u65F6\u81EA\u52A8\u6062\u590D\uFF0C\u4EC5\u9996\u6B21\u56DE\u590D\u6709\u51E0\u79D2\u7B49\u5F85\u3002\u6B63\u5728\u4F7F\u7528\u7684\u9879\u76EE\u3001\u8FD0\u884C\u4E2D\u7684\u4F1A\u8BDD\u4E0E\u540E\u53F0\u547D\u4EE4\u3001\u5B9A\u65F6\u4EFB\u52A1\u90FD\u4E0D\u4F1A\u88AB\u56DE\u6536\u3002\u540E\u53F0\u547D\u4EE4\u68C0\u6D4B\u4F9D\u8D56\u7CFB\u7EDF\u8FDB\u7A0B\u4FE1\u606F\uFF08Linux / macOS / Windows \u5404\u8D70\u7CFB\u7EDF\u81EA\u5E26\u5DE5\u5177\uFF09\uFF0C\u68C0\u6D4B\u4E0D\u53EF\u7528\u65F6\u529F\u80FD\u81EA\u52A8\u505C\u7528\u3002",
         featureIdleReclaim: "\u7A7A\u95F2\u9879\u76EE\u5185\u5B58\u56DE\u6536",
@@ -3462,6 +3470,8 @@
         featureSubagentIconDesc: "Task rows show a robot icon while subagents run and a terminal icon while background commands run (robot wins when both); the unread dot moves to the row end; running sessions always show a spinner; project unread badges ignore error rows.",
         subagentRobotTip: "Subagents running",
         subagentTermTip: "Background commands running",
+        subagentFreshLabel: "Minutes without subagent activity before considered finished",
+        subagentFreshHint: "Longer than this without subagent activity counts as finished: the robot icon turns off and official end records are no longer queried. Queries only go to sessions with recent activity, so idle projects are not started.",
         tabPerformance: "Performance",
         perfDesc: "ZCode keeps a session process resident for every project you have opened and never reclaims it, so memory grows with projects. When enabled, projects unused for a while with nothing running release their memory automatically: sessions are untouched and reload when reopened, with a few seconds' wait on the first reply. The project in use, running sessions, background commands and scheduled tasks are never reclaimed. Background-command detection reads system process info via built-in tools (Linux / macOS / Windows); when unavailable, the feature disables itself.",
         featureIdleReclaim: "Idle project memory reclaim",
@@ -12477,8 +12487,9 @@
             "div",
             { class: "mt-3 divide-y divide-border rounded-xl border border-border" },
             perfToggleWrap,
-            perfNumberRow(L.idleReclaimMinutesLabel, null, "idleReclaimMinutes", 30, 1),
-            perfNumberRow(L.idleReclaimStartupLabel, L.idleReclaimStartupHint, "idleReclaimStartupMinutes", 5, 0)
+            perfNumberRow(L.idleReclaimMinutesLabel, null, "idleReclaimMinutes", 10, 1),
+            perfNumberRow(L.idleReclaimStartupLabel, L.idleReclaimStartupHint, "idleReclaimStartupMinutes", 5, 0),
+            perfNumberRow(L.subagentFreshLabel, L.subagentFreshHint, "subagentFreshMinutes", 60, 1)
           )
         );
         const savedSync = config.sync && typeof config.sync === "object" ? config.sync : { url: "", dir: "zcode-pro", login: "", password: "", include: { zcodepro: true, model: true }, lastPushAt: null, lastPullAt: null };
@@ -15995,7 +16006,11 @@
   var installed6 = false;
   var enabled7 = true;
   var POLL_MS = 2e4;
-  var ACTIVITY_FRESH_MS = 60 * 6e4;
+  var DEFAULT_FRESH_MS = 60 * 6e4;
+  var freshMs = DEFAULT_FRESH_MS;
+  var freshGen = 0;
+  var endedSeen = /* @__PURE__ */ new Map();
+  var ENDED_CACHE_MAX = 256;
   var WS_CANDIDATES_TTL_MS = 5 * 6e4;
   var APPLY_DEBOUNCE_MS = 300;
   var CALL_TIMEOUT_MS = 6e3;
@@ -16242,28 +16257,84 @@
         CALL_TIMEOUT_MS,
         null
       );
-      const rootsWithKids = new Set((childRes && childRes.children || []).map((c) => c.root));
-      const endedLists = await Promise.all([...candidates].filter(([sid]) => rootsWithKids.has(sid)).map(async ([sid, ws]) => {
+      if (!childRes || childRes.ok === false || !Array.isArray(childRes.children)) return;
+      const tickFresh = freshMs;
+      const tickGen = freshGen;
+      const now = Date.now();
+      const lastChildAt = /* @__PURE__ */ new Map();
+      const childrenOfRoot = /* @__PURE__ */ new Map();
+      for (const c of childRes && childRes.children || []) {
+        const root = c && c.root;
+        const at = Number(c && c.at) || 0;
+        if (!root) continue;
+        if (at > (lastChildAt.get(root) || 0)) lastChildAt.set(root, at);
+        const arr = childrenOfRoot.get(root);
+        if (arr) arr.push({ id: String(c.id || ""), at });
+        else childrenOfRoot.set(root, [{ id: String(c.id || ""), at }]);
+      }
+      const freshRoots = new Set([...lastChildAt].filter(([, at]) => now - at <= tickFresh).map(([sid]) => sid));
+      const toQuery = [...candidates].filter(([sid]) => {
+        if (!freshRoots.has(sid)) return false;
+        const seen2 = endedSeen.get(sid);
+        return !(seen2 && seen2.at === lastChildAt.get(sid));
+      });
+      const endedLists = await Promise.all(toQuery.map(async ([sid, ws]) => {
         const r = await withTimeout(
           ag.listSessionSubagents({ workspacePath: ws, sessionId: sid, endedLimit: 20 }),
           CALL_TIMEOUT_MS,
           null
         );
-        return r && r.ended && r.ended.items || [];
+        return {
+          sid,
+          at: lastChildAt.get(sid),
+          ok: !!(r && r.ended && Array.isArray(r.ended.items)),
+          items: r && r.ended && r.ended.items || [],
+          // 结束记录一页最多 20 条；超过一页时用应用自己的 running 列表兜底：
+          // 不在 running 里的新鲜子代理视为已结束（只剩"误记结束但还在跑"的
+          // 小概率，代价是图标早灭，不会一直拉起进程）。running 是对象数组
+          // （含 childSessionId），结构异常时不做兜底
+          truncated: !!(r && r.ended && Number(r.ended.total) > (r.ended.items || []).length),
+          running: Array.isArray(r && r.running) ? new Set(r.running.map((x) => typeof x === "string" ? x : x && x.childSessionId).filter(Boolean)) : null
+        };
       }));
       const endedAt = /* @__PURE__ */ new Map();
-      for (const items2 of endedLists) {
+      for (const { sid, at, ok, items: items2, truncated, running } of endedLists) {
+        const map = /* @__PURE__ */ new Map();
         for (const e of items2) {
           const id = e && e.childSessionId;
-          if (id) endedAt.set(id, Math.max(endedAt.get(id) || 0, Number(e.endedAt) || 0));
+          if (id) map.set(id, Math.max(map.get(id) || 0, Number(e.endedAt) || 0));
         }
+        if (ok) {
+          const freshKids = (childrenOfRoot.get(sid) || []).filter((k) => now - k.at <= tickFresh);
+          let settled = freshKids.length > 0;
+          for (const k of freshKids) {
+            if ((map.get(k.id) || 0) >= k.at) continue;
+            if (truncated && running && !running.has(k.id)) {
+              map.set(k.id, k.at);
+              continue;
+            }
+            settled = false;
+          }
+          if (settled && tickGen === freshGen) endedSeen.set(sid, { at, ended: map });
+          else endedSeen.delete(sid);
+        }
+        for (const [id, t2] of map) endedAt.set(id, Math.max(endedAt.get(id) || 0, t2));
       }
-      const now = Date.now();
+      for (const sid of freshRoots) {
+        const seen2 = endedSeen.get(sid);
+        if (!seen2 || seen2.at !== lastChildAt.get(sid)) continue;
+        for (const [id, t2] of seen2.ended) endedAt.set(id, Math.max(endedAt.get(id) || 0, t2));
+      }
+      for (const sid of endedSeen.keys()) if (!freshRoots.has(sid)) endedSeen.delete(sid);
+      if (endedSeen.size > ENDED_CACHE_MAX) {
+        const oldest = [...endedSeen.entries()].sort((a, b) => a[1].at - b[1].at);
+        for (let i = 0; i < oldest.length - ENDED_CACHE_MAX; i++) endedSeen.delete(oldest[i][0]);
+      }
       const live = /* @__PURE__ */ new Set();
       const liveWs = /* @__PURE__ */ new Set();
       for (const c of childRes && childRes.children || []) {
         const at = Number(c.at) || 0;
-        if (!(at > 0 && now - at <= ACTIVITY_FRESH_MS)) continue;
+        if (!(at > 0 && now - at <= tickFresh)) continue;
         const end = endedAt.get(c.id) || 0;
         if (end && end >= at) continue;
         live.add(c.root);
@@ -16337,13 +16408,23 @@
   }
   async function refreshConfig2() {
     try {
-      const cfg = await getConfig();
-      const next = !!(cfg && cfg.features && cfg.features.subagentIcon !== false);
+      const cfg = await withTimeout(getConfig(), CALL_TIMEOUT_MS, null);
+      if (!cfg || Object.keys(cfg).length <= 1) return false;
+      const next = !!(cfg.features && cfg.features.subagentIcon !== false);
+      const mins = Number(cfg.subagentFreshMinutes);
+      const nextFresh = Number.isFinite(mins) && mins >= 1 ? Math.min(1440, Math.round(mins)) * 6e4 : DEFAULT_FRESH_MS;
+      if (nextFresh !== freshMs) {
+        endedSeen.clear();
+        freshGen++;
+      }
+      freshMs = nextFresh;
       if (next !== enabled7) {
         enabled7 = next;
         apply2();
       }
+      return true;
     } catch {
+      return false;
     }
   }
   var applyDebounce = 0;
@@ -16351,8 +16432,9 @@
   function startSubagentIcon() {
     if (installed6 || typeof document === "undefined") return;
     installed6 = true;
-    void refreshConfig2();
-    void tick4();
+    void refreshConfig2().then((ok) => {
+      if (ok) void tick4();
+    });
     setInterval(() => {
       void refreshConfig2();
       void tick4();
@@ -16415,6 +16497,12 @@
       }
     }
     return out;
+  }
+  async function hasFreshSubagentActivity(ws, windowMs) {
+    const res = await rpc("/workspace-subagent-activity?path=" + encodeURIComponent(ws)).catch(() => null);
+    if (!res || res.ok !== true) return true;
+    const at = Number(res.at) || 0;
+    return at > 0 && Date.now() - at <= windowMs;
   }
   async function reclaim(ws) {
     const services = findServices();
@@ -16496,8 +16584,10 @@
       idleSince.clear();
       return;
     }
-    const minutes = Math.min(MAX_MINUTES, Math.max(MIN_MINUTES, Number(cfg.idleReclaimMinutes) || 30));
+    const minutes = Math.min(MAX_MINUTES, Math.max(MIN_MINUTES, Number(cfg.idleReclaimMinutes) || 10));
     const threshold = minutes * 6e4;
+    const freshMinutes = Number(cfg.subagentFreshMinutes);
+    const subagentGuardMs = (Number.isFinite(freshMinutes) && freshMinutes >= 1 ? Math.min(1440, Math.round(freshMinutes)) : 60) * 6e4;
     let startupMinutes = Number(cfg.idleReclaimStartupMinutes);
     if (!Number.isFinite(startupMinutes)) startupMinutes = 5;
     startupMinutes = Math.min(MAX_MINUTES, Math.max(0, startupMinutes));
@@ -16536,6 +16626,10 @@
     const procBusy = new Set(res.busy || []);
     for (const ws of due) {
       if (procBusy.has(ws)) {
+        idleSince.delete(ws);
+        continue;
+      }
+      if (await hasFreshSubagentActivity(ws, subagentGuardMs)) {
         idleSince.delete(ws);
         continue;
       }

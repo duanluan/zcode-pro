@@ -8,7 +8,9 @@
 // 这里在"未读盖住运行中"时补回转圈（克隆官方 loader），保证运行中恒为转圈。
 // 后台任务清单来自 helper 的 /background-bash（进程握着的任务日志文件反查会话，
 // 纯文件系统扫描）。不能用会话快照（getTaskSnapshot）：出快照会把会话 resume
-// 起来，逐会话轮询快照曾造成整夜 6600 次/小时 resume、会话内存暴涨。
+// 起来，逐会话轮询快照曾造成整夜 6600 次/小时 resume、会话内存暴涨。同理，
+// listSessionSubagents 会为对应项目启动会话进程：只对最近仍有子代理活动的会话
+// 查询，活动超过新鲜期的历史会话一律不查，避免空闲项目的进程被图标轮询拉起。
 // 信号：子代理子会话写入 CLI 会话库的活动时间（/subagent-children，含嵌套子代理，
 // 由 host 查库；已结束且没有后续活动的子代理由 host 按 turn_usage 的轮次结束时间
 // 排除——中断时父回合被打断、结束记录没有写入，被继续唤起过的子代理应用记的结束
@@ -16,8 +18,8 @@
 // 运行列表判活——它两头都不可靠：
 // 长跑子代理跑着跑着会被误记为失败/结束（实测 48 分钟、60 分钟的都中过招），
 // 崩溃/中断残留的又永远挂"运行中"（实测残留数月）。子代理运行时消息不断写入
-// 会话库，超过 60 分钟无动静视为僵死不亮（单个长工具调用可静默 20 分钟上下，
-// 取 60 分钟留足余量）；应用的"结束"记录不早于最后活动时可信，用来让刚结束的
+// 会话库，默认超过 60 分钟无动静视为僵死不亮（单个长工具调用可静默 20 分钟上下，
+// 时长可在设置里调，留足余量）；应用的"结束"记录不早于最后活动时可信，用来让刚结束的
 // 图标立刻熄灭，被误记结束但还在写的照常亮。
 // 折叠项目的会话清单从任务索引反查（/workspace-sessions，最近更新的 30 个、
 // 7 天内有动静）；任务行在场时直接用行键里的会话 id。项目行的根路径优先按
@@ -36,7 +38,13 @@ let installed = false;
 let enabled = true;
 
 const POLL_MS = 20_000;          // 全量刷新周期
-const ACTIVITY_FRESH_MS = 60 * 60_000; // 子会话无活动超过此时长视为僵死
+const DEFAULT_FRESH_MS = 60 * 60_000; // 子会话无活动超过此时长视为僵死（默认值，可在设置里调）
+let freshMs = DEFAULT_FRESH_MS;
+let freshGen = 0; // 新鲜期变更代数：递增时进行中的 tick 不再写回缓存（旧窗口的结论作废）
+// 已确认结束的子代理记录：root 会话 → { at, ended: Map(子会话 id → endedAt) }。
+// 活动时间没变化说明没有新的子代理活动，不必再查官方接口
+const endedSeen = new Map();
+const ENDED_CACHE_MAX = 256;
 const WS_CANDIDATES_TTL_MS = 5 * 60_000; // 折叠项目会话清单 / 项目根路径缓存
 const APPLY_DEBOUNCE_MS = 300;   // DOM 变动后按已知状态补上图标的去抖
 const CALL_TIMEOUT_MS = 6_000;   // 单个服务/rpc 调用超时
@@ -320,28 +328,102 @@ async function tick() {
     const childRes = await withTimeout(
       rpc('/subagent-children?ids=' + encodeURIComponent([...candidates.keys()].join(','))),
       CALL_TIMEOUT_MS, null);
+    // 查询失败（超时/helper 抖动，rpc 网络错误返回 {ok:false}）时保留缓存与上次
+    // 的图标状态，下一轮重试：清缓存会让所有新鲜会话下一轮重新查官方接口
+    // （正是要避免的进程拉起），图标也会全灭再闪回。持续失败时本 tick 里的
+    // 转圈/终端/未读查询也一并跳过（保持旧值），helper 恢复后自动接上
+    if (!childRes || childRes.ok === false || !Array.isArray(childRes.children)) return;
+    // 快照本轮使用的新鲜期：refreshConfig 与 tick 并发跑，中途改值会让前后
+    // 半段按不同窗口算，缓存也被写脏
+    const tickFresh = freshMs;
+    const tickGen = freshGen;
+    const now = Date.now();
+    // 每个会话最近一次子代理活动时间，以及名下子代理清单（判断能否停止后续查询）
+    const lastChildAt = new Map();
+    const childrenOfRoot = new Map();
+    for (const c of (childRes && childRes.children) || []) {
+      const root = c && c.root;
+      const at = Number(c && c.at) || 0;
+      if (!root) continue;
+      if (at > (lastChildAt.get(root) || 0)) lastChildAt.set(root, at);
+      const arr = childrenOfRoot.get(root);
+      if (arr) arr.push({ id: String(c.id || ''), at });
+      else childrenOfRoot.set(root, [{ id: String(c.id || ''), at }]);
+    }
     // 结束记录只对"名下真有子代理"的会话有意义（收刚结束的图标），没子代理的
-    // 会话不必逐个查——这是每轮 × 全部会话的主要调用量
-    const rootsWithKids = new Set(((childRes && childRes.children) || []).map((c) => c.root));
-    const endedLists = await Promise.all([...candidates].filter(([sid]) => rootsWithKids.has(sid)).map(async ([sid, ws]) => {
+    // 会话不必逐个查——这是每轮 × 全部会话的主要调用量。活动已超过新鲜期的
+    // 会话本来就不亮图标，也一律不查：listSessionSubagents 会为对应项目启动
+    // 会话进程，历史子代理记录会让空闲项目的进程被反复拉起，空闲回收刚释放
+    // 又被重建
+    const freshRoots = new Set([...lastChildAt].filter(([, at]) => now - at <= tickFresh).map(([sid]) => sid));
+    // 只查"刚进入新鲜期或活动时间有变化"的会话；同一活动时间已经查过且结果在案
+    // 时直接复用——子代理结束后活动时间不再变化，重复查只会每 20 秒把进程拉起
+    const toQuery = [...candidates].filter(([sid]) => {
+      if (!freshRoots.has(sid)) return false;
+      const seen = endedSeen.get(sid);
+      return !(seen && seen.at === lastChildAt.get(sid));
+    });
+    const endedLists = await Promise.all(toQuery.map(async ([sid, ws]) => {
       const r = await withTimeout(
         ag.listSessionSubagents({ workspacePath: ws, sessionId: sid, endedLimit: 20 }),
         CALL_TIMEOUT_MS, null);
-      return (r && r.ended && r.ended.items) || [];
+      return {
+        sid,
+        at: lastChildAt.get(sid),
+        ok: !!(r && r.ended && Array.isArray(r.ended.items)),
+        items: (r && r.ended && r.ended.items) || [],
+        // 结束记录一页最多 20 条；超过一页时用应用自己的 running 列表兜底：
+        // 不在 running 里的新鲜子代理视为已结束（只剩"误记结束但还在跑"的
+        // 小概率，代价是图标早灭，不会一直拉起进程）。running 是对象数组
+        // （含 childSessionId），结构异常时不做兜底
+        truncated: !!(r && r.ended && Number(r.ended.total) > ((r.ended.items || []).length)),
+        running: Array.isArray(r && r.running)
+          ? new Set(r.running.map((x) => (typeof x === 'string' ? x : (x && x.childSessionId))).filter(Boolean))
+          : null,
+      };
     }));
     const endedAt = new Map(); // 子会话 id → 最新结束时间
-    for (const items of endedLists) {
+    for (const { sid, at, ok, items, truncated, running } of endedLists) {
+      const map = new Map();
       for (const e of items) {
         const id = e && e.childSessionId;
-        if (id) endedAt.set(id, Math.max(endedAt.get(id) || 0, Number(e.endedAt) || 0));
+        if (id) map.set(id, Math.max(map.get(id) || 0, Number(e.endedAt) || 0));
       }
+      // 只有"名下仍在新鲜期内的子代理都已确认结束"时才停掉后续查询；还有活着的
+      // 子代理就下一轮继续查，否则结束记录晚到会让图标一直不灭。早已超过新鲜期
+      // 的子代理本来就不亮图标，不参与判定。running 兜底命中的子代理把结束时间
+      // 记成活动时间，让图标真正熄灭（而不是只停查询、图标一直亮着）
+      if (ok) {
+        const freshKids = (childrenOfRoot.get(sid) || []).filter((k) => now - k.at <= tickFresh);
+        let settled = freshKids.length > 0;
+        for (const k of freshKids) {
+          if ((map.get(k.id) || 0) >= k.at) continue;
+          if (truncated && running && !running.has(k.id)) { map.set(k.id, k.at); continue; }
+          settled = false;
+        }
+      if (settled && tickGen === freshGen) endedSeen.set(sid, { at, ended: map });
+      else endedSeen.delete(sid);
+      }
+      for (const [id, t] of map) endedAt.set(id, Math.max(endedAt.get(id) || 0, t));
     }
-    const now = Date.now();
+    // 缓存命中的会话：并入上次确认的结束记录，避免跳过查询后图标又亮起来
+    for (const sid of freshRoots) {
+      const seen = endedSeen.get(sid);
+      if (!seen || seen.at !== lastChildAt.get(sid)) continue;
+      for (const [id, t] of seen.ended) endedAt.set(id, Math.max(endedAt.get(id) || 0, t));
+    }
+    // 离开新鲜期的缓存清掉，避免无限增长
+    for (const sid of endedSeen.keys()) if (!freshRoots.has(sid)) endedSeen.delete(sid);
+    if (endedSeen.size > ENDED_CACHE_MAX) {
+      // 缓存规模正常情况下由 freshRoots 决定；超出上限时按活动时间淘汰最旧的
+      const oldest = [...endedSeen.entries()].sort((a, b) => a[1].at - b[1].at);
+      for (let i = 0; i < oldest.length - ENDED_CACHE_MAX; i++) endedSeen.delete(oldest[i][0]);
+    }
     const live = new Set();
     const liveWs = new Set();
     for (const c of (childRes && childRes.children) || []) {
       const at = Number(c.at) || 0;
-      if (!(at > 0 && now - at <= ACTIVITY_FRESH_MS)) continue;
+      if (!(at > 0 && now - at <= tickFresh)) continue;
       const end = endedAt.get(c.id) || 0;
       if (end && end >= at) continue; // 结束记录不早于最后活动 = 真结束了
       live.add(c.root);
@@ -424,15 +506,25 @@ function apply() {
 
 // —— 配置与入口 ——
 
+// 返回 true = 拿到了真实配置；false = helper 未就绪/超时（此时保持上次值）
 async function refreshConfig() {
   try {
-    const cfg = await getConfig();
-    const next = !!(cfg && cfg.features && cfg.features.subagentIcon !== false);
+    const cfg = await withTimeout(getConfig(), CALL_TIMEOUT_MS, null);
+    // helper 不可用时 getConfig 会回一个只有 features 的占位对象
+    if (!cfg || Object.keys(cfg).length <= 1) return false;
+    const next = !!(cfg.features && cfg.features.subagentIcon !== false);
+    const mins = Number(cfg.subagentFreshMinutes);
+    const nextFresh = Number.isFinite(mins) && mins >= 1 ? Math.min(1440, Math.round(mins)) * 60_000 : DEFAULT_FRESH_MS;
+    // 新鲜期变了，旧窗口下“已全部结束”的结论不再成立，缓存作废重查；
+    // 代数递增让进行中的 tick 不把旧窗口的结论写回来
+    if (nextFresh !== freshMs) { endedSeen.clear(); freshGen++; }
+    freshMs = nextFresh;
     if (next !== enabled) {
       enabled = next;
       apply(); // 关闭时把已挂的机器人清掉
     }
-  } catch { /* helper 未就绪时保持现状 */ }
+    return true;
+  } catch { return false; /* helper 未就绪时保持现状 */ }
 }
 
 let applyDebounce = 0;
@@ -441,8 +533,9 @@ let tickThrottle = 0;
 export function startSubagentIcon() {
   if (installed || typeof document === 'undefined') return;
   installed = true;
-  void refreshConfig();
-  void tick();
+  // 首轮先取配置再巡检：新鲜期配的是更短时长时，不能先按默认 60 分钟查历史会话
+  // （那个查询会把空闲项目的会话进程拉起来）。配置没读到就跳过首轮，等下一轮
+  void refreshConfig().then((ok) => { if (ok) void tick(); });
   setInterval(() => { void refreshConfig(); void tick(); }, POLL_MS);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) { void refreshConfig(); void tick(); } });
   // 行挂载/React 重建后按已知状态补上图标（不重查，重查留给周期 tick）；
