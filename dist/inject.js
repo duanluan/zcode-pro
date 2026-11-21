@@ -14717,21 +14717,39 @@
   var statsSid = null;
   var tickSeq = 0;
   var EST_CHARS_PER_TOKEN = 2;
+  var EST_WINDOW_MS = 8e3;
+  var EST_MIN_SPAN_MS = 2e3;
   var streamSample = null;
+  var streamGrowth = [];
   var streamEst = null;
+  var streamRow = null;
   function composerEl() {
     return document.querySelector("main textarea, main [contenteditable=true], form textarea, form [contenteditable=true]") || document.querySelector("textarea, [contenteditable=true]");
+  }
+  function addStreamSample(book, len, prevLen, at) {
+    book.push({ at, chars: Math.max(0, len - prevLen) });
+    while (book.length > 1 && at - book[0].at > EST_WINDOW_MS) book.shift();
+    if (book.length < 2) return null;
+    let chars = 0;
+    for (const s of book) chars += s.chars;
+    const span = Math.max(EST_MIN_SPAN_MS, at - book[0].at);
+    return chars / EST_CHARS_PER_TOKEN / (span / 1e3);
   }
   function sampleStream() {
     const rows = document.querySelectorAll('[class*="@md/conversation"] [class*="assistant-row"]');
     const last = rows.length ? rows[rows.length - 1] : null;
+    if (last !== streamRow) {
+      streamRow = last;
+      streamGrowth = [];
+    }
     const len = last ? (last.textContent || "").length : 0;
     const now = Date.now();
     const prev = streamSample;
     streamSample = { len, at: now };
-    if (!prev || len <= prev.len || now - prev.at < 500) return null;
-    streamEst = { value: (len - prev.len) / EST_CHARS_PER_TOKEN / ((now - prev.at) / 1e3), at: now };
-    return streamEst.value;
+    if (!prev || now - prev.at < 500) return null;
+    const value = addStreamSample(streamGrowth, len, prev.len, now);
+    if (len > prev.len && value != null) streamEst = { value, at: now };
+    return len > prev.len ? value : null;
   }
   var lastRenderedHtml = null;
   function selectedSessionId() {
@@ -15060,6 +15078,7 @@
         lastStats = null;
         streamSample = null;
         streamEst = null;
+        streamGrowth = [];
       }
       sampleStream();
       const seq = ++tickSeq;

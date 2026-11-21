@@ -23,8 +23,12 @@ let tickSeq = 0; // 在途请求序号：过期响应丢弃，不覆盖新值
 // 标 ≈）。长调用生成中官方 60 秒窗口值要等调用结束才更新，会长时间不动；
 // 文本在增长时优先用估算，流停止后切回官方真实值
 const EST_CHARS_PER_TOKEN = 2;
+const EST_WINDOW_MS = 8000; // 估算窗口：单个 2 秒采样太抖，慢速段会算出 1 tok/s，下个窗口又跳回几十
+const EST_MIN_SPAN_MS = 2000; // 刚起步只有一两次采样时的分母下限
 let streamSample = null; // 上一次采样 { len, at }
+let streamGrowth = []; // 窗口内每次采样的增量 [{ at, chars }]，chars 只记正增长
 let streamEst = null; // 最近一次估算 { value, at }
+let streamRow = null; // 上一次采样的回答行元素：换了行（新一轮）就清空窗口，不拿两行拼增量
 
 // 输入框（composer）：优先在 main/form 里找，弹窗里的 textarea/contenteditable
 //（重命名等）排在文档前面时不会抢位；找不到再退回全文档第一个
@@ -33,19 +37,35 @@ function composerEl() {
     || document.querySelector('textarea, [contenteditable=true]');
 }
 
+// 往窗口里加一次采样并算出速率：窗口内字符增量之和 ÷ 窗口时长。
+// 负增量记 0——流式渲染时 markdown 重排会让 textContent 变短，那不是“倒着输出”
+function addStreamSample(book, len, prevLen, at) {
+  book.push({ at, chars: Math.max(0, len - prevLen) });
+  while (book.length > 1 && at - book[0].at > EST_WINDOW_MS) book.shift();
+  if (book.length < 2) return null;
+  let chars = 0;
+  for (const s of book) chars += s.chars;
+  const span = Math.max(EST_MIN_SPAN_MS, at - book[0].at);
+  return chars / EST_CHARS_PER_TOKEN / (span / 1000);
+}
+
 function sampleStream() {
   // 采样最后一条回答行的文本长度：速率本来就是它的增长。原先取整个 main 的
   // textContent 长度，长会话那是 MB 级字符串，每 2 秒拼一次太贵；回答行不含
   // 输入框，用户打字不会被算成生成，不再需要扣减输入框长度
   const rows = document.querySelectorAll('[class*="@md/conversation"] [class*="assistant-row"]');
   const last = rows.length ? rows[rows.length - 1] : null;
+  // 换了回答行 = 新一轮：窗口里留着上一行的增量会把开头几十秒的速率拉高
+  if (last !== streamRow) { streamRow = last; streamGrowth = []; }
   const len = last ? (last.textContent || '').length : 0;
   const now = Date.now();
   const prev = streamSample;
   streamSample = { len, at: now };
-  if (!prev || len <= prev.len || now - prev.at < 500) return null; // 没增长 = 没在生成
-  streamEst = { value: (len - prev.len) / EST_CHARS_PER_TOKEN / ((now - prev.at) / 1000), at: now };
-  return streamEst.value;
+  if (!prev || now - prev.at < 500) return null; // 没增长 = 没在生成
+  const value = addStreamSample(streamGrowth, len, prev.len, now);
+  // 只在文本还在增长时更新估算时刻：流停了（工具调用、思考停顿）5 秒后切回官方值
+  if (len > prev.len && value != null) streamEst = { value, at: now };
+  return len > prev.len ? value : null;
 }
 let lastRenderedHtml = null; // renderBar 去重：内容没变不重写 DOM
 
@@ -442,7 +462,7 @@ async function tick() {
   const sid = wantRate ? selectedSessionId() : '';
   if (!official || (wantRate && sid)) {
     // 切换会话即作废缓存与估算：不顶着“本会话”显示上一个会话的速率
-    if (sid !== lastSid) { lastSid = sid; lastStats = null; streamSample = null; streamEst = null; }
+    if (sid !== lastSid) { lastSid = sid; lastStats = null; streamSample = null; streamEst = null; streamGrowth = []; }
     sampleStream(); // 2 秒一次采样流式文本增长（估算与真实数据互补）
     const seq = ++tickSeq;
     // turns=0：状态栏只读 global，让 helper 跳过每轮分钟桶聚合

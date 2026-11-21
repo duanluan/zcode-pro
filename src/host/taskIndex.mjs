@@ -20,6 +20,9 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
 const BUSY_TIMEOUT_MS = 5000;
+// 生成速率上限：整段返回的供应商首末间隔只有几十毫秒，按它算的速率能到几十万
+// tok/s（全库实测最大 50 万），超过这个数就直接按全程算生成时长
+const RATE_CAP = 1000;
 // 子代理轮次结束与 session.time_updated 的写入先后有几毫秒差；超过这段时长的新活动
 // 才算下一轮已经开始（继续对话），见 listSubagentChildrenActivity
 const SUBAGENT_TURN_START_GRACE_MS = 5000;
@@ -494,18 +497,28 @@ export async function listSessionModelUsage(dataRoot, sessionId, treeTrace = '')
       rows = JSON.parse(agg.stdout.trim() || '[]');
     }
     const num = (v) => Number(v) || 0;
-    // 净生成时长 = 耗时 − 首 token 时机。两种情形按全程（耗时）算生成时长：
-    // 1. 非流式/整段返回：首 token 时机贴着结束（实测只差 20-30ms），扣出来是
-    //    毫秒级会把速率顶到几万 tok/s（首 token 占耗时 8 成以上即判定）；
-    // 2. 首 token 时机缺失（部分供应商不回传，如 glm-5.3 占近三成）：排除掉会
-    //    让整段速率消失。只有耗时也没有时留 null
-    const genMsOf = (dur, ttft) => (dur > 0 ? (ttft > 0 && ttft < dur * 0.8 ? dur - ttft : dur) : null);
+    // 净生成时长 = 耗时 − 首 token 时机（与官方开发者工具的 TPS 同一条公式）。
+    // 两种情形按全程（耗时）算：
+    // 1. 首 token 时机缺失（部分供应商不回传，如 glm-5.3 占近三成）：排除掉会让
+    //    整段速率消失；
+    // 2. 按首 token 扣出来的速率超过 RATE_CAP：整段返回的供应商首末只差几十毫秒，
+    //    实测速率能到几十万 tok/s，那不是真实吞吐。
+    // 早先用“首 token 占耗时 8 成以上算全程”做判定，缓冲式供应商（mimo 实测首末
+    // 只差 600ms、占耗时 8%）被误判成整段返回，速率只有官方值的十分之一。
+    const genMsOf = (dur, ttft, out) => {
+      if (!(dur > 0)) return null;
+      if (!(ttft > 0)) return dur;
+      const gap = dur - ttft;
+      if (gap <= 0) return dur;
+      if (out / (gap / 1000) > RATE_CAP) return dur;
+      return gap;
+    };
     const rounds = rows.map((r, i) => {
       const inp = num(r.input_tokens);
       const cacheRead = num(r.cache_read_input_tokens);
       const ttft = num(r.time_to_first_token_ms);
       const dur = num(r.duration_ms);
-      const genMs = genMsOf(dur, ttft);
+      const genMs = genMsOf(dur, ttft, num(r.output_tokens));
       const out = num(r.output_tokens);
       return {
         idx: i + 1,
@@ -552,7 +565,7 @@ export async function listSessionModelUsage(dataRoot, sessionId, treeTrace = '')
         let genSum = 0;
         for (const r of tRows) {
           if (num(r.completed_at) < anchorT - 60_000) break;
-          const genMs = genMsOf(num(r.duration_ms), num(r.time_to_first_token_ms));
+          const genMs = genMsOf(num(r.duration_ms), num(r.time_to_first_token_ms), num(r.output_tokens));
           if (genMs) { outSum += num(r.output_tokens); genSum += genMs; }
         }
         if (genSum > 0) summary.tps = outSum / (genSum / 1000);
@@ -609,7 +622,14 @@ export async function listSessionTurnUsage(dataRoot, sessionId) {
     }
     if (!turns.length) return null;
     const num = (v) => Number(v) || 0;
-    const genMsOf = (dur, ttft) => (dur > 0 ? (ttft > 0 && ttft < dur * 0.8 ? dur - ttft : dur) : null);
+    const genMsOf = (dur, ttft, out) => {
+      if (!(dur > 0)) return null;
+      if (!(ttft > 0)) return dur;
+      const gap = dur - ttft;
+      if (gap <= 0) return dur;
+      if (out / (gap / 1000) > RATE_CAP) return dur;
+      return gap;
+    };
     const rounds = turns.map((t, i) => {
       const inp = num(t.input_tokens);
       const cacheRead = num(t.cache_read_input_tokens);
@@ -636,7 +656,7 @@ export async function listSessionTurnUsage(dataRoot, sessionId) {
       while (ti < rounds.length && at > rounds[ti].at) ti += 1;
       const turn = rounds[ti];
       if (!turn || at < turn.startAt || at > turn.at) continue;
-      const genMs = genMsOf(num(u.duration_ms), num(u.time_to_first_token_ms));
+      const genMs = genMsOf(num(u.duration_ms), num(u.time_to_first_token_ms), num(u.output_tokens));
       if (genMs) turn.genMs += genMs;
     }
     for (const turn of rounds) {
@@ -656,7 +676,7 @@ export async function listSessionTurnUsage(dataRoot, sessionId) {
     for (const u of usages) {
       const at = num(u.completed_at);
       if (at <= lastAt) continue;
-      const genMs = genMsOf(num(u.duration_ms), num(u.time_to_first_token_ms));
+      const genMs = genMsOf(num(u.duration_ms), num(u.time_to_first_token_ms), num(u.output_tokens));
       live.push({
         at,
         in: num(u.input_tokens),
