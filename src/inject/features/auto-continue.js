@@ -70,6 +70,9 @@ const DEFAULTS = {
     'access denied', 'permission denied',
     'context[_ -]length', 'prompt (is )?too long', '上下文(超|过|长度)', '输入过长', 'token limit',
     'exceeded the provider context window',
+    // 免费层级停用（如 Ling 3.1 Flash tier has been retired）：403 但正文只有这句
+    // 英文提示，不含状态码，重试必然再失败
+    'tier has been retired', 'now a paid model',
     'param incorrect', 'invalid[_ -]?request', 'invalid[_ -]?parameter', '参数(错误|不正确|无效)',
     // 官方会把已知错误本地化后再显示；补上日/韩/俄的同类措辞，避免一直续接永久失败
     '認証(に失敗|エラー|が必要)', 'ログイン.*(期限|失効|必要)', 'サインイン.*(期限|失効|必要)',
@@ -246,6 +249,25 @@ async function tick() {
         el.dataset.zcodeproAc = 'skip';
         return;
       }
+      // 横幅正文常是通用文案，供应商的真实报错（计费、鉴权）收在“展开详情”
+      // 弹窗里，正文里搜不到关键词：拿该会话在日志里记录的失败原因再判一次，
+      // 命中永久性错误就不继续（实测：Meta 供应商 Billing verification failed
+      // 的横幅只显示通用错误，不补这一道会再撞一次同样的墙）。失败日志先于
+      // 横幅落盘，一张横幅查一次就够——巡检 2 秒一轮，不设防会反复整扫日志；
+      // 查询失败不置标记，下轮重试
+      const sid = activeSessionId();
+      if (sid && el.dataset.zcodeproAcLog !== '1') {
+        const res = await rpc('/ac-stuck').catch(() => null);
+        if (res && res.ok) el.dataset.zcodeproAcLog = '1';
+        const f = res && res.ok && Array.isArray(res.failed) ? res.failed.find((x) => x.sessionId === sid) : null;
+        if (f && (isPermanent(f.message || '', cfg) || isCancelled(f.message || ''))) {
+          const dbgLog = window.__acDebug ||= [];
+          dbgLog.push(`${new Date().toISOString().slice(11, 19)} banner skip by log: ${String(f.message).slice(0, 60)}`);
+          if (dbgLog.length > 50) dbgLog.splice(0, dbgLog.length - 50);
+          el.dataset.zcodeproAc = 'skip';
+          return;
+        }
+      }
     }
     // 有人重新发起回合、或用户已在输入框起草：不打扰
     if (document.querySelector(STOP_SEL)) return;
@@ -322,6 +344,13 @@ async function rescueStuck(task) {
   const r = await rpc('/ac-continue', { method: 'POST', body: { sessionId: task.sessionId, text: continueTextFor(cfg.continueText) } });
   if (!r.ok) rescueUntil = 0;
   return r.ok;
+}
+
+// 当前打开会话的 id：侧栏选中行的 data-task-item-key 形如
+// “/path/to/project/:session_xxx”，最后一个冒号后面就是会话号
+function activeSessionId() {
+  const key = document.querySelector('[data-task-item-key].bg-selected')?.getAttribute('data-task-item-key') || '';
+  return key.includes(':') ? key.slice(key.lastIndexOf(':') + 1) : key;
 }
 
 // 切到任务所在的会话：侧栏行直接点；虚拟列表没渲染出该行时返回 false（留在当前视图）
