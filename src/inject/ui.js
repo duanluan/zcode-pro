@@ -41,6 +41,75 @@ export function showToast(text, kind = 'info') {
   toastTimer = setTimeout(() => wrap.remove(), v.ms);
 }
 
+// 右下角提示卡片：固定贴在窗体右下角，用于「需要用户留意但不打断操作」的提示
+// （居中 toast 会盖住正文，且 2.6 秒自动消失，操作类提示来不及处理）。
+// 视觉与自动继续卡一致：12px 圆角、主题变量边框与底色、24px 阴影；主题变量缺失时
+// 回退字面量，跟亮/暗主题都能对上。actions 为 [{ label, primary, onClick }]，
+// 点击后不自动关闭（由调用方或用户关）。同一 position 只保留一张卡，避免叠罗马柱。
+//
+// 底色不能用 --color-surface：该 token 在应用里是 ~3% 不透明度的着色层
+// （#0d0d0d08），拿来做卡片底会整卡透明（见下方 AlertDialog 注释）。这里用
+// --color-popover（实体底色），缺失时回退深色字面量。
+const cornerCards = new Map();
+
+// 位置表：bf=左下、br=右下、tl=左上、tr=右上
+// 不用动态堆叠算高度——对方卡片可能晚出现、换文案后变高，算不准；直接用不同角落
+// 天然不冲突（自动继续卡占右下，headroom 提示用左下）。
+const CORNER_POS = {
+  bl: 'left:16px;bottom:16px;',
+  br: 'right:16px;bottom:16px;',
+  tl: 'left:16px;top:16px;',
+  tr: 'right:16px;top:16px;',
+};
+
+export function showCornerCard({ position = 'br', title, desc, actions = [], kind = 'info' } = {}) {
+  cornerCards.get(position)?.remove();
+  const glyph = { success: '✓', warning: '！', error: '✕', info: 'ⓘ' }[kind] || '';
+  const pos = CORNER_POS[position] || CORNER_POS.br;
+  const card = h('div', {
+    class: 'zcodepro-corner-card',
+    'data-zcodepro-corner': position,
+    style: `position:fixed;${pos}z-index:2147483000;max-width:360px;padding:12px;`
+      + `border-radius:12px;border:1px solid var(--color-border, #3f3f46);`
+      + `background:var(--color-popover, #1f1f23);color:var(--color-foreground, #eee);`
+      + `font-size:13px;line-height:1.5;box-shadow:0 4px 24px rgba(0,0,0,.4);animation:zcodepro-fade-in .18s ease;`,
+  });
+  const head = h('div', { style: 'display:flex;align-items:flex-start;gap:6px;font-weight:600;margin-bottom:4px;' });
+  if (glyph) head.append(h('span', { style: 'flex:none;' }, glyph));
+  head.append(h('span', { style: 'flex:1;min-width:0;' }, String(title ?? '')));
+  const close = h('button', {
+    type: 'button',
+    'aria-label': '关闭',
+    style: 'flex:none;cursor:pointer;border:none;background:transparent;color:inherit;opacity:.6;font-size:14px;line-height:1;padding:0 2px;',
+    onclick: () => closeCornerCard(position),
+  }, '×');
+  head.append(close);
+  card.append(head);
+  if (desc) card.append(h('div', { style: 'opacity:.85;white-space:pre-wrap;' }, String(desc)));
+  const usable = actions.filter((a) => a && typeof a.onClick === 'function');
+  if (usable.length) {
+    const row = h('div', { style: 'display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;' });
+    for (const a of usable) {
+      row.append(h('button', {
+        type: 'button',
+        style: a.primary
+          ? 'cursor:pointer;border:none;border-radius:8px;padding:5px 12px;background:var(--color-brand, #4a7cf7);color:#fff;font-size:12px;'
+          : 'cursor:pointer;border-radius:8px;padding:5px 12px;background:transparent;border:1px solid var(--color-border, #666);color:inherit;font-size:12px;',
+        onclick: () => a.onClick(),
+      }, String(a.label ?? '')));
+    }
+    card.append(row);
+  }
+  document.body.append(card);
+  cornerCards.set(position, card);
+  return { close: () => closeCornerCard(position) };
+}
+
+export function closeCornerCard(position = 'br') {
+  cornerCards.get(position)?.remove();
+  cornerCards.delete(position);
+}
+
 // 复用应用自身 AlertDialog 的真实类名组合（逆向自 app.asar 渲染层源码）：
 // 遮罩 fixed inset-0 z-50 bg-black/60 + 毛玻璃 + Linux 下 top-12（让出自绘标题栏），
 // 内容卡 rounded-2xl bg-popover/98 ring-border shadow-2xl。

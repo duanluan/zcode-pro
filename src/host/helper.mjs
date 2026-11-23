@@ -2492,6 +2492,24 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         });
         return;
       }
+      if (req.method === 'GET' && url.pathname === '/headroom/reconcile-notice') {
+        // headroom 插件在会话启动时对账供应商登记，结果写在数据根的
+        // hr-reconcile-notice.json；页面轮询这个端点拿最新一条并弹提示。
+        // 文件不存在＝没有需要提示的内容，正常返回空（不是错误）。
+        // 用传入的 dataRoot（测试脚本传假目录时读的就是假目录），
+        // 不用 resolveDataRootDir()——那会绕过 startHelper 的参数去读真实 ~/.zcode
+        const file = join(dataRoot, 'hr-reconcile-notice.json');
+        let notice = null;
+        if (existsSync(file)) {
+          try {
+            notice = JSON.parse(readFileSync(file, 'utf8'));
+          } catch {
+            notice = null; // 写一半或损坏：当作没有，等下一轮
+          }
+        }
+        json(res, 200, { ok: true, notice });
+        return;
+      }
       if (req.method === 'GET' && url.pathname === '/headroom/upgrade') {
         json(res, 200, { ok: true, upgrade: headroomUpgradeSnapshot() });
         return;

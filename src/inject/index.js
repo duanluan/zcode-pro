@@ -31,6 +31,7 @@ import { startSessionLink } from './features/session-link.js';
 import { startComposerProvider } from './features/composer-provider.js';
 import { startComposerEditModel } from './features/composer-edit-model.js';
 import { startPluginUpdateCheck } from './features/plugin-updates.js';
+import { startHrNotice } from './features/hr-notice.js';
 import { ensureStyle } from './ui.js';
 
 (function zcodeproInject() {
@@ -100,6 +101,8 @@ import { ensureStyle } from './ui.js';
     try { startComposerProvider(); } catch { /* ignore */ }
     try { startComposerEditModel(); } catch { /* ignore */ }
     try { startSettingsEntry(); } catch { /* ignore */ }
+    // headroom 供应商登记提示：首轮立即查，有问题才弹右下角卡片
+    try { startHrNotice(); } catch { /* ignore */ }
     // 插件更新检查慢（可能 git pull），异步进行，不阻塞其他功能
     try { void startPluginUpdateCheck(); } catch { /* ignore */ }
   };
