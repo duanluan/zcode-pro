@@ -1789,7 +1789,32 @@ export function openSettingsDialog() {
         );
       };
       renderProxyScopes();
-      paneProxy.append(
+      // 两级 tab：软件代理（原有界面）/ 供应商代理（按供应商转发 + 工具名检查）
+      let proxySubTab = 'software';
+      const proxySubTablist = h('div', { role: 'tablist', 'aria-orientation': 'horizontal', class: 'zcodepro-tablist' });
+      // mt-2 与“行为”二级 tab 保持一致：内容面板与上方 tab 栏之间留出间距
+      const paneProxySoftware = h('div', { class: 'mt-2' });
+      const paneProxyVendor = h('div', { class: 'mt-2' });
+      const renderProxySubTabs = () => proxySubTablist.replaceChildren(...[
+        ['software', L.proxySubSoftware],
+        ['vendor', L.proxySubVendor],
+      ].map(([id, label]) => h('button', {
+        type: 'button', role: 'tab', class: 'zcodepro-tab',
+        'aria-selected': String(proxySubTab === id),
+        'data-state': proxySubTab === id ? 'active' : 'inactive',
+        onClick: () => {
+          proxySubTab = id;
+          paneProxySoftware.style.display = id === 'software' ? '' : 'none';
+          paneProxyVendor.style.display = id === 'vendor' ? '' : 'none';
+          if (id === 'vendor') void refreshVendorProxyStatus();
+          renderProxySubTabs();
+        },
+      }, label)));
+      renderProxySubTabs();
+      subTabBars.proxy = proxySubTablist;
+      paneProxy.append(proxySubTablist, paneProxySoftware, paneProxyVendor);
+      paneProxyVendor.style.display = 'none';
+      paneProxySoftware.append(
         h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.proxyDesc),
         h('div', { class: 'mt-3 flex items-center gap-2' },
           proxyInput,
@@ -1799,6 +1824,236 @@ export function openSettingsDialog() {
         proxyTestState,
         h('div', { class: 'mt-3 divide-y divide-border rounded-xl border border-border' }, proxyScopeWrap),
       );
+
+      // —— 供应商代理：只列已添加的供应商（每条一行：名称/状态 + 开关 + 代理地址），
+      // 没添加的不显示也不生效；底部“添加供应商”下拉从供应商清单里挑。
+      // 开关保存走 POST /config 的 providerProxies（单条提交）；helper 收到即对齐
+      // 转发器与供应商地址。代理地址留空 = 跟随全局代理。
+      let vendorProviders = [];
+      let vendorProxyState = {};
+      let vendorLastRun = null;
+      const vendorStatusText = h('p', { class: 'mt-2 text-ui-xs/relaxed text-foreground-subtle' });
+      const vendorListWrap = h('div', { class: 'mt-3 divide-y divide-border rounded-xl border border-border' });
+      // 删除：整条从配置里删掉（helper 看到条目消失 → 地址改回上游、停端口）。
+      // 不弹确认框：删的只是“这个供应商走代理”的配置，供应商本身和它的密钥都不动，
+      // 想恢复随时能从下面的下拉重新添加。
+      const removeVendorProxy = async (id) => {
+        const res = await rpc('/config', { method: 'POST', body: { providerProxies: { [id]: { remove: true } } } });
+        if (!res.ok) { showToast(L.failed + ': ' + errText(res), 'error'); return; }
+        // 服务端保存后就地重读整表，视野以服务端为准
+        const cfg = await rpc('/config');
+        if (cfg.ok && cfg.config && cfg.config.providerProxies) vendorProxyState = { ...cfg.config.providerProxies };
+        else delete vendorProxyState[id];
+        // 列表和“添加供应商”下拉一起重绘（删掉的要重新出现在下拉里）
+        refreshVendorView();
+        setTimeout(() => { void refreshVendorProxyStatus(); }, 400);
+      };
+      const saveVendorProxy = async (id, patch) => {
+        const entry = { ...(vendorProxyState[id] || {}), ...patch };
+        const body = { [id]: { enabled: entry.enabled === true, proxy: entry.proxy || '', port: entry.port, upstream: entry.upstream ?? null } };
+        const res = await rpc('/config', { method: 'POST', body: { providerProxies: body } });
+        if (!res.ok) { showToast(L.failed + ': ' + errText(res), 'error'); return false; }
+        const saved = res.config && res.config.providerProxies && res.config.providerProxies[id];
+        if (saved) vendorProxyState[id] = saved;
+        return true;
+      };
+      // 添加：在配置里建一条条目，默认开启（添加即生效）；地址留空 = 跟随全局代理
+      const addVendorProxy = async (id) => {
+        if (!id || vendorProxyState[id]) return;
+        if (!(await saveVendorProxy(id, { enabled: true, proxy: '' }))) return;
+        refreshVendorView();
+        setTimeout(() => { void refreshVendorProxyStatus(); }, 400);
+      };
+      // 列表 + “添加供应商”下拉一起重绘：两处的可见项都依赖 vendorProxyState，
+      // 增删之后必须同步刷新，否则删掉的供应商不会再出现在下拉里
+      let refreshVendorView = () => {}; // 真正实现放在 renderAddVendor 定义之后（见下）
+      const renderVendorRows = () => {
+        if (!vendorProviders.length) {
+          vendorListWrap.replaceChildren(h('p', { class: 'px-3 py-3 text-ui-sm text-foreground-subtle' }, L.proxyVendorEmpty));
+          return;
+        }
+        // 只列已添加的（配置里有的）供应商；名称取列表里的显示名，查不到就用 id
+        const added = Object.keys(vendorProxyState);
+        if (!added.length) {
+          vendorListWrap.replaceChildren(h('p', { class: 'px-3 py-3 text-ui-sm text-foreground-subtle' }, L.proxyVendorEmpty));
+          return;
+        }
+        const nameOf = (id) => (vendorProviders.find((x) => x.id === id) || {}).name || id;
+        vendorListWrap.replaceChildren(...added.map((id) => {
+          const st = vendorProxyState[id] || { enabled: false, proxy: '', port: 18731, upstream: null };
+          // 代理地址拆成 协议 / 地址 / 端口 三段：存的是拼好的 http(s)://host:port，
+          // 地址留空 = 跟随全局代理（与原来一致）。
+          const parsed = /^(https?):\/\/([^/:]+):(\d+)$/.exec(st.proxy || '');
+          const fieldCls = 'h-7 rounded-lg border border-border bg-input px-2 text-ui-xs text-foreground outline-none transition-shadow placeholder:text-foreground-subtle focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40';
+          const protoSel = h('select', { class: fieldCls + ' shrink-0' },
+            h('option', { value: 'http' }, 'http'),
+            h('option', { value: 'https' }, 'https'));
+          protoSel.value = parsed ? parsed[1] : 'http';
+          const hostInput = h('input', {
+            type: 'text', value: parsed ? parsed[2] : '', placeholder: L.proxyVendorHostPlaceholder,
+            spellcheck: 'false', title: L.proxyVendorHost, class: fieldCls + ' min-w-0 flex-1',
+          });
+          const portInput = h('input', {
+            type: 'text', value: parsed ? parsed[3] : '', placeholder: '7890',
+            spellcheck: 'false', title: L.proxyVendorPortLabel, class: fieldCls + ' w-16 shrink-0',
+          });
+          let lastSaved = st.proxy || '';
+          const persistFromFields = async () => {
+            const host = hostInput.value.trim();
+            const portText = portInput.value.trim();
+            // 两项都空 = 跟随全局代理
+            if (!host && !portText) {
+              if (await saveVendorProxy(id, { proxy: '' })) lastSaved = '';
+              return;
+            }
+            if (!host) {
+              showToast(L.failed + ': ' + L.proxyVendorHostRequired, 'error');
+              hostInput.focus();
+              return;
+            }
+            // 端口留空用默认 7890（clash 常用端口）：只填地址也能存
+            const portNum = portText === '' ? 7890 : Number(portText);
+            if (portText !== '' && (!/^\d+$/.test(portText) || !Number.isInteger(portNum) || portNum < 1 || portNum > 65535)) {
+              showToast(L.failed + ': ' + L.proxyVendorPortInvalid, 'error');
+              portInput.focus();
+              return;
+            }
+            const value = `${protoSel.value}://${host}:${portNum}`;
+            if (value === lastSaved) return;
+            if (await saveVendorProxy(id, { proxy: value })) {
+              lastSaved = value;
+              portInput.value = String(portNum); // 回填默认端口，界面上看得见实际用了哪个
+            }
+          };
+          hostInput.addEventListener('change', persistFromFields);
+          portInput.addEventListener('change', persistFromFields);
+          protoSel.addEventListener('change', persistFromFields);
+          // 一行放完：名称在左，开关 + 文字“移除”在最右；地址三段在下一行（更矮）
+          const row = h('div', {
+            class: 'flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-surface-hover',
+            onClick: () => {},
+          },
+          h('div', { class: 'min-w-0 flex-1 text-ui-sm font-medium text-foreground' }, nameOf(id)),
+          h('button', {
+            type: 'button', role: 'switch', 'aria-checked': String(st.enabled),
+            class: 'relative inline-flex shrink-0 cursor-pointer items-center',
+            onClick: async (e) => {
+              e.stopPropagation();
+              const next = !st.enabled;
+              if (await saveVendorProxy(id, { enabled: next })) {
+                refreshVendorView();
+                setTimeout(() => { void refreshVendorProxyStatus(); }, 400);
+              }
+            },
+          }, h('span', { class: 'zcodepro-switch', 'data-zcodepro-switch': '', 'data-state': st.enabled ? 'on' : 'off' },
+            h('span', { class: 'zcodepro-switch-knob' }))),
+          // 文字按钮（与 vision 标签页的移除按钮一致），比一个 × 好点
+          btnSmall(L.proxyVendorRemove, () => { void removeVendorProxy(id); }, 'shrink-0'),
+        );
+          return h('div', { class: 'px-2 py-1.5' },
+            row,
+            h('div', { class: 'mt-1 flex items-center gap-1.5 pl-0.5' }, protoSel, hostInput, portInput));
+        }));
+      };
+      const refreshVendorProxyStatus = async () => {
+        const res = await rpc('/provider-proxies/status');
+        if (!res.ok) return;
+        vendorLastRun = res.lastRun || null;
+        refreshVendorView();
+        const errs = (vendorLastRun && vendorLastRun.errors) || [];
+        vendorStatusText.className = 'mt-2 text-ui-xs/relaxed ' + (errs.length ? 'text-amber-500' : 'text-foreground-subtle');
+        vendorStatusText.textContent = errs.length
+          ? errs.join('；')
+          : (vendorLastRun ? `${isCjkLocale() ? '上次对齐' : 'Last sync'}: ${vendorLastRun.started.length} ${isCjkLocale() ? '个转发中' : 'forwarding'}${vendorLastRun.ms != null ? ` · ${vendorLastRun.ms}ms` : ''}` : '');
+      };
+
+      // 工具名合规检查：设置页按钮一行，跑完显示一行结果
+      const toolNameState = h('p', { class: 'mt-2 text-ui-xs/relaxed text-foreground-subtle' });
+      let toolNameBusy = false;
+      const toolNameBtn = btnSmall(L.toolNameCheckBtn, () => { void runToolNameCheck(); }, 'shrink-0', 'primary');
+      const runToolNameCheck = async () => {
+        if (toolNameBusy) return;
+        toolNameBusy = true;
+        toolNameBtn.disabled = true;
+        toolNameBtn.textContent = L.toolNameCheckRunning;
+        toolNameState.textContent = '';
+        toolNameState.className = 'mt-2 text-ui-xs/relaxed text-foreground-subtle';
+        const res = await rpc('/tool-names/check', { method: 'POST', body: {} });
+        toolNameBusy = false;
+        toolNameBtn.disabled = false;
+        toolNameBtn.textContent = L.toolNameCheckBtn;
+        if (!res.ok) {
+          toolNameState.className = 'mt-2 text-ui-xs/relaxed text-destructive';
+          toolNameState.textContent = L.toolNameCheckFailed + ': ' + errText(res);
+          return;
+        }
+        toolNameState.className = 'mt-2 text-ui-xs/relaxed ' + (res.warnings && res.warnings.length ? 'text-amber-500' : 'text-foreground-subtle');
+        toolNameState.textContent = res.summary || '';
+      };
+      // 自动修复开关（默认开）：关掉后启动时不再自动改写，只留按钮手动执行
+      let toolNameAutoOn = config.toolNameAuto !== false;
+      const toolNameAutoWrap = h('div', { class: 'ml-auto flex shrink-0 items-center gap-1.5' });
+      const renderToolNameAuto = () => {
+        const toggle = async () => {
+          const next = !toolNameAutoOn;
+          const res = await rpc('/config', { method: 'POST', body: { toolNameAuto: next } });
+          if (!res.ok) { showToast(L.failed + ': ' + errText(res), 'error'); return; }
+          toolNameAutoOn = (res.config && typeof res.config.toolNameAuto === 'boolean') ? res.config.toolNameAuto : next;
+          renderToolNameAuto();
+        };
+        toolNameAutoWrap.replaceChildren(
+          h('span', { class: 'text-ui-xs text-foreground-subtle', title: L.toolNameAutoDesc }, L.toolNameAuto),
+          h('button', {
+            type: 'button', role: 'switch', 'aria-checked': String(toolNameAutoOn),
+            class: 'relative inline-flex shrink-0 cursor-pointer items-center',
+            title: L.toolNameAutoDesc,
+            onClick: () => { void toggle(); },
+          }, h('span', { class: 'zcodepro-switch', 'data-zcodepro-switch': '', 'data-state': toolNameAutoOn ? 'on' : 'off' },
+            h('span', { class: 'zcodepro-switch-knob' }))),
+        );
+      };
+      renderToolNameAuto();
+
+      // “添加供应商”下拉：只列还没添加的供应商（已添加的不重复出现）。
+      // 选中后建一条默认关闭的条目，用户再打开开关才真正生效。
+      const addVendorWrap = h('div', { class: 'mt-2' });
+      const renderAddVendor = () => {
+        const available = vendorProviders.filter((p) => !vendorProxyState[p.id]);
+        if (!available.length) { addVendorWrap.replaceChildren(); return; }
+        const sel = h('select', {
+          class: 'h-7 w-full rounded-lg border border-border bg-input px-2 text-ui-xs text-foreground outline-none',
+        }, h('option', { value: '' }, '+ ' + L.proxyVendorAdd),
+        ...available.map((p) => h('option', { value: p.id }, p.name || p.id)));
+        sel.addEventListener('change', async () => {
+          const id = sel.value;
+          if (!id) return;
+          await addVendorProxy(id);
+          renderAddVendor();
+        });
+        addVendorWrap.replaceChildren(sel);
+      };
+      // 上方的删除/添加要用同一个刷新入口：放在这里定义，闭包能同时看到两个渲染函数
+      refreshVendorView = () => { renderVendorRows(); renderAddVendor(); };
+
+      paneProxyVendor.append(
+        h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.proxyVendorDesc),
+        vendorListWrap,
+        addVendorWrap,
+        vendorStatusText,
+        h('div', { class: 'mt-4 rounded-xl border border-border p-3' },
+          h('div', { class: 'text-ui-sm font-medium text-foreground' }, L.toolNameCheckTitle),
+          h('p', { class: 'mt-1 text-ui-xs/relaxed text-foreground-subtle' }, L.toolNameCheckDesc),
+          h('div', { class: 'mt-2 flex items-center gap-2' }, toolNameBtn, toolNameAutoWrap),
+          toolNameState),
+      );
+      // 供应商列表来自 /title-gen/providers（与 ZCode 供应商列表一致，不含密钥）；
+      // providerProxies 由 /config 带回。打开二级页时拉一次。
+      void (async () => {
+        const [provRes] = await Promise.all([rpc('/title-gen/providers')]);
+        if (provRes.ok && Array.isArray(provRes.providers)) vendorProviders = provRes.providers;
+        vendorProxyState = (config.providerProxies && typeof config.providerProxies === 'object') ? { ...config.providerProxies } : {};
+        refreshVendorView();
+      })();
 
       // “性能”：空闲项目内存回收（开关 + 两个时长）与子代理活动判定时长。
       // idleReclaimStartupMinutes 允许 0（启动后立即回收一次），取值不能用

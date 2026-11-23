@@ -18,6 +18,8 @@ import { webdavRequest, webdavPutWithMkcol, webdavHttpText, parseWebdavListing, 
 import { resolveZcodeExecutable, resolveDataRootDir } from './paths.mjs';
 import { skillStats, DEFAULT_METADATA_BUDGET } from './skill-stats.mjs';
 import { listImportSessions, runImport } from './session-import/index.mjs';
+import { ProviderProxyManager } from './provider-proxy.mjs';
+import { applyToolNameMaps, toolNameCheckSummary } from './tool-name-check.mjs';
 
 // 会话导入（/import/list、/import/run）：把外部 CLI 的历史会话写成 ZCode 任务。
 
@@ -399,6 +401,21 @@ export function defaultConfig() {
     // 软件（headroom 与 rtk）的安装、检查更新与升级；sync = WebDAV 同步。同步默认
     // 关闭——坚果云等国内网盘通常直连即可，代理停了同步会跟着失败
     proxyScopes: { plugins: true, deps: true, sync: false },
+    // 供应商代理（设置页“代理 → 供应商代理”二级）：供应商 id → { enabled, proxy,
+    // port, upstream }。enabled=true 时该供应商的模型请求走本机转发
+    // （zcode-pro 起的 127.0.0.1 转发进程再用指定的上游 HTTP 代理发出）。
+    // 不动 ZCode 自身的全局代理，也不走 headroom 路由——只改 baseUrl 指向转发地址。
+    providerProxies: {},
+    // headroom 上游代理：headroom 插件拉起实例时带 HEADROOM_HTTP_PROXY，
+    // 实例连上游（BigModel/MiMo/Command Code 等）走它。空 = 不走代理（旧行为）。
+    headroomProxy: '',
+    // 工具名合规检查（设置页“代理 → 供应商代理”二级底行）：服务器键名 → 短键名。
+    // 有的模型服务（如 Meta）对 MCP 工具名长度限 64 字符，超长会整包 400。
+    // 这里持久化贴壳后的短名：ZCode 升级/插件更新会改回长名，启动时自动重打。
+    toolNameMaps: { 'android-emulator': 'ae', 'tencent-docs': 'td' },
+    // 工具名自动检查开关：启动时自动把 toolNameMaps 打回服务器键名（默认开）。
+    // 关掉后只保留设置页按钮的手动执行——适合想自己掌控何时改配置的人。
+    toolNameAuto: true,
     // 开发模式（设置弹窗“调试”标签页）：开启后出现“重载”按钮，可在不重启
     // ZCode 的情况下加载新代码（构建 → 换新启动器进程 → 各窗口自动刷新重注入）
     devMode: false,
@@ -452,6 +469,21 @@ function migrateStyles(saved) {
   return out;
 }
 
+// 查询本机 18731 端口空闲（分配供应商代理转发端口用），取不到就返回空
+async function providerProxyFreePort(minPort = 18731, maxPort = 18760) {
+  const { createServer } = await import('node:http');
+  for (let port = minPort; port <= maxPort; port++) {
+    const free = await new Promise((resolve) => {
+      const srv = createServer();
+      srv.once('error', () => resolve(false));
+      srv.once('listening', () => srv.close(() => resolve(true)));
+      srv.listen(port, '127.0.0.1');
+    });
+    if (free) return port;
+  }
+  return null;
+}
+
 export function loadConfig(configFile) {
   try {
     if (!existsSync(configFile)) { configUnreadable = false; return defaultConfig(); }
@@ -477,6 +509,10 @@ export function loadConfig(configFile) {
       titleGen: mergeTitleGenConfig(saved.titleGen),
       theme: mergeThemeConfig(saved.theme),
       proxyScopes: mergeProxyScopes(saved.proxyScopes),
+      providerProxies: mergeProviderProxies(saved.providerProxies),
+      headroomProxy: typeof saved.headroomProxy === 'string' ? saved.headroomProxy.trim().slice(0, 300) : '',
+      toolNameMaps: mergeToolNameMaps(saved.toolNameMaps),
+      toolNameAuto: saved.toolNameAuto !== false,
       devMode: saved.devMode === true,
       // devActive 每次读取时重算（保存时会随配置一起写入文件，但读取方不用保存的值）：
       // 开发模式生效 = 配置开关或启动器带 ZCODEPRO_DEV=1，设置弹窗据此决定是否显示“调试”标签页（普通用户不可见）
@@ -651,6 +687,246 @@ function readBody(req, limitBytes = 1 << 20) {
 let activeProxyUrl = '';
 let activeProxyScopes = { plugins: true, deps: true, sync: false };
 let systemProxyCache = { url: '', at: 0 };
+// headroom 上游代理（HEADROOM_HTTP_PROXY）：随 zcodepro.json 的 headroomProxy
+// 保存即时更新；runHeadroomHook 拉起实例时带上。
+let activeHeadroomProxy = '';
+// 供应商代理转发器单例：正常挂 state（跨热替换实例共享——helper 热替换后旧转发器
+// 继续跑，端口不变、供应商地址不用重写）；单测直调不传 state 时退回模块级一份。
+let providerProxyManager = null;
+function getProviderProxyManager(state) {
+  if (state && typeof state === 'object') {
+    if (!state.providerProxyManager) state.providerProxyManager = providerProxyManager || new ProviderProxyManager();
+    providerProxyManager = state.providerProxyManager;
+    return providerProxyManager;
+  }
+  if (!providerProxyManager) providerProxyManager = new ProviderProxyManager();
+  return providerProxyManager;
+}
+
+// —— 供应商代理运行时（设置页“代理 → 供应商代理”二级）——
+// enabled=true 的供应商：helper 在本机起一个 127.0.0.1 转发端口，把该供应商在
+// v2/config.json（options.baseURL（地址））与 v2/provider_config.json（api.baseUrl（地址））
+// 里的地址改成转发地址；模型请求先到转发器，再经指定代理发往真实上游（upstream（上游））。
+// enabled=false 时把地址改回真实上游并停掉该端口。改写前留 .zcodepro-backup 备份，
+// 写时原子替换——与 headroom 开关（setHeadroomUsageLocked）同款做法。
+const PROVIDER_PROXY_PORT_MIN = 18731;
+const PROVIDER_PROXY_PORT_MAX = 18760;
+
+// 某地址是不是“自家转发地址”（端口在转发段内，或就是该条目的端口）：回滚时只动
+// 自己的，headroom 路由（8787）等别的本机地址不动。
+function providerProxyOwnUrl(url, port) {
+  const u = String(url || '').trim();
+  if (port && (u === `http://127.0.0.1:${port}` || u === `http://127.0.0.1:${port}/`)) return true;
+  const m = /^http:\/\/127\.0\.0\.1:(\d+)\/?$/.exec(u);
+  if (!m) return false;
+  const p = Number(m[1]);
+  return p >= PROVIDER_PROXY_PORT_MIN && p <= PROVIDER_PROXY_PORT_MAX;
+}
+
+// 从 provider_config.json 文档里取某供应商的 api.baseUrl（地址）
+function providerProxyRuleBaseUrl(pc, id) {
+  const rules = pc?.config?.providerConfigRules?.providerRules;
+  if (!Array.isArray(rules)) return '';
+  const hit = rules.find((r) => r && r.providerId === id);
+  const u = hit?.config?.api?.baseUrl;
+  return typeof u === 'string' ? u.trim() : '';
+}
+
+// 某供应商当前在用的地址（v2/config.json 的 provider 表优先：桌面实际在用的为准）
+function providerProxyCurrentBaseUrl(dataRoot, id) {
+  const v2 = readJsonFile(join(dataRoot, 'v2', 'config.json'));
+  const p = v2?.provider?.[id];
+  const fromV2 = (p && typeof p === 'object' && typeof p.options?.baseURL === 'string') ? p.options.baseURL.trim() : '';
+  if (fromV2) return fromV2;
+  return providerProxyRuleBaseUrl(readJsonFile(join(dataRoot, 'v2', 'provider_config.json')), id);
+}
+
+// 从备份文件里找某供应商的地址（当前地址已是转发地址、配置里又没记上游时兜底）
+function providerProxyBackupBaseUrl(dataRoot, id) {
+  const v2 = readJsonFile(join(dataRoot, 'v2', 'config.json.zcodepro-backup'));
+  const p = v2?.provider?.[id];
+  const fromV2 = (p && typeof p === 'object' && typeof p.options?.baseURL === 'string') ? p.options.baseURL.trim() : '';
+  if (fromV2) return fromV2;
+  return providerProxyRuleBaseUrl(readJsonFile(join(dataRoot, 'v2', 'provider_config.json.zcodepro-backup')), id);
+}
+
+// 把某供应商在两张 v2 表里的地址改成 target，返回改了几处（target 非空字符串才动）
+function providerProxyRewriteBaseUrl(dataRoot, id, target) {
+  if (typeof target !== 'string' || !target) return 0;
+  if (id === '__proto__' || id === 'constructor' || id === 'prototype') return 0;
+  const backupFile = (p) => {
+    try { if (existsSync(p)) copyFileSync(p, p + '.zcodepro-backup'); } catch { /* 备份失败不阻塞 */ }
+  };
+  const atomicWrite = (p, obj) => {
+    const tmp = `${p}.${process.pid}.${Date.now().toString(36)}.tmp`; // 防多写者共用同一 .tmp 撕裂
+    writeFileSync(tmp, JSON.stringify(obj, null, 2) + '\n', { encoding: 'utf8', mode: 0o600 });
+    renameSync(tmp, p);
+  };
+  let changed = 0;
+  const v2File = join(dataRoot, 'v2', 'config.json');
+  const v2 = readJsonFile(v2File);
+  const p = v2?.provider?.[id];
+  if (p && typeof p === 'object' && p.options && typeof p.options === 'object'
+      && typeof p.options.baseURL === 'string' && p.options.baseURL.trim() !== target) {
+    p.options.baseURL = target;
+    backupFile(v2File);
+    atomicWrite(v2File, v2);
+    changed += 1;
+  }
+  const pcFile = join(dataRoot, 'v2', 'provider_config.json');
+  const pc = readJsonFile(pcFile);
+  const rules = pc?.config?.providerConfigRules?.providerRules;
+  if (Array.isArray(rules)) {
+    const hit = rules.find((r) => r && r.providerId === id);
+    const api = hit?.config?.api;
+    if (api && typeof api.baseUrl === 'string' && api.baseUrl.trim() !== target) {
+      api.baseUrl = target;
+      backupFile(pcFile);
+      atomicWrite(pcFile, pc);
+      changed += 1;
+    }
+  }
+  return changed;
+}
+
+// 按 zcodepro.json 的 providerProxies 把转发器与供应商地址对齐：开的拉起转发并改
+// 地址指过去，关的改回上游并停端口。幂等；单条失败只记 errors 不中断整体。
+// 结果顺手存 state.providerProxyLastRun，供 /provider-proxies/status 查询。导出以便测试。
+export async function ensureProviderProxies({ dataRoot, configFile, state = {}, reason = '' } = {}) {
+  const startedAt = Date.now();
+  const errors = [];
+  const result = { at: startedAt, reason, started: [], restored: [], stopped: [], errors };
+  try {
+    if (!dataRoot || !configFile) {
+      errors.push('缺少数据目录');
+      return result;
+    }
+    const config = loadConfig(configFile);
+    const proxies = (config.providerProxies && typeof config.providerProxies === 'object') ? config.providerProxies : {};
+    const ids = Object.keys(proxies).filter((id) => id !== '__proto__' && id !== 'constructor' && id !== 'prototype');
+    const manager = getProviderProxyManager(state);
+    // 已开启条目声明的端口：关条目停端口时跳过这些，避免把在用的转发器掐掉
+    const enabledPorts = new Set();
+    for (const id of ids) {
+      const e = proxies[id];
+      if (e && typeof e === 'object' && e.enabled === true && Number.isFinite(Number(e.port))) enabledPorts.add(Number(e.port));
+    }
+    const wantedPorts = new Set(); // 本轮实际在用的转发端口（收尾时清理其余实例用）
+    const persist = {}; // id → { port?, upstream? }：需要写回配置的（补上的上游、换过的端口）
+    for (const id of ids) {
+      const entry = proxies[id];
+      if (!entry || typeof entry !== 'object') continue;
+      // 有效代理：条目自填优先，留空跟随全局（软件代理）
+      const proxyUrl = (typeof entry.proxy === 'string' && entry.proxy.trim()) ? entry.proxy.trim() : effectiveProxyUrl();
+      // 真实上游：配置里记的优先；没记（新机器同步来的 null）就从当前地址取
+      // （转发地址除外），再没有翻备份文件
+      let upstream = (typeof entry.upstream === 'string' && entry.upstream.trim()) ? entry.upstream.trim() : '';
+      if (upstream && !/^https?:\/\/\S+$/.test(upstream)) upstream = '';
+      const current = providerProxyCurrentBaseUrl(dataRoot, id);
+      if (!upstream || providerProxyOwnUrl(upstream, entry.port)) {
+        upstream = '';
+        if (current && /^https?:\/\/\S+$/.test(current) && !providerProxyOwnUrl(current, entry.port)) upstream = current;
+        else {
+          const fromBackup = providerProxyBackupBaseUrl(dataRoot, id);
+          if (fromBackup && /^https?:\/\/\S+$/.test(fromBackup) && !providerProxyOwnUrl(fromBackup, entry.port)) upstream = fromBackup;
+        }
+        if (upstream && upstream !== entry.upstream) persist[id] = { ...persist[id], upstream };
+      }
+      if (entry.enabled !== true) {
+        // 关：当前是自家转发地址才改回上游；停掉该条目的端口（被开启条目占用时跳过）
+        if (upstream && current && providerProxyOwnUrl(current, entry.port)) {
+          try {
+            if (providerProxyRewriteBaseUrl(dataRoot, id, upstream)) result.restored.push(id);
+          } catch (err) { errors.push(`${id}：恢复地址失败（${err?.message || err}）`); }
+        }
+        const port = Number(entry.port);
+        if (Number.isFinite(port) && !enabledPorts.has(port)) {
+          try { if (await manager.stopPort(port)) result.stopped.push(port); } catch { /* 停失败下次清理 */ }
+        }
+        continue;
+      }
+      if (!upstream) {
+        errors.push(`${id}：没找到真实上游地址（供应商可能已被删除），跳过`);
+        continue;
+      }
+      let port = Number.isFinite(Number(entry.port)) ? Math.min(65535, Math.max(1024, Math.round(Number(entry.port)))) : PROVIDER_PROXY_PORT_MIN;
+      // 同端口被本轮别的条目先占了就换段内空闲端口（两个供应商不能互抢同一端口）
+      if (wantedPorts.has(port)) {
+        const free = await providerProxyFreePort();
+        if (free === null) { errors.push(`${id}：端口 ${port} 被占用且段内无空闲端口`); continue; }
+        port = free;
+      }
+      let actual = 0;
+      try {
+        actual = await manager.ensure({ upstream, port, proxyUrl });
+      } catch (err) {
+        // 端口被别的程序占了就换段内空闲端口再试一次
+        const busy = err && /EADDRINUSE/.test(String(err.code || '') + ' ' + String(err.message || ''));
+        const free = busy ? await providerProxyFreePort() : null;
+        if (free !== null && free !== port) {
+          port = free;
+          try { actual = await manager.ensure({ upstream, port, proxyUrl }); }
+          catch (err2) { errors.push(`${id}：转发器启动失败（${err2?.message || err2}）`); continue; }
+        } else {
+          errors.push(busy ? `${id}：端口 ${port} 被占用且段内无空闲端口` : `${id}：转发器启动失败（${err?.message || err}）`);
+          continue;
+        }
+      }
+      wantedPorts.add(actual);
+      if (actual !== entry.port) persist[id] = { ...persist[id], port: actual };
+      const forwardUrl = `http://127.0.0.1:${actual}`;
+      if (current !== forwardUrl && current !== forwardUrl + '/') {
+        try {
+          providerProxyRewriteBaseUrl(dataRoot, id, forwardUrl);
+        } catch (err) { errors.push(`${id}：改写地址失败（${err?.message || err}）`); continue; }
+      }
+      result.started.push({ id, port: actual });
+    }
+    // 收掉不再需要的转发端口（条目删了、关了、或换了端口后的旧实例）
+    try {
+      for (const fw of manager.status()) {
+        if (!wantedPorts.has(fw.port)) {
+          try { if (await manager.stopPort(fw.port)) result.stopped.push(fw.port); } catch { /* 下次再收 */ }
+        }
+      }
+    } catch { /* 状态查询失败不影响 */ }
+    // 配置写回（补上的上游、换过的端口）：锁内重读，只改这几个字段
+    const persistIds = Object.keys(persist);
+    if (persistIds.length) {
+      try {
+        await withConfigLock(configFile, () => {
+          const fresh = loadConfig(configFile);
+          if (configUnreadable) return;
+          const table = { ...(fresh.providerProxies || {}) };
+          for (const id of persistIds) {
+            if (!table[id] || typeof table[id] !== 'object') continue;
+            table[id] = { ...table[id], ...persist[id] };
+          }
+          fresh.providerProxies = table;
+          saveConfig(configFile, fresh);
+        });
+      } catch (err) { errors.push(`配置写回失败（${err?.message || err}）`); }
+    }
+  } catch (err) {
+    errors.push(String(err?.message || err));
+  }
+  result.ms = Date.now() - startedAt;
+  try { state.providerProxyLastRun = result; } catch { /* state 不可写不影响 */ }
+  for (const e of errors) console.error(`[zcodepro] 供应商代理：${e}`);
+  return result;
+}
+
+// 启动兜底：helper 就绪后延迟几秒对齐一次（避开启动高峰）；标志挂 state，
+// 热替换不重复排队。失败一律静默——没配供应商代理的环境不能打扰启动。
+function ensureProviderProxiesAtStartup(state = {}, ctx = {}) {
+  if (!state || typeof state !== 'object') return;
+  if (state.providerProxyEnsureFired) return;
+  state.providerProxyEnsureFired = true;
+  const timer = setTimeout(() => {
+    ensureProviderProxies({ ...ctx, state, reason: 'startup' }).catch(() => { /* 兜底失败不影响启动 */ });
+  }, 3000);
+  timer.unref?.();
+}
 
 // ProxyServer 的值有两种写法：host:port，或 http=host:port;https=host:port。
 // 取 https（没有就取 http），补上协议。导出以便测试。
@@ -794,6 +1070,7 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
   const bootConfig = loadConfig(configFile);
   activeProxyUrl = String(bootConfig.proxy || '').trim();
   activeProxyScopes = { ...bootConfig.proxyScopes };
+  activeHeadroomProxy = String(bootConfig.headroomProxy || '').trim();
 
   const server = createServer(async (req, res) => {
     const url = new URL(req.url, `http://127.0.0.1:${port}`);
@@ -970,6 +1247,50 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
             }
             activeProxyScopes = { ...current.proxyScopes };
           }
+          // 供应商代理开关（每个供应商一项即时保存）：单条提交，只改自己那条；
+          // enabled=true 时由远端改 baseUrl 指向本机转发 + 拉起转发进程
+          if (body && typeof body === 'object' && body.providerProxies && typeof body.providerProxies === 'object') {
+            const next = { ...(current.providerProxies || {}) };
+            let bad = null;
+            for (const [id, v] of Object.entries(body.providerProxies)) {
+              if (typeof id !== 'string' || !id.trim() || id === '__proto__' || id === 'constructor' || id === 'prototype') continue;
+              if (!v || typeof v !== 'object' || Array.isArray(v)) continue;
+              // remove: true = 移除该供应商的代理设置（界面“×”按钮）：整条删掉，
+              // 后面的对齐会把地址改回真实上游并停掉转发
+              if (v.remove === true) { delete next[id]; continue; }
+              const proxy = typeof v.proxy === 'string' ? v.proxy.trim().slice(0, 300) : '';
+              if (proxy && !/^https?:\/\/\S+:\d+$/.test(proxy)) { bad = { id, error: '代理地址需形如 http://127.0.0.1:7890，或留空跟随全局代理' }; break; }
+              const port = Number.isFinite(Number(v.port)) && Number(v.port) >= 1024 && Number(v.port) <= 65535
+                ? Math.round(Number(v.port)) : (next[id]?.port || 18731);
+              const upstream = typeof v.upstream === 'string' ? v.upstream.trim().slice(0, 500)
+                : (v.upstream === null ? null : (next[id]?.upstream ?? null));
+              if (upstream !== null && upstream !== '' && !/^https?:\/\/\S+$/.test(upstream)) { bad = { id, error: '上游地址需为 http(s) 网址，或留空' }; break; }
+              next[id] = { enabled: v.enabled === true, proxy, port, upstream };
+            }
+            if (bad) {
+              json(res, 400, { ok: false, code: 'provider-proxy-invalid', error: `供应商 ${bad.id}：${bad.error}` });
+              return;
+            }
+            current.providerProxies = next;
+          }
+          // headroom 上游代理：头一家（headroom 实例拉起时带 HEADROOM_HTTP_PROXY）
+          if (body && typeof body === 'object' && typeof body.headroomProxy === 'string') {
+            const v = body.headroomProxy.trim().slice(0, 300);
+            if (v && !/^https?:\/\/\S+:\d+$/.test(v)) {
+              json(res, 400, { ok: false, code: 'headroom-proxy-invalid', error: 'headroom 上游代理需形如 http://127.0.0.1:7890，或留空清除' });
+              return;
+            }
+            current.headroomProxy = v;
+            activeHeadroomProxy = v;
+          }
+          // 工具名映射（服务器键名 → 短键名）：整表覆盖，按合法键过滤
+          if (body && typeof body === 'object' && body.toolNameMaps && typeof body.toolNameMaps === 'object') {
+            current.toolNameMaps = mergeToolNameMaps(body.toolNameMaps);
+          }
+          // 工具名自动检查开关（默认开）：关掉后启动时不自动改写，只留手动按钮
+          if (body && typeof body === 'object' && typeof body.toolNameAuto === 'boolean') {
+            current.toolNameAuto = body.toolNameAuto;
+          }
           if (body && typeof body === 'object' && typeof body.devMode === 'boolean') {
             current.devMode = body.devMode;
           }
@@ -1080,8 +1401,34 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
             json(res, 500, { ok: false, code: 'config-unreadable', error: 'zcodepro.json 读取失败或已损坏，保存中止（请先修好配置文件）' });
             return;
           }
+          // 供应商代理/全局代理变了就对齐转发器：发完不管，不拖慢保存响应；
+          // 结果进 state.providerProxyLastRun，状态端点可查
+          if (body && typeof body === 'object'
+              && (body.providerProxies !== undefined || typeof body.proxy === 'string')) {
+            ensureProviderProxies({ dataRoot, configFile, state, reason: 'config' }).catch(() => {});
+          }
           json(res, 200, { ok: true, config: current });
         });
+        return;
+      }
+      // —— 供应商代理状态（设置页“代理 → 供应商代理”二级）：转发器实例 + 上次对齐结果 ——
+      if (req.method === 'GET' && url.pathname === '/provider-proxies/status') {
+        let forwarders = [];
+        try { forwarders = getProviderProxyManager(state).status(); } catch { /* 单例异常按空表 */ }
+        json(res, 200, { ok: true, forwarders, lastRun: state.providerProxyLastRun || null });
+        return;
+      }
+      // —— 工具名合规检查（设置页“代理 → 供应商代理”底行按钮）：扫描并重写服务器键名 ——
+      if (req.method === 'POST' && url.pathname === '/tool-names/check') {
+        const body = await readBody(req);
+        const dryRun = body?.dryRun === true;
+        try {
+          const r = runToolNameCheck({ dataRoot, configFile, dryRun });
+          state.toolNameLastRun = r;
+          json(res, 200, { ok: true, dryRun, scanned: r.scanned, changed: r.changed, warnings: r.warnings, summary: r.summary });
+        } catch (err) {
+          json(res, 500, { ok: false, code: 'tool-name-check', error: String(err?.message || err) });
+        }
         return;
       }
       // —— ZCode CLI 行为配置（设置 → 行为 → ZCode CLI）：读写 ~/.zcode/cli/config.json
@@ -2675,7 +3022,12 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         }
       } catch { /* 无配置或不可写不影响启动 */ }
       // 服务就绪即安排 headroom 代理兜底（内部延迟 5 秒执行，避开启动高峰）
-      server.listen(port, '127.0.0.1', () => { ensureHeadroomAtStartup(state); resolveStarted(server); });
+      server.listen(port, '127.0.0.1', () => {
+        ensureHeadroomAtStartup(state);
+        ensureProviderProxiesAtStartup(state, { dataRoot, configFile });
+        ensureToolNamesAtStartup(state, { dataRoot, configFile });
+        resolveStarted(server);
+      });
     };
     tryListen();
   });
@@ -2721,6 +3073,9 @@ export function dispose() {
     try { child.kill(); } catch { /* 已退出 */ }
   }
   transcodeChildren.clear();
+  // 注意：供应商代理转发器不在这里停——单例挂在跨热替换共享的 state 上，
+  // 热替换后新实例继续用同一批转发器（端口不变、不断线）；进程退出时它们
+  // 随进程一起结束，不留孤儿。
 }
 // 解析一段 rollout 文本为记录；completeBytes = 已完整解析的整行字节数
 //（末行若是不完整 JSON（写入中途）不计入，调用方据此决定偏移推进量）
@@ -3032,6 +3387,50 @@ function mergeProxyScopes(saved) {
     deps: typeof s.deps === 'boolean' ? s.deps : d.deps,
     sync: typeof s.sync === 'boolean' ? s.sync : d.sync,
   };
+}
+
+// providerProxies 归一：供应商 id → { enabled, proxy, port, upstream }；
+// 只收合法值（非法项整条丢弃，不阻断整份配置）。
+// proxy 留空 = 跟随全局代理（解析在运行时按 effectiveProxyUrl() 兜底）。
+// upstream 落盘：None 值保留为 null（新机器上 helper 重新补），空串非法丢弃。
+export function mergeProviderProxies(saved) {
+  const s = (saved && typeof saved === 'object' && !Array.isArray(saved)) ? saved : {};
+  const out = {};
+  for (const [id, v] of Object.entries(s)) {
+    if (typeof id !== 'string' || !id.trim() || !v || typeof v !== 'object' || Array.isArray(v)) continue;
+    if (id === '__proto__' || id === 'constructor' || id === 'prototype') continue;
+    const proxy = typeof v.proxy === 'string' ? v.proxy.trim().slice(0, 300) : '';
+    if (proxy && !/^https?:\/\/\S+:\d+$/.test(proxy)) continue;
+    const port = Number.isFinite(Number(v.port)) ? Math.min(65535, Math.max(1024, Math.round(Number(v.port)))) : 18731;
+    const upstream = typeof v.upstream === 'string' ? v.upstream.trim().slice(0, 500)
+      : (v.upstream === null ? null : null);
+    out[id] = {
+      enabled: v.enabled === true,
+      proxy,
+      port,
+      upstream: (upstream || upstream === null) ? upstream : null,
+    };
+  }
+  return out;
+}
+
+// toolNameMaps 归一：服务器键名 → 短键名；只收合法键（字母/数字/连字符/下划线，
+// 长度 ≤ 32，短名 ≤ 24），非法项丢弃。
+// 内置默认映射（android-emulator → ae、tencent-docs → td）作为底：文件里存了空对象
+// 或者只写了别的键，默认这两条仍然生效——它们只影响服务器键名，不涉及数据丢失。
+export function mergeToolNameMaps(saved) {
+  const s = (saved && typeof saved === 'object' && !Array.isArray(saved)) ? saved : {};
+  const out = { ...defaultConfig().toolNameMaps };
+  for (const [k, v] of Object.entries(s)) {
+    if (typeof k !== 'string' || typeof v !== 'string') continue;
+    const key = k.trim();
+    const val = v.trim();
+    if (!/^[A-Za-z0-9_-]{1,32}$/.test(key) || !/^[A-Za-z0-9_-]{1,24}$/.test(val)) continue;
+    if (key === '__proto__' || key === 'constructor' || key === 'prototype') continue;
+    if (key === val) continue;
+    out[key] = val;
+  }
+  return out;
 }
 
 // loadConfig 时把磁盘上的 sync 段按默认值归一（长度限幅、时间戳只收数字）。
@@ -3469,6 +3868,7 @@ export function applySyncDocs({ docs, dataRoot, configFile, config, sync }) {
 
   if (docs.zcodepro) {
     const rz = docs.zcodepro;
+    let providerProxiesChanged = false;
     // 整段 zcodepro.json 读改写放进跨进程锁内同步执行（applySyncDocs 是同步
     // 调用点，用同步等锁变体），防止与别的写入方互相覆盖整份配置
     const rzErr = withConfigLockSync(configFile, () => {
@@ -3481,6 +3881,31 @@ export function applySyncDocs({ docs, dataRoot, configFile, config, sync }) {
         const v = rz.proxy.trim();
         if (v === '' || /^https?:\/\/\S+:\d+$/.test(v)) next.proxy = v;
       }
+      // 供应商代理：云端整表为准（另一台机器关掉的条目这里也关），只保留一个例外——
+      // 云端 upstream 为 null 时沿用本机补上的真实上游（null 只表示“等本机自己补”）
+      if (rz.providerProxies && typeof rz.providerProxies === 'object' && !Array.isArray(rz.providerProxies)) {
+        const incoming = mergeProviderProxies(rz.providerProxies);
+        const local = next.providerProxies || {};
+        const merged = {};
+        for (const [id, v] of Object.entries(incoming)) {
+          const prev = local[id];
+          merged[id] = {
+            ...v,
+            upstream: v.upstream || (prev && typeof prev.upstream === 'string' ? prev.upstream : null),
+          };
+        }
+        next.providerProxies = merged;
+        providerProxiesChanged = true;
+      }
+      // headroom 上游代理：与软件代理同款校验，云端有效才覆盖
+      if (typeof rz.headroomProxy === 'string') {
+        const v = rz.headroomProxy.trim().slice(0, 300);
+        if (v === '' || /^https?:\/\/\S+:\d+$/.test(v)) next.headroomProxy = v;
+      }
+      // 工具名映射：云端优先，本机多出来的键保留（另一台机器没配的不删）
+      if (rz.toolNameMaps && typeof rz.toolNameMaps === 'object' && !Array.isArray(rz.toolNameMaps)) {
+        next.toolNameMaps = { ...(next.toolNameMaps || {}), ...mergeToolNameMaps(rz.toolNameMaps) };
+      }
       next.sync = { ...next.sync, lastPullAt: sync.lastPullAt }; // 保留本机 sync 配置与凭据，只记本次拉取时间
       backupFile(configFile);
       if (!saveConfig(configFile, next)) {
@@ -3490,6 +3915,14 @@ export function applySyncDocs({ docs, dataRoot, configFile, config, sync }) {
     });
     if (rzErr) return rzErr;
     applied.push('zcodepro');
+    // 供应商代理开关变了就对齐转发器（拉起/停掉、改写供应商地址）；
+    // 工具名映射变了就把短键名打回去。都尽力而为，失败不影响同步结果。
+    if (providerProxiesChanged) {
+      ensureProviderProxies({ dataRoot, configFile, reason: 'sync' }).catch(() => { /* 尽力而为 */ });
+    }
+    if (rz && rz.toolNameMaps) {
+      try { runToolNameCheck({ dataRoot, configFile }); } catch { /* 尽力而为 */ }
+    }
   }
   if (docs.model) {
     const provider = docs.model.provider;
@@ -5595,6 +6028,10 @@ function startHeadroomUpgrade(channel) {
 async function runHeadroomHook(args, timeoutMs = 30000) {
   const noProxy = ['127.0.0.1', 'localhost', process.env.NO_PROXY || process.env.no_proxy || ''].filter(Boolean).join(',');
   const hookEnv = { NO_PROXY: noProxy, no_proxy: noProxy };
+  // headroom 上游代理（两层代理的内层）：配置了就随钩子传进实例环境，
+  // 实例连上游（BigModel/MiMo 等）走它；空 = 不带（旧行为）。
+  // 钩子与实例本体都认 HEADROOM_HTTP_PROXY（headroom proxy --http-proxy 同款）。
+  if (activeHeadroomProxy) hookEnv.HEADROOM_HTTP_PROXY = activeHeadroomProxy;
   const mjs = findMarketplaceHook('headroom', join('hooks', 'ensure-proxy.mjs'));
   if (mjs) return runNodeScript([mjs, ...args], timeoutMs, 'none', hookEnv);
   const hook = findMarketplaceHook('headroom', join('hooks', 'ensure-proxy.sh'));
@@ -5840,6 +6277,48 @@ export function runNodeScript(scriptArgs, timeoutMs = 120000, scope = 'deps', ex
     });
   });
   return attempt('node', {}).then((r) => r || attempt(process.execPath, { ELECTRON_RUN_AS_NODE: '1' }));
+}
+
+// 工具名合规检查的运行时：从配置拿映射表，扫用户级 MCP 配置与各处插件清单，
+// 把长服务器键名改短。sourcePackages 取 ZCode 安装目录（bundle 旁的 packages，
+// 插件缓存由它生成），找不到就不扫源包，只扫缓存。
+// 导出以便测试；设置页按钮走 /tool-names/check，启动时自动跑一次。
+function runToolNameCheck({ dataRoot, configFile, dryRun = false } = {}) {
+  const config = loadConfig(configFile);
+  let sourcePackagesDir = '';
+  for (const bundle of zcodeCliBundleCandidates()) {
+    const dir = join(dirname(bundle), 'packages');
+    if (existsSync(dir)) { sourcePackagesDir = dir; break; }
+  }
+  const result = applyToolNameMaps({
+    dataRoot,
+    zcodeConfigFile: join(zcodeDataRoot(), 'cli', 'config.json'),
+    maps: config.toolNameMaps,
+    sourcePackagesDir,
+    dryRun,
+  });
+  return { ...result, summary: toolNameCheckSummary(result) };
+}
+
+// 启动兜底：ZCode 升级/插件更新会把服务器键名改回长名，helper 就绪后延迟几秒补打一次；
+// 标志挂 state，热替换不重复排队。失败静默——没配映射的环境不受影响。
+// 配置里 toolNameAuto=false 时跳过（用户关掉了自动修复，只用手动按钮）。
+function ensureToolNamesAtStartup(state = {}, ctx = {}) {
+  if (!state || typeof state !== 'object') return;
+  if (state.toolNameEnsureFired) return;
+  state.toolNameEnsureFired = true;
+  const timer = setTimeout(() => {
+    try {
+      const config = loadConfig(ctx.configFile);
+      if (config.toolNameAuto === false) return; // 用户关了自动修复
+      const r = runToolNameCheck(ctx);
+      state.toolNameLastRun = r;
+      if (r.changed.length) console.log(`[zcodepro] 工具名检查：${r.summary}`);
+    } catch (err) {
+      console.error(`[zcodepro] 工具名检查失败：${err?.message || err}`);
+    }
+  }, 4000);
+  timer.unref?.();
 }
 
 // ZCode CLI bundle（plugins 子命令入口）：优先从定位到的 ZCode 可执行文件推导
