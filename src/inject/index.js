@@ -27,6 +27,8 @@ import { startPinnedCollapse } from './features/pinned-collapse.js';
 import { startStyleAdjustments } from './features/styles.js';
 import { startTheme } from './features/theme.js';
 import { startTableCopy } from './features/table-copy.js';
+import { startTranslatePanel } from './features/translate-panel.js';
+import { startSelectionToolbarTranslate } from './features/selection-toolbar-translate.js';
 import { startSessionLink } from './features/session-link.js';
 import { startComposerProvider } from './features/composer-provider.js';
 import { startComposerEditModel } from './features/composer-edit-model.js';
@@ -97,6 +99,8 @@ import { ensureStyle } from './ui.js';
     try { startStyleAdjustments(); } catch { /* ignore */ }
     try { startTheme(); } catch { /* ignore */ }
     try { startTableCopy(); } catch { /* ignore */ }
+    try { startTranslatePanel(); } catch { /* ignore */ }
+    try { startSelectionToolbarTranslate(); } catch { /* ignore */ }
     try { startSessionLink(); } catch { /* ignore */ }
     try { startComposerProvider(); } catch { /* ignore */ }
     try { startComposerEditModel(); } catch { /* ignore */ }

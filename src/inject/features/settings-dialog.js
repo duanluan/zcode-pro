@@ -3,6 +3,7 @@
 import { h, t, rpc, getConfig, clearConfigCache, errText, HELPER_URL, liveBoot, isZhLocale, uiLocale, isCjkLocale, isNewProjectSidebar, DEFAULT_SHORTCUTS, DEFAULT_STATUS_ITEMS, DEFAULT_TURN_ITEMS, STATUS_SESSION_IDS, STATUS_GLOBAL_IDS } from '../core.js';
 import { openDialog, dialogFooter, btnPrimary, btnSecondary, btnSmall, settingRow, ensureStyle, showToast, numberField, unitField } from '../ui.js';
 import { comboField, providerOptionsOf, modelOptionsOf, modelPlaceholderOf, isManualConn } from '../provider-fields.js';
+import { thinkingLabel, resolveThinkingOptions } from '../thinking-levels.js';
 import { refreshAliases } from './alias.js';
 import { migrationCard } from './alias-migration.js';
 import { applyStyles, STYLE_DEFAULTS, showStyleHighlight, hideStyleHighlight } from './styles.js';
@@ -152,7 +153,7 @@ function makeUpgradeControls({ endpoint, metaRefresh, idleText }) {
   return { btn, state, stop: stopPoll };
 }
 
-export function openSettingsDialog() {
+export function openSettingsDialog(initialTab = 'features') {
   ensureStyle();
   const L = t();
   // Headroom / rtk 升级进度轮询的停止句柄：面板代码在 onMount 里赋值，关弹窗时停掉
@@ -172,6 +173,8 @@ export function openSettingsDialog() {
     onClose: () => {
       if (hrUpgradePollStop) hrUpgradePollStop();
       if (rtkUpgradePollStop) rtkUpgradePollStop();
+      // 通知外部（翻译面板等）设置已关闭：它们可能在打开期间临时降了层级
+      window.dispatchEvent(new CustomEvent('zcodepro:settings-closed'));
     },
     onMount: async ({ body, close, content }) => {
       // 标记设置弹窗：showToast 据此把弹窗内触发的提示居中叠在弹窗上
@@ -216,9 +219,9 @@ export function openSettingsDialog() {
         }, '✕');
         titleEl.replaceChildren(titleLeft, closeX);
       }
-      // 九个只读请求相互独立：并行取（串行时 headroom 的版本探测一项就约
+      // 十一个只读请求相互独立：并行取（串行时 headroom 的版本探测一项就约
       // 700ms，弹窗打开明显卡顿）
-      const [health, config, agentsRes, visionRes, titleGenRes, titleGenProvidersRes, rtkRes, headroomRes, zcodeConfigRes] = await Promise.all([
+      const [health, config, agentsRes, visionRes, titleGenRes, titleGenProvidersRes, rtkRes, headroomRes, zcodeConfigRes, translateRes, translateProvidersRes, translateSessionRes] = await Promise.all([
         rpc('/health'),
         getConfig(true),
         rpc('/agents'),
@@ -228,6 +231,9 @@ export function openSettingsDialog() {
         rpc('/rtk'),
         rpc('/headroom'),
         rpc('/zcode-config'),
+        rpc('/translate'),
+        rpc('/translate/providers'),
+        rpc('/translate/session-model'),
       ]);
       // 供应商表（含各供应商可选模型）：视觉代理的模型下拉也用这份
       const titleGenProviders = titleGenProvidersRes.ok && Array.isArray(titleGenProvidersRes.providers)
@@ -387,6 +393,11 @@ export function openSettingsDialog() {
             if (await setFeature('tableCopy', next)) f.tableCopy = next;
             refreshRows();
           }),
+          settingRow(L.featureTranslate, L.featureTranslateDesc, f.translate !== false, async () => {
+            const next = !(f.translate !== false);
+            if (await setFeature('translate', next)) f.translate = next;
+            refreshRows();
+          }),
           settingRow(L.featureSessionLink, L.featureSessionLinkDesc, f.sessionLink !== false, async () => {
             const next = !(f.sessionLink !== false);
             if (await setFeature('sessionLink', next)) f.sessionLink = next;
@@ -498,7 +509,8 @@ export function openSettingsDialog() {
           }));
 
       // 标签页切换：功能（现有内容）/ 外观 / 全局提示词 / 视觉代理
-      let activeTab = 'features';
+      // initialTab 供面板等入口直达指定标签（如翻译面板的 ⚙ 打开“翻译”页）
+      let activeTab = typeof initialTab === 'string' && initialTab ? initialTab : 'features';
       // 二级 tab 栏（外观 / 行为各一条）：登记后统一放到滚动区上方的固定区
       const subTabBars = {};
       // 插件更新卡片：显示 duanluan-zcode-plugins 市场状态，一键更新（helper /plugins/* 端点）；
@@ -615,8 +627,9 @@ export function openSettingsDialog() {
       const paneHeadroom = h('div', { role: 'tabpanel', style: 'display:none' });
       const paneAutoContinue = h('div', { role: 'tabpanel', style: 'display:none' });
       const paneTitleGen = h('div', { role: 'tabpanel', style: 'display:none' });
+      const paneTranslate = h('div', { role: 'tabpanel', style: 'display:none' });
       const paneDebug = h('div', { role: 'tabpanel', style: 'display:none' });
-      const panes = { features: paneFeatures, shortcuts: paneShortcuts, styles: paneStyles, perf: panePerf, agents: paneAgents, proxy: paneProxy, sync: paneSync, import: paneImport, vision: paneVision, headroom: paneHeadroom, rtk: paneRtk, debug: paneDebug };
+      const panes = { features: paneFeatures, shortcuts: paneShortcuts, styles: paneStyles, perf: panePerf, agents: paneAgents, proxy: paneProxy, sync: paneSync, import: paneImport, vision: paneVision, translate: paneTranslate, headroom: paneHeadroom, rtk: paneRtk, debug: paneDebug };
       // 一级 tab 顺序：功能 → 外观 → 行为 → 性能 → 快捷键 → 代理/同步/插件页
       const tabDefs = [
         ['features', L.tabFeatures],
@@ -626,6 +639,7 @@ export function openSettingsDialog() {
         ['shortcuts', L.tabShortcuts],
         ['proxy', L.tabProxy],
         ['sync', L.tabSync],
+        ['translate', L.tabTranslate],
         ...(config.features.sessionImport !== false ? [['import', L.tabImport]] : []),
         ['vision', L.tabVision],
         ['headroom', L.tabHeadroom],
@@ -651,7 +665,11 @@ export function openSettingsDialog() {
         if (name === 'import') paneImport.__onShow?.();
         renderTabs();
       };
-      renderTabs();
+      // 初始标签页：所有 pane 默认 display:none、只有“功能”页不带该样式。指定了
+      // 别的初始页（如翻译面板的 ⚙ 直达“翻译”）时，必须真正切一次，否则只高亮
+      // tab 按钮、内容区空着——这就是“点了设置但没切到翻译页”的原因
+      if (activeTab === 'features') renderTabs();
+      else switchTab(activeTab);
 
       // “样式”：一行两项、相关项同行；无描述文字，悬停名称显示 tip；
       // 数字框滚轮/手输调节，改完即存即生效
@@ -2859,6 +2877,207 @@ export function openSettingsDialog() {
           visionTestPre,
         );
       };
+
+      // “翻译”标签页：触发方式、目标语言、面板尺寸、历史与机翻密钥。
+      // 通道与提示词的快捷切换在翻译面板上完成（写的是同一个配置文件），
+      // 这里放整块设置；嵌套键（panel/history 等）提交完整对象，防止合并写
+      // 顶层替换时丢掉同组的其余键
+      const TR_INPUT_CLS = 'h-7 w-full rounded-lg border border-border bg-input px-2 text-ui-xs text-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40';
+      const TR_MT_FIELDS = {
+        youdao: [['appKey', 'App Key'], ['key', 'Secret']],
+        baidu: [['appId', 'App ID'], ['secret', 'Secret']],
+        caiyun: [['token', 'Token']],
+        deepl: [['authKey', 'Auth Key']],
+        deeplx: [['apiUrl', 'API URL'], ['token', 'Token']],
+        niu: [['apiKey', 'API Key']],
+        tencent: [['secretId', 'Secret ID'], ['secretKey', 'Secret Key']],
+        aliyun: [['accessKeyId', 'Access Key ID'], ['accessKeySecret', 'Access Key Secret']],
+        volc: [['accessKeyId', 'Access Key ID'], ['secretAccessKey', 'Secret Access Key']],
+      };
+      const TR_MT_IDS = Object.keys(TR_MT_FIELDS);
+      // 各家获取密钥的官方入口：来源是沙拉查词（crimx/ext-saladict）各机翻
+      // 组件 auth.ts 的 url 字段；两处例外——腾讯的是带返利参数的推广短链，
+      // 换成机器翻译控制台直达；有道的旧网关地址会跳到新版控制台，直接用域名根
+      const TR_MT_URLS = {
+        youdao: 'https://ai.youdao.com/',
+        baidu: 'https://api.fanyi.baidu.com/api/trans/product/prodinfo',
+        caiyun: 'https://fanyi.caiyunapp.com/#/api',
+        deepl: 'https://www.deepl.com/pro-api',
+        deeplx: 'https://github.com/OwO-Network/DeepLX',
+        niu: 'https://niutrans.com/documents/contents/trans_detection',
+        tencent: 'https://console.cloud.tencent.com/tmt',
+        aliyun: 'https://help.aliyun.com/zh/machine-translation/developer-reference/api-alimt-2018-10-12-overview',
+        volc: 'https://www.volcengine.com/docs/4640/65067',
+      };
+      const trSvcStatus = translateProvidersRes.ok && Array.isArray(translateProvidersRes.services) ? translateProvidersRes.services : [];
+      const renderTranslate = () => {
+        const field = (labelText, node) => h('label', { class: 'block min-w-0' },
+          h('span', { class: 'mb-1 block text-ui-xs font-medium text-foreground-subtle' }, labelText), node);
+        if (!translateRes.ok) {
+          paneTranslate.replaceChildren(
+            h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.translateDesc),
+            h('p', { class: 'mt-2 text-ui-sm text-destructive' }, L.failed + ': ' + errText(translateRes)));
+          return;
+        }
+        const tr = translateRes.config || {};
+        let saveTimer = null;
+        let pendingCfg = {};
+        const persist = (partial) => {
+          // 防抖期间的多次改动合并提交，且嵌套键展开成完整对象后再并入
+          Object.assign(pendingCfg, partial);
+          clearTimeout(saveTimer);
+          saveTimer = setTimeout(async () => {
+            const body = pendingCfg;
+            pendingCfg = {};
+            const res = await rpc('/translate', { method: 'POST', body: { config: body } });
+            if (res.ok && res.config) {
+              translateRes.config = res.config;
+              showToast(L.translateSaved, 'success');
+              // 通知翻译面板立即按新配置刷新
+              window.dispatchEvent(new CustomEvent('zcodepro:config-changed'));
+            } else {
+              showToast(L.failed + ': ' + errText(res), 'error');
+            }
+          }, 400);
+        };
+        // title 可选：下拉的悬停说明（如“该模型不支持思考”）
+        const selIn = (value, options, onPick, title = '') => {
+          const n = h('select', {
+            class: 'h-7 w-40 rounded-lg border border-border bg-input px-2 text-ui-xs text-foreground outline-none',
+            ...(title ? { title, disabled: true } : {}),
+          });
+          for (const [v, label] of options) {
+            const o = h('option', { value: v }, label);
+            if (v === value) o.selected = true;
+            n.append(o);
+          }
+          n.addEventListener('change', () => onPick(n.value));
+          return n;
+        };
+        const numIn = (value, dflt, min, max, onCommit) => {
+          const n = h('input', { type: 'number', min: String(min), max: String(max), class: TR_INPUT_CLS, style: 'width:7rem' });
+          n.value = String(Number.isFinite(value) ? value : dflt);
+          n.addEventListener('change', () => onCommit(Math.max(min, Math.min(max, Math.round(Number(n.value) || dflt)))));
+          return n;
+        };
+        const testBtn = btnSmall(L.translateTest, async () => {
+          const ch = (translateRes.config && translateRes.config.channel) || {};
+          const res = await rpc('/translate/test', { method: 'POST', body: { channel: ch } });
+          if (res.ok) showToast(res.output || '✓', 'success');
+          else showToast(L.failed + ': ' + errText(res), 'error');
+        });
+        const panel0 = tr.panel || {};
+        const history0 = tr.history || {};
+        // 默认通道（LLM）：供应商与模型照视觉代理页的接法（下拉+手输），
+        // 但不含“不跟随（自填地址）”——翻译通道只认 会话/供应商 两种来源
+        const chNow = () => (translateRes.config && translateRes.config.channel) || {};
+        const providerField = field(L.translateProvider, comboField(
+          chNow().provider || 'session',
+          [{ value: 'session', label: L.titleGenProviderSession }, ...titleGenProviders.map((p) => ({ value: p.id, label: p.name }))],
+          (v, src) => {
+            const c = chNow();
+            persist({ channel: { ...c, type: 'llm', provider: v, model: v === 'session' ? '' : c.model } });
+            if (src === 'select') renderTranslate();
+          },
+          { staleLabel: L.titleGenProviderDeleted }));
+        const modelField = field(L.translateModelLabel, comboField(
+          chNow().model || '',
+          modelOptionsOf(chNow().provider || 'session', titleGenProviders, {
+            followSession: (chNow().provider || 'session') === 'session',
+            followSessionLabel: L.titleGenModelFollowSession,
+          }),
+          (v, src) => {
+            const cur = chNow();
+            // 换模型后重绘整页：思考档位跟着所选模型变
+            translateRes.config = { ...translateRes.config, channel: { ...cur, model: v.trim() } };
+            persist({ channel: { ...cur, model: v.trim() } });
+            if (src === 'select') renderTranslate();
+          },
+          { placeholder: modelPlaceholderOf(chNow().provider || 'session', L) }));
+        // 通用设置放最前（一行三个）；翻译服务 = AI 翻译或某家机翻，选哪个
+        // 出现哪组选项（AI：供应商/模型/思考等级；机翻：该服务的密钥）
+        const ch0 = chNow();
+        const isLlm = ch0.type !== 'mt';
+        const setChannel = (patch) => {
+          const merged = { ...chNow(), ...patch };
+          // 保存前把档位自适应映射到该通道支持的档位
+          if (merged.type !== 'mt') {
+            const opts = resolveThinkingOptions(titleGenProviders, merged, translateSessionRes.ok ? translateSessionRes.session : null);
+            merged.thinking = opts.current;
+          }
+          translateRes.config = { ...translateRes.config, channel: merged };
+          persist({ channel: merged });
+          renderTranslate();
+        };
+        const mtServiceName = (id) => L['translateMt' + id.charAt(0).toUpperCase() + id.slice(1)] || id;
+        const mtSvc = ch0.service && TR_MT_FIELDS[ch0.service] ? ch0.service : 'deepl';
+        const serviceSel = selIn(isLlm ? 'llm' : mtSvc, [
+          ['llm', L.translateEngineLlm],
+          ...TR_MT_IDS.map((id) => {
+            const s2 = trSvcStatus.find((s) => s.id === id);
+            return [id, mtServiceName(id) + (s2 && !s2.configured ? '（' + L.translateUnconfigured + '）' : '')];
+          }),
+        ], (v) => { if (v === 'llm') setChannel({ type: 'llm' }); else setChannel({ type: 'mt', service: v }); });
+        const engineArea = isLlm
+          ? h('div', { class: 'mt-2 grid grid-cols-1 gap-3 sm:grid-cols-3' },
+              providerField,
+              modelField,
+              field(L.translateThinking, (() => {
+                // 档位随所选模型变化；跟随会话当前模型时用会话模型的档位，
+                // 并把已存档位自适应映射过去（如 max → enabled）
+                const smi = translateSessionRes.ok ? translateSessionRes.session : null;
+                const opts = resolveThinkingOptions(titleGenProviders, ch0, smi);
+                return selIn(opts.display, opts.variants.map((k) => [k, thinkingLabel(k, L)]),
+                  (v) => setChannel({ type: 'llm', thinking: v }), opts.unsupported ? L.translateThinkingUnsupported : '');
+              })()))
+          : (() => {
+            const mtCur = (tr.mt && tr.mt.services && tr.mt.services[mtSvc]) || {};
+            return h('div', { class: 'mt-2 flex flex-wrap gap-2' },
+              ...TR_MT_FIELDS[mtSvc].map(([k, label]) => {
+                const inp = h('input', { type: 'text', value: mtCur[k] || '', placeholder: label, class: TR_INPUT_CLS, style: 'width:12rem' });
+                inp.addEventListener('change', () => {
+                  mtCur[k] = inp.value.trim();
+                  persist({ mt: { services: { ...((tr.mt && tr.mt.services) || {}), [mtSvc]: { ...mtCur } } } });
+                });
+                return inp;
+              }));
+          })();
+        paneTranslate.replaceChildren(
+          h('div', { class: 'flex flex-wrap items-center justify-between gap-2' },
+            h('p', { class: 'min-w-0 flex-1 text-ui-sm/relaxed text-foreground-subtle' }, L.translateDesc),
+            testBtn),
+          h('div', { class: 'mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3' },
+            field(L.translateTrigger, selIn((tr.trigger && tr.trigger.mode) || 'ctrl-drag', [
+              ['ctrl-drag', L.translateTriggerCtrlDrag],
+              ['ctrl-tap', L.translateTriggerCtrlTap],
+              ['alt-drag', L.translateTriggerAltDrag],
+            ], (v) => persist({ trigger: { mode: v } }))),
+            field(L.translateTargetLang, selIn(tr.targetLang || 'zh', [
+              ['zh', '简体中文'], ['en', 'English'], ['ja', '日本語'], ['ko', '한국어'],
+              ['fr', 'Français'], ['de', 'Deutsch'], ['ru', 'Русский'], ['es', 'Español'],
+            ], (v) => persist({ targetLang: v }))),
+            field(L.translatePanelWidth, numIn(panel0.width, 450, 280, 800, (v) => persist({ panel: { ...panel0, width: v } })))),
+          h('div', { class: 'mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3' },
+            field(L.translatePanelHeight, numIn(panel0.maxHeightPct, 80, 40, 95, (v) => persist({ panel: { ...panel0, maxHeightPct: v } }))),
+            field(L.translateTheme, selIn(panel0.theme || 'follow', [
+              ['follow', L.translateThemeFollow],
+              ['light', L.translateThemeLight],
+              ['dark', L.translateThemeDark],
+            ], (v) => persist({ panel: { ...panel0, theme: v } }))),
+            field(L.translateHistoryLimit, numIn(history0.limit, 100, 10, 1000, (v) => persist({ history: { ...history0, limit: v } })))),
+          h('div', { class: 'mt-4 flex flex-wrap items-center gap-2' },
+            h('span', { class: 'text-ui-sm font-medium' }, L.translateEngine),
+            serviceSel,
+            // 机翻时紧挨下拉放“获取密钥”入口，不另起一行
+            isLlm ? null : h('span', {
+              class: 'cursor-pointer text-ui-xs underline-offset-4 hover:underline',
+              title: TR_MT_URLS[mtSvc],
+              onClick: () => openExternal(TR_MT_URLS[mtSvc]),
+            }, '↗ ' + L.translateGetKey)),
+          engineArea,
+        );
+      };
+      renderTranslate();
       renderVision();
 
       // “rtk 压缩”：编辑 rtk 插件状态（~/.zcode-rtk 的 mode 与 whitelist，
@@ -3745,6 +3964,7 @@ export function openSettingsDialog() {
         panePerf,
         paneProxy,
         paneSync,
+        paneTranslate,
         paneImport,
         paneVision,
         paneHeadroom,

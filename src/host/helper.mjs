@@ -20,6 +20,7 @@ import { skillStats, DEFAULT_METADATA_BUDGET } from './skill-stats.mjs';
 import { listImportSessions, runImport } from './session-import/index.mjs';
 import { ProviderProxyManager } from './provider-proxy.mjs';
 import { applyToolNameMaps, toolNameCheckSummary } from './tool-name-check.mjs';
+import { defaultTranslateFile, readTranslateConfig, writeTranslateConfig, validateTranslateConfig, translateServicesStatus, translateMt, translateJson, streamTranslateText, isWordText, targetLangFor, renderTranslatePrompt, TRANSLATE_MAX_TEXT, isValidThinking, readTranslateHistory, appendTranslateHistory } from './translate-lib.mjs';
 
 // 会话导入（/import/list、/import/run）：把外部 CLI 的历史会话写成 ZCode 任务。
 
@@ -1062,9 +1063,10 @@ function zcodeConfigSnapshot(dataRoot) {
   return { ok: true, values, configured, stats };
 }
 
-export function startHelper({ port, token, dataRoot, state, agentsFile = defaultAgentsFile(), listenTries = 40, rolloutDir = '', visionFile = '' }) {
+export function startHelper({ port, token, dataRoot, state, agentsFile = defaultAgentsFile(), listenTries = 40, rolloutDir = '', visionFile = '', translateFile = '' }) {
   if (rolloutDir) rolloutDirOverride = rolloutDir;
   if (!visionFile) visionFile = defaultVisionFile(); // 测试可覆盖，别把启动补写落到真实 ~/.zcode
+  if (!translateFile) translateFile = defaultTranslateFile(); // 划词翻译配置，同上可覆盖
   const configFile = join(dataRoot, 'zcodepro.json');
   const settingsFile = join(dataRoot, 'v2', 'setting.json');
   const bootConfig = loadConfig(configFile);
@@ -2018,6 +2020,175 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
           store = r.store;
         }
         json(res, 200, { ok: true, title, written, store });
+        return;
+      }
+      // —— 划词翻译（/translate*）：翻译面板与设置页“翻译”标签共用 ————
+      // 配置读写（照 /vision 的合并写语义：前端只提交认识的键，磁盘上多出的键保留）
+      if (req.method === 'GET' && url.pathname === '/translate') {
+        json(res, 200, { ok: true, config: readTranslateConfig(translateFile), file: translateFile });
+        return;
+      }
+      if (req.method === 'POST' && url.pathname === '/translate') {
+        const body = await readBody(req);
+        const [cfg, verr] = validateTranslateConfig(body?.config);
+        if (verr) {
+          json(res, 400, { ok: false, code: 'translate-invalid', error: verr });
+          return;
+        }
+        try {
+          writeTranslateConfig(translateFile, cfg);
+        } catch (err2) {
+          json(res, 500, { ok: false, code: 'translate-write', error: '写入 zcode-translate.json 失败: ' + (err2?.message || err2) });
+          return;
+        }
+        json(res, 200, { ok: true, config: readTranslateConfig(translateFile) });
+        return;
+      }
+      // 面板通道下拉：LLM 供应商（与智能起名同源，剔密钥）+ 机翻服务配置状态
+      if (req.method === 'GET' && url.pathname === '/translate/providers') {
+        json(res, 200, {
+          ok: true,
+          providers: listTitleGenProviders().map(({ apiKey, ...rest }) => rest),
+          services: translateServicesStatus(translateFile),
+        });
+        return;
+      }
+      // 当前会话的模型信息（选“跟随当前会话”时前端据此自适应思考档位）：
+      // 返回会话正在用的 provider/model/variant，以及该模型支持的档位列表
+      if (req.method === 'GET' && url.pathname === '/translate/session-model') {
+        const sessId = typeof url.searchParams.get('sessId') === 'string'
+          && /^(?:sess|session)_[A-Za-z0-9._-]+$/.test(url.searchParams.get('sessId'))
+          ? url.searchParams.get('sessId') : '';
+        let info = null;
+        try {
+          info = await getTaskProviderModel(dataRoot, sessId);
+        } catch { info = null; }
+        if (!info) {
+          json(res, 200, { ok: true, session: null });
+          return;
+        }
+        const all = listTitleGenProviders();
+        const entry = all.find((p) => p.id === info.providerId)
+          || all.find((p) => p.modelReasoning?.[info.modelId]);
+        const rr = entry ? entry.modelReasoning?.[info.modelId] : null;
+        json(res, 200, {
+          ok: true,
+          session: {
+            providerId: info.providerId,
+            modelId: info.modelId,
+            variants: rr && Array.isArray(rr.variants) ? rr.variants : null,
+            defaultVariant: rr?.defaultVariant || '',
+          },
+        });
+        return;
+      }
+      // 执行翻译：机翻整段返回；LLM 单词出词典卡片；LLM 句子/段落默认整段，
+      // stream=true 时以 SSE 增量返回（fetch 流式读取，不占用 json() 的单次应答）
+      if (req.method === 'POST' && url.pathname === '/translate/do') {
+        const body = await readBody(req);
+        const text = typeof body?.text === 'string' ? body.text.trim() : '';
+        if (!text) {
+          json(res, 400, { ok: false, code: 'invalid-request', error: 'text 不能为空' });
+          return;
+        }
+        if ([...text].length > TRANSLATE_MAX_TEXT) {
+          json(res, 400, { ok: false, code: 'translate-too-long', error: `文本超过 ${TRANSLATE_MAX_TEXT} 字符上限` });
+          return;
+        }
+        const channel = (body?.channel && typeof body.channel === 'object') ? body.channel : {};
+        const cfg = readTranslateConfig(translateFile);
+        const sessId = typeof body?.sessId === 'string' && /^(?:sess|session)_[A-Za-z0-9._-]+$/.test(body.sessId) ? body.sessId : '';
+        const targetLang = typeof body?.targetLang === 'string' && /^[a-z]{2,8}$/.test(body.targetLang) ? body.targetLang : cfg.targetLang;
+        const effTarget = targetLangFor(text, targetLang);
+        const isWord = body?.mode === 'word' || (body?.mode !== 'text' && isWordText(text));
+        const promptRaw = typeof body?.prompt === 'string' && body.prompt.trim() ? body.prompt
+          : ((cfg.prompts.find((p) => p.id === (body?.promptId || cfg.promptId)) || cfg.prompts[0]) || {}).prompt || '';
+        const thinking = resolveThinkingForChannel(channel);
+        if (channel.type === 'mt') {
+          try {
+            const r = await translateMt(translateFile, typeof channel.service === 'string' ? channel.service : '', { text, targetLang: effTarget });
+            json(res, 200, {
+              ok: true,
+              kind: r.dict ? 'dict' : 'trans',
+              dict: r.dict || null,
+              trans: r.dict ? null : { text: r.paragraphs.join('\n'), sourceLang: r.detectedLang || '' },
+            });
+          } catch (err) {
+            json(res, 500, { ok: false, code: 'translate-mt', error: err?.message || String(err) });
+          }
+          return;
+        }
+        let conn;
+        try {
+          conn = await resolveTranslateConn(channel, dataRoot, sessId);
+        } catch (err) {
+          json(res, 400, { ok: false, code: 'translate-conn', error: err?.message || String(err) });
+          return;
+        }
+        const opts = { text, isWord, prompt: renderTranslatePrompt(promptRaw, effTarget), targetLang: effTarget, thinking };
+        const label = (!channel.provider || channel.provider === 'session') ? `会话 · ${conn.model}` : `${channel.provider} · ${conn.model}`;
+        if (body?.stream === true && !opts.isWord) {
+          res.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
+          const send = (o) => { if (!res.writableEnded) res.write('data: ' + JSON.stringify(o) + '\n\n'); };
+          const abort = new AbortController();
+          req.on('close', () => abort.abort());
+          try {
+            await streamTranslateText(conn, opts, send, abort.signal);
+          } catch (err) {
+            send({ type: 'error', error: err?.message || String(err) });
+          } finally {
+            try { res.end(); } catch { /* 客户端已断开 */ }
+          }
+          return;
+        }
+        try {
+          const r = await translateJson(conn, opts);
+          json(res, 200, { ok: true, kind: r.kind, dict: r.dict || null, trans: r.trans || null, label });
+        } catch (err) {
+          json(res, 500, { ok: false, code: 'translate-llm', error: err?.message || String(err) });
+        }
+        return;
+      }
+      // 通道测试：固定样例走所选通道（设置页测试按钮用）
+      if (req.method === 'POST' && url.pathname === '/translate/test') {
+        const body = await readBody(req);
+        const channel = (body?.channel && typeof body.channel === 'object') ? body.channel : {};
+        const text = 'Hello, world! The quick brown fox jumps over the lazy dog.';
+        const cfg = readTranslateConfig(translateFile);
+        const effTarget = targetLangFor(text, cfg.targetLang);
+        try {
+          if (channel.type === 'mt') {
+            const r = await translateMt(translateFile, typeof channel.service === 'string' ? channel.service : '', { text, targetLang: effTarget });
+            json(res, 200, { ok: true, output: r.paragraphs.join('\n') });
+            return;
+          }
+          const conn = await resolveTranslateConn(channel, dataRoot, '');
+          const promptRaw = ((cfg.prompts.find((p) => p.id === cfg.promptId) || cfg.prompts[0]) || {}).prompt || '';
+          const r = await translateJson(conn, {
+            text, isWord: false, prompt: renderTranslatePrompt(promptRaw, effTarget), targetLang: effTarget,
+            thinking: resolveThinkingForChannel(channel),
+          });
+          json(res, 200, { ok: true, output: r.trans ? r.trans.text : '' });
+        } catch (err) {
+          json(res, 500, { ok: false, code: 'translate-test', error: err?.message || String(err) });
+        }
+        return;
+      }
+      // 查询历史：面板记录（POST）与回看（GET）；history.enabled=false 时不读不写
+      if (req.method === 'GET' && url.pathname === '/translate/history') {
+        const cfg = readTranslateConfig(translateFile);
+        json(res, 200, { ok: true, items: cfg.history.enabled ? readTranslateHistory(translateFile) : [] });
+        return;
+      }
+      if (req.method === 'POST' && url.pathname === '/translate/history') {
+        const body = await readBody(req);
+        const cfg = readTranslateConfig(translateFile);
+        if (cfg.history.enabled && typeof body?.text === 'string' && body.text.trim()) {
+          try {
+            appendTranslateHistory(translateFile, { text: body.text, kind: body.kind, label: body.label }, cfg.history.limit);
+          } catch { /* 历史写失败不影响翻译主流程 */ }
+        }
+        json(res, 200, { ok: true });
         return;
       }
       // 手动自动重命名（任务行悬浮按钮 / 右键菜单入口）：取会话最近 N 轮问答按
@@ -4882,7 +5053,10 @@ export function listTitleGenProviders() {
   const planKinds = codingPlanKindByFamily();
   // 注册表读一次，供下方各条目的协议判定兜底复用（文件不存在时为空数组）
   const headroomProviders = (readJsonFile(defaultHeadroomFile()) || {}).providers || [];
-  const add = (id, { name, aliases = [], kind, baseUrl, apiKey, models = [] }) => {
+  // modelReasoning: 每个模型的思考档位（来自 config.json 的 models.<id>.reasoning）。
+  // 结构 { variants: ['low','high','max'], defaultVariant: 'max' }；模型没配
+  // reasoning 表示不支持思考（如 GLM-5.2），不进这张表
+  const add = (id, { name, aliases = [], kind, baseUrl, apiKey, models = [], modelReasoning = {} }) => {
     baseUrl = typeof baseUrl === 'string' ? baseUrl.trim() : '';
     apiKey = typeof apiKey === 'string' ? apiKey.trim() : '';
     if (!id || !baseUrl || !apiKey) return;
@@ -4895,13 +5069,14 @@ export function listTitleGenProviders() {
     const known = byId.get(id);
     if (known) {
       known.models = [...new Set([...known.models, ...models])];
+      known.modelReasoning = { ...known.modelReasoning, ...modelReasoning };
       for (const a of aliases) if (a && !known.aliases.includes(a)) known.aliases.push(a);
       return;
     }
     const shown = titleGenProviderDisplayName(id, name, planKinds);
     const entry = {
       id, name: shown, aliases: [...new Set(aliases.filter((a) => a && a !== shown))],
-      format, baseUrl, apiKey, models: [...new Set(models)],
+      format, baseUrl, apiKey, models: [...new Set(models)], modelReasoning,
     };
     byId.set(id, entry);
     out.push(entry);
@@ -4912,19 +5087,133 @@ export function listTitleGenProviders() {
   const rulesDoc = readJsonFile(join(resolveDataRootDir(), 'v2', 'provider_config.json'));
   const rules = (rulesDoc && rulesDoc.config?.providerConfigRules?.providerRules) || [];
   const ruleById = new Map(rules.filter((r) => r && typeof r.providerId === 'string').map((r) => [r.providerId, r]));
+  // 模型档位的第三处来源（「智能配置」）：ZCode 内置的模型推荐规则，
+  // v2/runtime/provider/<平台>/<版本>/endpoint-*/zcode-builtin.json 的
+  // config.modelConfigRules.modelRules[]，每条是 { modelMatch: 正则, config:
+  // { optionSpecs: { reasoningLevel: { values } } } }。规则按数组顺序「最后一个
+  // 匹配的胜出」（首条是 .* 兜底、越往后越具体），实测与 ZCode 界面显示的
+  // 档位一致。用户自带供应商（MiMo / DeepSeek 等）的档位只有这里有
+  const loadBuiltinModelRules = () => {
+    try {
+      // 目录形状：runtime/provider/<平台>/<版本>/endpoint-*/zcode-builtin.json
+      const root = join(resolveDataRootDir(), 'v2', 'runtime', 'provider');
+      if (!existsSync(root)) return [];
+      let platforms;
+      try { platforms = readdirSync(root, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name); } catch { return []; }
+      // 版本号按数值比大小（字典序会把 3.9 排在 3.18 之后），取最新的一份
+      const cmpVer = (a, b) => {
+        const pa = a.split(/[.\-]/).map((x) => parseInt(x, 10) || 0);
+        const pb = b.split(/[.\-]/).map((x) => parseInt(x, 10) || 0);
+        for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+          const d = (pa[i] || 0) - (pb[i] || 0);
+          if (d) return d;
+        }
+        return 0;
+      };
+      for (const plat of platforms) {
+        const platDir = join(root, plat);
+        let versions;
+        try { versions = readdirSync(platDir, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name); } catch { continue; }
+        versions.sort(cmpVer).reverse();
+        for (const ver of versions) {
+          const verDir = join(platDir, ver);
+          let endpoints;
+          try { endpoints = readdirSync(verDir); } catch { continue; }
+          for (const ep of endpoints) {
+            const f = join(verDir, ep, 'zcode-builtin.json');
+            if (!existsSync(f)) continue;
+            const doc = readJsonFile(f);
+            const rules = doc?.config?.modelConfigRules?.modelRules;
+            if (Array.isArray(rules) && rules.length) return rules;
+          }
+        }
+      }
+    } catch { /* 读不到就退回其它来源 */ }
+    return [];
+  };
+  const builtinModelRules = loadBuiltinModelRules();
+  // 按「最后一个匹配胜出」求某模型名的档位；没有匹配或没有档位定义返回 null
+  const builtinVariantsOf = (model) => {
+    if (!model || !builtinModelRules.length) return null;
+    let hit = null;
+    for (const r of builtinModelRules) {
+      const m = r && typeof r.modelMatch === 'string' ? r.modelMatch : '';
+      if (!m) continue;
+      let re;
+      try { re = new RegExp(m); } catch { continue; }
+      if (re.test(model)) hit = r;
+    }
+    const vals = hit?.config?.optionSpecs?.reasoningLevel?.values;
+    if (!Array.isArray(vals) || !vals.length) return null;
+    const variants = [...new Set(vals.filter((v) => typeof v === 'string' && v).map((v) => (v === 'disabled' ? 'off' : v)))];
+    return variants.length ? { variants, defaultVariant: variants[0] } : null;
+  };
+  // 模型档位的第二处来源：provider_config.json 的
+  // config.modelConfigRules.providerModelRules[]，形状是
+  // { providerId, modelId, config: { optionSpecs: { reasoningLevel: { values: [...] } } } }。
+  // 内置供应商（如 Meta Muse）的档位只记在这里，config.json 的 models 里没有
+  const modelRuleVariants = new Map(); // key: providerId + '\u0000' + modelId → { variants, defaultVariant }
+  {
+    const mcr = rulesDoc && rulesDoc.config?.modelConfigRules;
+    const pmr = Array.isArray(mcr?.providerModelRules) ? mcr.providerModelRules : [];
+    for (const r of pmr) {
+      if (!r || typeof r.providerId !== 'string' || typeof r.modelId !== 'string') continue;
+      const rl = r.config?.optionSpecs?.reasoningLevel;
+      const vals = Array.isArray(rl?.values) ? rl.values.filter((v) => typeof v === 'string' && v) : [];
+      if (!vals.length) continue;
+      const variants = [...new Set(vals.map((v) => (v === 'disabled' ? 'off' : v)))];
+      const dflt = rl.default === 'disabled' ? 'off' : (typeof rl.default === 'string' ? rl.default : '');
+      modelRuleVariants.set(r.providerId + '\u0000' + r.modelId,
+        { variants, defaultVariant: variants.includes(dflt) ? dflt : variants[0] });
+    }
+  }
+  // 思考档位归一：variants 转字符串数组，'disabled' 统一成 'off'（ZCode 界面
+  // 对 MiMo 这类只会开/关的模型用 disabled，我们的档位值用 off）
+  const reasoningOf = (modelCfg) => {
+    const r = modelCfg && typeof modelCfg === 'object' ? modelCfg.reasoning : null;
+    if (!r || typeof r !== 'object' || r.enabled === false) return null;
+    const raw = Array.isArray(r.variants) ? r.variants : [];
+    if (!raw.length) return null;
+    const variants = [...new Set(raw.map((v) => (v === 'disabled' ? 'off' : String(v))))];
+    const dflt = r.defaultVariant === 'disabled' ? 'off' : (r.defaultVariant ? String(r.defaultVariant) : '');
+    return { variants, defaultVariant: variants.includes(dflt) ? dflt : variants[0] };
+  };
   // 同一 id 在两张表的字段并起来（provider 表优先：地址/密钥以桌面实际在用的为准）
   const addMerged = (id) => {
     const p = providers[id];
     if (p !== undefined && (p === null || typeof p !== 'object')) return;
     const r = ruleById.get(id) || {};
     const c = r.config || {};
+    const modelCfg = (p && p.models) || {};
+    const modelReasoning = {};
+    for (const [mid, mc] of Object.entries(modelCfg)) {
+      const rr = reasoningOf(mc);
+      if (rr) modelReasoning[mid] = rr;
+    }
+    // 再用 modelConfigRules 补：这些模型可能根本不在 config.json 的 models 表里
+    // （Meta Muse 就是这样），所以按键前缀扫一遍
+    const prefix = id + '\u0000';
+    for (const [key, rr2] of modelRuleVariants) {
+      if (!key.startsWith(prefix)) continue;
+      const mid = key.slice(prefix.length);
+      if (!modelReasoning[mid]) modelReasoning[mid] = rr2;
+    }
+    // 最后用「智能配置」的内置规则兜底：按模型 ID 正则匹配，覆盖前两处都没有的
+    // 供应商（MiMo / DeepSeek 这类用户自带模型）
+    const allModels = [...new Set([...Object.keys(modelCfg), ...(c.modelOrder || []), ...(c.personalModelIds || [])])];
+    for (const mid of allModels) {
+      if (modelReasoning[mid]) continue;
+      const rr3 = builtinVariantsOf(mid);
+      if (rr3) modelReasoning[mid] = rr3;
+    }
     add(id, {
       name: (p && p.name) || r.providerName,
       aliases: [r.providerName, p && p.name],
       kind: (p && p.kind) || c.api?.type,
       baseUrl: (p && p.options?.baseURL) || c.api?.baseUrl,
       apiKey: (p && p.options?.apiKey) || c.access?.apiKey,
-      models: [...Object.keys((p && p.models) || {}), ...(c.modelOrder || []), ...(c.personalModelIds || [])],
+      models: [...Object.keys(modelCfg), ...(c.modelOrder || []), ...(c.personalModelIds || [])],
+      modelReasoning,
     });
   };
 
@@ -5292,6 +5581,43 @@ async function resolveTitleGenConnection(cfg, providerId, model, dataRoot, sessI
   }
   if (!model) throw new Error('不跟随（自填地址）需要填写模型');
   return { format: cfg.format, baseUrl: cfg.baseUrl, apiKey: cfg.apiKey, model };
+}
+
+// 所选通道的思考档位：以该模型在供应商表里的实际档位为准（各模型不同：
+// GLM 是 low/high/max，MiMo 只有 off/enabled，Meta 有 6 档）。模型没配思考
+// 能力（表里没有条目）时一律 off。通道里存的值不在该模型档位内则回退默认档
+function resolveThinkingForChannel(channel) {
+  const wanted = typeof channel?.thinking === 'string' ? channel.thinking : '';
+  const providerId = typeof channel?.provider === 'string' && channel.provider ? channel.provider : '';
+  const model = typeof channel?.model === 'string' ? channel.model.trim() : '';
+  const all = listTitleGenProviders();
+  // 跟随会话时没有确定供应商：用户若显式选了模型，就跨供应商按模型名找档位
+  // （模型名通常唯一），找不到再按“未知”处理
+  const entry = providerId && providerId !== 'session'
+    ? all.find((p) => p.id === providerId)
+    : (model ? all.find((p) => p.modelReasoning?.[model]) : null);
+  const effModel = model || (entry && Array.isArray(entry.models) ? entry.models[0] : '');
+  const rr = entry && effModel ? entry.modelReasoning?.[effModel] : null;
+  if (!rr || !Array.isArray(rr.variants) || !rr.variants.length) {
+    // 跟随会话或查不到模型时：没有档位信息就按“仅开关”处理
+    return isValidThinking(wanted) ? wanted : 'off';
+  }
+  if (rr.variants.includes(wanted)) return wanted;
+  return rr.variants.includes('off') ? 'off' : rr.defaultVariant || rr.variants[0];
+}
+
+// 划词翻译的连接解析：LLM 通道取供应商条目，或“跟随当前会话”（复用智能起名
+// 的解析逻辑，含登录账号换 token 直连的分支）；机翻通道不走这里（凭据在
+// zcode-translate.json，由 translate-lib 的适配器自查）
+async function resolveTranslateConn(channel, dataRoot, sessId) {
+  const providerId = typeof channel?.provider === 'string' && channel.provider ? channel.provider : 'session';
+  const model = typeof channel?.model === 'string' ? channel.model.trim() : '';
+  if (providerId === 'session') return resolveTitleGenConnection({}, 'session', model, dataRoot, sessId);
+  const entry = listTitleGenProviders().find((p) => p.id === providerId);
+  if (!entry) throw new Error(`供应商 ${providerId} 已不可用，请在面板重新选择`);
+  const useModel = model || entry.models[0] || '';
+  if (!useModel) throw new Error('该供应商没有可选模型，请在面板选择或填写模型');
+  return { format: entry.format, baseUrl: entry.baseUrl, apiKey: entry.apiKey, model: useModel };
 }
 
 // 清洗模型输出：去思考块/代码围栏/首尾引号/序号/末尾标点，取首个非空行并限长。

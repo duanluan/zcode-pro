@@ -1024,5 +1024,190 @@ export function ensureStyle() {
     .zcodepro-pin-collapsed > :is(ul, div):has(li[data-task-item-key]) { display: none !important; }
     /* 折叠后去掉标题自带的底部留白，与下一分区的间隔和其他分区节奏一致 */
     .zcodepro-pin-collapsed .zcodepro-pin-head { padding-bottom: 0; }
+    /* 划词翻译面板：fixed 浮层（右键菜单同级的最高层），配色全走主题变量 */
+    .zcodepro-translate-panel {
+      position: fixed;
+      z-index: 2147483000;
+      display: flex;
+      flex-direction: column;
+      background: var(--color-popover, #fff);
+      color: var(--color-foreground, #222);
+      border: 1px solid var(--color-border, rgba(0, 0, 0, 0.12));
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+      overflow: visible; /* 尖角探出面板边界 */
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    /* 面板内滚动区自己裁切（面板不能 overflow:hidden，否则尖角被切掉） */
+    /* 面板内的块元素用相对定位（给尖角与缩放手柄做定位参照）。
+       必须排除同样是绝对定位的子元素：尖角与缩放热区若被这条覆盖成
+       relative 会掉进普通流、跑到面板左下角 */
+    .zcodepro-translate-panel > :not(.zcodepro-tr-arrow):not(.zcodepro-tr-edge) { position: relative; }
+    /* 指向选中文字的尖角：--tr-arrow-x 由 positionPanel 按选区中心反算。
+       外层画描边色三角、after 画面板底色三角，叠出带边框的尖角 */
+    .zcodepro-tr-arrow {
+      position: absolute;
+      width: 0;
+      height: 0;
+      left: var(--tr-arrow-x, 50%);
+      transform: translateX(-50%);
+      pointer-events: none;
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+    }
+    .zcodepro-tr-arrow::after {
+      content: '';
+      position: absolute;
+      left: -7px;
+      border-left: 7px solid transparent;
+      border-right: 7px solid transparent;
+    }
+    /* 面板在选区上方：尖角贴面板底边、朝下 */
+    .zcodepro-translate-panel[data-placement="top"] .zcodepro-tr-arrow {
+      bottom: -8px;
+      border-top: 8px solid var(--color-border, rgba(0, 0, 0, 0.12));
+    }
+    .zcodepro-translate-panel[data-placement="top"] .zcodepro-tr-arrow::after {
+      top: -9px;
+      border-top: 7px solid var(--color-popover, #fff);
+    }
+    /* 面板在选区下方：尖角贴面板顶边、朝上 */
+    .zcodepro-translate-panel[data-placement="bottom"] .zcodepro-tr-arrow {
+      top: -8px;
+      border-bottom: 8px solid var(--color-border, rgba(0, 0, 0, 0.12));
+    }
+    .zcodepro-translate-panel[data-placement="bottom"] .zcodepro-tr-arrow::after {
+      top: 1px;
+      border-bottom: 7px solid var(--color-popover, #fff);
+    }
+    /* 手动拖动过：尖角不再指向选区，隐藏 */
+    .zcodepro-translate-panel[data-dragged] .zcodepro-tr-arrow { display: none; }
+    /* 缩放热区：四边四角各一条透明的绝对定位细条，没有可见图标。
+       具体位置与光标由内联样式按方向给出（见 translate-panel.js 的 edges 表）。
+       放在最上层（z-index:3）以保证边缘优先于内容接收鼠标 */
+    .zcodepro-tr-edge {
+      position: absolute;
+      touch-action: none;
+      z-index: 3;
+    }
+    /* 设了像素高度后，正文区自己滚动 */
+    .zcodepro-translate-panel[style*="height:"] .zcodepro-tr-body { overflow: auto; }
+    /* overflow:visible 后圆角不再被父级裁切：首尾子元素各自补圆角（11px = 12px 减去 1px 边框） */
+    .zcodepro-translate-panel > .zcodepro-tr-head { border-top-left-radius: 11px; border-top-right-radius: 11px; }
+    .zcodepro-translate-panel > .zcodepro-tr-body { border-bottom-left-radius: 11px; border-bottom-right-radius: 11px; }
+    /* flex 子项要能收缩，否则 body 的 overflow:auto 不起作用、高内容撑破 max-height */
+    .zcodepro-tr-body { min-height: 0; }
+    /* 面板主题：data-theme=light/dark 在面板根上覆盖主题变量（follow 不设，跟随宿主） */
+    .zcodepro-translate-panel[data-theme="light"] {
+      --color-popover: #fff; --color-foreground: #222; --color-border: rgba(0, 0, 0, 0.12);
+      --color-muted: rgba(0, 0, 0, 0.04); --color-muted-foreground: #777; --color-accent: rgba(0, 0, 0, 0.08);
+      --color-input: #fff; --color-primary: #2563eb; --color-primary-foreground: #fff; --color-destructive: #dc2626;
+    }
+    .zcodepro-translate-panel[data-theme="dark"] {
+      --color-popover: #202124; --color-foreground: #e8eaed; --color-border: rgba(255, 255, 255, 0.14);
+      --color-muted: rgba(255, 255, 255, 0.06); --color-muted-foreground: #9aa0a6; --color-accent: rgba(255, 255, 255, 0.1);
+      --color-input: #2a2b2e; --color-primary: #4c8dff; --color-primary-foreground: #fff; --color-destructive: #f2635f;
+    }
+    .zcodepro-tr-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 5px 8px 5px 12px;
+      cursor: move;
+      user-select: none;
+      border-bottom: 1px solid var(--color-border, rgba(0, 0, 0, 0.1));
+      background: var(--color-muted, rgba(0, 0, 0, 0.04));
+    }
+    .zcodepro-tr-title { font-weight: 600; font-size: 12px; }
+    .zcodepro-tr-headbtns { display: flex; gap: 2px; }
+    .zcodepro-tr-ibtn {
+      border: none;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .zcodepro-tr-ibtn:hover { background: var(--color-accent, rgba(0, 0, 0, 0.08)); }
+    /* 按钮内图标与文字居中对齐（lucide 描边图标统一纯色） */
+    .zcodepro-tr-ibtn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .zcodepro-tr-ibtn svg { display: block; }
+    /* 历史条目的类型图标跟文字基线对齐 */
+    .zcodepro-tr-histtext { display: inline-flex; align-items: center; gap: 4px; }
+    .zcodepro-tr-ibtn-primary { background: var(--color-primary, #2563eb); color: var(--color-primary-foreground, #fff); }
+    .zcodepro-tr-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 10px;
+      border-bottom: 1px solid var(--color-border, rgba(0, 0, 0, 0.1));
+    }
+    .zcodepro-tr-select, .zcodepro-tr-input {
+      height: 26px;
+      border: 1px solid var(--color-border, rgba(0, 0, 0, 0.15));
+      background: var(--color-input, #fff);
+      color: inherit;
+      border-radius: 7px;
+      padding: 0 6px;
+      font-size: 12px;
+      min-width: 0;
+    }
+    .zcodepro-tr-select { max-width: 220px; }
+    .zcodepro-tr-textarea {
+      width: 100%;
+      border: 1px solid var(--color-border, rgba(0, 0, 0, 0.15));
+      background: var(--color-input, #fff);
+      color: inherit;
+      border-radius: 8px;
+      padding: 6px 8px;
+      font-size: 12px;
+      resize: vertical;
+    }
+    .zcodepro-tr-inputrow { display: flex; gap: 6px; padding: 8px 10px 0; }
+    .zcodepro-tr-inputrow .zcodepro-tr-input { flex: 1; height: 28px; }
+    .zcodepro-tr-body { padding: 10px; overflow: auto; flex: 1; min-height: 48px; }
+    .zcodepro-tr-loading { color: var(--color-muted-foreground, #888); }
+    .zcodepro-tr-err { color: var(--color-destructive, #dc2626); }
+    .zcodepro-tr-wordrow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .zcodepro-tr-word { font-size: 15px; font-weight: 600; }
+    .zcodepro-tr-phon { color: var(--color-muted-foreground, #777); font-size: 12px; }
+    .zcodepro-tr-defs { margin-top: 4px; }
+    .zcodepro-tr-pos { display: inline-block; margin-right: 6px; color: var(--color-muted-foreground, #777); font-style: italic; font-size: 12px; }
+    .zcodepro-tr-example {
+      border-left: 2px solid var(--color-border, rgba(0, 0, 0, 0.15));
+      padding-left: 8px;
+      margin: 6px 0 0;
+      color: var(--color-muted-foreground, #666);
+      font-size: 12px;
+    }
+    .zcodepro-tr-example-dst { margin-top: 2px; }
+    .zcodepro-tr-forms { margin-top: 6px; color: var(--color-muted-foreground, #777); font-size: 12px; }
+    .zcodepro-tr-out { white-space: pre-wrap; word-break: break-word; }
+    .zcodepro-tr-details summary { cursor: pointer; color: var(--color-muted-foreground, #888); font-size: 12px; }
+    .zcodepro-tr-src-text { color: var(--color-muted-foreground, #888); font-size: 12px; margin-top: 4px; white-space: pre-wrap; }
+    .zcodepro-tr-actions { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
+    .zcodepro-tr-meta { color: var(--color-muted-foreground, #888); font-size: 12px; margin-right: auto; }
+    .zcodepro-tr-hint { margin-top: 6px; color: var(--color-muted-foreground, #888); font-size: 12px; }
+    .zcodepro-tr-empty { color: var(--color-muted-foreground, #888); }
+    .zcodepro-tr-histitem {
+      display: flex;
+      gap: 8px;
+      padding: 4px 6px;
+      border-radius: 6px;
+      cursor: pointer;
+      align-items: baseline;
+    }
+    .zcodepro-tr-histitem:hover { background: var(--color-accent, rgba(0, 0, 0, 0.06)); }
+    .zcodepro-tr-histtime { color: var(--color-muted-foreground, #999); font-size: 11px; flex-shrink: 0; }
+    .zcodepro-tr-histtext { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   `));
 }
