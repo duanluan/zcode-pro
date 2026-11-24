@@ -185,7 +185,7 @@ export function windowsShortcutPlan(cmd, desktop = false, wshOk = true, menuLnk 
     '  $l.TargetPath = "$env:SystemRoot\\System32\\wscript.exe"',
     `  $l.Arguments = '${psQuote(`"${paths.vbsPath}"`)}'`,
     `  $l.WorkingDirectory = '${psQuote(paths.vbsDir)}'`,
-    "  $l.Description = 'ZCode 桌面版增强启动器（壁纸引擎、皮肤主题等，不修改客户端文件）'",
+    "  $l.Description = 'ZCode 桌面版增强包：壁纸引擎、皮肤主题等三十余项增强，不修改客户端文件'",
     iconLine,
     '}',
   ] : [
@@ -197,7 +197,7 @@ export function windowsShortcutPlan(cmd, desktop = false, wshOk = true, menuLnk 
     // 降级分支不建 vbsDir（目录可能不存在，快捷方式会报“起始位置无效”）：
     // 起始位置改用命令所在目录
     `  $l.WorkingDirectory = '${psQuote(cmdWorkDir(cmd) || process.env.USERPROFILE || process.env.HOME || paths.vbsDir)}'`,
-    "  $l.Description = 'ZCode 桌面版增强启动器（壁纸引擎、皮肤主题等，不修改客户端文件）'",
+    "  $l.Description = 'ZCode 桌面版增强包：壁纸引擎、皮肤主题等三十余项增强，不修改客户端文件'",
     iconLine,
     '  $l.WindowStyle = 7',
     '}',
@@ -246,7 +246,7 @@ function desktopEntry(execCmd) {
     '[Desktop Entry]',
     'Type=Application',
     'Name=ZCode Pro',
-    'Comment=ZCode 桌面版增强启动器（壁纸引擎、皮肤主题等，不修改客户端文件）',
+    'Comment=ZCode 桌面版增强包：壁纸引擎、皮肤主题等三十余项增强，不修改客户端文件',
     `Exec=${exec}`,
     'Icon=zcode',
     'Terminal=false',

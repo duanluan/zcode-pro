@@ -73,8 +73,33 @@
         "proxyScopeDepsDesc": "headroom \u3068 rtk \u306E\u30A4\u30F3\u30B9\u30C8\u30FC\u30EB\u3001\u30A2\u30C3\u30D7\u30C7\u30FC\u30C8\u78BA\u8A8D\u3001\u30A2\u30C3\u30D7\u30B0\u30EC\u30FC\u30C9\uFF08pip \u3068 GitHub \u304B\u3089\u306E\u30C0\u30A6\u30F3\u30ED\u30FC\u30C9\uFF09\u304C\u30D7\u30ED\u30AD\u30B7\u7D4C\u7531\u306B\u306A\u308A\u307E\u3059\u3002",
         "proxyScopeSync": "\u540C\u671F",
         "proxyScopeSyncDesc": "WebDAV \u306E\u30A2\u30C3\u30D7\u30ED\u30FC\u30C9\u3068\u30C0\u30A6\u30F3\u30ED\u30FC\u30C9\u304C\u30D7\u30ED\u30AD\u30B7\u7D4C\u7531\u306B\u306A\u308A\u307E\u3059\u3002",
+        "proxySubSoftware": "\u30BD\u30D5\u30C8\u30A6\u30A7\u30A2\u30D7\u30ED\u30AD\u30B7",
+        "proxySubVendor": "\u30D7\u30ED\u30D0\u30A4\u30C0\u30FC\u30D7\u30ED\u30AD\u30B7",
+        "proxyVendorDesc": "\u30D7\u30ED\u30D0\u30A4\u30C0\u30FC\u3054\u3068\u306B\u8A2D\u5B9A\u3057\u307E\u3059\u3002\u30AA\u30F3\u306B\u3059\u308B\u3068\u3001\u305D\u306E\u30D7\u30ED\u30D0\u30A4\u30C0\u30FC\u3078\u306E\u30E2\u30C7\u30EB\u30EA\u30AF\u30A8\u30B9\u30C8\u306F\u307E\u305A\u30ED\u30FC\u30AB\u30EB\u306E\u8EE2\u9001\u30DD\u30FC\u30C8\u306B\u5C4A\u304D\u3001\u6307\u5B9A\u3057\u305F\u30D7\u30ED\u30AD\u30B7\u7D4C\u7531\u3067\u9001\u4FE1\u3055\u308C\u307E\u3059\u3002\u30AA\u30D5\u306E\u3068\u304D\u306F\u5143\u306E\u30A2\u30C9\u30EC\u30B9\u306E\u307E\u307E\u76F4\u63A5\u63A5\u7D9A\u3057\u307E\u3059\u3002ZCode \u306E\u30B0\u30ED\u30FC\u30D0\u30EB\u30D7\u30ED\u30AD\u30B7\u306F\u5909\u66F4\u305B\u305A\u3001\u4ED6\u306E\u30D7\u30ED\u30D0\u30A4\u30C0\u30FC\u306B\u3082\u5F71\u97FF\u3057\u307E\u305B\u3093\u3002\u30D7\u30ED\u30AD\u30B7\u30A2\u30C9\u30EC\u30B9\u3092\u7A7A\u6B04\u306B\u3059\u308B\u3068\u30B0\u30ED\u30FC\u30D0\u30EB\u30D7\u30ED\u30AD\u30B7\u306B\u5F93\u3044\u307E\u3059\u3002",
+        "proxyVendorEmpty": "\u30D7\u30ED\u30D0\u30A4\u30C0\u30FC\u30D7\u30ED\u30AD\u30B7\u306F\u307E\u3060\u8FFD\u52A0\u3055\u308C\u3066\u3044\u307E\u305B\u3093\u3002\u4E0B\u306E\u300C\u30D7\u30ED\u30D0\u30A4\u30C0\u30FC\u3092\u8FFD\u52A0\u300D\u304B\u3089\u9078\u3076\u3068\u6709\u52B9\u306B\u306A\u308A\u307E\u3059\u3002",
+        "proxyVendorAdd": "\u30D7\u30ED\u30D0\u30A4\u30C0\u30FC\u3092\u8FFD\u52A0",
+        "proxyVendorRemove": "\u524A\u9664",
+        "proxyVendorUseGlobal": "\u30B0\u30ED\u30FC\u30D0\u30EB\u30D7\u30ED\u30AD\u30B7\u306B\u5F93\u3046",
+        "proxyVendorProtocol": "\u30D7\u30ED\u30C8\u30B3\u30EB",
+        "proxyVendorHost": "\u30A2\u30C9\u30EC\u30B9",
+        "proxyVendorHostRequired": "\u30D7\u30ED\u30AD\u30B7\u306E\u30A2\u30C9\u30EC\u30B9\u3092\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044",
+        "proxyVendorHostPlaceholder": "127.0.0.1",
+        "proxyVendorPortLabel": "\u30DD\u30FC\u30C8",
+        "proxyVendorPortInvalid": "\u30DD\u30FC\u30C8\u306F 1\u301C65535 \u306E\u6574\u6570\u3067\u3042\u308B\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059",
+        "proxyVendorForcedHint": "\u3053\u306E\u30D7\u30ED\u30D0\u30A4\u30C0\u30FC\u306E\u30A2\u30C9\u30EC\u30B9\u306F\u3059\u3067\u306B\u30ED\u30FC\u30AB\u30EB\u8EE2\u9001\u30DD\u30FC\u30C8\u3092\u6307\u3057\u3066\u3044\u307E\u3059\u304C\u3001\u3082\u3046\u4E00\u65B9\u306E\u60C5\u5831\u6E90\uFF08\u30D7\u30ED\u30D0\u30A4\u30C0\u30FC\u8A2D\u5B9A\u307E\u305F\u306F provider \u30C6\u30FC\u30D6\u30EB\uFF09\u3092\u66F8\u304D\u63DB\u3048\u3089\u308C\u307E\u305B\u3093\u3067\u3057\u305F\u3002\u30D5\u30A1\u30A4\u30EB\u306E\u6A29\u9650\u3092\u78BA\u8A8D\u3057\u3066\u304F\u3060\u3055\u3044\u3002",
+        "proxyVendorUpstreamMissing": "\u5B9F\u969B\u306E\u4E0A\u6D41\u30A2\u30C9\u30EC\u30B9\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093\uFF08\u30D7\u30ED\u30D0\u30A4\u30C0\u30FC\u304C\u524A\u9664\u3055\u308C\u305F\u53EF\u80FD\u6027\u304C\u3042\u308A\u307E\u3059\uFF09\u3002\u30B9\u30AD\u30C3\u30D7\u3057\u307E\u3057\u305F\u3002",
+        "headroomUpstreamProxy": "\u4E0A\u6D41\u30D7\u30ED\u30AD\u30B7",
+        "headroomUpstreamProxyDesc": "headroom \u30A4\u30F3\u30B9\u30BF\u30F3\u30B9\u304C\u4E0A\u6D41\u306E\u30E2\u30C7\u30EB\u30B5\u30FC\u30D3\u30B9\u3078\u63A5\u7D9A\u3059\u308B\u3068\u304D\u306B\u4F7F\u3046\u30D7\u30ED\u30AD\u30B7\u3067\u3059\uFF08\u4E8C\u6BB5\u30D7\u30ED\u30AD\u30B7\u306E\u5185\u5074\uFF09\u3002\u7A7A\u6B04 = \u30D7\u30ED\u30AD\u30B7\u3092\u4F7F\u3044\u307E\u305B\u3093\u3002",
+        "headroomUpstreamProxyPlaceholder": "http://127.0.0.1:7897",
+        "toolNameCheckTitle": "\u30C4\u30FC\u30EB\u540D\u306E\u6E96\u62E0\u30C1\u30A7\u30C3\u30AF",
+        "toolNameCheckDesc": "\u4E00\u90E8\u306E\u30E2\u30C7\u30EB\u30B5\u30FC\u30D3\u30B9\uFF08Meta \u306A\u3069\uFF09\u306F MCP \u30C4\u30FC\u30EB\u540D\u3092 64 \u6587\u5B57\u306B\u5236\u9650\u3057\u3066\u304A\u308A\u3001\u8D85\u904E\u3059\u308B\u3068\u30EA\u30AF\u30A8\u30B9\u30C8\u5168\u4F53\u304C\u5931\u6557\u3057\u307E\u3059\u3002\u3053\u3053\u3067\u9577\u3059\u304E\u308B\u30B5\u30FC\u30D0\u30FC\u30AD\u30FC\u3092\u77ED\u3044\u540D\u524D\u306B\u7F6E\u304D\u63DB\u3048\u307E\u3059\uFF08\u5BFE\u5FDC\u8868\u306F\u8A2D\u5B9A\u306B\u4FDD\u5B58\u3055\u308C\u307E\u3059\uFF09\u3002",
+        "toolNameCheckBtn": "\u30C1\u30A7\u30C3\u30AF\u3057\u3066\u66F8\u304D\u63DB\u3048",
+        "toolNameCheckRunning": "\u30C1\u30A7\u30C3\u30AF\u4E2D\u2026",
+        "toolNameCheckFailed": "\u30C1\u30A7\u30C3\u30AF\u306B\u5931\u6557\u3057\u307E\u3057\u305F",
+        "toolNameAuto": "\u8D77\u52D5\u6642\u306B\u81EA\u52D5\u66F8\u304D\u63DB\u3048",
+        "toolNameAutoDesc": "ZCode \u306E\u30A2\u30C3\u30D7\u30B0\u30EC\u30FC\u30C9\u3084\u30D7\u30E9\u30B0\u30A4\u30F3\u306E\u66F4\u65B0\u3067\u30B5\u30FC\u30D0\u30FC\u30AD\u30FC\u304C\u9577\u3044\u540D\u524D\u306B\u623B\u308B\u3053\u3068\u304C\u3042\u308A\u307E\u3059\u3002\u30AA\u30F3\u306E\u3068\u304D\u306F\u8D77\u52D5\u306E\u305F\u3073\u306B\u81EA\u52D5\u3067\u77ED\u304F\u3057\u307E\u3059\u3002\u30AA\u30D5\u306E\u3068\u304D\u306F\u4E0A\u306E\u30DC\u30BF\u30F3\u3067\u306E\u307F\u5B9F\u884C\u3057\u307E\u3059\u3002",
         "tabSync": "\u540C\u671F",
-        "tabImport": "\u30BB\u30C3\u30B7\u30E7\u30F3\u306E\u30A4\u30F3\u30DD\u30FC\u30C8",
+        "tabImport": "\u30A4\u30F3\u30DD\u30FC\u30C8",
         "tabDebug": "\u30C7\u30D0\u30C3\u30B0",
         "importDesc": "Codex\u3001Claude Code\u3001dsh\u3001pi \u306E\u5C65\u6B74\u30BB\u30C3\u30B7\u30E7\u30F3\u3092 ZCode \u306E\u30BF\u30B9\u30AF\u3068\u3057\u3066\u30B3\u30D4\u30FC\u3057\u307E\u3059\u3002\u30A4\u30F3\u30DD\u30FC\u30C8\u306F\u30B9\u30CA\u30C3\u30D7\u30B7\u30E7\u30C3\u30C8\u3067\u3042\u308A\u3001\u5143\u306E\u30BB\u30C3\u30B7\u30E7\u30F3\u306E\u4EE5\u964D\u306E\u5909\u66F4\u306F\u540C\u671F\u3055\u308C\u307E\u305B\u3093\u3002",
         "importSearch": "\u30BF\u30A4\u30C8\u30EB\u307E\u305F\u306F\u30D5\u30A9\u30EB\u30C0\u30FC\u3092\u691C\u7D22",
@@ -431,6 +456,83 @@
         "featureComposerProvider": "\u30E2\u30C7\u30EB\u540D\u306B\u30D7\u30ED\u30D0\u30A4\u30C0\u30FC\u3092\u8868\u793A",
         "featureImageCopyDesc": "\u30BB\u30C3\u30B7\u30E7\u30F3\u5185\u306E\u753B\u50CF\u3092\u53F3\u30AF\u30EA\u30C3\u30AF\u3059\u308B\u304B\u3001\u62E1\u5927\u30D7\u30EC\u30D3\u30E5\u30FC\u3092\u30AF\u30EA\u30C3\u30AF\u3059\u308B\u3068\u3001\u753B\u50CF\u3092\u30AF\u30EA\u30C3\u30D7\u30DC\u30FC\u30C9\u306B\u30B3\u30D4\u30FC\u3067\u304D\u307E\u3059\u3002",
         "featureTableCopyDesc": "\u8868\u306E\u30C4\u30FC\u30EB\u30D0\u30FC\u306B\u300C\u8868\u3092\u30B3\u30D4\u30FC\u300D\u3092\u8FFD\u52A0\u3057\u307E\u3057\u305F\u3002Excel \u3084\u30EA\u30C3\u30C1\u30C6\u30AD\u30B9\u30C8\u30A8\u30C7\u30A3\u30BF\u30FC\u306B\u8CBC\u308A\u4ED8\u3051\u308B\u3068\u3001\u304D\u308C\u3044\u306A\u8868\u306B\u306A\u308A\u307E\u3059\u3002",
+        "featureTranslate": "\u30C6\u30AD\u30B9\u30C8\u9078\u629E\u7FFB\u8A33",
+        "featureTranslateDesc": "Ctrl \u3092\u62BC\u3057\u306A\u304C\u3089\u30C9\u30E9\u30C3\u30B0\u3057\u3066\u9078\u629E\u3057\u305F\u30C6\u30AD\u30B9\u30C8\u3092\u9078\u629E\u7BC4\u56F2\u306E\u6A2A\u306E\u30D5\u30ED\u30FC\u30C6\u30A3\u30F3\u30B0\u30D1\u30CD\u30EB\u3067\u7FFB\u8A33\u3057\u307E\u3059\u3002\u30C1\u30E3\u30F3\u30CD\u30EB\u30FB\u601D\u8003\u30EC\u30D9\u30EB\u30FB\u30D7\u30ED\u30F3\u30D7\u30C8\u306F\u30D1\u30CD\u30EB\u3067\u5207\u308A\u66FF\u3048",
+        "tabTranslate": "\u7FFB\u8A33",
+        "translateEngine": "\u7FFB\u8A33\u30B5\u30FC\u30D3\u30B9",
+        "translateEngineLlm": "AI \u7FFB\u8A33",
+        "translateMtService": "\u6A5F\u68B0\u7FFB\u8A33\u30B5\u30FC\u30D3\u30B9",
+        "translateProvider": "\u30D7\u30ED\u30D0\u30A4\u30C0\u30FC\uFF08LLM \u30C1\u30E3\u30F3\u30CD\u30EB\uFF09",
+        "translateModelLabel": "\u30E2\u30C7\u30EB",
+        "translateTitle": "\u7FFB\u8A33",
+        "translatePin": "\u30D4\u30F3\u7559\u3081\uFF08\u5916\u5074\u3092\u30AF\u30EA\u30C3\u30AF\u3057\u3066\u3082\u9589\u3058\u306A\u3044\uFF09",
+        "translatePinned": "\u30D4\u30F3\u7559\u3081\u3057\u307E\u3057\u305F",
+        "translateUnpinned": "\u30D4\u30F3\u7559\u3081\u3092\u89E3\u9664\u3057\u307E\u3057\u305F",
+        "translateHistory": "\u5C65\u6B74",
+        "translateSettings": "\u7FFB\u8A33\u8A2D\u5B9A\u3092\u958B\u304F",
+        "translateChannelSession": "\u73FE\u5728\u306E\u30BB\u30C3\u30B7\u30E7\u30F3\u306B\u5F93\u3046",
+        "translateChannelLlm": "LLM",
+        "translateChannelMt": "\u6A5F\u68B0\u7FFB\u8A33",
+        "translateModelEmpty": "\u30E2\u30C7\u30EB\u540D\u3092\u5165\u529B",
+        "translateThinking": "\u601D\u8003\u30EC\u30D9\u30EB",
+        "translateThinkingUnsupported": "\u9078\u629E\u3057\u305F\u30E2\u30C7\u30EB\u306F\u601D\u8003\u306B\u5BFE\u5FDC\u3057\u3066\u3044\u307E\u305B\u3093",
+        "translateThinkingFollowSession": "\u601D\u8003\u30EC\u30D9\u30EB\uFF08\u30BB\u30C3\u30B7\u30E7\u30F3\u30E2\u30C7\u30EB {model} \u306B\u8FFD\u5F93\uFF09",
+        "translateThinking_off": "\u601D\u8003\uFF1A\u30AA\u30D5",
+        "translateThinking_minimal": "\u601D\u8003\uFF1A\u6700\u5C0F",
+        "translateThinking_low": "\u601D\u8003\uFF1A\u4F4E",
+        "translateThinking_medium": "\u601D\u8003\uFF1A\u4E2D",
+        "translateThinking_high": "\u601D\u8003\uFF1A\u9AD8",
+        "translateThinking_xhigh": "\u601D\u8003\uFF1A\u6700\u9AD8\u7D1A",
+        "translateThinking_max": "\u601D\u8003\uFF1A\u6700\u5927",
+        "translateThinking_enabled": "\u601D\u8003\uFF1A\u30AA\u30F3",
+        "translatePrompt": "\u30D7\u30ED\u30F3\u30D7\u30C8",
+        "translatePromptEdit": "\u30D7\u30ED\u30F3\u30D7\u30C8\u3092\u7DE8\u96C6",
+        "translatePromptEditTitle": "\u30D7\u30ED\u30F3\u30D7\u30C8\u30D7\u30EA\u30BB\u30C3\u30C8\u3092\u7DE8\u96C6",
+        "translatePromptName": "\u30D7\u30EA\u30BB\u30C3\u30C8\u540D",
+        "translatePromptHint": "{target} \u306F\u76EE\u7684\u8A00\u8A9E\u306B\u7F6E\u304D\u63DB\u3048\u3089\u308C\u307E\u3059\u3002\u4FDD\u5B58\u5F8C\u3059\u3050\u53CD\u6620\u3055\u308C\u307E\u3059\u3002\u540D\u524D\u3092\u5909\u3048\u308B\u3068\u65B0\u3057\u3044\u30D7\u30EA\u30BB\u30C3\u30C8\u3068\u3057\u3066\u4FDD\u5B58\u3055\u308C\u307E\u3059",
+        "translatePromptRequired": "\u540D\u524D\u3068\u5185\u5BB9\u306F\u5FC5\u9808\u3067\u3059",
+        "translateInputPh": "\u30C6\u30AD\u30B9\u30C8\u3092\u5165\u529B\u3057\u3066 Enter \u3067\u7FFB\u8A33",
+        "translateToolbarLabel": "\u7FFB\u8A33",
+        "translateToolbarTitle": "\u9078\u629E\u3057\u305F\u30C6\u30AD\u30B9\u30C8\u3092\u7FFB\u8A33",
+        "translateGo": "\u7FFB\u8A33",
+        "translateCopy": "\u30B3\u30D4\u30FC",
+        "translateSpeak": "\u8AAD\u307F\u4E0A\u3052",
+        "translateRetry": "\u518D\u7FFB\u8A33",
+        "translateShowSource": "\u539F\u6587",
+        "translateLoading": "\u7FFB\u8A33\u4E2D\u2026",
+        "translateFailed": "\u7FFB\u8A33\u306B\u5931\u6557\u3057\u307E\u3057\u305F",
+        "translateEmpty": "\u30E2\u30C7\u30EB\u304C\u5185\u5BB9\u3092\u8FD4\u3057\u307E\u305B\u3093\u3067\u3057\u305F",
+        "translateNoHistory": "\u5C65\u6B74\u306F\u307E\u3060\u3042\u308A\u307E\u305B\u3093",
+        "translateUnconfigured": "\u672A\u8A2D\u5B9A",
+        "translateSave": "\u4FDD\u5B58",
+        "translateCopied": "\u30B3\u30D4\u30FC\u3057\u307E\u3057\u305F",
+        "translateSaved": "\u4FDD\u5B58\u3057\u307E\u3057\u305F",
+        "translateMtYoudao": "\u6709\u9053",
+        "translateMtBaidu": "\u767E\u5EA6",
+        "translateMtCaiyun": "\u5F69\u96F2",
+        "translateMtDeepl": "DeepL",
+        "translateMtDeeplx": "DeepLX",
+        "translateMtNiu": "\u5C0F\u725B",
+        "translateMtTencent": "\u9A30\u8A0A",
+        "translateMtAliyun": "\u963F\u91CC",
+        "translateMtVolc": "\u706B\u5C71",
+        "translateDesc": "\u30C6\u30AD\u30B9\u30C8\u9078\u629E\u7FFB\u8A33\u306E\u30C8\u30EA\u30AC\u30FC\u30FB\u76EE\u7684\u8A00\u8A9E\u30FB\u30D1\u30CD\u30EB\u30B5\u30A4\u30BA\u30FB\u6A5F\u68B0\u7FFB\u8A33\u30AD\u30FC\u3002\u30C1\u30E3\u30F3\u30CD\u30EB\u3068\u30D7\u30ED\u30F3\u30D7\u30C8\u306F\u7FFB\u8A33\u30D1\u30CD\u30EB\u3067\u5207\u308A\u66FF\u3048\u307E\u3059\u3002",
+        "translateTrigger": "\u30C8\u30EA\u30AC\u30FC",
+        "translateTriggerCtrlDrag": "Ctrl \u3092\u62BC\u3057\u306A\u304C\u3089\u30C9\u30E9\u30C3\u30B0",
+        "translateTriggerCtrlTap": "\u9078\u629E\u5F8C Ctrl \u3092\u4E00\u56DE\u62BC\u3059",
+        "translateTriggerAltDrag": "Alt \u3092\u62BC\u3057\u306A\u304C\u3089\u30C9\u30E9\u30C3\u30B0",
+        "translateTargetLang": "\u76EE\u7684\u8A00\u8A9E",
+        "translatePanelWidth": "\u30D1\u30CD\u30EB\u5E45\uFF08px\uFF09",
+        "translatePanelHeight": "\u30D1\u30CD\u30EB\u306E\u6700\u5927\u9AD8\u3055\uFF08\u753B\u9762\u6BD4 %\uFF09",
+        "translateTheme": "\u30D1\u30CD\u30EB\u30C6\u30FC\u30DE",
+        "translateThemeFollow": "\u30B7\u30B9\u30C6\u30E0\u306B\u5408\u308F\u305B\u308B",
+        "translateThemeLight": "\u30E9\u30A4\u30C8",
+        "translateThemeDark": "\u30C0\u30FC\u30AF",
+        "translateHistoryLimit": "\u5C65\u6B74\u306E\u4E0A\u9650\u4EF6\u6570",
+        "translateMtCreds": "\u6A5F\u68B0\u7FFB\u8A33\u30B5\u30FC\u30D3\u30B9\u306E\u30AD\u30FC",
+        "translateGetKey": "\u30AD\u30FC\u3092\u53D6\u5F97",
+        "translateMtCredsDesc": "\u30ED\u30FC\u30AB\u30EB\u306E ~/.zcode/zcode-translate.json \u306B\u306E\u307F\u4FDD\u5B58\u3055\u308C\u307E\u3059\u3002\u672A\u8A2D\u5B9A\u306E\u30B5\u30FC\u30D3\u30B9\u306F\u30C9\u30ED\u30C3\u30D7\u30C0\u30A6\u30F3\u3067\u672A\u8A2D\u5B9A\u3068\u8868\u793A\u3055\u308C\u307E\u3059",
+        "translateTest": "\u73FE\u5728\u306E\u30C1\u30E3\u30F3\u30CD\u30EB\u3092\u30C6\u30B9\u30C8",
         "featureSessionLink": "\u30BB\u30C3\u30B7\u30E7\u30F3 ID \u3092\u30BF\u30B9\u30AF\u540D\u30EA\u30F3\u30AF\u3068\u3057\u3066\u8868\u793A",
         "featureSessionLinkDesc": "\u8CEA\u554F\u3068\u56DE\u7B54\u5185\u306E\u30BB\u30C3\u30B7\u30E7\u30F3 ID\uFF08sess_ / session_ \u3067\u59CB\u307E\u308B\u3082\u306E\uFF09\u3092\u30BF\u30B9\u30AF\u540D\u3068\u3057\u3066\u8868\u793A\u3057\u307E\u3059\u3002\u30AF\u30EA\u30C3\u30AF\u3067\u305D\u306E\u30BB\u30C3\u30B7\u30E7\u30F3\u306B\u5207\u308A\u66FF\u308F\u308A\u3001\u30AB\u30FC\u30BD\u30EB\u3092\u5408\u308F\u305B\u308B\u3068\u5143\u306E ID \u3092\u78BA\u8A8D\u3067\u304D\u307E\u3059\u3002",
         "featureComposerProviderDesc": "\u30E2\u30C7\u30EB\u540D\u306E\u524D\u306B\u30D7\u30ED\u30D0\u30A4\u30C0\u30FC\u540D\u3092\u8868\u793A\u3057\u307E\u3059\uFF08\u4F8B\uFF1ABigModel-Max1 / glm-5.3\uFF09\u3002\u540C\u540D\u30E2\u30C7\u30EB\u3092\u898B\u5206\u3051\u3089\u308C\u307E\u3059\u3002",
@@ -690,6 +792,14 @@
       };
       jaErrors = {
         "invalid-path": "\u30D7\u30ED\u30B8\u30A7\u30AF\u30C8\u306E\u30D1\u30B9\u304C\u7121\u52B9\u3067\u3059",
+        "translate-invalid": "\u7FFB\u8A33\u8A2D\u5B9A\u304C\u7121\u52B9\u3067\u3059",
+        "translate-write": "zcode-translate.json \u306E\u66F8\u304D\u8FBC\u307F\u306B\u5931\u6557\u3057\u307E\u3057\u305F",
+        "translate-too-long": "\u9078\u629E\u3057\u305F\u30C6\u30AD\u30B9\u30C8\u304C\u9577\u3059\u304E\u307E\u3059",
+        "translate-conn": "\u7FFB\u8A33\u30C1\u30E3\u30F3\u30CD\u30EB\u3092\u5229\u7528\u3067\u304D\u307E\u305B\u3093\u3002\u30D1\u30CD\u30EB\u3067\u30D7\u30ED\u30D0\u30A4\u30C0\u30FC\uFF0F\u30E2\u30C7\u30EB\u3092\u9078\u3073\u76F4\u3057\u3066\u304F\u3060\u3055\u3044",
+        "translate-llm": "LLM \u7FFB\u8A33\u30EA\u30AF\u30A8\u30B9\u30C8\u306B\u5931\u6557\u3057\u307E\u3057\u305F",
+        "translate-mt": "\u6A5F\u68B0\u7FFB\u8A33\u30EA\u30AF\u30A8\u30B9\u30C8\u306B\u5931\u6557\u3057\u307E\u3057\u305F",
+        "translate-test": "\u7FFB\u8A33\u30C1\u30E3\u30F3\u30CD\u30EB\u306E\u30C6\u30B9\u30C8\u306B\u5931\u6557\u3057\u307E\u3057\u305F",
+        "translate-empty": "\u7FFB\u8A33\u30E2\u30C7\u30EB\u304C\u30C6\u30AD\u30B9\u30C8\u3092\u8FD4\u3057\u307E\u305B\u3093\u3067\u3057\u305F",
         "not-found": "\u30D5\u30A9\u30EB\u30C0\u30FC\u304C\u5B58\u5728\u3057\u307E\u305B\u3093",
         "invalid-request": "\u30EA\u30AF\u30A8\u30B9\u30C8\u304C\u7121\u52B9\u3067\u3059",
         "invalid-content": "content \u306F\u6587\u5B57\u5217\u3067\u3042\u308B\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059",
@@ -721,6 +831,9 @@
         "vision-write": "zcode-vision.json \u306E\u66F8\u304D\u8FBC\u307F\u306B\u5931\u6557\u3057\u307E\u3057\u305F",
         "vision-test": "\u8996\u899A\u30D7\u30ED\u30AD\u30B7\u306E\u30C6\u30B9\u30C8\u306B\u5931\u6557\u3057\u307E\u3057\u305F",
         "proxy-invalid": "\u30D7\u30ED\u30AD\u30B7\u306F http://127.0.0.1:7890 \u306E\u3088\u3046\u306A URL \u304B\u7A7A\u3067\u3042\u308B\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059",
+        "provider-proxy-invalid": "\u30D7\u30ED\u30D0\u30A4\u30C0\u30FC\u30D7\u30ED\u30AD\u30B7\u306E\u8A2D\u5B9A\u304C\u7121\u52B9\u3067\u3059\u3002\u30D7\u30ED\u30AD\u30B7\u306F http://127.0.0.1:7890 \u306E\u3088\u3046\u306A URL \u304B\u3001\u7A7A\uFF08\u30B0\u30ED\u30FC\u30D0\u30EB\u30D7\u30ED\u30AD\u30B7\u306B\u5F93\u3046\uFF09\u3067\u3042\u308B\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059",
+        "headroom-proxy-invalid": "headroom \u306E\u4E0A\u6D41\u30D7\u30ED\u30AD\u30B7\u306F http://127.0.0.1:7890 \u306E\u3088\u3046\u306A URL \u304B\u7A7A\u3067\u3042\u308B\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059",
+        "tool-name-check": "\u30C4\u30FC\u30EB\u540D\u306E\u6E96\u62E0\u30C1\u30A7\u30C3\u30AF\u306B\u5931\u6557\u3057\u307E\u3057\u305F",
         "proxy-not-set": "\u5148\u306B\u30D7\u30ED\u30AD\u30B7\u306E\u30A2\u30C9\u30EC\u30B9\u3092\u8A2D\u5B9A\u3057\u3066\u304F\u3060\u3055\u3044",
         "rtk-invalid": "rtk \u306E\u8A2D\u5B9A\u304C\u7121\u52B9\u3067\u3059",
         "rtk-update": "rtk \u306E\u30A2\u30C3\u30D7\u30C7\u30FC\u30C8\u78BA\u8A8D\u306B\u5931\u6557\u3057\u307E\u3057\u305F\uFF08GitHub Releases \u306B\u63A5\u7D9A\u3067\u304D\u306A\u3044\u53EF\u80FD\u6027\u304C\u3042\u308A\u307E\u3059\u3002\u30D7\u30ED\u30AD\u30B7\u30BF\u30D6\u3067\u30D7\u30ED\u30AD\u30B7\u3092\u8A2D\u5B9A\u3057\u3066\u304F\u3060\u3055\u3044\uFF09",
@@ -849,8 +962,33 @@
         "proxyScopeDepsDesc": "headroom\uACFC rtk\uC758 \uC124\uCE58, \uC5C5\uB370\uC774\uD2B8 \uD655\uC778 \uBC0F \uC5C5\uADF8\uB808\uC774\uB4DC(pip \uBC0F GitHub \uB2E4\uC6B4\uB85C\uB4DC)\uAC00 \uD504\uB85D\uC2DC\uB97C \uAC70\uCE69\uB2C8\uB2E4.",
         "proxyScopeSync": "\uB3D9\uAE30\uD654",
         "proxyScopeSyncDesc": "WebDAV \uC5C5\uB85C\uB4DC\uC640 \uB2E4\uC6B4\uB85C\uB4DC\uAC00 \uD504\uB85D\uC2DC\uB97C \uAC70\uCE69\uB2C8\uB2E4.",
+        "proxySubSoftware": "\uC18C\uD504\uD2B8\uC6E8\uC5B4 \uD504\uB85D\uC2DC",
+        "proxySubVendor": "\uACF5\uAE09\uC790 \uD504\uB85D\uC2DC",
+        "proxyVendorDesc": "\uACF5\uAE09\uC790\uBCC4\uB85C \uC124\uC815\uD569\uB2C8\uB2E4. \uCF1C\uBA74 \uD574\uB2F9 \uACF5\uAE09\uC790\uC758 \uBAA8\uB378 \uC694\uCCAD\uC774 \uBA3C\uC800 \uB85C\uCEEC \uC804\uB2EC \uD3EC\uD2B8\uC5D0 \uB3C4\uCC29\uD55C \uB4A4 \uC9C0\uC815\uD55C \uD504\uB85D\uC2DC\uB97C \uAC70\uCCD0 \uB098\uAC11\uB2C8\uB2E4. \uB044\uBA74 \uC6D0\uB798 \uC8FC\uC18C \uADF8\uB300\uB85C \uC9C1\uC811 \uC5F0\uACB0\uD569\uB2C8\uB2E4. ZCode \uC804\uC5ED \uD504\uB85D\uC2DC\uB294 \uBC14\uAFB8\uC9C0 \uC54A\uC73C\uBA70 \uB2E4\uB978 \uACF5\uAE09\uC790\uC5D0\uB3C4 \uC601\uD5A5\uC744 \uC8FC\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4. \uD504\uB85D\uC2DC \uC8FC\uC18C\uB97C \uBE44\uC6B0\uBA74 \uC804\uC5ED \uD504\uB85D\uC2DC\uB97C \uB530\uB985\uB2C8\uB2E4.",
+        "proxyVendorEmpty": "\uC544\uC9C1 \uACF5\uAE09\uC790 \uD504\uB85D\uC2DC\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4. \uC544\uB798 '\uACF5\uAE09\uC790 \uCD94\uAC00'\uC5D0\uC11C \uC120\uD0DD\uD558\uBA74 \uC801\uC6A9\uB429\uB2C8\uB2E4.",
+        "proxyVendorAdd": "\uACF5\uAE09\uC790 \uCD94\uAC00",
+        "proxyVendorRemove": "\uC0AD\uC81C",
+        "proxyVendorUseGlobal": "\uC804\uC5ED \uD504\uB85D\uC2DC \uB530\uB974\uAE30",
+        "proxyVendorProtocol": "\uD504\uB85C\uD1A0\uCF5C",
+        "proxyVendorHost": "\uC8FC\uC18C",
+        "proxyVendorHostRequired": "\uD504\uB85D\uC2DC \uC8FC\uC18C\uB97C \uC785\uB825\uD558\uC138\uC694",
+        "proxyVendorHostPlaceholder": "127.0.0.1",
+        "proxyVendorPortLabel": "\uD3EC\uD2B8",
+        "proxyVendorPortInvalid": "\uD3EC\uD2B8\uB294 1~65535 \uC0AC\uC774\uC758 \uC815\uC218\uC5EC\uC57C \uD569\uB2C8\uB2E4",
+        "proxyVendorForcedHint": "\uC774 \uACF5\uAE09\uC790\uC758 \uC8FC\uC18C\uAC00 \uC774\uBBF8 \uB85C\uCEEC \uC804\uB2EC \uD3EC\uD2B8\uB97C \uAC00\uB9AC\uD0A4\uC9C0\uB9CC, \uB2E4\uB978 \uCD9C\uCC98(\uACF5\uAE09\uC790 \uC124\uC815 \uB610\uB294 provider \uD14C\uC774\uBE14)\uB97C \uB2E4\uC2DC \uC4F0\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uD30C\uC77C \uAD8C\uD55C\uC744 \uD655\uC778\uD558\uC138\uC694.",
+        "proxyVendorUpstreamMissing": "\uC2E4\uC81C \uC5C5\uC2A4\uD2B8\uB9BC \uC8FC\uC18C\uB97C \uCC3E\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4(\uACF5\uAE09\uC790\uAC00 \uC0AD\uC81C\uB418\uC5C8\uC744 \uC218 \uC788\uC74C). \uAC74\uB108\uB6F0\uC5C8\uC2B5\uB2C8\uB2E4.",
+        "headroomUpstreamProxy": "\uC5C5\uC2A4\uD2B8\uB9BC \uD504\uB85D\uC2DC",
+        "headroomUpstreamProxyDesc": "headroom \uC778\uC2A4\uD134\uC2A4\uAC00 \uC5C5\uC2A4\uD2B8\uB9BC \uBAA8\uB378 \uC11C\uBE44\uC2A4\uC5D0 \uC5F0\uACB0\uD560 \uB54C \uC0AC\uC6A9\uD558\uB294 \uD504\uB85D\uC2DC\uC785\uB2C8\uB2E4(2\uB2E8\uACC4 \uD504\uB85D\uC2DC\uC758 \uC548\uCABD). \uBE44\uC6CC \uB450\uBA74 \uD504\uB85D\uC2DC\uB97C \uC0AC\uC6A9\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4.",
+        "headroomUpstreamProxyPlaceholder": "http://127.0.0.1:7897",
+        "toolNameCheckTitle": "\uB3C4\uAD6C \uC774\uB984 \uC900\uC218 \uAC80\uC0AC",
+        "toolNameCheckDesc": "\uC77C\uBD80 \uBAA8\uB378 \uC11C\uBE44\uC2A4(Meta \uB4F1)\uB294 MCP \uB3C4\uAD6C \uC774\uB984\uC744 64\uC790\uB85C \uC81C\uD55C\uD558\uBA70, \uCD08\uACFC\uD558\uBA74 \uC694\uCCAD \uC804\uCCB4\uAC00 \uC2E4\uD328\uD569\uB2C8\uB2E4. \uC5EC\uAE30\uC11C \uB108\uBB34 \uAE34 \uC11C\uBC84 \uD0A4\uB97C \uC9E7\uC740 \uC774\uB984\uC73C\uB85C \uBC14\uAFC9\uB2C8\uB2E4(\uB9E4\uD551\uC740 \uC124\uC815\uC5D0 \uC800\uC7A5\uB429\uB2C8\uB2E4).",
+        "toolNameCheckBtn": "\uAC80\uC0AC \uBC0F \uB2E4\uC2DC \uC4F0\uAE30",
+        "toolNameCheckRunning": "\uAC80\uC0AC \uC911\u2026",
+        "toolNameCheckFailed": "\uAC80\uC0AC \uC2E4\uD328",
+        "toolNameAuto": "\uC2DC\uC791 \uC2DC \uC790\uB3D9 \uC7AC\uC791\uC131",
+        "toolNameAutoDesc": "ZCode \uC5C5\uADF8\uB808\uC774\uB4DC\uB098 \uD50C\uB7EC\uADF8\uC778 \uC5C5\uB370\uC774\uD2B8\uB85C \uC11C\uBC84 \uD0A4\uAC00 \uAE34 \uC774\uB984\uC73C\uB85C \uB418\uB3CC\uC544\uAC08 \uC218 \uC788\uC2B5\uB2C8\uB2E4. \uCF1C\uBA74 \uC2DC\uC791\uD560 \uB54C\uB9C8\uB2E4 \uC790\uB3D9\uC73C\uB85C \uC9E7\uAC8C \uBC14\uAFC9\uB2C8\uB2E4. \uB044\uBA74 \uC704 \uBC84\uD2BC\uC73C\uB85C\uB9CC \uC2E4\uD589\uD569\uB2C8\uB2E4.",
         "tabSync": "\uB3D9\uAE30\uD654",
-        "tabImport": "\uC138\uC158 \uAC00\uC838\uC624\uAE30",
+        "tabImport": "\uAC00\uC838\uC624\uAE30",
         "tabDebug": "\uB514\uBC84\uADF8",
         "importDesc": "Codex, Claude Code, dsh, pi\uC758 \uC774\uC804 \uC138\uC158\uC744 ZCode \uC791\uC5C5\uC73C\uB85C \uBCF5\uC0AC\uD569\uB2C8\uB2E4. \uAC00\uC838\uC624\uAE30\uB294 \uC2A4\uB0C5\uC0F7\uC774\uBA70, \uC774\uD6C4 \uC6D0\uBCF8 \uC138\uC158\uC758 \uBCC0\uACBD \uC0AC\uD56D\uC740 \uB3D9\uAE30\uD654\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4.",
         "importSearch": "\uC81C\uBAA9 \uB610\uB294 \uD3F4\uB354 \uAC80\uC0C9",
@@ -1207,6 +1345,83 @@
         "featureComposerProvider": "\uBAA8\uB378 \uC774\uB984\uC5D0 \uACF5\uAE09\uC790 \uD45C\uC2DC",
         "featureImageCopyDesc": "\uC138\uC158\uC758 \uC774\uBBF8\uC9C0\uB97C \uC624\uB978\uCABD \uD074\uB9AD\uD558\uAC70\uB098 \uD655\uB300 \uBBF8\uB9AC\uBCF4\uAE30\uB97C \uD074\uB9AD\uD558\uBA74 \uC774\uBBF8\uC9C0\uB97C \uD074\uB9BD\uBCF4\uB4DC\uC5D0 \uBCF5\uC0AC\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4.",
         "featureTableCopyDesc": "\uD45C \uB3C4\uAD6C \uBAA8\uC74C\uC5D0 \uD45C \uBCF5\uC0AC\uB97C \uCD94\uAC00\uD588\uC2B5\uB2C8\uB2E4. Excel\uC774\uB098 \uC11C\uC2DD \uC788\uB294 \uD14D\uC2A4\uD2B8 \uD3B8\uC9D1\uAE30\uC5D0 \uBD99\uC5EC\uB123\uC73C\uBA74 \uAE54\uB054\uD55C \uD45C\uAC00 \uB429\uB2C8\uB2E4.",
+        "featureTranslate": "\uB4DC\uB798\uADF8 \uBC88\uC5ED",
+        "featureTranslateDesc": "Ctrl \uC744 \uB204\uB978 \uCC44 \uB4DC\uB798\uADF8\uD574 \uC120\uD0DD\uD55C \uD14D\uC2A4\uD2B8\uB97C \uC120\uD0DD \uC601\uC5ED \uC606 \uD50C\uB85C\uD305 \uD328\uB110\uC5D0\uC11C \uBC88\uC5ED\uD569\uB2C8\uB2E4. \uCC44\uB110\xB7\uCD94\uB860 \uB808\uBCA8\xB7\uD504\uB86C\uD504\uD2B8\uB294 \uD328\uB110\uC5D0\uC11C \uC804\uD658",
+        "tabTranslate": "\uBC88\uC5ED",
+        "translateEngine": "\uBC88\uC5ED \uC11C\uBE44\uC2A4",
+        "translateEngineLlm": "AI \uBC88\uC5ED",
+        "translateMtService": "\uAE30\uACC4\uBC88\uC5ED \uC11C\uBE44\uC2A4",
+        "translateProvider": "\uACF5\uAE09\uC790(LLM \uCC44\uB110)",
+        "translateModelLabel": "\uBAA8\uB378",
+        "translateTitle": "\uBC88\uC5ED",
+        "translatePin": "\uACE0\uC815(\uBC14\uAE65 \uD074\uB9AD \uC2DC \uB2EB\uD788\uC9C0 \uC54A\uC74C)",
+        "translatePinned": "\uACE0\uC815\uB428",
+        "translateUnpinned": "\uACE0\uC815 \uD574\uC81C\uB428",
+        "translateHistory": "\uAE30\uB85D",
+        "translateSettings": "\uBC88\uC5ED \uC124\uC815 \uC5F4\uAE30",
+        "translateChannelSession": "\uD604\uC7AC \uC138\uC158 \uB530\uB77C\uAC00\uAE30",
+        "translateChannelLlm": "LLM",
+        "translateChannelMt": "\uAE30\uACC4 \uBC88\uC5ED",
+        "translateModelEmpty": "\uBAA8\uB378 \uC774\uB984 \uC785\uB825",
+        "translateThinking": "\uCD94\uB860 \uB808\uBCA8",
+        "translateThinkingUnsupported": "\uC120\uD0DD\uD55C \uBAA8\uB378\uC740 \uCD94\uB860\uC744 \uC9C0\uC6D0\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4",
+        "translateThinkingFollowSession": "\uCD94\uB860 \uB808\uBCA8(\uC138\uC158 \uBAA8\uB378 {model} \uB530\uB984)",
+        "translateThinking_off": "\uCD94\uB860: \uB054",
+        "translateThinking_minimal": "\uCD94\uB860: \uCD5C\uC18C",
+        "translateThinking_low": "\uCD94\uB860: \uB0AE\uC74C",
+        "translateThinking_medium": "\uCD94\uB860: \uC911\uAC04",
+        "translateThinking_high": "\uCD94\uB860: \uB192\uC74C",
+        "translateThinking_xhigh": "\uCD94\uB860: \uB9E4\uC6B0 \uB192\uC74C",
+        "translateThinking_max": "\uCD94\uB860: \uCD5C\uB300",
+        "translateThinking_enabled": "\uCD94\uB860: \uCF2C",
+        "translatePrompt": "\uD504\uB86C\uD504\uD2B8",
+        "translatePromptEdit": "\uD504\uB86C\uD504\uD2B8 \uD3B8\uC9D1",
+        "translatePromptEditTitle": "\uD504\uB86C\uD504\uD2B8 \uD504\uB9AC\uC14B \uD3B8\uC9D1",
+        "translatePromptName": "\uD504\uB9AC\uC14B \uC774\uB984",
+        "translatePromptHint": "{target} \uC740 \uB300\uC0C1 \uC5B8\uC5B4\uB85C \uCE58\uD658\uB429\uB2C8\uB2E4. \uC800\uC7A5 \uC989\uC2DC \uC801\uC6A9\uB418\uBA70, \uC774\uB984\uC744 \uBC14\uAFB8\uBA74 \uC0C8 \uD504\uB9AC\uC14B\uC73C\uB85C \uC800\uC7A5\uB429\uB2C8\uB2E4",
+        "translatePromptRequired": "\uC774\uB984\uACFC \uB0B4\uC6A9\uC744 \uBAA8\uB450 \uC785\uB825\uD558\uC138\uC694",
+        "translateInputPh": "\uD14D\uC2A4\uD2B8\uB97C \uC785\uB825\uD558\uACE0 Enter \uB85C \uBC88\uC5ED",
+        "translateToolbarLabel": "\uBC88\uC5ED",
+        "translateToolbarTitle": "\uC120\uD0DD\uD55C \uD14D\uC2A4\uD2B8 \uBC88\uC5ED",
+        "translateGo": "\uBC88\uC5ED",
+        "translateCopy": "\uBCF5\uC0AC",
+        "translateSpeak": "\uC77D\uAE30",
+        "translateRetry": "\uB2E4\uC2DC \uBC88\uC5ED",
+        "translateShowSource": "\uC6D0\uBB38",
+        "translateLoading": "\uBC88\uC5ED \uC911\u2026",
+        "translateFailed": "\uBC88\uC5ED \uC2E4\uD328",
+        "translateEmpty": "\uBAA8\uB378\uC774 \uB0B4\uC6A9\uC744 \uBC18\uD658\uD558\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4",
+        "translateNoHistory": "\uAE30\uB85D\uC774 \uC5C6\uC2B5\uB2C8\uB2E4",
+        "translateUnconfigured": "\uBBF8\uC124\uC815",
+        "translateSave": "\uC800\uC7A5",
+        "translateCopied": "\uBCF5\uC0AC\uB428",
+        "translateSaved": "\uC800\uC7A5\uB418\uC5C8\uC2B5\uB2C8\uB2E4",
+        "translateMtYoudao": "\uC720\uB2E4\uC624",
+        "translateMtBaidu": "\uBC14\uC774\uB450",
+        "translateMtCaiyun": "\uCC28\uC774\uC708",
+        "translateMtDeepl": "DeepL",
+        "translateMtDeeplx": "DeepLX",
+        "translateMtNiu": "\uC0E4\uC624\uB2C8\uC6B0",
+        "translateMtTencent": "\uD150\uC13C\uD2B8",
+        "translateMtAliyun": "\uC54C\uB9AC\uC708",
+        "translateMtVolc": "\uD654\uC0B0",
+        "translateDesc": "\uB4DC\uB798\uADF8 \uBC88\uC5ED\uC758 \uD2B8\uB9AC\uAC70\xB7\uB300\uC0C1 \uC5B8\uC5B4\xB7\uD328\uB110 \uD06C\uAE30\xB7\uAE30\uACC4\uBC88\uC5ED \uD0A4. \uCC44\uB110\uACFC \uD504\uB86C\uD504\uD2B8\uB294 \uBC88\uC5ED \uD328\uB110\uC5D0\uC11C \uC804\uD658\uD569\uB2C8\uB2E4.",
+        "translateTrigger": "\uD2B8\uB9AC\uAC70",
+        "translateTriggerCtrlDrag": "Ctrl \uB204\uB974\uACE0 \uB4DC\uB798\uADF8",
+        "translateTriggerCtrlTap": "\uC120\uD0DD \uD6C4 Ctrl \uD55C \uBC88 \uB204\uB974\uAE30",
+        "translateTriggerAltDrag": "Alt \uB204\uB974\uACE0 \uB4DC\uB798\uADF8",
+        "translateTargetLang": "\uB300\uC0C1 \uC5B8\uC5B4",
+        "translatePanelWidth": "\uD328\uB110 \uB108\uBE44(px)",
+        "translatePanelHeight": "\uD328\uB110 \uCD5C\uB300 \uB192\uC774(\uD654\uBA74 \uBE44\uC728 %)",
+        "translateTheme": "\uD328\uB110 \uD14C\uB9C8",
+        "translateThemeFollow": "\uC2DC\uC2A4\uD15C \uC124\uC815 \uB530\uB974\uAE30",
+        "translateThemeLight": "\uB77C\uC774\uD2B8",
+        "translateThemeDark": "\uB2E4\uD06C",
+        "translateHistoryLimit": "\uAE30\uB85D \uCD5C\uB300 \uAC74\uC218",
+        "translateMtCreds": "\uAE30\uACC4\uBC88\uC5ED \uC11C\uBE44\uC2A4 \uD0A4",
+        "translateGetKey": "\uD0A4 \uC5BB\uAE30",
+        "translateMtCredsDesc": "\uB85C\uCEEC ~/.zcode/zcode-translate.json \uC5D0\uB9CC \uC800\uC7A5\uB429\uB2C8\uB2E4. \uD0A4\uAC00 \uC5C6\uB294 \uC11C\uBE44\uC2A4\uB294 \uB4DC\uB86D\uB2E4\uC6B4\uC5D0 \uBBF8\uC124\uC815\uC73C\uB85C \uD45C\uC2DC\uB429\uB2C8\uB2E4",
+        "translateTest": "\uD604\uC7AC \uCC44\uB110 \uD14C\uC2A4\uD2B8",
         "featureSessionLink": "\uC138\uC158 ID\uB97C \uC791\uC5C5 \uC774\uB984 \uB9C1\uD06C\uB85C \uD45C\uC2DC",
         "featureSessionLinkDesc": "\uC9C8\uBB38\uACFC \uB2F5\uBCC0\uC758 \uC138\uC158 ID(sess_ / session_\uB85C \uC2DC\uC791)\uB97C \uC791\uC5C5 \uC774\uB984\uC73C\uB85C \uD45C\uC2DC\uD569\uB2C8\uB2E4. \uD074\uB9AD\uD558\uBA74 \uD574\uB2F9 \uC138\uC158\uC73C\uB85C \uC804\uD658\uB418\uACE0, \uB9C8\uC6B0\uC2A4\uB97C \uC62C\uB9AC\uBA74 \uC6D0\uB798 ID\uB97C \uBCFC \uC218 \uC788\uC2B5\uB2C8\uB2E4.",
         "featureComposerProviderDesc": "\uBAA8\uB378 \uC774\uB984 \uC55E\uC5D0 \uACF5\uAE09\uC790 \uC774\uB984\uC744 \uD45C\uC2DC\uD569\uB2C8\uB2E4(\uC608: BigModel-Max1 / glm-5.3). \uAC19\uC740 \uC774\uB984\uC758 \uBAA8\uB378\uC744 \uAD6C\uBD84\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4.",
@@ -1466,6 +1681,14 @@
       };
       koErrors = {
         "invalid-path": "\uD504\uB85C\uC81D\uD2B8 \uACBD\uB85C\uAC00 \uC62C\uBC14\uB974\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4",
+        "translate-invalid": "\uBC88\uC5ED \uC124\uC815\uC774 \uC798\uBABB\uB418\uC5C8\uC2B5\uB2C8\uB2E4",
+        "translate-write": "zcode-translate.json \uC4F0\uAE30\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4",
+        "translate-too-long": "\uC120\uD0DD\uD55C \uD14D\uC2A4\uD2B8\uAC00 \uB108\uBB34 \uAE41\uB2C8\uB2E4",
+        "translate-conn": "\uBC88\uC5ED \uCC44\uB110\uC744 \uC0AC\uC6A9\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4. \uD328\uB110\uC5D0\uC11C \uACF5\uAE09\uC790/\uBAA8\uB378\uC744 \uB2E4\uC2DC \uC120\uD0DD\uD558\uC138\uC694",
+        "translate-llm": "LLM \uBC88\uC5ED \uC694\uCCAD\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4",
+        "translate-mt": "\uAE30\uACC4\uBC88\uC5ED \uC694\uCCAD\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4",
+        "translate-test": "\uBC88\uC5ED \uCC44\uB110 \uD14C\uC2A4\uD2B8\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4",
+        "translate-empty": "\uBC88\uC5ED \uBAA8\uB378\uC774 \uD14D\uC2A4\uD2B8\uB97C \uBC18\uD658\uD558\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4",
         "not-found": "\uD3F4\uB354\uAC00 \uC874\uC7AC\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4",
         "invalid-request": "\uC798\uBABB\uB41C \uC694\uCCAD\uC785\uB2C8\uB2E4",
         "invalid-content": "content\uB294 \uBB38\uC790\uC5F4\uC774\uC5B4\uC57C \uD569\uB2C8\uB2E4",
@@ -1497,6 +1720,9 @@
         "vision-write": "zcode-vision.json\uC744 \uC4F0\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4",
         "vision-test": "\uBE44\uC804 \uD504\uB85D\uC2DC \uD14C\uC2A4\uD2B8\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4",
         "proxy-invalid": "\uD504\uB85D\uC2DC\uB294 http://127.0.0.1:7890\uACFC \uAC19\uC740 URL\uC774\uAC70\uB098 \uBE44\uC5B4 \uC788\uC5B4\uC57C \uD569\uB2C8\uB2E4",
+        "provider-proxy-invalid": "\uACF5\uAE09\uC790 \uD504\uB85D\uC2DC \uC124\uC815\uC774 \uC62C\uBC14\uB974\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4. \uD504\uB85D\uC2DC\uB294 http://127.0.0.1:7890\uACFC \uAC19\uC740 URL\uC774\uAC70\uB098 \uBE44\uC5B4 \uC788\uC5B4\uC57C \uD569\uB2C8\uB2E4(\uC804\uC5ED \uD504\uB85D\uC2DC \uB530\uB974\uAE30)",
+        "headroom-proxy-invalid": "headroom \uC5C5\uC2A4\uD2B8\uB9BC \uD504\uB85D\uC2DC\uB294 http://127.0.0.1:7890\uACFC \uAC19\uC740 URL\uC774\uAC70\uB098 \uBE44\uC5B4 \uC788\uC5B4\uC57C \uD569\uB2C8\uB2E4",
+        "tool-name-check": "\uB3C4\uAD6C \uC774\uB984 \uC900\uC218 \uAC80\uC0AC\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4",
         "proxy-not-set": "\uBA3C\uC800 \uD504\uB85D\uC2DC \uC8FC\uC18C\uB97C \uC124\uC815\uD558\uC138\uC694",
         "rtk-invalid": "rtk \uC124\uC815\uC774 \uC62C\uBC14\uB974\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4",
         "rtk-update": "rtk \uC5C5\uB370\uC774\uD2B8 \uD655\uC778\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4(GitHub Releases\uC5D0 \uC5F0\uACB0\uD560 \uC218 \uC5C6\uB098\uC694? \uD504\uB85D\uC2DC \uD0ED\uC5D0\uC11C \uD504\uB85D\uC2DC\uB97C \uC124\uC815\uD558\uC138\uC694)",
@@ -1625,8 +1851,33 @@
         "proxyScopeDepsDesc": "\u0423\u0441\u0442\u0430\u043D\u043E\u0432\u043A\u0430, \u043F\u0440\u043E\u0432\u0435\u0440\u043A\u0430 \u043E\u0431\u043D\u043E\u0432\u043B\u0435\u043D\u0438\u0439 \u0438 \u043E\u0431\u043D\u043E\u0432\u043B\u0435\u043D\u0438\u0435 headroom \u0438 rtk (\u0437\u0430\u0433\u0440\u0443\u0437\u043A\u0430 \u0447\u0435\u0440\u0435\u0437 pip \u0438 GitHub) \u0438\u0434\u0443\u0442 \u0447\u0435\u0440\u0435\u0437 \u043F\u0440\u043E\u043A\u0441\u0438.",
         "proxyScopeSync": "\u0421\u0438\u043D\u0445\u0440\u043E\u043D\u0438\u0437\u0430\u0446\u0438\u044F",
         "proxyScopeSyncDesc": "\u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0430 \u0438 \u0441\u043A\u0430\u0447\u0438\u0432\u0430\u043D\u0438\u0435 WebDAV \u0438\u0434\u0443\u0442 \u0447\u0435\u0440\u0435\u0437 \u043F\u0440\u043E\u043A\u0441\u0438.",
+        "proxySubSoftware": "\u041F\u0440\u043E\u043A\u0441\u0438 \u041F\u041E",
+        "proxySubVendor": "\u041F\u0440\u043E\u043A\u0441\u0438 \u043F\u0440\u043E\u0432\u0430\u0439\u0434\u0435\u0440\u043E\u0432",
+        "proxyVendorDesc": "\u041D\u0430\u0441\u0442\u0440\u0430\u0438\u0432\u0430\u0435\u0442\u0441\u044F \u0434\u043B\u044F \u043A\u0430\u0436\u0434\u043E\u0433\u043E \u043F\u0440\u043E\u0432\u0430\u0439\u0434\u0435\u0440\u0430. \u041F\u0440\u0438 \u0432\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u0438 \u0437\u0430\u043F\u0440\u043E\u0441\u044B \u043A \u043C\u043E\u0434\u0435\u043B\u044F\u043C \u044D\u0442\u043E\u0433\u043E \u043F\u0440\u043E\u0432\u0430\u0439\u0434\u0435\u0440\u0430 \u0441\u043D\u0430\u0447\u0430\u043B\u0430 \u043F\u0440\u0438\u0445\u043E\u0434\u044F\u0442 \u043D\u0430 \u043B\u043E\u043A\u0430\u043B\u044C\u043D\u044B\u0439 \u043F\u043E\u0440\u0442 \u043F\u0435\u0440\u0435\u0441\u044B\u043B\u043A\u0438 \u0438 \u0443\u0445\u043E\u0434\u044F\u0442 \u0447\u0435\u0440\u0435\u0437 \u0443\u043A\u0430\u0437\u0430\u043D\u043D\u044B\u0439 \u043F\u0440\u043E\u043A\u0441\u0438; \u043F\u0440\u0438 \u0432\u044B\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u0438 \u0430\u0434\u0440\u0435\u0441 \u043E\u0441\u0442\u0430\u0451\u0442\u0441\u044F \u043F\u0440\u0435\u0436\u043D\u0438\u043C \u0438 \u0441\u043E\u0435\u0434\u0438\u043D\u0435\u043D\u0438\u0435 \u043F\u0440\u044F\u043C\u043E\u0435. \u0413\u043B\u043E\u0431\u0430\u043B\u044C\u043D\u044B\u0439 \u043F\u0440\u043E\u043A\u0441\u0438 ZCode \u043D\u0435 \u043C\u0435\u043D\u044F\u0435\u0442\u0441\u044F, \u0434\u0440\u0443\u0433\u0438\u0435 \u043F\u0440\u043E\u0432\u0430\u0439\u0434\u0435\u0440\u044B \u043D\u0435 \u0437\u0430\u0442\u0440\u0430\u0433\u0438\u0432\u0430\u044E\u0442\u0441\u044F. \u041F\u0443\u0441\u0442\u043E\u0439 \u0430\u0434\u0440\u0435\u0441 \u043F\u0440\u043E\u043A\u0441\u0438 = \u0441\u043B\u0435\u0434\u043E\u0432\u0430\u0442\u044C \u0433\u043B\u043E\u0431\u0430\u043B\u044C\u043D\u043E\u043C\u0443 \u043F\u0440\u043E\u043A\u0441\u0438.",
+        "proxyVendorEmpty": "\u041F\u0440\u043E\u043A\u0441\u0438 \u043F\u0440\u043E\u0432\u0430\u0439\u0434\u0435\u0440\u043E\u0432 \u0435\u0449\u0451 \u043D\u0435 \u0434\u043E\u0431\u0430\u0432\u043B\u0435\u043D\u044B. \u0412\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u043F\u0440\u043E\u0432\u0430\u0439\u0434\u0435\u0440\u0430 \u0447\u0435\u0440\u0435\u0437 \xAB\u0414\u043E\u0431\u0430\u0432\u0438\u0442\u044C \u043F\u0440\u043E\u0432\u0430\u0439\u0434\u0435\u0440\u0430\xBB \u043D\u0438\u0436\u0435 \u2014 \u043D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0430 \u043D\u0430\u0447\u043D\u0451\u0442 \u0434\u0435\u0439\u0441\u0442\u0432\u043E\u0432\u0430\u0442\u044C \u043F\u043E\u0441\u043B\u0435 \u0434\u043E\u0431\u0430\u0432\u043B\u0435\u043D\u0438\u044F.",
+        "proxyVendorAdd": "\u0414\u043E\u0431\u0430\u0432\u0438\u0442\u044C \u043F\u0440\u043E\u0432\u0430\u0439\u0434\u0435\u0440\u0430",
+        "proxyVendorRemove": "\u0423\u0434\u0430\u043B\u0438\u0442\u044C",
+        "proxyVendorUseGlobal": "\u0421\u043B\u0435\u0434\u043E\u0432\u0430\u0442\u044C \u0433\u043B\u043E\u0431\u0430\u043B\u044C\u043D\u043E\u043C\u0443 \u043F\u0440\u043E\u043A\u0441\u0438",
+        "proxyVendorProtocol": "\u041F\u0440\u043E\u0442\u043E\u043A\u043E\u043B",
+        "proxyVendorHost": "\u0410\u0434\u0440\u0435\u0441",
+        "proxyVendorHostRequired": "\u0423\u043A\u0430\u0436\u0438\u0442\u0435 \u0430\u0434\u0440\u0435\u0441 \u043F\u0440\u043E\u043A\u0441\u0438",
+        "proxyVendorHostPlaceholder": "127.0.0.1",
+        "proxyVendorPortLabel": "\u041F\u043E\u0440\u0442",
+        "proxyVendorPortInvalid": "\u041F\u043E\u0440\u0442 \u0434\u043E\u043B\u0436\u0435\u043D \u0431\u044B\u0442\u044C \u0446\u0435\u043B\u044B\u043C \u0447\u0438\u0441\u043B\u043E\u043C \u043E\u0442 1 \u0434\u043E 65535",
+        "proxyVendorForcedHint": "\u0410\u0434\u0440\u0435\u0441 \u044D\u0442\u043E\u0433\u043E \u043F\u0440\u043E\u0432\u0430\u0439\u0434\u0435\u0440\u0430 \u0443\u0436\u0435 \u0443\u043A\u0430\u0437\u044B\u0432\u0430\u0435\u0442 \u043D\u0430 \u043B\u043E\u043A\u0430\u043B\u044C\u043D\u044B\u0439 \u043F\u043E\u0440\u0442 \u043F\u0435\u0440\u0435\u0441\u044B\u043B\u043A\u0438, \u043D\u043E \u0434\u0440\u0443\u0433\u043E\u0439 \u0438\u0441\u0442\u043E\u0447\u043D\u0438\u043A (\u043A\u043E\u043D\u0444\u0438\u0433\u0443\u0440\u0430\u0446\u0438\u044F \u043F\u0440\u043E\u0432\u0430\u0439\u0434\u0435\u0440\u0430 \u0438\u043B\u0438 \u0442\u0430\u0431\u043B\u0438\u0446\u0430 provider) \u043F\u0435\u0440\u0435\u043F\u0438\u0441\u0430\u0442\u044C \u043D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C. \u041F\u0440\u043E\u0432\u0435\u0440\u044C\u0442\u0435 \u043F\u0440\u0430\u0432\u0430 \u043D\u0430 \u0444\u0430\u0439\u043B\u044B.",
+        "proxyVendorUpstreamMissing": "\u041D\u0430\u0441\u0442\u043E\u044F\u0449\u0438\u0439 \u0432\u044B\u0448\u0435\u0441\u0442\u043E\u044F\u0449\u0438\u0439 \u0430\u0434\u0440\u0435\u0441 \u043D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D (\u0432\u043E\u0437\u043C\u043E\u0436\u043D\u043E, \u043F\u0440\u043E\u0432\u0430\u0439\u0434\u0435\u0440 \u0443\u0434\u0430\u043B\u0451\u043D). \u041F\u0440\u043E\u043F\u0443\u0449\u0435\u043D\u043E.",
+        "headroomUpstreamProxy": "\u0412\u044B\u0448\u0435\u0441\u0442\u043E\u044F\u0449\u0438\u0439 \u043F\u0440\u043E\u043A\u0441\u0438",
+        "headroomUpstreamProxyDesc": "\u041F\u0440\u043E\u043A\u0441\u0438, \u0447\u0435\u0440\u0435\u0437 \u043A\u043E\u0442\u043E\u0440\u044B\u0439 \u044D\u043A\u0437\u0435\u043C\u043F\u043B\u044F\u0440\u044B headroom \u043E\u0431\u0440\u0430\u0449\u0430\u044E\u0442\u0441\u044F \u043A \u0432\u044B\u0448\u0435\u0441\u0442\u043E\u044F\u0449\u0438\u043C \u0441\u0435\u0440\u0432\u0438\u0441\u0430\u043C \u043C\u043E\u0434\u0435\u043B\u0435\u0439 (\u0432\u043D\u0443\u0442\u0440\u0435\u043D\u043D\u0438\u0439 \u0443\u0440\u043E\u0432\u0435\u043D\u044C \u0434\u0432\u0443\u0445\u0443\u0440\u043E\u0432\u043D\u0435\u0432\u043E\u0433\u043E \u043F\u0440\u043E\u043A\u0441\u0438). \u041F\u0443\u0441\u0442\u043E = \u0431\u0435\u0437 \u043F\u0440\u043E\u043A\u0441\u0438.",
+        "headroomUpstreamProxyPlaceholder": "http://127.0.0.1:7897",
+        "toolNameCheckTitle": "\u041F\u0440\u043E\u0432\u0435\u0440\u043A\u0430 \u0441\u043E\u043E\u0442\u0432\u0435\u0442\u0441\u0442\u0432\u0438\u044F \u0438\u043C\u0451\u043D \u0438\u043D\u0441\u0442\u0440\u0443\u043C\u0435\u043D\u0442\u043E\u0432",
+        "toolNameCheckDesc": "\u041D\u0435\u043A\u043E\u0442\u043E\u0440\u044B\u0435 \u0441\u0435\u0440\u0432\u0438\u0441\u044B \u043C\u043E\u0434\u0435\u043B\u0435\u0439 (\u043D\u0430\u043F\u0440\u0438\u043C\u0435\u0440, Meta) \u043E\u0433\u0440\u0430\u043D\u0438\u0447\u0438\u0432\u0430\u044E\u0442 \u0438\u043C\u0435\u043D\u0430 MCP-\u0438\u043D\u0441\u0442\u0440\u0443\u043C\u0435\u043D\u0442\u043E\u0432 64 \u0441\u0438\u043C\u0432\u043E\u043B\u0430\u043C\u0438 \u0438 \u043E\u0442\u043A\u043B\u043E\u043D\u044F\u044E\u0442 \u0432\u0435\u0441\u044C \u0437\u0430\u043F\u0440\u043E\u0441 \u043F\u0440\u0438 \u043F\u0440\u0435\u0432\u044B\u0448\u0435\u043D\u0438\u0438. \u0417\u0434\u0435\u0441\u044C \u0441\u043B\u0438\u0448\u043A\u043E\u043C \u0434\u043B\u0438\u043D\u043D\u044B\u0435 \u043A\u043B\u044E\u0447\u0438 \u0441\u0435\u0440\u0432\u0435\u0440\u043E\u0432 \u0437\u0430\u043C\u0435\u043D\u044F\u044E\u0442\u0441\u044F \u043A\u043E\u0440\u043E\u0442\u043A\u0438\u043C\u0438 (\u0442\u0430\u0431\u043B\u0438\u0446\u0430 \u0445\u0440\u0430\u043D\u0438\u0442\u0441\u044F \u0432 \u043A\u043E\u043D\u0444\u0438\u0433\u0443\u0440\u0430\u0446\u0438\u0438).",
+        "toolNameCheckBtn": "\u041F\u0440\u043E\u0432\u0435\u0440\u0438\u0442\u044C \u0438 \u043F\u0435\u0440\u0435\u043F\u0438\u0441\u0430\u0442\u044C",
+        "toolNameCheckRunning": "\u041F\u0440\u043E\u0432\u0435\u0440\u043A\u0430\u2026",
+        "toolNameCheckFailed": "\u041E\u0448\u0438\u0431\u043A\u0430 \u043F\u0440\u043E\u0432\u0435\u0440\u043A\u0438",
+        "toolNameAuto": "\u0410\u0432\u0442\u043E\u043F\u0435\u0440\u0435\u0437\u0430\u043F\u0438\u0441\u044C \u043F\u0440\u0438 \u0437\u0430\u043F\u0443\u0441\u043A\u0435",
+        "toolNameAutoDesc": "\u041E\u0431\u043D\u043E\u0432\u043B\u0435\u043D\u0438\u0435 ZCode \u0438\u043B\u0438 \u043F\u043B\u0430\u0433\u0438\u043D\u043E\u0432 \u043C\u043E\u0436\u0435\u0442 \u0432\u0435\u0440\u043D\u0443\u0442\u044C \u0434\u043B\u0438\u043D\u043D\u044B\u0435 \u0438\u043C\u0435\u043D\u0430 \u0441\u0435\u0440\u0432\u0435\u0440\u043E\u0432. \u0415\u0441\u043B\u0438 \u0432\u043A\u043B\u044E\u0447\u0435\u043D\u043E, \u043E\u043D\u0438 \u0441\u043E\u043A\u0440\u0430\u0449\u0430\u044E\u0442\u0441\u044F \u043F\u0440\u0438 \u043A\u0430\u0436\u0434\u043E\u043C \u0437\u0430\u043F\u0443\u0441\u043A\u0435. \u0415\u0441\u043B\u0438 \u0432\u044B\u043A\u043B\u044E\u0447\u0435\u043D\u043E, \u0438\u0437\u043C\u0435\u043D\u0435\u043D\u0438\u0435 \u043F\u0440\u0438\u043C\u0435\u043D\u044F\u0435\u0442\u0441\u044F \u0442\u043E\u043B\u044C\u043A\u043E \u043A\u043D\u043E\u043F\u043A\u043E\u0439 \u0432\u044B\u0448\u0435.",
         "tabSync": "\u0421\u0438\u043D\u0445\u0440\u043E\u043D\u0438\u0437\u0430\u0446\u0438\u044F",
-        "tabImport": "\u0418\u043C\u043F\u043E\u0440\u0442 \u0441\u0435\u0441\u0441\u0438\u0439",
+        "tabImport": "\u0418\u043C\u043F\u043E\u0440\u0442",
         "tabDebug": "\u041E\u0442\u043B\u0430\u0434\u043A\u0430",
         "importDesc": "\u041A\u043E\u043F\u0438\u0440\u0443\u0435\u0442 \u0441\u0435\u0441\u0441\u0438\u0438 \u0438\u0437 Codex, Claude Code, dsh \u0438 pi \u0432 \u0437\u0430\u0434\u0430\u0447\u0438 ZCode. \u0418\u043C\u043F\u043E\u0440\u0442 \u0441\u043E\u0437\u0434\u0430\u0451\u0442 \u0441\u043D\u0438\u043C\u043E\u043A; \u043F\u043E\u0441\u043B\u0435\u0434\u0443\u044E\u0449\u0438\u0435 \u0438\u0437\u043C\u0435\u043D\u0435\u043D\u0438\u044F \u0432 \u0438\u0441\u0445\u043E\u0434\u043D\u043E\u0439 \u0441\u0435\u0441\u0441\u0438\u0438 \u043D\u0435 \u0441\u0438\u043D\u0445\u0440\u043E\u043D\u0438\u0437\u0438\u0440\u0443\u044E\u0442\u0441\u044F.",
         "importSearch": "\u041F\u043E\u0438\u0441\u043A \u043F\u043E \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u044E \u0438\u043B\u0438 \u043F\u0430\u043F\u043A\u0435",
@@ -1983,6 +2234,83 @@
         "featureComposerProvider": "\u041F\u0440\u043E\u0432\u0430\u0439\u0434\u0435\u0440 \u0432 \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u0438 \u043C\u043E\u0434\u0435\u043B\u0438",
         "featureImageCopyDesc": "\u0429\u0451\u043B\u043A\u043D\u0438\u0442\u0435 \u0438\u0437\u043E\u0431\u0440\u0430\u0436\u0435\u043D\u0438\u0435 \u0432 \u0441\u0435\u0441\u0441\u0438\u0438 \u043F\u0440\u0430\u0432\u043E\u0439 \u043A\u043D\u043E\u043F\u043A\u043E\u0439 \u0438\u043B\u0438 \u043D\u0430\u0436\u043C\u0438\u0442\u0435 \u043D\u0430 \u0443\u0432\u0435\u043B\u0438\u0447\u0435\u043D\u043D\u043E\u0435 \u0438\u0437\u043E\u0431\u0440\u0430\u0436\u0435\u043D\u0438\u0435, \u0447\u0442\u043E\u0431\u044B \u0441\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u0435\u0433\u043E \u0432 \u0431\u0443\u0444\u0435\u0440 \u043E\u0431\u043C\u0435\u043D\u0430.",
         "featureTableCopyDesc": "\u041D\u0430 \u043F\u0430\u043D\u0435\u043B\u044C \u0438\u043D\u0441\u0442\u0440\u0443\u043C\u0435\u043D\u0442\u043E\u0432 \u0442\u0430\u0431\u043B\u0438\u0446\u044B \u0434\u043E\u0431\u0430\u0432\u043B\u0435\u043D\u0430 \u043A\u043D\u043E\u043F\u043A\u0430 \xAB\u041A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u0442\u0430\u0431\u043B\u0438\u0446\u0443\xBB; \u043F\u0440\u0438 \u0432\u0441\u0442\u0430\u0432\u043A\u0435 \u0432 Excel \u0438\u043B\u0438 \u0440\u0435\u0434\u0430\u043A\u0442\u043E\u0440 \u0441 \u0444\u043E\u0440\u043C\u0430\u0442\u0438\u0440\u043E\u0432\u0430\u043D\u0438\u0435\u043C \u043F\u043E\u043B\u0443\u0447\u0430\u0435\u0442\u0441\u044F \u0447\u0438\u0441\u0442\u0430\u044F \u0442\u0430\u0431\u043B\u0438\u0446\u0430.",
+        "featureTranslate": "\u041F\u0435\u0440\u0435\u0432\u043E\u0434 \u0432\u044B\u0434\u0435\u043B\u0435\u043D\u043D\u043E\u0433\u043E",
+        "featureTranslateDesc": "\u0412\u044B\u0434\u0435\u043B\u0438\u0442\u0435 \u0442\u0435\u043A\u0441\u0442 \u0441 \u0437\u0430\u0436\u0430\u0442\u044B\u043C Ctrl \u2014 \u043F\u0435\u0440\u0435\u0432\u043E\u0434 \u043F\u043E\u044F\u0432\u0438\u0442\u0441\u044F \u0432\u043E \u0432\u0441\u043F\u043B\u044B\u0432\u0430\u044E\u0449\u0435\u0439 \u043F\u0430\u043D\u0435\u043B\u0438 \u0440\u044F\u0434\u043E\u043C \u0441 \u0432\u044B\u0434\u0435\u043B\u0435\u043D\u0438\u0435\u043C; \u043A\u0430\u043D\u0430\u043B, \u0443\u0440\u043E\u0432\u0435\u043D\u044C \u0440\u0430\u0437\u043C\u044B\u0448\u043B\u0435\u043D\u0438\u0439 \u0438 \u043F\u0440\u043E\u043C\u043F\u0442 \u043F\u0435\u0440\u0435\u043A\u043B\u044E\u0447\u0430\u044E\u0442\u0441\u044F \u0432 \u043F\u0430\u043D\u0435\u043B\u0438",
+        "tabTranslate": "\u041F\u0435\u0440\u0435\u0432\u043E\u0434",
+        "translateEngine": "\u0421\u0435\u0440\u0432\u0438\u0441 \u043F\u0435\u0440\u0435\u0432\u043E\u0434\u0430",
+        "translateEngineLlm": "AI-\u043F\u0435\u0440\u0435\u0432\u043E\u0434",
+        "translateMtService": "\u0421\u0435\u0440\u0432\u0438\u0441 \u043F\u0435\u0440\u0435\u0432\u043E\u0434\u0430",
+        "translateProvider": "\u041F\u0440\u043E\u0432\u0430\u0439\u0434\u0435\u0440 (\u043A\u0430\u043D\u0430\u043B LLM)",
+        "translateModelLabel": "\u041C\u043E\u0434\u0435\u043B\u044C",
+        "translateTitle": "\u041F\u0435\u0440\u0435\u0432\u043E\u0434",
+        "translatePin": "\u0417\u0430\u043A\u0440\u0435\u043F\u0438\u0442\u044C (\u043D\u0435 \u0437\u0430\u043A\u0440\u044B\u0432\u0430\u0442\u044C \u043F\u0440\u0438 \u043A\u043B\u0438\u043A\u0435 \u0432\u043D\u0435 \u043F\u0430\u043D\u0435\u043B\u0438)",
+        "translatePinned": "\u0417\u0430\u043A\u0440\u0435\u043F\u043B\u0435\u043D\u043E",
+        "translateUnpinned": "\u041E\u0442\u043A\u0440\u0435\u043F\u043B\u0435\u043D\u043E",
+        "translateHistory": "\u0418\u0441\u0442\u043E\u0440\u0438\u044F",
+        "translateSettings": "\u041E\u0442\u043A\u0440\u044B\u0442\u044C \u043D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438 \u043F\u0435\u0440\u0435\u0432\u043E\u0434\u0430",
+        "translateChannelSession": "\u041A\u0430\u043A \u0432 \u0442\u0435\u043A\u0443\u0449\u0435\u0439 \u0441\u0435\u0441\u0441\u0438\u0438",
+        "translateChannelLlm": "LLM",
+        "translateChannelMt": "\u041C\u0430\u0448\u0438\u043D\u043D\u044B\u0439 \u043F\u0435\u0440\u0435\u0432\u043E\u0434",
+        "translateModelEmpty": "\u041D\u0430\u0437\u0432\u0430\u043D\u0438\u0435 \u043C\u043E\u0434\u0435\u043B\u0438",
+        "translateThinking": "\u0423\u0440\u043E\u0432\u0435\u043D\u044C \u0440\u0430\u0437\u043C\u044B\u0448\u043B\u0435\u043D\u0438\u0439",
+        "translateThinkingUnsupported": "\u0412\u044B\u0431\u0440\u0430\u043D\u043D\u0430\u044F \u043C\u043E\u0434\u0435\u043B\u044C \u043D\u0435 \u043F\u043E\u0434\u0434\u0435\u0440\u0436\u0438\u0432\u0430\u0435\u0442 \u0440\u0430\u0437\u043C\u044B\u0448\u043B\u0435\u043D\u0438\u044F",
+        "translateThinkingFollowSession": "\u0423\u0440\u043E\u0432\u0435\u043D\u044C \u0440\u0430\u0437\u043C\u044B\u0448\u043B\u0435\u043D\u0438\u0439 (\u043A\u0430\u043A \u0432 \u043C\u043E\u0434\u0435\u043B\u0438 \u0441\u0435\u0441\u0441\u0438\u0438 {model})",
+        "translateThinking_off": "\u0420\u0430\u0437\u043C\u044B\u0448\u043B\u0435\u043D\u0438\u044F: \u0432\u044B\u043A\u043B",
+        "translateThinking_minimal": "\u0420\u0430\u0437\u043C\u044B\u0448\u043B\u0435\u043D\u0438\u044F: \u043C\u0438\u043D\u0438\u043C\u0443\u043C",
+        "translateThinking_low": "\u0420\u0430\u0437\u043C\u044B\u0448\u043B\u0435\u043D\u0438\u044F: \u043D\u0438\u0437\u043A\u0438\u0439",
+        "translateThinking_medium": "\u0420\u0430\u0437\u043C\u044B\u0448\u043B\u0435\u043D\u0438\u044F: \u0441\u0440\u0435\u0434\u043D\u0438\u0439",
+        "translateThinking_high": "\u0420\u0430\u0437\u043C\u044B\u0448\u043B\u0435\u043D\u0438\u044F: \u0432\u044B\u0441\u043E\u043A\u0438\u0439",
+        "translateThinking_xhigh": "\u0420\u0430\u0437\u043C\u044B\u0448\u043B\u0435\u043D\u0438\u044F: \u043E\u0447\u0435\u043D\u044C \u0432\u044B\u0441\u043E\u043A\u0438\u0439",
+        "translateThinking_max": "\u0420\u0430\u0437\u043C\u044B\u0448\u043B\u0435\u043D\u0438\u044F: \u043C\u0430\u043A\u0441\u0438\u043C\u0443\u043C",
+        "translateThinking_enabled": "\u0420\u0430\u0437\u043C\u044B\u0448\u043B\u0435\u043D\u0438\u044F: \u0432\u043A\u043B",
+        "translatePrompt": "\u041F\u0440\u043E\u043C\u043F\u0442",
+        "translatePromptEdit": "\u0420\u0435\u0434\u0430\u043A\u0442\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u043F\u0440\u043E\u043C\u043F\u0442",
+        "translatePromptEditTitle": "\u0420\u0435\u0434\u0430\u043A\u0442\u0438\u0440\u043E\u0432\u0430\u043D\u0438\u0435 \u043F\u0440\u0435\u0441\u0435\u0442\u0430 \u043F\u0440\u043E\u043C\u043F\u0442\u0430",
+        "translatePromptName": "\u041D\u0430\u0437\u0432\u0430\u043D\u0438\u0435 \u043F\u0440\u0435\u0441\u0435\u0442\u0430",
+        "translatePromptHint": "{target} \u0437\u0430\u043C\u0435\u043D\u044F\u0435\u0442\u0441\u044F \u0446\u0435\u043B\u0435\u0432\u044B\u043C \u044F\u0437\u044B\u043A\u043E\u043C; \u043F\u0440\u0438\u043C\u0435\u043D\u044F\u0435\u0442\u0441\u044F \u0441\u0440\u0430\u0437\u0443; \u043F\u0440\u0438 \u043F\u0435\u0440\u0435\u0438\u043C\u0435\u043D\u043E\u0432\u0430\u043D\u0438\u0438 \u0441\u043E\u0445\u0440\u0430\u043D\u044F\u0435\u0442\u0441\u044F \u043A\u0430\u043A \u043D\u043E\u0432\u044B\u0439 \u043F\u0440\u0435\u0441\u0435\u0442",
+        "translatePromptRequired": "\u0417\u0430\u043F\u043E\u043B\u043D\u0438\u0442\u0435 \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u0435 \u0438 \u0441\u043E\u0434\u0435\u0440\u0436\u0430\u043D\u0438\u0435",
+        "translateInputPh": "\u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u0442\u0435\u043A\u0441\u0442 \u0438 \u043D\u0430\u0436\u043C\u0438\u0442\u0435 Enter",
+        "translateToolbarLabel": "\u041F\u0435\u0440\u0435\u0432\u043E\u0434",
+        "translateToolbarTitle": "\u041F\u0435\u0440\u0435\u0432\u0435\u0441\u0442\u0438 \u0432\u044B\u0434\u0435\u043B\u0435\u043D\u043D\u044B\u0439 \u0442\u0435\u043A\u0441\u0442",
+        "translateGo": "\u041F\u0435\u0440\u0435\u0432\u0435\u0441\u0442\u0438",
+        "translateCopy": "\u041A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u0442\u044C",
+        "translateSpeak": "\u041E\u0437\u0432\u0443\u0447\u0438\u0442\u044C",
+        "translateRetry": "\u041F\u0435\u0440\u0435\u0432\u0435\u0441\u0442\u0438 \u0441\u043D\u043E\u0432\u0430",
+        "translateShowSource": "\u041E\u0440\u0438\u0433\u0438\u043D\u0430\u043B",
+        "translateLoading": "\u041F\u0435\u0440\u0435\u0432\u043E\u0434\u2026",
+        "translateFailed": "\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u043F\u0435\u0440\u0435\u0432\u0435\u0441\u0442\u0438",
+        "translateEmpty": "\u041C\u043E\u0434\u0435\u043B\u044C \u043D\u0435 \u0432\u0435\u0440\u043D\u0443\u043B\u0430 \u0441\u043E\u0434\u0435\u0440\u0436\u0438\u043C\u043E\u0435",
+        "translateNoHistory": "\u0418\u0441\u0442\u043E\u0440\u0438\u0438 \u043F\u043E\u043A\u0430 \u043D\u0435\u0442",
+        "translateUnconfigured": "\u043D\u0435 \u043D\u0430\u0441\u0442\u0440\u043E\u0435\u043D\u043E",
+        "translateSave": "\u0421\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u044C",
+        "translateCopied": "\u0421\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u043D\u043E",
+        "translateSaved": "\u0421\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u043E",
+        "translateMtYoudao": "Youdao",
+        "translateMtBaidu": "Baidu",
+        "translateMtCaiyun": "Caiyun",
+        "translateMtDeepl": "DeepL",
+        "translateMtDeeplx": "DeepLX",
+        "translateMtNiu": "Niu Trans",
+        "translateMtTencent": "Tencent",
+        "translateMtAliyun": "Aliyun",
+        "translateMtVolc": "Volc",
+        "translateDesc": "\u0422\u0440\u0438\u0433\u0433\u0435\u0440, \u0446\u0435\u043B\u0435\u0432\u043E\u0439 \u044F\u0437\u044B\u043A, \u0440\u0430\u0437\u043C\u0435\u0440 \u043F\u0430\u043D\u0435\u043B\u0438 \u0438 \u043A\u043B\u044E\u0447\u0438 \u043C\u0430\u0448\u0438\u043D\u043D\u043E\u0433\u043E \u043F\u0435\u0440\u0435\u0432\u043E\u0434\u0430; \u043A\u0430\u043D\u0430\u043B \u0438 \u043F\u0440\u043E\u043C\u043F\u0442 \u043F\u0435\u0440\u0435\u043A\u043B\u044E\u0447\u0430\u044E\u0442\u0441\u044F \u0432 \u043F\u0430\u043D\u0435\u043B\u0438 \u043F\u0435\u0440\u0435\u0432\u043E\u0434\u0430.",
+        "translateTrigger": "\u0422\u0440\u0438\u0433\u0433\u0435\u0440",
+        "translateTriggerCtrlDrag": "Ctrl + \u0432\u044B\u0434\u0435\u043B\u0435\u043D\u0438\u0435 \u043C\u044B\u0448\u044C\u044E",
+        "translateTriggerCtrlTap": "\u0412\u044B\u0434\u0435\u043B\u0438\u0442\u044C, \u0437\u0430\u0442\u0435\u043C \u043D\u0430\u0436\u0430\u0442\u044C Ctrl",
+        "translateTriggerAltDrag": "Alt + \u0432\u044B\u0434\u0435\u043B\u0435\u043D\u0438\u0435 \u043C\u044B\u0448\u044C\u044E",
+        "translateTargetLang": "\u0426\u0435\u043B\u0435\u0432\u043E\u0439 \u044F\u0437\u044B\u043A",
+        "translatePanelWidth": "\u0428\u0438\u0440\u0438\u043D\u0430 \u043F\u0430\u043D\u0435\u043B\u0438 (px)",
+        "translatePanelHeight": "\u041C\u0430\u043A\u0441. \u0432\u044B\u0441\u043E\u0442\u0430 \u043F\u0430\u043D\u0435\u043B\u0438 (% \u044D\u043A\u0440\u0430\u043D\u0430)",
+        "translateTheme": "\u0422\u0435\u043C\u0430 \u043F\u0430\u043D\u0435\u043B\u0438",
+        "translateThemeFollow": "\u041A\u0430\u043A \u0432 \u0441\u0438\u0441\u0442\u0435\u043C\u0435",
+        "translateThemeLight": "\u0421\u0432\u0435\u0442\u043B\u0430\u044F",
+        "translateThemeDark": "\u0422\u0451\u043C\u043D\u0430\u044F",
+        "translateHistoryLimit": "\u041B\u0438\u043C\u0438\u0442 \u0438\u0441\u0442\u043E\u0440\u0438\u0438",
+        "translateMtCreds": "\u041A\u043B\u044E\u0447\u0438 \u043C\u0430\u0448\u0438\u043D\u043D\u043E\u0433\u043E \u043F\u0435\u0440\u0435\u0432\u043E\u0434\u0430",
+        "translateGetKey": "\u041F\u043E\u043B\u0443\u0447\u0438\u0442\u044C \u043A\u043B\u044E\u0447",
+        "translateMtCredsDesc": "\u0425\u0440\u0430\u043D\u044F\u0442\u0441\u044F \u0442\u043E\u043B\u044C\u043A\u043E \u0432 \u043B\u043E\u043A\u0430\u043B\u044C\u043D\u043E\u043C ~/.zcode/zcode-translate.json; \u0441\u0435\u0440\u0432\u0438\u0441\u044B \u0431\u0435\u0437 \u043A\u043B\u044E\u0447\u0435\u0439 \u043F\u043E\u043C\u0435\u0447\u0435\u043D\u044B \u043A\u0430\u043A \u043D\u0435 \u043D\u0430\u0441\u0442\u0440\u043E\u0435\u043D\u043D\u044B\u0435 \u0432 \u0432\u044B\u043F\u0430\u0434\u0430\u044E\u0449\u0435\u043C \u0441\u043F\u0438\u0441\u043A\u0435",
+        "translateTest": "\u041F\u0440\u043E\u0432\u0435\u0440\u0438\u0442\u044C \u0442\u0435\u043A\u0443\u0449\u0438\u0439 \u043A\u0430\u043D\u0430\u043B",
         "featureSessionLink": "ID \u0441\u0435\u0441\u0441\u0438\u0439 \u0432 \u0432\u0438\u0434\u0435 \u0441\u0441\u044B\u043B\u043E\u043A \u0441 \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u0435\u043C \u0437\u0430\u0434\u0430\u0447\u0438",
         "featureSessionLinkDesc": "ID \u0441\u0435\u0441\u0441\u0438\u0439 \u0432 \u0432\u043E\u043F\u0440\u043E\u0441\u0430\u0445 \u0438 \u043E\u0442\u0432\u0435\u0442\u0430\u0445 (\u043D\u0430\u0447\u0438\u043D\u0430\u044E\u0449\u0438\u0435\u0441\u044F \u0441 sess_ / session_) \u043E\u0442\u043E\u0431\u0440\u0430\u0436\u0430\u044E\u0442\u0441\u044F \u043A\u0430\u043A \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u044F \u0437\u0430\u0434\u0430\u0447; \u043D\u0430\u0436\u043C\u0438\u0442\u0435, \u0447\u0442\u043E\u0431\u044B \u043F\u0435\u0440\u0435\u0439\u0442\u0438 \u043A \u0441\u0435\u0441\u0441\u0438\u0438, \u043D\u0430\u0432\u0435\u0434\u0438\u0442\u0435 \u2014 \u043F\u043E\u043A\u0430\u0436\u0435\u0442\u0441\u044F \u0438\u0441\u0445\u043E\u0434\u043D\u044B\u0439 ID.",
         "featureComposerProviderDesc": "\u041F\u043E\u043A\u0430\u0437\u044B\u0432\u0430\u0435\u0442 \u043F\u0440\u043E\u0432\u0430\u0439\u0434\u0435\u0440\u0430 \u043F\u0435\u0440\u0435\u0434 \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u0435\u043C \u043C\u043E\u0434\u0435\u043B\u0438 (\u043D\u0430\u043F\u0440\u0438\u043C\u0435\u0440, BigModel-Max1 / glm-5.3), \u0447\u0442\u043E\u0431\u044B \u0440\u0430\u0437\u043B\u0438\u0447\u0430\u0442\u044C \u043E\u0434\u043D\u043E\u0438\u043C\u0451\u043D\u043D\u044B\u0435 \u043C\u043E\u0434\u0435\u043B\u0438.",
@@ -2242,6 +2570,14 @@
       };
       ruErrors = {
         "invalid-path": "\u041D\u0435\u0434\u043E\u043F\u0443\u0441\u0442\u0438\u043C\u044B\u0439 \u043F\u0443\u0442\u044C \u043A \u043F\u0440\u043E\u0435\u043A\u0442\u0443",
+        "translate-invalid": "\u041D\u0435\u0434\u043E\u043F\u0443\u0441\u0442\u0438\u043C\u044B\u0435 \u043D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438 \u043F\u0435\u0440\u0435\u0432\u043E\u0434\u0430",
+        "translate-write": "\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u0437\u0430\u043F\u0438\u0441\u0430\u0442\u044C zcode-translate.json",
+        "translate-too-long": "\u0412\u044B\u0434\u0435\u043B\u0435\u043D\u043D\u044B\u0439 \u0442\u0435\u043A\u0441\u0442 \u0441\u043B\u0438\u0448\u043A\u043E\u043C \u0434\u043B\u0438\u043D\u043D\u044B\u0439",
+        "translate-conn": "\u041A\u0430\u043D\u0430\u043B \u043F\u0435\u0440\u0435\u0432\u043E\u0434\u0430 \u043D\u0435\u0434\u043E\u0441\u0442\u0443\u043F\u0435\u043D: \u0432\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u043F\u0440\u043E\u0432\u0430\u0439\u0434\u0435\u0440\u0430/\u043C\u043E\u0434\u0435\u043B\u044C \u0437\u0430\u043D\u043E\u0432\u043E \u043D\u0430 \u043F\u0430\u043D\u0435\u043B\u0438",
+        "translate-llm": "\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u0432\u044B\u043F\u043E\u043B\u043D\u0438\u0442\u044C LLM-\u043F\u0435\u0440\u0435\u0432\u043E\u0434",
+        "translate-mt": "\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u0432\u044B\u043F\u043E\u043B\u043D\u0438\u0442\u044C \u043C\u0430\u0448\u0438\u043D\u043D\u044B\u0439 \u043F\u0435\u0440\u0435\u0432\u043E\u0434",
+        "translate-test": "\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u043F\u0440\u043E\u0432\u0435\u0440\u0438\u0442\u044C \u043A\u0430\u043D\u0430\u043B \u043F\u0435\u0440\u0435\u0432\u043E\u0434\u0430",
+        "translate-empty": "\u041C\u043E\u0434\u0435\u043B\u044C \u043F\u0435\u0440\u0435\u0432\u043E\u0434\u0430 \u043D\u0435 \u0432\u0435\u0440\u043D\u0443\u043B\u0430 \u0442\u0435\u043A\u0441\u0442",
         "not-found": "\u041F\u0430\u043F\u043A\u0430 \u043D\u0435 \u0441\u0443\u0449\u0435\u0441\u0442\u0432\u0443\u0435\u0442",
         "invalid-request": "\u041D\u0435\u0434\u043E\u043F\u0443\u0441\u0442\u0438\u043C\u044B\u0439 \u0437\u0430\u043F\u0440\u043E\u0441",
         "invalid-content": "content \u0434\u043E\u043B\u0436\u0435\u043D \u0431\u044B\u0442\u044C \u0441\u0442\u0440\u043E\u043A\u043E\u0439",
@@ -2273,6 +2609,9 @@
         "vision-write": "\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u0437\u0430\u043F\u0438\u0441\u0430\u0442\u044C zcode-vision.json",
         "vision-test": "\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u0432\u044B\u043F\u043E\u043B\u043D\u0438\u0442\u044C \u043F\u0440\u043E\u0432\u0435\u0440\u043A\u0443 \u0432\u0438\u0437\u0443\u0430\u043B\u044C\u043D\u043E\u0433\u043E \u043F\u0440\u043E\u043A\u0441\u0438",
         "proxy-invalid": "\u041F\u0440\u043E\u043A\u0441\u0438 \u0434\u043E\u043B\u0436\u0435\u043D \u0431\u044B\u0442\u044C URL \u0432\u0438\u0434\u0430 http://127.0.0.1:7890 \u0438\u043B\u0438 \u043F\u0443\u0441\u0442\u043E\u0439 \u0441\u0442\u0440\u043E\u043A\u043E\u0439.",
+        "provider-proxy-invalid": "\u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0430 \u043F\u0440\u043E\u043A\u0441\u0438 \u043F\u0440\u043E\u0432\u0430\u0439\u0434\u0435\u0440\u0430 \u043D\u0435\u0432\u0435\u0440\u043D\u0430: \u043F\u0440\u043E\u043A\u0441\u0438 \u0434\u043E\u043B\u0436\u0435\u043D \u0431\u044B\u0442\u044C URL \u0432\u0438\u0434\u0430 http://127.0.0.1:7890 (\u0438\u043B\u0438 \u043F\u0443\u0441\u0442\u044B\u043C, \u0447\u0442\u043E\u0431\u044B \u0441\u043B\u0435\u0434\u043E\u0432\u0430\u0442\u044C \u0433\u043B\u043E\u0431\u0430\u043B\u044C\u043D\u043E\u043C\u0443 \u043F\u0440\u043E\u043A\u0441\u0438).",
+        "headroom-proxy-invalid": "\u0412\u044B\u0448\u0435\u0441\u0442\u043E\u044F\u0449\u0438\u0439 \u043F\u0440\u043E\u043A\u0441\u0438 headroom \u0434\u043E\u043B\u0436\u0435\u043D \u0431\u044B\u0442\u044C URL \u0432\u0438\u0434\u0430 http://127.0.0.1:7890 \u0438\u043B\u0438 \u043F\u0443\u0441\u0442\u043E\u0439 \u0441\u0442\u0440\u043E\u043A\u043E\u0439.",
+        "tool-name-check": "\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u0432\u044B\u043F\u043E\u043B\u043D\u0438\u0442\u044C \u043F\u0440\u043E\u0432\u0435\u0440\u043A\u0443 \u0441\u043E\u043E\u0442\u0432\u0435\u0442\u0441\u0442\u0432\u0438\u044F \u0438\u043C\u0451\u043D \u0438\u043D\u0441\u0442\u0440\u0443\u043C\u0435\u043D\u0442\u043E\u0432",
         "proxy-not-set": "\u0421\u043D\u0430\u0447\u0430\u043B\u0430 \u0443\u043A\u0430\u0436\u0438\u0442\u0435 \u0430\u0434\u0440\u0435\u0441 \u043F\u0440\u043E\u043A\u0441\u0438",
         "rtk-invalid": "\u041D\u0435\u0434\u043E\u043F\u0443\u0441\u0442\u0438\u043C\u0430\u044F \u043A\u043E\u043D\u0444\u0438\u0433\u0443\u0440\u0430\u0446\u0438\u044F rtk",
         "rtk-update": "\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u043F\u0440\u043E\u0432\u0435\u0440\u0438\u0442\u044C \u043E\u0431\u043D\u043E\u0432\u043B\u0435\u043D\u0438\u044F rtk (GitHub Releases \u043D\u0435\u0434\u043E\u0441\u0442\u0443\u043F\u0435\u043D? \u0423\u043A\u0430\u0436\u0438\u0442\u0435 \u043F\u0440\u043E\u043A\u0441\u0438 \u043D\u0430 \u0432\u043A\u043B\u0430\u0434\u043A\u0435 \xAB\u041F\u0440\u043E\u043A\u0441\u0438\xBB)",
@@ -2629,8 +2968,33 @@
         proxyScopeDepsDesc: "headroom \u4E0E rtk \u7684\u5B89\u88C5\u3001\u68C0\u67E5\u66F4\u65B0\u4E0E\u5347\u7EA7\uFF08pip \u4E0E GitHub \u4E0B\u8F7D\uFF09\u8D70\u4EE3\u7406\u3002",
         proxyScopeSync: "\u540C\u6B65",
         proxyScopeSyncDesc: "WebDAV \u4E0A\u4F20\u4E0E\u4E0B\u8F7D\u8D70\u4EE3\u7406\u3002",
+        proxySubSoftware: "\u8F6F\u4EF6\u4EE3\u7406",
+        proxySubVendor: "\u4F9B\u5E94\u5546\u4EE3\u7406",
+        proxyVendorDesc: "\u6309\u4F9B\u5E94\u5546\u5355\u72EC\u8BBE\u7F6E\uFF1A\u6253\u5F00\u540E\u8BE5\u4F9B\u5E94\u5546\u7684\u6A21\u578B\u8BF7\u6C42\u5148\u5230\u672C\u673A\u8F6C\u53D1\u7AEF\u53E3\uFF0C\u518D\u7ECF\u6307\u5B9A\u4EE3\u7406\u53D1\u51FA\uFF1B\u5173\u95ED\u65F6\u4FDD\u6301\u539F\u5730\u5740\u76F4\u8FDE\u3002\u4E0D\u6539 ZCode \u5168\u5C40\u4EE3\u7406\uFF0C\u4E5F\u4E0D\u5F71\u54CD\u5176\u4ED6\u4F9B\u5E94\u5546\u3002\u4EE3\u7406\u5730\u5740\u7559\u7A7A = \u8DDF\u968F\u5168\u5C40\u4EE3\u7406\u3002",
+        proxyVendorEmpty: "\u8FD8\u6CA1\u6709\u6DFB\u52A0\u4F9B\u5E94\u5546\u4EE3\u7406\u3002\u70B9\u4E0B\u65B9\u201C\u6DFB\u52A0\u4F9B\u5E94\u5546\u201D\u9009\u62E9\u8981\u8D70\u4EE3\u7406\u7684\u4F9B\u5E94\u5546\uFF0C\u6DFB\u52A0\u540E\u624D\u4F1A\u751F\u6548\u3002",
+        proxyVendorAdd: "\u6DFB\u52A0\u4F9B\u5E94\u5546",
+        proxyVendorRemove: "\u5220\u9664",
+        proxyVendorUseGlobal: "\u8DDF\u968F\u5168\u5C40\u4EE3\u7406",
+        proxyVendorProtocol: "\u534F\u8BAE",
+        proxyVendorHost: "\u5730\u5740",
+        proxyVendorHostRequired: "\u8BF7\u586B\u5199\u4EE3\u7406\u5730\u5740",
+        proxyVendorHostPlaceholder: "127.0.0.1",
+        proxyVendorPortLabel: "\u7AEF\u53E3",
+        proxyVendorPortInvalid: "\u7AEF\u53E3\u9700\u4E3A 1\u201365535 \u7684\u6574\u6570",
+        proxyVendorForcedHint: "\u8BE5\u4F9B\u5E94\u5546\u5730\u5740\u5DF2\u6307\u5411\u672C\u673A\u8F6C\u53D1\u7AEF\u53E3\uFF0C\u53E6\u4E00\u5904\u6765\u6E90\uFF08\u4F9B\u5E94\u5546\u914D\u7F6E\u6216 provider \u8868\uFF09\u6CA1\u80FD\u6539\u5199\uFF0C\u8BF7\u68C0\u67E5\u6587\u4EF6\u6743\u9650\u3002",
+        proxyVendorUpstreamMissing: "\u672A\u627E\u5230\u771F\u5B9E\u4E0A\u6E38\u5730\u5740\uFF08\u4F9B\u5E94\u5546\u53EF\u80FD\u5DF2\u88AB\u5220\u9664\uFF09\uFF0C\u5DF2\u8DF3\u8FC7\u3002",
+        headroomUpstreamProxy: "\u4E0A\u6E38\u4EE3\u7406",
+        headroomUpstreamProxyDesc: "headroom \u5B9E\u4F8B\u8FDE\u4E0A\u6E38\u6A21\u578B\u670D\u52A1\u65F6\u8D70\u8FD9\u4E2A\u4EE3\u7406\uFF08\u4E24\u5C42\u4EE3\u7406\u7684\u5185\u5C42\uFF09\u3002\u7559\u7A7A = \u4E0D\u7ECF\u8FC7\u4EE3\u7406\u3002",
+        headroomUpstreamProxyPlaceholder: "http://127.0.0.1:7897",
+        toolNameCheckTitle: "\u5DE5\u5177\u540D\u5408\u89C4\u68C0\u67E5",
+        toolNameCheckDesc: "\u6709\u7684\u6A21\u578B\u670D\u52A1\uFF08\u5982 Meta\uFF09\u9650\u5236 MCP \u5DE5\u5177\u540D 64 \u5B57\u7B26\uFF0C\u8D85\u957F\u4F1A\u8BA9\u6574\u6B21\u8BF7\u6C42\u5931\u8D25\u3002\u8FD9\u91CC\u628A\u8FC7\u957F\u7684\u670D\u52A1\u5668\u952E\u540D\u6362\u6210\u77ED\u540D\uFF08\u6620\u5C04\u5B58\u5728\u914D\u7F6E\u91CC\uFF09\u3002",
+        toolNameCheckBtn: "\u68C0\u67E5\u5E76\u6539\u5199",
+        toolNameCheckRunning: "\u68C0\u67E5\u4E2D\u2026",
+        toolNameCheckFailed: "\u68C0\u67E5\u5931\u8D25",
+        toolNameAuto: "\u542F\u52A8\u65F6\u81EA\u52A8\u6539\u5199",
+        toolNameAutoDesc: "ZCode \u5347\u7EA7\u6216\u63D2\u4EF6\u66F4\u65B0\u4F1A\u628A\u670D\u52A1\u5668\u952E\u540D\u6539\u56DE\u957F\u540D\uFF0C\u5F00\u542F\u65F6\u6BCF\u6B21\u542F\u52A8\u81EA\u52A8\u6539\u77ED\u3002\u5173\u95ED\u540E\u53EA\u80FD\u7528\u4E0A\u9762\u7684\u6309\u94AE\u624B\u52A8\u6267\u884C\u3002",
         tabSync: "\u540C\u6B65",
-        tabImport: "\u5BFC\u5165\u4F1A\u8BDD",
+        tabImport: "\u5BFC\u5165",
         tabDebug: "\u8C03\u8BD5",
         importDesc: "\u628A Codex\u3001Claude Code\u3001dsh\u3001pi \u7684\u5386\u53F2\u4F1A\u8BDD\u590D\u5236\u6210 ZCode \u4EFB\u52A1\u3002\u5BFC\u5165\u662F\u5FEB\u7167\uFF0C\u4E4B\u540E\u6E90\u4F1A\u8BDD\u7684\u53D8\u5316\u4E0D\u4F1A\u518D\u540C\u6B65\u3002",
         importSearch: "\u641C\u7D22\u6807\u9898\u6216\u76EE\u5F55",
@@ -2988,6 +3352,83 @@
         featureComposerProvider: "\u6A21\u578B\u540D\u663E\u793A\u4F9B\u5E94\u5546",
         featureImageCopyDesc: "\u53F3\u952E\u4F1A\u8BDD\u4E2D\u7684\u56FE\u7247\u6216\u70B9\u51FB\u653E\u5927\u7684\u9884\u89C8\u56FE\uFF0C\u53EF\u5C06\u56FE\u7247\u590D\u5236\u5230\u526A\u8D34\u677F\u3002",
         featureTableCopyDesc: "\u8868\u683C\u5DE5\u5177\u6761\u65B0\u589E\u590D\u5236\u8868\u683C\uFF0C\u7C98\u8D34\u8FDB Excel / \u5BCC\u6587\u672C\u7F16\u8F91\u5668\u5373\u4E3A\u5E72\u51C0\u8868\u683C\u3002",
+        featureTranslate: "\u5212\u8BCD\u7FFB\u8BD1",
+        featureTranslateDesc: "\u6309\u4F4F Ctrl \u62D6\u9009\u6587\u5B57\uFF0C\u5728\u9009\u533A\u65C1\u5F39\u51FA\u7FFB\u8BD1\u6D6E\u7A97\uFF1B\u901A\u9053\u3001\u601D\u8003\u7B49\u7EA7\u4E0E\u63D0\u793A\u8BCD\u5728\u9762\u677F\u4E0A\u5207\u6362",
+        tabTranslate: "\u7FFB\u8BD1",
+        translateEngine: "\u7FFB\u8BD1\u670D\u52A1",
+        translateEngineLlm: "AI \u7FFB\u8BD1",
+        translateMtService: "\u673A\u7FFB\u670D\u52A1",
+        translateProvider: "\u4F9B\u5E94\u5546\uFF08LLM \u901A\u9053\uFF09",
+        translateModelLabel: "\u6A21\u578B",
+        translateTitle: "\u7FFB\u8BD1",
+        translatePin: "\u9489\u4F4F\uFF08\u70B9\u51FB\u9762\u677F\u5916\u4E0D\u518D\u5173\u95ED\uFF09",
+        translatePinned: "\u5DF2\u9489\u4F4F",
+        translateUnpinned: "\u5DF2\u53D6\u6D88\u9489\u4F4F",
+        translateHistory: "\u5386\u53F2",
+        translateSettings: "\u6253\u5F00\u7FFB\u8BD1\u8BBE\u7F6E",
+        translateChannelSession: "\u8DDF\u968F\u5F53\u524D\u4F1A\u8BDD",
+        translateChannelLlm: "LLM",
+        translateChannelMt: "\u673A\u7FFB",
+        translateModelEmpty: "\u586B\u5199\u6A21\u578B\u540D",
+        translateThinking: "\u601D\u8003\u7B49\u7EA7",
+        translateThinkingUnsupported: "\u6240\u9009\u6A21\u578B\u4E0D\u652F\u6301\u601D\u8003",
+        translateThinkingFollowSession: "\u601D\u8003\u7B49\u7EA7\uFF08\u8DDF\u968F\u4F1A\u8BDD\u6A21\u578B {model}\uFF09",
+        translateThinking_off: "\u601D\u8003\uFF1A\u5173",
+        translateThinking_minimal: "\u601D\u8003\uFF1A\u6781\u5C11",
+        translateThinking_low: "\u601D\u8003\uFF1A\u4F4E",
+        translateThinking_medium: "\u601D\u8003\uFF1A\u4E2D",
+        translateThinking_high: "\u601D\u8003\uFF1A\u9AD8",
+        translateThinking_xhigh: "\u601D\u8003\uFF1A\u6781\u9AD8",
+        translateThinking_max: "\u601D\u8003\uFF1A\u6700\u9AD8",
+        translateThinking_enabled: "\u601D\u8003\uFF1A\u5F00",
+        translatePrompt: "\u63D0\u793A\u8BCD",
+        translatePromptEdit: "\u7F16\u8F91\u63D0\u793A\u8BCD",
+        translatePromptEditTitle: "\u7F16\u8F91\u63D0\u793A\u8BCD\u9884\u8BBE",
+        translatePromptName: "\u9884\u8BBE\u540D\u79F0",
+        translatePromptHint: "{target} \u4F1A\u88AB\u66FF\u6362\u6210\u76EE\u6807\u8BED\u8A00\uFF1B\u4FDD\u5B58\u540E\u7ACB\u5373\u751F\u6548\uFF1B\u6539\u540D\u79F0\u53E6\u5B58\u4E3A\u65B0\u9884\u8BBE",
+        translatePromptRequired: "\u540D\u79F0\u4E0E\u5185\u5BB9\u90FD\u8981\u586B",
+        translateInputPh: "\u8F93\u5165\u6587\u5B57\uFF0C\u56DE\u8F66\u7FFB\u8BD1",
+        translateToolbarLabel: "\u7FFB\u8BD1",
+        translateToolbarTitle: "\u7FFB\u8BD1\u9009\u4E2D\u7684\u6587\u5B57",
+        translateGo: "\u7FFB\u8BD1",
+        translateCopy: "\u590D\u5236",
+        translateSpeak: "\u6717\u8BFB",
+        translateRetry: "\u91CD\u8BD1",
+        translateShowSource: "\u539F\u6587",
+        translateLoading: "\u7FFB\u8BD1\u4E2D\u2026",
+        translateFailed: "\u7FFB\u8BD1\u5931\u8D25",
+        translateEmpty: "\u6A21\u578B\u6CA1\u6709\u8FD4\u56DE\u5185\u5BB9",
+        translateNoHistory: "\u6682\u65E0\u5386\u53F2",
+        translateUnconfigured: "\u672A\u914D\u7F6E",
+        translateSave: "\u4FDD\u5B58",
+        translateCopied: "\u5DF2\u590D\u5236",
+        translateSaved: "\u5DF2\u4FDD\u5B58",
+        translateMtYoudao: "\u6709\u9053",
+        translateMtBaidu: "\u767E\u5EA6",
+        translateMtCaiyun: "\u5F69\u4E91",
+        translateMtDeepl: "DeepL",
+        translateMtDeeplx: "DeepLX",
+        translateMtNiu: "\u5C0F\u725B",
+        translateMtTencent: "\u817E\u8BAF",
+        translateMtAliyun: "\u963F\u91CC",
+        translateMtVolc: "\u706B\u5C71",
+        translateDesc: "\u5212\u8BCD\u7FFB\u8BD1\u7684\u89E6\u53D1\u65B9\u5F0F\u3001\u76EE\u6807\u8BED\u8A00\u3001\u9762\u677F\u5C3A\u5BF8\u4E0E\u673A\u7FFB\u5BC6\u94A5\uFF1B\u901A\u9053\u548C\u63D0\u793A\u8BCD\u5728\u7FFB\u8BD1\u9762\u677F\u4E0A\u5207\u6362\u3002",
+        translateTrigger: "\u89E6\u53D1\u65B9\u5F0F",
+        translateTriggerCtrlDrag: "\u6309\u4F4F Ctrl \u62D6\u9009",
+        translateTriggerCtrlTap: "\u9009\u4E2D\u540E\u6572\u4E00\u4E0B Ctrl",
+        translateTriggerAltDrag: "\u6309\u4F4F Alt \u62D6\u9009",
+        translateTargetLang: "\u76EE\u6807\u8BED\u8A00",
+        translatePanelWidth: "\u9762\u677F\u5BBD\u5EA6\uFF08px\uFF09",
+        translatePanelHeight: "\u9762\u677F\u6700\u9AD8\u5360\u5C4F\uFF08%\uFF09",
+        translateTheme: "\u9762\u677F\u4E3B\u9898",
+        translateThemeFollow: "\u8DDF\u968F\u7CFB\u7EDF",
+        translateThemeLight: "\u6D45\u8272",
+        translateThemeDark: "\u6DF1\u8272",
+        translateHistoryLimit: "\u5386\u53F2\u6761\u6570\u4E0A\u9650",
+        translateMtCreds: "\u673A\u7FFB\u670D\u52A1\u5BC6\u94A5",
+        translateGetKey: "\u83B7\u53D6\u5BC6\u94A5",
+        translateMtCredsDesc: "\u53EA\u5728\u672C\u5730 ~/.zcode/zcode-translate.json \u91CC\u4FDD\u5B58\uFF1B\u4E0D\u586B\u7684\u901A\u9053\u5728\u4E0B\u62C9\u4E2D\u6807\u6CE8\u201C\u672A\u914D\u7F6E\u201D",
+        translateTest: "\u6D4B\u8BD5\u5F53\u524D\u901A\u9053",
         featureSessionLink: "\u4F1A\u8BDD ID \u663E\u793A\u4E3A\u4EFB\u52A1\u540D\u94FE\u63A5",
         featureSessionLinkDesc: "\u63D0\u95EE\u4E0E\u56DE\u7B54\u91CC\u7684\u4F1A\u8BDD ID\uFF08sess_ / session_ \u5F00\u5934\uFF09\u663E\u793A\u4E3A\u4EFB\u52A1\u540D\uFF0C\u70B9\u51FB\u5207\u6362\u5230\u8BE5\u4F1A\u8BDD\uFF0C\u60AC\u505C\u53EF\u770B\u539F\u59CB ID\u3002",
         featureComposerProviderDesc: "\u6A21\u578B\u540D\u524D\u663E\u793A\u4F9B\u5E94\u5546\u540D\uFF08\u5982 BigModel-Max1 / glm-5.3\uFF09\uFF0C\u533A\u5206\u540C\u540D\u6A21\u578B\u3002",
@@ -3305,8 +3746,33 @@
         proxyScopeDepsDesc: "headroom and rtk installs, update checks and upgrades (pip and GitHub downloads) go through the proxy.",
         proxyScopeSync: "Sync",
         proxyScopeSyncDesc: "WebDAV upload and download go through the proxy.",
+        proxySubSoftware: "Software proxy",
+        proxySubVendor: "Provider proxies",
+        proxyVendorDesc: "Per provider: when on, that provider's model requests hit a local forward port and leave through the chosen proxy; when off, its address stays as-is. Does not change ZCode's global proxy or affect other providers. Leave the proxy address empty to follow the global proxy.",
+        proxyVendorEmpty: "No provider proxies added yet. Use \u201CAdd provider\u201D below to pick a provider; it takes effect once added.",
+        proxyVendorAdd: "Add provider",
+        proxyVendorRemove: "Remove",
+        proxyVendorUseGlobal: "Follow the global proxy",
+        proxyVendorProtocol: "Protocol",
+        proxyVendorHost: "Host",
+        proxyVendorHostRequired: "Enter the proxy host",
+        proxyVendorHostPlaceholder: "127.0.0.1",
+        proxyVendorPortLabel: "Port",
+        proxyVendorPortInvalid: "Port must be an integer from 1 to 65535",
+        proxyVendorForcedHint: "This provider's address already points at the local forward port, but the other source (provider config or the provider table) could not be rewritten \u2014 check file permissions.",
+        proxyVendorUpstreamMissing: "No real upstream found (provider may have been deleted); skipped.",
+        headroomUpstreamProxy: "Upstream proxy",
+        headroomUpstreamProxyDesc: "Used by headroom instances when they call upstream model services (the inner layer of two-layer proxying). Empty = no proxy.",
+        headroomUpstreamProxyPlaceholder: "http://127.0.0.1:7897",
+        toolNameCheckTitle: "Tool name compliance",
+        toolNameCheckDesc: "Some model services (Meta, for example) cap MCP tool names at 64 characters and reject the whole request when exceeded. This shortens over-long server keys (the mapping is saved in the config).",
+        toolNameCheckBtn: "Check and rewrite",
+        toolNameCheckRunning: "Checking\u2026",
+        toolNameCheckFailed: "Check failed",
+        toolNameAuto: "Auto-rewrite on startup",
+        toolNameAutoDesc: "ZCode upgrades and plugin updates can restore long server keys. When on, they are shortened at each startup. When off, only the button above applies the change.",
         tabSync: "Sync",
-        tabImport: "Session import",
+        tabImport: "Import",
         tabDebug: "Debug",
         importDesc: "Copy sessions from Codex, Claude Code, dsh and pi into ZCode tasks. The copy is a snapshot; later changes in the source session are not synced.",
         importSearch: "Search title or folder",
@@ -3663,6 +4129,83 @@
         featureComposerProvider: "Provider in model name",
         featureImageCopyDesc: "Right-click an image in chat or the enlarged preview to copy it to the clipboard.",
         featureTableCopyDesc: "Copy-table button on the table toolbar; pastes into Excel / editors as a clean table.",
+        featureTranslate: "Selection translate",
+        featureTranslateDesc: "Hold Ctrl and drag-select text to translate it in a popup next to the selection; channel, thinking level and prompt switch on the panel",
+        tabTranslate: "Translate",
+        translateEngine: "Translation service",
+        translateEngineLlm: "AI translation",
+        translateMtService: "MT service",
+        translateProvider: "Provider (LLM channel)",
+        translateModelLabel: "Model",
+        translateTitle: "Translate",
+        translatePin: "Pin (keep open when clicking outside)",
+        translatePinned: "Pinned",
+        translateUnpinned: "Unpinned",
+        translateHistory: "History",
+        translateSettings: "Open translate settings",
+        translateChannelSession: "Follow current session",
+        translateChannelLlm: "LLM",
+        translateChannelMt: "Machine translation",
+        translateModelEmpty: "Model name",
+        translateThinking: "Thinking level",
+        translateThinkingUnsupported: "The selected model does not support thinking",
+        translateThinkingFollowSession: "Thinking (follows session model {model})",
+        translateThinking_off: "Thinking: off",
+        translateThinking_minimal: "Thinking: minimal",
+        translateThinking_low: "Thinking: low",
+        translateThinking_medium: "Thinking: medium",
+        translateThinking_high: "Thinking: high",
+        translateThinking_xhigh: "Thinking: xhigh",
+        translateThinking_max: "Thinking: max",
+        translateThinking_enabled: "Thinking: on",
+        translatePrompt: "Prompt",
+        translatePromptEdit: "Edit prompt",
+        translatePromptEditTitle: "Edit prompt preset",
+        translatePromptName: "Preset name",
+        translatePromptHint: "{target} is replaced with the target language; takes effect immediately; renaming saves it as a new preset",
+        translatePromptRequired: "Name and content are both required",
+        translateInputPh: "Type text and press Enter to translate",
+        translateToolbarLabel: "Translate",
+        translateToolbarTitle: "Translate selected text",
+        translateGo: "Translate",
+        translateCopy: "Copy",
+        translateSpeak: "Speak",
+        translateRetry: "Retry",
+        translateShowSource: "Source",
+        translateLoading: "Translating\u2026",
+        translateFailed: "Translation failed",
+        translateEmpty: "The model returned no content",
+        translateNoHistory: "No history yet",
+        translateUnconfigured: "not configured",
+        translateSave: "Save",
+        translateCopied: "Copied",
+        translateSaved: "Saved",
+        translateMtYoudao: "Youdao",
+        translateMtBaidu: "Baidu",
+        translateMtCaiyun: "Caiyun",
+        translateMtDeepl: "DeepL",
+        translateMtDeeplx: "DeepLX",
+        translateMtNiu: "Niu Trans",
+        translateMtTencent: "Tencent",
+        translateMtAliyun: "Aliyun",
+        translateMtVolc: "Volc",
+        translateDesc: "Trigger, target language, panel size and machine-translation keys for selection translate; channel and prompt switch on the panel.",
+        translateTrigger: "Trigger",
+        translateTriggerCtrlDrag: "Hold Ctrl + drag",
+        translateTriggerCtrlTap: "Select, then tap Ctrl",
+        translateTriggerAltDrag: "Hold Alt + drag",
+        translateTargetLang: "Target language",
+        translatePanelWidth: "Panel width (px)",
+        translatePanelHeight: "Panel max height (% of screen)",
+        translateTheme: "Panel theme",
+        translateThemeFollow: "Follow system",
+        translateThemeLight: "Light",
+        translateThemeDark: "Dark",
+        translateHistoryLimit: "History limit",
+        translateMtCreds: "Machine translation keys",
+        translateGetKey: "Get key",
+        translateMtCredsDesc: 'Stored only in the local ~/.zcode/zcode-translate.json; services without keys are marked "not configured" in the dropdown',
+        translateTest: "Test current channel",
         featureSessionLink: "Session ID links",
         featureSessionLinkDesc: "Shows session IDs (sess_ / session_) in chat as task names; click to switch to that session, hover for the raw ID.",
         featureComposerProviderDesc: "Shows the provider before the model name (e.g. BigModel-Max1 / glm-5.3).",
@@ -3956,7 +4499,18 @@
         "vision-read": "Failed to read zcode-vision.json",
         "vision-write": "Failed to write zcode-vision.json",
         "vision-test": "Vision test failed",
+        "translate-invalid": "Invalid translation settings",
+        "translate-write": "Failed to write zcode-translate.json",
+        "translate-too-long": "Selected text is too long",
+        "translate-conn": "Translation channel unavailable: reselect provider/model on the panel",
+        "translate-llm": "LLM translation request failed",
+        "translate-mt": "Machine translation request failed",
+        "translate-test": "Translation channel test failed",
+        "translate-empty": "The translation model returned no text",
         "proxy-invalid": "The proxy must be a URL like http://127.0.0.1:7890, or be empty",
+        "provider-proxy-invalid": "Provider proxy setting is invalid: the proxy must be a URL like http://127.0.0.1:7890 (or empty to follow the global proxy)",
+        "headroom-proxy-invalid": "The headroom upstream proxy must be a URL like http://127.0.0.1:7890, or be empty",
+        "tool-name-check": "Tool name compliance check failed",
         "proxy-not-set": "Set the proxy address first",
         "rtk-invalid": "Invalid rtk config",
         "rtk-update": "Failed to check for rtk updates (GitHub Releases unreachable? Set a proxy in the Proxy tab)",
@@ -4053,7 +4607,48 @@
     document.body.append(wrap);
     toastTimer = setTimeout(() => wrap.remove(), v.ms);
   }
-  function openDialog({ title, description, onMount, onClose, width = "sm:max-w-md", overlay = "dim", draggable = false, posKey = "", dismissOnOutside = true, bodyClass = "", closable = false }) {
+  function showCornerCard({ position = "br", title, desc, actions = [], kind = "info" } = {}) {
+    cornerCards.get(position)?.remove();
+    const glyph = { success: "\u2713", warning: "\uFF01", error: "\u2715", info: "\u24D8" }[kind] || "";
+    const pos = CORNER_POS[position] || CORNER_POS.br;
+    const card = h("div", {
+      class: "zcodepro-corner-card",
+      "data-zcodepro-corner": position,
+      style: `position:fixed;${pos}z-index:2147483000;max-width:360px;padding:12px;border-radius:12px;border:1px solid var(--color-border, #3f3f46);background:var(--color-popover, #1f1f23);color:var(--color-foreground, #eee);font-size:13px;line-height:1.5;box-shadow:0 4px 24px rgba(0,0,0,.4);animation:zcodepro-fade-in .18s ease;`
+    });
+    const head = h("div", { style: "display:flex;align-items:flex-start;gap:6px;font-weight:600;margin-bottom:4px;" });
+    if (glyph) head.append(h("span", { style: "flex:none;" }, glyph));
+    head.append(h("span", { style: "flex:1;min-width:0;" }, String(title ?? "")));
+    const close = h("button", {
+      type: "button",
+      "aria-label": "\u5173\u95ED",
+      style: "flex:none;cursor:pointer;border:none;background:transparent;color:inherit;opacity:.6;font-size:14px;line-height:1;padding:0 2px;",
+      onclick: () => closeCornerCard(position)
+    }, "\xD7");
+    head.append(close);
+    card.append(head);
+    if (desc) card.append(h("div", { style: "opacity:.85;white-space:pre-wrap;" }, String(desc)));
+    const usable = actions.filter((a) => a && typeof a.onClick === "function");
+    if (usable.length) {
+      const row = h("div", { style: "display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;" });
+      for (const a of usable) {
+        row.append(h("button", {
+          type: "button",
+          style: a.primary ? "cursor:pointer;border:none;border-radius:8px;padding:5px 12px;background:var(--color-brand, #4a7cf7);color:#fff;font-size:12px;" : "cursor:pointer;border-radius:8px;padding:5px 12px;background:transparent;border:1px solid var(--color-border, #666);color:inherit;font-size:12px;",
+          onclick: () => a.onClick()
+        }, String(a.label ?? "")));
+      }
+      card.append(row);
+    }
+    document.body.append(card);
+    cornerCards.set(position, card);
+    return { close: () => closeCornerCard(position) };
+  }
+  function closeCornerCard(position = "br") {
+    cornerCards.get(position)?.remove();
+    cornerCards.delete(position);
+  }
+  function openDialog({ title, description, onMount, onClose, width = "sm:max-w-md", overlay = "dim", draggable = false, posKey = "", resizable = false, sizeKey = "", dismissOnOutside = true, bodyClass = "", closable = false }) {
     const L = t();
     const prevActive = document.activeElement;
     let cleanupDrag = null;
@@ -4069,6 +4664,7 @@
       dialogStack = dialogStack.filter((e) => e !== overlayEl);
       document.removeEventListener("keydown", onKey);
       if (cleanupDrag) cleanupDrag();
+      if (cleanupResize) cleanupResize();
       if (prevActive && prevActive.focus) {
         try {
           prevActive.focus();
@@ -4125,6 +4721,7 @@
     const body = h("div", { class: "zcodepro-dialog-body " + (bodyClass || "mt-4") });
     content.append(body);
     let restorePos = null;
+    let cleanupResize = null;
     if (draggable) {
       titleEl.style.cursor = "move";
       titleEl.style.userSelect = "none";
@@ -4213,6 +4810,71 @@
         window.removeEventListener("resize", reclamp);
       };
       restorePos = restore;
+    }
+    if (resizable) {
+      const MIN_W = 320;
+      const edges = [
+        ["w", "left:0;top:10px;bottom:10px;width:6px;cursor:ew-resize"],
+        ["e", "right:0;top:10px;bottom:10px;width:6px;cursor:ew-resize"]
+      ];
+      const baseMarginLeft = () => parseFloat(getComputedStyle(content).marginLeft) || 0;
+      const edgeEls = edges.map(([dir, css]) => {
+        const el = h("div", { class: "zcodepro-dialog-edge", "data-dir": dir, "aria-hidden": "true", style: css });
+        el.addEventListener("mousedown", (e) => {
+          if (e.button !== 0) return;
+          e.preventDefault();
+          e.stopPropagation();
+          const r = content.getBoundingClientRect();
+          const sx = e.clientX;
+          const sw = r.width;
+          const sl = r.left;
+          const hasW = dir.includes("w");
+          const ml0 = baseMarginLeft();
+          let w = sw;
+          const onMove = (ev) => {
+            const dx = ev.clientX - sx;
+            if (hasW) {
+              const clamped = Math.max(dx, MIN_W - sw);
+              const newLeft = Math.max(8, sl + clamped);
+              w = sw + (sl - newLeft);
+              w = Math.max(MIN_W, Math.min(w, window.innerWidth - newLeft - 8));
+              const shift = newLeft - sl;
+              content.style.marginLeft = ml0 + shift + "px";
+            } else {
+              w = Math.max(MIN_W, Math.min(sw + dx, window.innerWidth - sl - 8));
+            }
+            content.style.width = w + "px";
+            content.style.maxWidth = "none";
+          };
+          const onUp = () => {
+            document.removeEventListener("mousemove", onMove);
+            document.removeEventListener("mouseup", onUp);
+            if (sizeKey) {
+              try {
+                localStorage.setItem("zcodepro-dialog-size:" + sizeKey, JSON.stringify({ w: Math.round(w) }));
+              } catch {
+              }
+            }
+          };
+          document.addEventListener("mousemove", onMove);
+          document.addEventListener("mouseup", onUp);
+        });
+        return el;
+      });
+      content.style.position = "relative";
+      content.append(...edgeEls);
+      if (sizeKey) {
+        try {
+          const saved = JSON.parse(localStorage.getItem("zcodepro-dialog-size:" + sizeKey) || "null");
+          if (saved && Number.isFinite(saved.w)) {
+            content.style.width = Math.max(MIN_W, Math.min(saved.w, window.innerWidth - 16)) + "px";
+            content.style.maxWidth = "none";
+          }
+        } catch {
+        }
+      }
+      cleanupResize = () => {
+      };
     }
     document.addEventListener("keydown", onKey, true);
     document.body.append(overlayEl);
@@ -4473,6 +5135,8 @@
     .zcodepro-toast-info .zcodepro-toast-glyph { color: var(--color-foreground-subtle, #999); }
     /* \u5F39\u7A97\u906E\u7F69/\u9762\u677F\u515C\u5E95\uFF1A\u4E0D\u4F9D\u8D56\u5E94\u7528 Tailwind \u7C7B\u662F\u5426\u4ECD\u5B58\u5728\uFF1B\u4E3B\u9898\u8272\u8D70 --color-* \u53D8\u91CF\uFF0C\u7F3A\u5931\u65F6\u56DE\u9000\u5B57\u9762\u91CF */
     .zcodepro-overlay { background-color: rgba(0, 0, 0, 0.6); }
+    /* \u5F39\u7A97\u7F29\u653E\u70ED\u533A\uFF1A\u56DB\u8FB9\u56DB\u89D2\u900F\u660E\u7EC6\u6761\uFF0C\u6CA1\u6709\u53EF\u89C1\u56FE\u6807 */
+    .zcodepro-dialog-edge { position: absolute; touch-action: none; z-index: 5; }
     .zcodepro-overlay[data-overlay="none"] { background-color: transparent; }
     .zcodepro-card {
       background-color: var(--color-popover, #fff);
@@ -4534,6 +5198,36 @@
       padding: 2px;
       border-radius: 9999px;
       background-color: color-mix(in oklab, var(--color-foreground, #888) 8%, transparent);
+    }
+    /* \u4E00\u7EA7 tab \u680F\u53EF\u6A2A\u5411\u6EDA\u52A8\uFF1Atab \u591A\u3001\u5F39\u7A97\u7A84\u65F6\u4E0D\u88AB\u88C1\u6389\u3002
+       \u6EDA\u52A8\u6761\u9ED8\u8BA4\u9690\u85CF\uFF08\u4FDD\u6301\u80F6\u56CA\u5916\u89C2\uFF09\uFF0C\u4F46\u5185\u5BB9\u6EA2\u51FA\u65F6\u9F20\u6807\u6EDA\u8F6E\u53EF\u6A2A\u5411\u6EDA\u3001
+       \u6309\u4F4F tab \u53EF\u62D6\u52A8\u6EDA\u52A8\uFF08\u89C1 settings-dialog.js \u7684 bindTabDragScroll\uFF09\u3002
+       \u8FB9\u7F18\u6E10\u9690\u53EA\u5728\u201C\u786E\u5B9E\u8FD8\u6709\u5185\u5BB9\u88AB\u6321\u4F4F\u201D\u65F6\u7531 JS \u52A0 data-overflow \u624D\u51FA\u73B0\uFF0C
+       \u5168\u90E8\u80FD\u663E\u793A\u65F6\u4E0D\u52A0\u4EFB\u4F55\u906E\u7F69 */
+    .zcodepro-tablist.zcodepro-tablist-scroll {
+      max-width: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: none;          /* Firefox */
+      -ms-overflow-style: none;       /* \u65E7 Edge */
+      cursor: grab;
+      user-select: none;              /* \u62D6\u52A8\u65F6\u4E0D\u8981\u9009\u4E2D tab \u6587\u5B57 */
+    }
+    .zcodepro-tablist.zcodepro-tablist-scroll[data-dragging="1"] { cursor: grabbing; }
+    .zcodepro-tablist.zcodepro-tablist-scroll::-webkit-scrollbar { display: none; }
+    .zcodepro-tablist.zcodepro-tablist-scroll > * { flex-shrink: 0; }
+    /* \u5185\u5BB9\u6EA2\u51FA\u65F6\u4E24\u7AEF\u6E10\u9690\uFF1B\u6EDA\u5230\u67D0\u4E00\u7AEF\u65F6\u8BE5\u7AEF\u4E0D\u518D\u6E10\u9690\uFF08\u8BE5\u4FA7\u5DF2\u65E0\u5185\u5BB9\uFF09 */
+    .zcodepro-tablist.zcodepro-tablist-scroll[data-overflow="1"] {
+      -webkit-mask-image: linear-gradient(to right, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
+      mask-image: linear-gradient(to right, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
+    }
+    .zcodepro-tablist.zcodepro-tablist-scroll[data-overflow="start"] {
+      -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 14px), transparent 100%);
+      mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 14px), transparent 100%);
+    }
+    .zcodepro-tablist.zcodepro-tablist-scroll[data-overflow="end"] {
+      -webkit-mask-image: linear-gradient(to right, transparent 0, #000 14px, #000 100%);
+      mask-image: linear-gradient(to right, transparent 0, #000 14px, #000 100%);
     }
     .zcodepro-tab {
       display: inline-flex;
@@ -4973,9 +5667,194 @@
     .zcodepro-pin-collapsed > :is(ul, div):has(li[data-task-item-key]) { display: none !important; }
     /* \u6298\u53E0\u540E\u53BB\u6389\u6807\u9898\u81EA\u5E26\u7684\u5E95\u90E8\u7559\u767D\uFF0C\u4E0E\u4E0B\u4E00\u5206\u533A\u7684\u95F4\u9694\u548C\u5176\u4ED6\u5206\u533A\u8282\u594F\u4E00\u81F4 */
     .zcodepro-pin-collapsed .zcodepro-pin-head { padding-bottom: 0; }
+    /* \u5212\u8BCD\u7FFB\u8BD1\u9762\u677F\uFF1Afixed \u6D6E\u5C42\uFF08\u53F3\u952E\u83DC\u5355\u540C\u7EA7\u7684\u6700\u9AD8\u5C42\uFF09\uFF0C\u914D\u8272\u5168\u8D70\u4E3B\u9898\u53D8\u91CF */
+    .zcodepro-translate-panel {
+      position: fixed;
+      z-index: 2147483000;
+      display: flex;
+      flex-direction: column;
+      background: var(--color-popover, #fff);
+      color: var(--color-foreground, #222);
+      border: 1px solid var(--color-border, rgba(0, 0, 0, 0.12));
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+      overflow: visible; /* \u5C16\u89D2\u63A2\u51FA\u9762\u677F\u8FB9\u754C */
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    /* \u9762\u677F\u5185\u6EDA\u52A8\u533A\u81EA\u5DF1\u88C1\u5207\uFF08\u9762\u677F\u4E0D\u80FD overflow:hidden\uFF0C\u5426\u5219\u5C16\u89D2\u88AB\u5207\u6389\uFF09 */
+    /* \u9762\u677F\u5185\u7684\u5757\u5143\u7D20\u7528\u76F8\u5BF9\u5B9A\u4F4D\uFF08\u7ED9\u5C16\u89D2\u4E0E\u7F29\u653E\u624B\u67C4\u505A\u5B9A\u4F4D\u53C2\u7167\uFF09\u3002
+       \u5FC5\u987B\u6392\u9664\u540C\u6837\u662F\u7EDD\u5BF9\u5B9A\u4F4D\u7684\u5B50\u5143\u7D20\uFF1A\u5C16\u89D2\u4E0E\u7F29\u653E\u70ED\u533A\u82E5\u88AB\u8FD9\u6761\u8986\u76D6\u6210
+       relative \u4F1A\u6389\u8FDB\u666E\u901A\u6D41\u3001\u8DD1\u5230\u9762\u677F\u5DE6\u4E0B\u89D2 */
+    .zcodepro-translate-panel > :not(.zcodepro-tr-arrow):not(.zcodepro-tr-edge) { position: relative; }
+    /* \u6307\u5411\u9009\u4E2D\u6587\u5B57\u7684\u5C16\u89D2\uFF1A--tr-arrow-x \u7531 positionPanel \u6309\u9009\u533A\u4E2D\u5FC3\u53CD\u7B97\u3002
+       \u5916\u5C42\u753B\u63CF\u8FB9\u8272\u4E09\u89D2\u3001after \u753B\u9762\u677F\u5E95\u8272\u4E09\u89D2\uFF0C\u53E0\u51FA\u5E26\u8FB9\u6846\u7684\u5C16\u89D2 */
+    .zcodepro-tr-arrow {
+      position: absolute;
+      width: 0;
+      height: 0;
+      left: var(--tr-arrow-x, 50%);
+      transform: translateX(-50%);
+      pointer-events: none;
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+    }
+    .zcodepro-tr-arrow::after {
+      content: '';
+      position: absolute;
+      left: -7px;
+      border-left: 7px solid transparent;
+      border-right: 7px solid transparent;
+    }
+    /* \u9762\u677F\u5728\u9009\u533A\u4E0A\u65B9\uFF1A\u5C16\u89D2\u8D34\u9762\u677F\u5E95\u8FB9\u3001\u671D\u4E0B */
+    .zcodepro-translate-panel[data-placement="top"] .zcodepro-tr-arrow {
+      bottom: -8px;
+      border-top: 8px solid var(--color-border, rgba(0, 0, 0, 0.12));
+    }
+    .zcodepro-translate-panel[data-placement="top"] .zcodepro-tr-arrow::after {
+      top: -9px;
+      border-top: 7px solid var(--color-popover, #fff);
+    }
+    /* \u9762\u677F\u5728\u9009\u533A\u4E0B\u65B9\uFF1A\u5C16\u89D2\u8D34\u9762\u677F\u9876\u8FB9\u3001\u671D\u4E0A */
+    .zcodepro-translate-panel[data-placement="bottom"] .zcodepro-tr-arrow {
+      top: -8px;
+      border-bottom: 8px solid var(--color-border, rgba(0, 0, 0, 0.12));
+    }
+    .zcodepro-translate-panel[data-placement="bottom"] .zcodepro-tr-arrow::after {
+      top: 1px;
+      border-bottom: 7px solid var(--color-popover, #fff);
+    }
+    /* \u624B\u52A8\u62D6\u52A8\u8FC7\uFF1A\u5C16\u89D2\u4E0D\u518D\u6307\u5411\u9009\u533A\uFF0C\u9690\u85CF */
+    .zcodepro-translate-panel[data-dragged] .zcodepro-tr-arrow { display: none; }
+    /* \u7F29\u653E\u70ED\u533A\uFF1A\u56DB\u8FB9\u56DB\u89D2\u5404\u4E00\u6761\u900F\u660E\u7684\u7EDD\u5BF9\u5B9A\u4F4D\u7EC6\u6761\uFF0C\u6CA1\u6709\u53EF\u89C1\u56FE\u6807\u3002
+       \u5177\u4F53\u4F4D\u7F6E\u4E0E\u5149\u6807\u7531\u5185\u8054\u6837\u5F0F\u6309\u65B9\u5411\u7ED9\u51FA\uFF08\u89C1 translate-panel.js \u7684 edges \u8868\uFF09\u3002
+       \u653E\u5728\u6700\u4E0A\u5C42\uFF08z-index:3\uFF09\u4EE5\u4FDD\u8BC1\u8FB9\u7F18\u4F18\u5148\u4E8E\u5185\u5BB9\u63A5\u6536\u9F20\u6807 */
+    .zcodepro-tr-edge {
+      position: absolute;
+      touch-action: none;
+      z-index: 3;
+    }
+    /* \u8BBE\u4E86\u50CF\u7D20\u9AD8\u5EA6\u540E\uFF0C\u6B63\u6587\u533A\u81EA\u5DF1\u6EDA\u52A8 */
+    .zcodepro-translate-panel[style*="height:"] .zcodepro-tr-body { overflow: auto; }
+    /* overflow:visible \u540E\u5706\u89D2\u4E0D\u518D\u88AB\u7236\u7EA7\u88C1\u5207\uFF1A\u9996\u5C3E\u5B50\u5143\u7D20\u5404\u81EA\u8865\u5706\u89D2\uFF0811px = 12px \u51CF\u53BB 1px \u8FB9\u6846\uFF09 */
+    .zcodepro-translate-panel > .zcodepro-tr-head { border-top-left-radius: 11px; border-top-right-radius: 11px; }
+    .zcodepro-translate-panel > .zcodepro-tr-body { border-bottom-left-radius: 11px; border-bottom-right-radius: 11px; }
+    /* flex \u5B50\u9879\u8981\u80FD\u6536\u7F29\uFF0C\u5426\u5219 body \u7684 overflow:auto \u4E0D\u8D77\u4F5C\u7528\u3001\u9AD8\u5185\u5BB9\u6491\u7834 max-height */
+    .zcodepro-tr-body { min-height: 0; }
+    /* \u9762\u677F\u4E3B\u9898\uFF1Adata-theme=light/dark \u5728\u9762\u677F\u6839\u4E0A\u8986\u76D6\u4E3B\u9898\u53D8\u91CF\uFF08follow \u4E0D\u8BBE\uFF0C\u8DDF\u968F\u5BBF\u4E3B\uFF09 */
+    .zcodepro-translate-panel[data-theme="light"] {
+      --color-popover: #fff; --color-foreground: #222; --color-border: rgba(0, 0, 0, 0.12);
+      --color-muted: rgba(0, 0, 0, 0.04); --color-muted-foreground: #777; --color-accent: rgba(0, 0, 0, 0.08);
+      --color-input: #fff; --color-primary: #2563eb; --color-primary-foreground: #fff; --color-destructive: #dc2626;
+    }
+    .zcodepro-translate-panel[data-theme="dark"] {
+      --color-popover: #202124; --color-foreground: #e8eaed; --color-border: rgba(255, 255, 255, 0.14);
+      --color-muted: rgba(255, 255, 255, 0.06); --color-muted-foreground: #9aa0a6; --color-accent: rgba(255, 255, 255, 0.1);
+      --color-input: #2a2b2e; --color-primary: #4c8dff; --color-primary-foreground: #fff; --color-destructive: #f2635f;
+    }
+    .zcodepro-tr-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 5px 8px 5px 12px;
+      cursor: move;
+      user-select: none;
+      border-bottom: 1px solid var(--color-border, rgba(0, 0, 0, 0.1));
+      background: var(--color-muted, rgba(0, 0, 0, 0.04));
+    }
+    .zcodepro-tr-title { font-weight: 600; font-size: 12px; }
+    .zcodepro-tr-headbtns { display: flex; gap: 2px; }
+    .zcodepro-tr-ibtn {
+      border: none;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .zcodepro-tr-ibtn:hover { background: var(--color-accent, rgba(0, 0, 0, 0.08)); }
+    /* \u6309\u94AE\u5185\u56FE\u6807\u4E0E\u6587\u5B57\u5C45\u4E2D\u5BF9\u9F50\uFF08lucide \u63CF\u8FB9\u56FE\u6807\u7EDF\u4E00\u7EAF\u8272\uFF09 */
+    .zcodepro-tr-ibtn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .zcodepro-tr-ibtn svg { display: block; }
+    /* \u5386\u53F2\u6761\u76EE\u7684\u7C7B\u578B\u56FE\u6807\u8DDF\u6587\u5B57\u57FA\u7EBF\u5BF9\u9F50 */
+    .zcodepro-tr-histtext { display: inline-flex; align-items: center; gap: 4px; }
+    .zcodepro-tr-ibtn-primary { background: var(--color-primary, #2563eb); color: var(--color-primary-foreground, #fff); }
+    .zcodepro-tr-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 10px;
+      border-bottom: 1px solid var(--color-border, rgba(0, 0, 0, 0.1));
+    }
+    .zcodepro-tr-select, .zcodepro-tr-input {
+      height: 26px;
+      border: 1px solid var(--color-border, rgba(0, 0, 0, 0.15));
+      background: var(--color-input, #fff);
+      color: inherit;
+      border-radius: 7px;
+      padding: 0 6px;
+      font-size: 12px;
+      min-width: 0;
+    }
+    .zcodepro-tr-select { max-width: 220px; }
+    .zcodepro-tr-textarea {
+      width: 100%;
+      border: 1px solid var(--color-border, rgba(0, 0, 0, 0.15));
+      background: var(--color-input, #fff);
+      color: inherit;
+      border-radius: 8px;
+      padding: 6px 8px;
+      font-size: 12px;
+      resize: vertical;
+    }
+    .zcodepro-tr-inputrow { display: flex; gap: 6px; padding: 8px 10px 0; }
+    .zcodepro-tr-inputrow .zcodepro-tr-input { flex: 1; height: 28px; }
+    .zcodepro-tr-body { padding: 10px; overflow: auto; flex: 1; min-height: 48px; }
+    .zcodepro-tr-loading { color: var(--color-muted-foreground, #888); }
+    .zcodepro-tr-err { color: var(--color-destructive, #dc2626); }
+    .zcodepro-tr-wordrow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .zcodepro-tr-word { font-size: 15px; font-weight: 600; }
+    .zcodepro-tr-phon { color: var(--color-muted-foreground, #777); font-size: 12px; }
+    .zcodepro-tr-defs { margin-top: 4px; }
+    .zcodepro-tr-pos { display: inline-block; margin-right: 6px; color: var(--color-muted-foreground, #777); font-style: italic; font-size: 12px; }
+    .zcodepro-tr-example {
+      border-left: 2px solid var(--color-border, rgba(0, 0, 0, 0.15));
+      padding-left: 8px;
+      margin: 6px 0 0;
+      color: var(--color-muted-foreground, #666);
+      font-size: 12px;
+    }
+    .zcodepro-tr-example-dst { margin-top: 2px; }
+    .zcodepro-tr-forms { margin-top: 6px; color: var(--color-muted-foreground, #777); font-size: 12px; }
+    .zcodepro-tr-out { white-space: pre-wrap; word-break: break-word; }
+    .zcodepro-tr-details summary { cursor: pointer; color: var(--color-muted-foreground, #888); font-size: 12px; }
+    .zcodepro-tr-src-text { color: var(--color-muted-foreground, #888); font-size: 12px; margin-top: 4px; white-space: pre-wrap; }
+    .zcodepro-tr-actions { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
+    .zcodepro-tr-meta { color: var(--color-muted-foreground, #888); font-size: 12px; margin-right: auto; }
+    .zcodepro-tr-hint { margin-top: 6px; color: var(--color-muted-foreground, #888); font-size: 12px; }
+    .zcodepro-tr-empty { color: var(--color-muted-foreground, #888); }
+    .zcodepro-tr-histitem {
+      display: flex;
+      gap: 8px;
+      padding: 4px 6px;
+      border-radius: 6px;
+      cursor: pointer;
+      align-items: baseline;
+    }
+    .zcodepro-tr-histitem:hover { background: var(--color-accent, rgba(0, 0, 0, 0.06)); }
+    .zcodepro-tr-histtime { color: var(--color-muted-foreground, #999); font-size: 11px; flex-shrink: 0; }
+    .zcodepro-tr-histtext { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   `));
   }
-  var toastTimer, TOAST_KINDS, overlayClass, overlayClassBare, contentClass, dialogStack;
+  var toastTimer, TOAST_KINDS, cornerCards, CORNER_POS, overlayClass, overlayClassBare, contentClass, dialogStack;
   var init_ui = __esm({
     "src/inject/ui.js"() {
       init_core();
@@ -4985,6 +5864,13 @@
         warning: { name: "warning", glyph: "\uFF01", ms: 3600 },
         error: { name: "error", glyph: "\u2715", ms: 5e3 },
         info: { name: "info", glyph: "\u24D8", ms: 2600 }
+      };
+      cornerCards = /* @__PURE__ */ new Map();
+      CORNER_POS = {
+        bl: "left:16px;bottom:16px;",
+        br: "right:16px;bottom:16px;",
+        tl: "left:16px;top:16px;",
+        tr: "right:16px;top:16px;"
       };
       overlayClass = "fixed inset-0 isolate z-50 flex items-start justify-center bg-black/60 supports-backdrop-filter:backdrop-blur-xs duration-100 p-4 platform-linux-desktop:top-12";
       overlayClassBare = "fixed inset-0 isolate z-50 flex items-start justify-center duration-100 p-4 platform-linux-desktop:top-12";
@@ -5139,8 +6025,8 @@
     const hit = activeIdsCache.get(key);
     if (hit && hit.pending) return hit.pending;
     if (!fresh && hit && now - hit.doneAt < ACTIVE_IDS_TTL_MS) return Promise.resolve(hit.ids);
-    const services = findServices();
-    const ts = services && services.zcodeTaskService;
+    const services2 = findServices();
+    const ts = services2 && services2.zcodeTaskService;
     if (!ts || typeof ts.listActiveTaskIds !== "function") return Promise.resolve(null);
     const one = (w) => new Promise((resolve) => {
       const timer = setTimeout(() => resolve([]), ACTIVE_IDS_TIMEOUT_MS);
@@ -5158,8 +6044,8 @@
     return pending;
   }
   async function authoritativeIdle(ws) {
-    const services = findServices();
-    const ts = services && services.zcodeTaskService;
+    const services2 = findServices();
+    const ts = services2 && services2.zcodeTaskService;
     if (!ts || typeof ts.listActiveTaskIds !== "function") return null;
     try {
       const base = String(ws).replace(/[\\/]+$/, "");
@@ -5356,8 +6242,8 @@
       let hit = null;
       try {
         const res = await rpc("/projects-v2").catch(() => null);
-        const services = findServices();
-        const ts = services && services.zcodeTaskService;
+        const services2 = findServices();
+        const ts = services2 && services2.zcodeTaskService;
         if (res && res.ok && res.available && ts && typeof ts.listActiveTaskIds === "function") {
           hit = false;
           const projPaths = /* @__PURE__ */ new Set();
@@ -5849,9 +6735,9 @@
     switchTo: () => switchTo
   });
   function loadHotkeys() {
-    return getConfig(true).then((cfg) => {
-      featureOn = !(cfg.features && cfg.features.sessionSwitch === false);
-      const sc = cfg && cfg.shortcuts;
+    return getConfig(true).then((cfg2) => {
+      featureOn = !(cfg2.features && cfg2.features.sessionSwitch === false);
+      const sc = cfg2 && cfg2.shortcuts;
       if (sc && typeof sc === "object") {
         for (const k of Object.keys(DEFAULT_SHORTCUTS)) {
           if (typeof sc[k] === "string" && /^[a-z0-9]$/.test(sc[k])) hotkeys[k] = sc[k];
@@ -6172,8 +7058,8 @@
     visibleCount = INITIAL_COUNT;
     highlight = 0;
     popupList = null;
-    const cfg = await getConfig().catch(() => null);
-    aliasesCache = cfg && cfg.aliases && typeof cfg.aliases === "object" ? cfg.aliases : {};
+    const cfg2 = await getConfig().catch(() => null);
+    aliasesCache = cfg2 && cfg2.aliases && typeof cfg2.aliases === "object" ? cfg2.aliases : {};
     if (mode === "attention") await fetchMissingTitles(attentionList()).catch(() => {
     });
     popupList = activeList();
@@ -6294,8 +7180,8 @@
       e.preventDefault();
       e.stopImmediatePropagation();
       void (async () => {
-        const cfg = await getConfig();
-        if (cfg.features && cfg.features.sessionSwitch === false) return;
+        const cfg2 = await getConfig();
+        if (cfg2.features && cfg2.features.sessionSwitch === false) return;
         if (k === hotkeys.switchLast) {
           if (e.repeat) return;
           closePopup(false);
@@ -7308,7 +8194,7 @@
       e.stopPropagation();
       hideMenu();
     };
-    const onKeyDown = (e) => {
+    const onKeyDown2 = (e) => {
       if (e.key !== "Escape") return;
       e.preventDefault();
       hideMenu();
@@ -7322,7 +8208,7 @@
       window.removeEventListener("resize", hideMenu);
       document.removeEventListener("scroll", hideMenu, true);
       document.removeEventListener("pointerdown", onPointerDown, true);
-      document.removeEventListener("keydown", onKeyDown, true);
+      document.removeEventListener("keydown", onKeyDown2, true);
       hideMenu = () => {
       };
     };
@@ -7330,7 +8216,7 @@
     window.addEventListener("resize", hideMenu);
     document.addEventListener("scroll", hideMenu, true);
     document.addEventListener("pointerdown", onPointerDown, true);
-    document.addEventListener("keydown", onKeyDown, true);
+    document.addEventListener("keydown", onKeyDown2, true);
   }
   async function fetchImageBlob(img) {
     const src = img.currentSrc || img.src || "";
@@ -7431,10 +8317,10 @@
   function startImageMenu() {
     if (typeof window === "undefined") return;
     if (typeof navigator.clipboard?.write !== "function" || typeof window.ClipboardItem === "undefined") return;
-    let enabled16 = true;
+    let enabled17 = true;
     const refresh = () => {
       void getConfig().then((c) => {
-        enabled16 = !(c.features && c.features.imageCopy === false);
+        enabled17 = !(c.features && c.features.imageCopy === false);
       });
     };
     refresh();
@@ -7443,7 +8329,7 @@
       const img = copyTargetOf(e.target, e.clientX, e.clientY);
       if (!img) return;
       e.preventDefault();
-      if (enabled16) showMenu(e.clientX, e.clientY, img);
+      if (enabled17) showMenu(e.clientX, e.clientY, img);
       refresh();
     }, true);
   }
@@ -7475,20 +8361,20 @@
     sync3();
     return h("div", { class: "flex flex-col gap-1" }, sel, input);
   }
-  function providerOptionsOf(providers, L) {
+  function providerOptionsOf(providers2, L) {
     return [
       { value: "", label: L.titleGenProviderNone },
       { value: "session", label: L.titleGenProviderSession },
-      ...providers.map((p) => ({ value: p.id, label: p.name }))
+      ...providers2.map((p) => ({ value: p.id, label: p.name }))
     ];
   }
-  function modelOptionsOf(providerValue, providers, { followSession = false, followSessionLabel = "" } = {}) {
+  function modelOptionsOf(providerValue, providers2, { followSession = false, followSessionLabel = "" } = {}) {
     const v = (providerValue || "").trim();
-    const cur = providers.find((p) => p.id === v);
+    const cur = providers2.find((p) => p.id === v);
     if (cur) return cur.models.map((m) => ({ value: m, label: m }));
     if (v === "session") {
       const head = followSession && followSessionLabel ? [{ value: "", label: followSessionLabel }] : [];
-      return [...head, ...[...new Set(providers.flatMap((p) => p.models))].map((m) => ({ value: m, label: m }))];
+      return [...head, ...[...new Set(providers2.flatMap((p) => p.models))].map((m) => ({ value: m, label: m }))];
     }
     return [];
   }
@@ -7498,9 +8384,74 @@
     if (v === "") return L.titleGenModelManualHint;
     return L.titleGenModelHint;
   }
-  function isManualConn(providerValue, providers) {
+  function isManualConn(providerValue, providers2) {
     const v = (providerValue || "").trim();
-    return v === "" || v !== "session" && !providers.some((p) => p.id === v);
+    return v === "" || v !== "session" && !providers2.some((p) => p.id === v);
+  }
+
+  // src/inject/thinking-levels.js
+  function thinkingLabel(level, L) {
+    const key = "translateThinking_" + level;
+    return L[key] || level;
+  }
+  function thinkingVariantsOf(providers2, providerId, model) {
+    if (!providerId || providerId === "session") {
+      const m = (model || "").trim();
+      if (!m) return null;
+      for (const p of providers2 || []) {
+        const rr2 = p && p.modelReasoning ? p.modelReasoning[m] : null;
+        if (rr2 && Array.isArray(rr2.variants) && rr2.variants.length) {
+          return { variants: rr2.variants.slice(), defaultVariant: rr2.defaultVariant || rr2.variants[0], supported: true };
+        }
+      }
+      return null;
+    }
+    const entry = (providers2 || []).find((p) => p && p.id === providerId);
+    const effModel = model || (entry && Array.isArray(entry.models) ? entry.models[0] : "");
+    const rr = entry && effModel ? entry.modelReasoning?.[effModel] : null;
+    if (rr && Array.isArray(rr.variants) && rr.variants.length) {
+      return { variants: rr.variants.slice(), defaultVariant: rr.defaultVariant || rr.variants[0], supported: true };
+    }
+    if (entry && effModel) return { variants: [], defaultVariant: "off", supported: false };
+    return null;
+  }
+  var ALL_THINKING_VARIANTS = ["off", "minimal", "low", "medium", "high", "xhigh", "max"];
+  var STRENGTH_ORDER = ["off", "enabled", "minimal", "low", "medium", "high", "xhigh", "max"];
+  var strengthOf = (v) => {
+    const i = STRENGTH_ORDER.indexOf(v);
+    return i >= 0 ? i : 3;
+  };
+  function adaptThinking(wanted, variants) {
+    const list = Array.isArray(variants) ? variants.filter(Boolean) : [];
+    if (!list.length) return "off";
+    if (!wanted || list.includes(wanted)) return wanted || list[0];
+    if (wanted === "off") return list.includes("off") ? "off" : list[0];
+    const w = strengthOf(wanted);
+    const below = list.filter((v) => strengthOf(v) <= w).sort((a, b) => strengthOf(b) - strengthOf(a))[0];
+    if (below) return below;
+    return list.slice().sort((a, b) => strengthOf(a) - strengthOf(b))[0];
+  }
+  function resolveThinkingOptions(providers2, channel, sessionInfo2) {
+    const ch = channel || {};
+    const isSession = !ch.provider || ch.provider === "session";
+    const followingModel = isSession && !String(ch.model || "").trim();
+    if (followingModel && sessionInfo2 && Array.isArray(sessionInfo2.variants) && sessionInfo2.variants.length) {
+      const variants2 = sessionInfo2.variants.slice();
+      return {
+        variants: variants2,
+        current: adaptThinking(ch.thinking || "off", variants2),
+        display: adaptThinking(ch.thinking || "off", variants2),
+        unsupported: false,
+        sessionModelId: sessionInfo2.modelId || ""
+      };
+    }
+    const info = thinkingVariantsOf(providers2, ch.provider, ch.model);
+    if (info && !info.variants.length) {
+      return { variants: [], current: "off", display: "off", unsupported: true, sessionModelId: "" };
+    }
+    const variants = info ? info.variants : ALL_THINKING_VARIANTS;
+    const cur = adaptThinking(ch.thinking || "off", variants);
+    return { variants, current: cur, display: cur, unsupported: false, sessionModelId: "" };
   }
 
   // src/inject/features/alias-migration.js
@@ -7512,7 +8463,7 @@
   function waitFor(getter, timeoutMs, step) {
     const start = Date.now();
     return new Promise((resolve, reject) => {
-      const tick8 = () => {
+      const tick9 = () => {
         let v = null;
         try {
           v = getter();
@@ -7526,9 +8477,9 @@
           reject(new Error(step));
           return;
         }
-        setTimeout(tick8, 120);
+        setTimeout(tick9, 120);
       };
-      tick8();
+      tick9();
     });
   }
   function setReactInputValue(input, value) {
@@ -8201,10 +9152,10 @@
       root.append(styleEl);
     }
     captureFontVars();
-    void getConfig().then((cfg) => applyStyles(cfg.styles)).catch(() => {
+    void getConfig().then((cfg2) => applyStyles(cfg2.styles)).catch(() => {
     });
     window.addEventListener("zcodepro:config-changed", () => {
-      void getConfig(true).then((cfg) => applyStyles(cfg.styles)).catch(() => {
+      void getConfig(true).then((cfg2) => applyStyles(cfg2.styles)).catch(() => {
       });
     });
   }
@@ -8734,12 +9685,12 @@
         wvStyled.splice(wvStyled.indexOf(rec), 1);
       }
     };
-    const scan6 = () => {
+    const scan7 = () => {
       const css = cardVeilCss();
       document.querySelectorAll("webview").forEach((w) => hook(w, css));
     };
-    scan6();
-    if (!webviewScanTimer) webviewScanTimer = setInterval(scan6, 2e3);
+    scan7();
+    if (!webviewScanTimer) webviewScanTimer = setInterval(scan7, 2e3);
   }
   function applyMediaState() {
     const bg = currentTheme.bg || {};
@@ -9125,9 +10076,9 @@
         clearWallpaper();
         return;
       }
-      const tick8 = () => showFile(files[nextIdx(files.length)], "folder");
-      wpTickFn = tick8;
-      tick8();
+      const tick9 = () => showFile(files[nextIdx(files.length)], "folder");
+      wpTickFn = tick9;
+      tick9();
       armRotateTimer(bg);
       return;
     }
@@ -9222,8 +10173,8 @@
         clearInterval(st.timer);
         st.timer = null;
       }
-      const setState = (image, tick8) => {
-        regionState[region] = { sig, image, tick: tick8, timer: null, interval: 0 };
+      const setState = (image, tick9) => {
+        regionState[region] = { sig, image, tick: tick9, timer: null, interval: 0 };
         if (image) addRule(region, image);
       };
       const drop = () => {
@@ -9276,10 +10227,10 @@
     if (!document.head && !document.documentElement) return;
     applyWebviewTransparency();
     applyAll({ skin: "default", custom: null, bg: { mode: "none", maskOpacity: 0.82, blurPx: 0, panelOpacity: 0.3 } });
-    void getConfig().then((cfg) => applyAll(cfg.theme)).catch(() => {
+    void getConfig().then((cfg2) => applyAll(cfg2.theme)).catch(() => {
     });
     window.addEventListener("zcodepro:config-changed", () => {
-      void getConfig(true).then((cfg) => applyAll(cfg.theme)).catch(() => {
+      void getConfig(true).then((cfg2) => applyAll(cfg2.theme)).catch(() => {
       });
     });
     lastThemeSig = JSON.stringify(currentTheme);
@@ -9287,14 +10238,14 @@
     let pollFail = 0;
     themePollTimer = setInterval(() => {
       if (pollFail >= 3 && ++pollFail % 6 !== 0) return;
-      void getConfig(true).then((cfg) => {
-        if (!cfg.theme) {
+      void getConfig(true).then((cfg2) => {
+        if (!cfg2.theme) {
           pollFail = Math.max(pollFail + 1, 3);
           return;
         }
         pollFail = 0;
-        const sig = JSON.stringify(cfg.theme);
-        if (sig !== lastThemeSig) applyAll(cfg.theme);
+        const sig = JSON.stringify(cfg2.theme);
+        if (sig !== lastThemeSig) applyAll(cfg2.theme);
       }).catch(() => {
         pollFail = Math.max(pollFail + 1, 3);
       });
@@ -9489,6 +10440,10 @@
       "\u8F93\u5165\u8FC7\u957F",
       "token limit",
       "exceeded the provider context window",
+      // 免费层级停用（如 Ling 3.1 Flash tier has been retired）：403 但正文只有这句
+      // 英文提示，不含状态码，重试必然再失败
+      "tier has been retired",
+      "now a paid model",
       "param incorrect",
       "invalid[_ -]?request",
       "invalid[_ -]?parameter",
@@ -9537,8 +10492,8 @@
       }
     }).filter(Boolean);
   }
-  function isPermanent(text, cfg) {
-    return compile(cfg.permanentPatterns).some((re) => re.test(text));
+  function isPermanent(text, cfg2) {
+    return compile(cfg2.permanentPatterns).some((re) => re.test(text));
   }
   function isCancelled(text) {
     return /\bcancel+ed?\b|已取消|已停止|手动停止|キャンセル|中止|취소|중지|отмен|остановлен/i.test(text);
@@ -9618,9 +10573,9 @@
     }
     return false;
   }
-  function delayFor(dense, cfg) {
+  function delayFor(dense, cfg2) {
     if (dense <= 1) return 3e3;
-    const secs = Math.min(cfg.cooldownBaseSec * Math.pow(cfg.cooldownFactor || 2, dense - 2), cfg.cooldownMaxSec);
+    const secs = Math.min(cfg2.cooldownBaseSec * Math.pow(cfg2.cooldownFactor || 2, dense - 2), cfg2.cooldownMaxSec);
     return Math.round(secs * 1e3);
   }
   function brokenTail() {
@@ -9644,32 +10599,45 @@
     const el = target.el;
     inflight = true;
     try {
-      const cfg = await getConfig2();
-      if (cfg.enabled === false) return;
+      const cfg2 = await getConfig2();
+      if (cfg2.enabled === false) return;
       if (target.kind === "banner") {
         const text = banner.innerText || "";
         const code = banner.getAttribute("data-error-code") || "";
-        if (isPermanent(text, cfg) || isPermanentCode(code) || isCancelled(text)) {
+        if (isPermanent(text, cfg2) || isPermanentCode(code) || isCancelled(text)) {
           el.dataset.zcodeproAc = "skip";
           return;
+        }
+        const sid = activeSessionId();
+        if (sid && el.dataset.zcodeproAcLog !== "1") {
+          const res = await rpc("/ac-stuck").catch(() => null);
+          if (res && res.ok) el.dataset.zcodeproAcLog = "1";
+          const f = res && res.ok && Array.isArray(res.failed) ? res.failed.find((x) => x.sessionId === sid) : null;
+          if (f && (isPermanent(f.message || "", cfg2) || isCancelled(f.message || ""))) {
+            const dbgLog = window.__acDebug ||= [];
+            dbgLog.push(`${(/* @__PURE__ */ new Date()).toISOString().slice(11, 19)} banner skip by log: ${String(f.message).slice(0, 60)}`);
+            if (dbgLog.length > 50) dbgLog.splice(0, dbgLog.length - 50);
+            el.dataset.zcodeproAc = "skip";
+            return;
+          }
         }
       }
       if (document.querySelector(STOP_SEL)) return;
       const input = document.querySelector(INPUT_SEL);
       if (!input || (input.textContent || "").trim()) return;
       pruneTimes();
-      if (continueTimes.length >= (cfg.maxRetries || DEFAULTS.maxRetries)) {
+      if (continueTimes.length >= (cfg2.maxRetries || DEFAULTS.maxRetries)) {
         el.dataset.zcodeproAc = "cap";
         return;
       }
       el.dataset.zcodeproAc = "pending";
-      await sleep2(delayFor(recentWithin(2 * 60 * 1e3), cfg));
+      await sleep2(delayFor(recentWithin(2 * 60 * 1e3), cfg2));
       if (!el.isConnected || document.querySelector(STOP_SEL)) {
         el.dataset.zcodeproAc = "skip";
         return;
       }
       const input2 = document.querySelector(INPUT_SEL);
-      const want = target.kind === "truncation" ? truncationTextFor(cfg.truncationContinueText) : continueTextFor(cfg.continueText);
+      const want = target.kind === "truncation" ? truncationTextFor(cfg2.truncationContinueText) : continueTextFor(cfg2.continueText);
       const current2 = (input2 && input2.textContent || "").trim();
       if (current2 && !current2.includes(want.slice(0, 10))) {
         el.dataset.zcodeproAc = "skip";
@@ -9707,10 +10675,14 @@
         await sleep2(3e3);
       }
     }
-    const cfg = await getConfig2();
-    const r = await rpc("/ac-continue", { method: "POST", body: { sessionId: task.sessionId, text: continueTextFor(cfg.continueText) } });
+    const cfg2 = await getConfig2();
+    const r = await rpc("/ac-continue", { method: "POST", body: { sessionId: task.sessionId, text: continueTextFor(cfg2.continueText) } });
     if (!r.ok) rescueUntil = 0;
     return r.ok;
+  }
+  function activeSessionId() {
+    const key = document.querySelector("[data-task-item-key].bg-selected")?.getAttribute("data-task-item-key") || "";
+    return key.includes(":") ? key.slice(key.lastIndexOf(":") + 1) : key;
   }
   function switchToTask(sessionId) {
     const row = document.querySelector(`[data-testid="task-item-${sessionId}"]`);
@@ -9727,15 +10699,15 @@
     const i = stuckQueue.indexOf(task);
     if (i >= 0) stuckQueue.splice(i, 1);
   }
-  function pruneStuckQueue(scan6, threshold) {
+  function pruneStuckQueue(scan7, threshold) {
     const alive = /* @__PURE__ */ new Map();
-    for (const t2 of Array.isArray(scan6?.tasks) ? scan6.tasks : []) {
+    for (const t2 of Array.isArray(scan7?.tasks) ? scan7.tasks : []) {
       if (t2.ageSec < threshold || (t2.silenceSec ?? 0) < threshold) continue;
       const arr = alive.get(t2.sessionId) || [];
       arr.push(t2);
       alive.set(t2.sessionId, arr);
     }
-    const failedAlive = new Set((Array.isArray(scan6?.failed) ? scan6.failed : []).map((f) => `${f.sessionId}:${f.failedAt}`));
+    const failedAlive = new Set((Array.isArray(scan7?.failed) ? scan7.failed : []).map((f) => `${f.sessionId}:${f.failedAt}`));
     let removedCurrent = false;
     for (let i = stuckQueue.length - 1; i >= 0; i -= 1) {
       const q = stuckQueue[i];
@@ -9768,8 +10740,8 @@
       void (async () => {
         try {
           const res = await rpc("/ac-stuck");
-          const cfg = await getConfig2();
-          if (res.ok) pruneStuckQueue(res, (cfg.stuckAfterMin || DEFAULTS.stuckAfterMin) * 60);
+          const cfg2 = await getConfig2();
+          if (res.ok) pruneStuckQueue(res, (cfg2.stuckAfterMin || DEFAULTS.stuckAfterMin) * 60);
         } catch {
         }
         showNextStuckCard();
@@ -9835,8 +10807,8 @@
       fix.disabled = true;
       if (task.failedMsg) {
         void (async () => {
-          const cfg = await getConfig2();
-          const r = await rpc("/ac-continue", { method: "POST", body: { sessionId: task.sessionId, text: continueTextFor(cfg.continueText) } });
+          const cfg2 = await getConfig2();
+          const r = await rpc("/ac-continue", { method: "POST", body: { sessionId: task.sessionId, text: continueTextFor(cfg2.continueText) } });
           if (r.ok) {
             dequeueStuck(task);
             closeStuckCard();
@@ -9877,9 +10849,9 @@
     };
     dbg(`scan ok=${res.ok} tasks=${Array.isArray(res.tasks) ? res.tasks.length : "x"} failed=${Array.isArray(res.failed) ? res.failed.length : "x"}`);
     if (!res.ok || !Array.isArray(res.tasks)) return;
-    const cfg = await getConfig2();
-    if (cfg.enabled === false) return;
-    const threshold = (cfg.stuckAfterMin || DEFAULTS.stuckAfterMin) * 60;
+    const cfg2 = await getConfig2();
+    if (cfg2.enabled === false) return;
+    const threshold = (cfg2.stuckAfterMin || DEFAULTS.stuckAfterMin) * 60;
     for (const task of res.tasks) {
       dbg(`task tid=${String(task.taskId).slice(0, 16)} kind=${task.kind} age=${task.ageSec} sil=${task.silenceSec} thr=${threshold} shown=${stuckShown.has(task.taskId)}`);
       if (task.ageSec < threshold || (task.silenceSec ?? 0) < threshold || stuckShown.has(task.taskId)) continue;
@@ -9895,20 +10867,20 @@
       if (!entry.kinds.includes(kind)) entry.kinds.push(kind);
       entry.ageSec = Math.max(entry.ageSec, task.ageSec);
     }
-    const failedThreshold = (cfg.failedAfterMin ?? DEFAULTS.failedAfterMin) * 60;
+    const failedThreshold = (cfg2.failedAfterMin ?? DEFAULTS.failedAfterMin) * 60;
     for (const f of Array.isArray(res.failed) ? res.failed : []) {
       const key = `${f.sessionId}:${f.failedAt}`;
-      dbg(`entry sid=${String(f.sessionId).slice(0, 20)} age=${f.ageSec} thr=${failedThreshold} shown=${failedShown.has(key)} perm=${isPermanent(f.message || "", cfg)} canc=${isCancelled(f.message || "")}`);
+      dbg(`entry sid=${String(f.sessionId).slice(0, 20)} age=${f.ageSec} thr=${failedThreshold} shown=${failedShown.has(key)} perm=${isPermanent(f.message || "", cfg2)} canc=${isCancelled(f.message || "")}`);
       if (f.ageSec < failedThreshold || failedShown.has(key)) continue;
-      if (isPermanent(f.message || "", cfg) || isCancelled(f.message || "")) continue;
+      if (isPermanent(f.message || "", cfg2) || isCancelled(f.message || "")) continue;
       if (String(f.sessionId).includes("subagent")) continue;
       failedShown.add(key);
       const times = (rescueTimes.get(f.sessionId) || []).filter((t2) => t2 >= Date.now() - 30 * 60 * 1e3);
-      dbg(`pass sid=${String(f.sessionId).slice(0, 20)} times=${times.length} autoFix=${cfg.failedAutoFix}`);
-      if (cfg.failedAutoFix !== false && times.length < 3) {
+      dbg(`pass sid=${String(f.sessionId).slice(0, 20)} times=${times.length} autoFix=${cfg2.failedAutoFix}`);
+      if (cfg2.failedAutoFix !== false && times.length < 3) {
         let r;
         try {
-          r = await rpc("/ac-continue", { method: "POST", body: { sessionId: f.sessionId, text: continueTextFor(cfg.continueText) } });
+          r = await rpc("/ac-continue", { method: "POST", body: { sessionId: f.sessionId, text: continueTextFor(cfg2.continueText) } });
         } catch (e) {
           dbg(`rpc threw ${String(e).slice(0, 80)}`);
           r = null;
@@ -10012,7 +10984,7 @@
       if (!containerKey) return false;
       const seen2 = /* @__PURE__ */ new Set();
       let found = null;
-      const scan6 = (o) => {
+      const scan7 = (o) => {
         if (!o || typeof o !== "object" || seen2.has(o) || found) return;
         seen2.add(o);
         try {
@@ -10026,8 +10998,8 @@
         visited++;
         for (const h2 of [f.memoizedProps, f.memoizedState]) {
           if (!h2 || typeof h2 !== "object") continue;
-          scan6(h2);
-          for (const v of Object.values(h2)) if (v && typeof v === "object") scan6(v);
+          scan7(h2);
+          for (const v of Object.values(h2)) if (v && typeof v === "object") scan7(v);
         }
         visit(f.child);
         visit(f.sibling);
@@ -10424,7 +11396,7 @@
       setState(L.upgradeFound.replaceAll("{v}", res.latest || ""));
       btn.textContent = L.upgradeNow;
     };
-    const tick8 = async () => {
+    const tick9 = async () => {
       const res = await rpc(endpoint + "/upgrade");
       if (!res.ok) {
         stopPoll();
@@ -10464,9 +11436,9 @@
       btn.textContent = L.upgradeStop;
       setState(L.upgradeRunning);
       timer = setInterval(() => {
-        void tick8();
+        void tick9();
       }, 1500);
-      void tick8();
+      void tick9();
     };
     void (async () => {
       const res = await rpc(endpoint + "/upgrade");
@@ -10475,7 +11447,7 @@
     setState("");
     return { btn, state, stop: stopPoll };
   }
-  function openSettingsDialog() {
+  function openSettingsDialog(initialTab = "features") {
     ensureStyle();
     const L = t();
     let hrUpgradePollStop = null;
@@ -10490,10 +11462,14 @@
       overlay: "none",
       draggable: true,
       posKey: "settings",
+      // 与翻译面板一致：四边/四角可拖动改尺寸，尺寸单独记住（不影响已存的拖动位置）
+      resizable: true,
+      sizeKey: "settings",
       dismissOnOutside: false,
       onClose: () => {
         if (hrUpgradePollStop) hrUpgradePollStop();
         if (rtkUpgradePollStop) rtkUpgradePollStop();
+        window.dispatchEvent(new CustomEvent("zcodepro:settings-closed"));
       },
       onMount: async ({ body, close, content }) => {
         if (content) content.setAttribute("data-zcodepro-settings", "1");
@@ -10545,7 +11521,7 @@
           }, "\u2715");
           titleEl.replaceChildren(titleLeft, closeX);
         }
-        const [health, config, agentsRes, visionRes, titleGenRes, titleGenProvidersRes, rtkRes, headroomRes, zcodeConfigRes] = await Promise.all([
+        const [health, config, agentsRes, visionRes, titleGenRes, titleGenProvidersRes, rtkRes, headroomRes, zcodeConfigRes, translateRes, translateProvidersRes, translateSessionRes] = await Promise.all([
           rpc("/health"),
           getConfig(true),
           rpc("/agents"),
@@ -10554,7 +11530,10 @@
           rpc("/title-gen/providers"),
           rpc("/rtk"),
           rpc("/headroom"),
-          rpc("/zcode-config")
+          rpc("/zcode-config"),
+          rpc("/translate"),
+          rpc("/translate/providers"),
+          rpc("/translate/session-model")
         ]);
         const titleGenProviders = titleGenProvidersRes.ok && Array.isArray(titleGenProvidersRes.providers) ? titleGenProvidersRes.providers : [];
         const setFeature = async (key, value) => {
@@ -10606,14 +11585,14 @@
           showToast(pluginsStatusLine.textContent, "success");
         };
         void (async () => {
-          const cfg = await getConfig(true).catch(() => null);
+          const cfg2 = await getConfig(true).catch(() => null);
           const res = await rpc("/plugins/status");
           if (!res.ok) {
             setPluginsStatus(errText(res));
             return;
           }
           const n = (res.updates || []).length;
-          if (cfg && (cfg.features || {}).autoUpdatePlugins === true && n > 0 && claimAutoUpdateRun()) {
+          if (cfg2 && (cfg2.features || {}).autoUpdatePlugins === true && n > 0 && claimAutoUpdateRun()) {
             void runPluginsUpdate();
             return;
           }
@@ -10688,6 +11667,11 @@
             settingRow(L.featureTableCopy, L.featureTableCopyDesc, f.tableCopy !== false, async () => {
               const next = !(f.tableCopy !== false);
               if (await setFeature("tableCopy", next)) f.tableCopy = next;
+              refreshRows();
+            }),
+            settingRow(L.featureTranslate, L.featureTranslateDesc, f.translate !== false, async () => {
+              const next = !(f.translate !== false);
+              if (await setFeature("translate", next)) f.translate = next;
               refreshRows();
             }),
             settingRow(L.featureSessionLink, L.featureSessionLinkDesc, f.sessionLink !== false, async () => {
@@ -10812,7 +11796,7 @@
             }
           )
         );
-        let activeTab = "features";
+        let activeTab = typeof initialTab === "string" && initialTab ? initialTab : "features";
         const subTabBars = {};
         const paneFeatures = h(
           "div",
@@ -10951,8 +11935,9 @@
         const paneHeadroom = h("div", { role: "tabpanel", style: "display:none" });
         const paneAutoContinue = h("div", { role: "tabpanel", style: "display:none" });
         const paneTitleGen = h("div", { role: "tabpanel", style: "display:none" });
+        const paneTranslate = h("div", { role: "tabpanel", style: "display:none" });
         const paneDebug = h("div", { role: "tabpanel", style: "display:none" });
-        const panes = { features: paneFeatures, shortcuts: paneShortcuts, styles: paneStyles, perf: panePerf, agents: paneAgents, proxy: paneProxy, sync: paneSync, import: paneImport, vision: paneVision, headroom: paneHeadroom, rtk: paneRtk, debug: paneDebug };
+        const panes = { features: paneFeatures, shortcuts: paneShortcuts, styles: paneStyles, perf: panePerf, agents: paneAgents, proxy: paneProxy, sync: paneSync, import: paneImport, vision: paneVision, translate: paneTranslate, headroom: paneHeadroom, rtk: paneRtk, debug: paneDebug };
         const tabDefs = [
           ["features", L.tabFeatures],
           ["styles", L.tabStyles],
@@ -10961,6 +11946,7 @@
           ["shortcuts", L.tabShortcuts],
           ["proxy", L.tabProxy],
           ["sync", L.tabSync],
+          ["translate", L.tabTranslate],
           ...config.features.sessionImport !== false ? [["import", L.tabImport]] : [],
           ["vision", L.tabVision],
           ["headroom", L.tabHeadroom],
@@ -10969,7 +11955,64 @@
           // 普通用户不可见
           ...config.devMode === true || config.devActive === true ? [["debug", L.tabDebug]] : []
         ];
-        const tablist = h("div", { role: "tablist", "aria-orientation": "horizontal", class: "zcodepro-tablist mt-1" });
+        const tablist = h("div", { role: "tablist", "aria-orientation": "horizontal", class: "zcodepro-tablist zcodepro-tablist-scroll mt-1" });
+        const bindTabScroll = () => {
+          const updateOverflow = () => {
+            const overflow = tablist.scrollWidth - tablist.clientWidth;
+            if (overflow <= 1) {
+              delete tablist.dataset.overflow;
+              return;
+            }
+            const atStart = tablist.scrollLeft <= 1;
+            const atEnd = tablist.scrollLeft >= overflow - 1;
+            tablist.dataset.overflow = atStart ? "start" : atEnd ? "end" : "1";
+          };
+          tablist.addEventListener("scroll", updateOverflow, { passive: true });
+          new ResizeObserver(updateOverflow).observe(tablist);
+          tablist.addEventListener("wheel", (e) => {
+            if (tablist.scrollWidth <= tablist.clientWidth + 1) return;
+            const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+            if (!delta) return;
+            e.preventDefault();
+            tablist.scrollLeft += delta;
+          }, { passive: false });
+          let drag = null;
+          let suppressClick = false;
+          tablist.addEventListener("pointerdown", (e) => {
+            if (e.button !== 0) return;
+            if (tablist.scrollWidth <= tablist.clientWidth + 1) return;
+            drag = { x: e.clientX, left: tablist.scrollLeft, moved: false };
+            suppressClick = false;
+          });
+          tablist.addEventListener("pointermove", (e) => {
+            if (!drag) return;
+            const dx = e.clientX - drag.x;
+            if (!drag.moved && Math.abs(dx) < 4) return;
+            if (!drag.moved) {
+              drag.moved = true;
+              tablist.dataset.dragging = "1";
+            }
+            tablist.scrollLeft = drag.left - dx;
+            e.preventDefault();
+          });
+          const endDrag = () => {
+            if (!drag) return;
+            suppressClick = drag.moved;
+            drag = null;
+            delete tablist.dataset.dragging;
+          };
+          tablist.addEventListener("pointerup", endDrag);
+          tablist.addEventListener("pointercancel", endDrag);
+          tablist.addEventListener("pointerleave", endDrag);
+          tablist.addEventListener("click", (e) => {
+            if (!suppressClick) return;
+            suppressClick = false;
+            e.stopPropagation();
+            e.preventDefault();
+          }, true);
+          updateOverflow();
+        };
+        bindTabScroll();
         const renderTabs = () => tablist.replaceChildren(...tabDefs.map(([id, label]) => h("button", {
           type: "button",
           role: "tab",
@@ -10978,6 +12021,10 @@
           "data-state": activeTab === id ? "active" : "inactive",
           onClick: () => switchTab(id)
         }, label)));
+        requestAnimationFrame(() => {
+          const overflow = tablist.scrollWidth - tablist.clientWidth;
+          if (overflow <= 1) delete tablist.dataset.overflow;
+        });
         const switchTab = (name) => {
           activeTab = name;
           if (name !== "shortcuts" && hkRecording) stopHkRecording();
@@ -10985,8 +12032,14 @@
           for (const [id, bar] of Object.entries(subTabBars)) bar.style.display = id === name ? "" : "none";
           if (name === "import") paneImport.__onShow?.();
           renderTabs();
+          try {
+            const el = tablist.querySelector('[data-state="active"]');
+            el?.scrollIntoView({ block: "nearest", inline: "nearest" });
+          } catch {
+          }
         };
-        renderTabs();
+        if (activeTab === "features") renderTabs();
+        else switchTab(activeTab);
         const savedStyles = config.styles || {};
         let saveTimer = null;
         let pendingStyles = {};
@@ -12420,7 +13473,32 @@
           );
         };
         renderProxyScopes();
-        paneProxy.append(
+        let proxySubTab = "software";
+        const proxySubTablist = h("div", { role: "tablist", "aria-orientation": "horizontal", class: "zcodepro-tablist" });
+        const paneProxySoftware = h("div", { class: "mt-2" });
+        const paneProxyVendor = h("div", { class: "mt-2" });
+        const renderProxySubTabs = () => proxySubTablist.replaceChildren(...[
+          ["software", L.proxySubSoftware],
+          ["vendor", L.proxySubVendor]
+        ].map(([id, label]) => h("button", {
+          type: "button",
+          role: "tab",
+          class: "zcodepro-tab",
+          "aria-selected": String(proxySubTab === id),
+          "data-state": proxySubTab === id ? "active" : "inactive",
+          onClick: () => {
+            proxySubTab = id;
+            paneProxySoftware.style.display = id === "software" ? "" : "none";
+            paneProxyVendor.style.display = id === "vendor" ? "" : "none";
+            if (id === "vendor") void refreshVendorProxyStatus();
+            renderProxySubTabs();
+          }
+        }, label)));
+        renderProxySubTabs();
+        subTabBars.proxy = proxySubTablist;
+        paneProxy.append(proxySubTablist, paneProxySoftware, paneProxyVendor);
+        paneProxyVendor.style.display = "none";
+        paneProxySoftware.append(
           h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.proxyDesc),
           h(
             "div",
@@ -12433,6 +13511,267 @@
           proxyTestState,
           h("div", { class: "mt-3 divide-y divide-border rounded-xl border border-border" }, proxyScopeWrap)
         );
+        let vendorProviders = [];
+        let vendorProxyState = {};
+        let vendorLastRun = null;
+        const vendorStatusText = h("p", { class: "mt-2 text-ui-xs/relaxed text-foreground-subtle" });
+        const vendorListWrap = h("div", { class: "mt-3 divide-y divide-border rounded-xl border border-border" });
+        const removeVendorProxy = async (id) => {
+          const res = await rpc("/config", { method: "POST", body: { providerProxies: { [id]: { remove: true } } } });
+          if (!res.ok) {
+            showToast(L.failed + ": " + errText(res), "error");
+            return;
+          }
+          const cfg2 = await rpc("/config");
+          if (cfg2.ok && cfg2.config && cfg2.config.providerProxies) vendorProxyState = { ...cfg2.config.providerProxies };
+          else delete vendorProxyState[id];
+          refreshVendorView();
+          setTimeout(() => {
+            void refreshVendorProxyStatus();
+          }, 400);
+        };
+        const saveVendorProxy = async (id, patch) => {
+          const entry = { ...vendorProxyState[id] || {}, ...patch };
+          const body2 = { [id]: { enabled: entry.enabled === true, proxy: entry.proxy || "", port: entry.port, upstream: entry.upstream ?? null } };
+          const res = await rpc("/config", { method: "POST", body: { providerProxies: body2 } });
+          if (!res.ok) {
+            showToast(L.failed + ": " + errText(res), "error");
+            return false;
+          }
+          const saved = res.config && res.config.providerProxies && res.config.providerProxies[id];
+          if (saved) vendorProxyState[id] = saved;
+          return true;
+        };
+        const addVendorProxy = async (id) => {
+          if (!id || vendorProxyState[id]) return;
+          if (!await saveVendorProxy(id, { enabled: true, proxy: "" })) return;
+          refreshVendorView();
+          setTimeout(() => {
+            void refreshVendorProxyStatus();
+          }, 400);
+        };
+        let refreshVendorView = () => {
+        };
+        const renderVendorRows = () => {
+          if (!vendorProviders.length) {
+            vendorListWrap.replaceChildren(h("p", { class: "px-3 py-3 text-ui-sm text-foreground-subtle" }, L.proxyVendorEmpty));
+            return;
+          }
+          const added = Object.keys(vendorProxyState);
+          if (!added.length) {
+            vendorListWrap.replaceChildren(h("p", { class: "px-3 py-3 text-ui-sm text-foreground-subtle" }, L.proxyVendorEmpty));
+            return;
+          }
+          const nameOf2 = (id) => (vendorProviders.find((x) => x.id === id) || {}).name || id;
+          vendorListWrap.replaceChildren(...added.map((id) => {
+            const st = vendorProxyState[id] || { enabled: false, proxy: "", port: 18731, upstream: null };
+            const parsed = /^(https?):\/\/([^/:]+):(\d+)$/.exec(st.proxy || "");
+            const fieldCls = "h-7 rounded-lg border border-border bg-input px-2 text-ui-xs text-foreground outline-none transition-shadow placeholder:text-foreground-subtle focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40";
+            const protoSel = h(
+              "select",
+              { class: fieldCls + " shrink-0" },
+              h("option", { value: "http" }, "http"),
+              h("option", { value: "https" }, "https")
+            );
+            protoSel.value = parsed ? parsed[1] : "http";
+            const hostInput = h("input", {
+              type: "text",
+              value: parsed ? parsed[2] : "",
+              placeholder: L.proxyVendorHostPlaceholder,
+              spellcheck: "false",
+              title: L.proxyVendorHost,
+              class: fieldCls + " min-w-0 flex-1"
+            });
+            const portInput = h("input", {
+              type: "text",
+              value: parsed ? parsed[3] : "",
+              placeholder: "7890",
+              spellcheck: "false",
+              title: L.proxyVendorPortLabel,
+              class: fieldCls + " w-16 shrink-0"
+            });
+            let lastSaved = st.proxy || "";
+            const persistFromFields = async () => {
+              const host = hostInput.value.trim();
+              const portText = portInput.value.trim();
+              if (!host && !portText) {
+                if (await saveVendorProxy(id, { proxy: "" })) lastSaved = "";
+                return;
+              }
+              if (!host) {
+                showToast(L.failed + ": " + L.proxyVendorHostRequired, "error");
+                hostInput.focus();
+                return;
+              }
+              const portNum = portText === "" ? 7890 : Number(portText);
+              if (portText !== "" && (!/^\d+$/.test(portText) || !Number.isInteger(portNum) || portNum < 1 || portNum > 65535)) {
+                showToast(L.failed + ": " + L.proxyVendorPortInvalid, "error");
+                portInput.focus();
+                return;
+              }
+              const value = `${protoSel.value}://${host}:${portNum}`;
+              if (value === lastSaved) return;
+              if (await saveVendorProxy(id, { proxy: value })) {
+                lastSaved = value;
+                portInput.value = String(portNum);
+              }
+            };
+            hostInput.addEventListener("change", persistFromFields);
+            portInput.addEventListener("change", persistFromFields);
+            protoSel.addEventListener("change", persistFromFields);
+            const row = h(
+              "div",
+              {
+                class: "flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-surface-hover",
+                onClick: () => {
+                }
+              },
+              h("div", { class: "min-w-0 flex-1 text-ui-sm font-medium text-foreground" }, nameOf2(id)),
+              h("button", {
+                type: "button",
+                role: "switch",
+                "aria-checked": String(st.enabled),
+                class: "relative inline-flex shrink-0 cursor-pointer items-center",
+                onClick: async (e) => {
+                  e.stopPropagation();
+                  const next = !st.enabled;
+                  if (await saveVendorProxy(id, { enabled: next })) {
+                    refreshVendorView();
+                    setTimeout(() => {
+                      void refreshVendorProxyStatus();
+                    }, 400);
+                  }
+                }
+              }, h(
+                "span",
+                { class: "zcodepro-switch", "data-zcodepro-switch": "", "data-state": st.enabled ? "on" : "off" },
+                h("span", { class: "zcodepro-switch-knob" })
+              )),
+              // 文字按钮（与 vision 标签页的移除按钮一致），比一个 × 好点
+              btnSmall(L.proxyVendorRemove, () => {
+                void removeVendorProxy(id);
+              }, "shrink-0")
+            );
+            return h(
+              "div",
+              { class: "px-2 py-1.5" },
+              row,
+              h("div", { class: "mt-1 flex items-center gap-1.5 pl-0.5" }, protoSel, hostInput, portInput)
+            );
+          }));
+        };
+        const refreshVendorProxyStatus = async () => {
+          const res = await rpc("/provider-proxies/status");
+          if (!res.ok) return;
+          vendorLastRun = res.lastRun || null;
+          refreshVendorView();
+          const errs = vendorLastRun && vendorLastRun.errors || [];
+          vendorStatusText.className = "mt-2 text-ui-xs/relaxed " + (errs.length ? "text-amber-500" : "text-foreground-subtle");
+          vendorStatusText.textContent = errs.length ? errs.join("\uFF1B") : vendorLastRun ? `${isCjkLocale() ? "\u4E0A\u6B21\u5BF9\u9F50" : "Last sync"}: ${vendorLastRun.started.length} ${isCjkLocale() ? "\u4E2A\u8F6C\u53D1\u4E2D" : "forwarding"}${vendorLastRun.ms != null ? ` \xB7 ${vendorLastRun.ms}ms` : ""}` : "";
+        };
+        const toolNameState = h("p", { class: "mt-2 text-ui-xs/relaxed text-foreground-subtle" });
+        let toolNameBusy = false;
+        const toolNameBtn = btnSmall(L.toolNameCheckBtn, () => {
+          void runToolNameCheck();
+        }, "shrink-0", "primary");
+        const runToolNameCheck = async () => {
+          if (toolNameBusy) return;
+          toolNameBusy = true;
+          toolNameBtn.disabled = true;
+          toolNameBtn.textContent = L.toolNameCheckRunning;
+          toolNameState.textContent = "";
+          toolNameState.className = "mt-2 text-ui-xs/relaxed text-foreground-subtle";
+          const res = await rpc("/tool-names/check", { method: "POST", body: {} });
+          toolNameBusy = false;
+          toolNameBtn.disabled = false;
+          toolNameBtn.textContent = L.toolNameCheckBtn;
+          if (!res.ok) {
+            toolNameState.className = "mt-2 text-ui-xs/relaxed text-destructive";
+            toolNameState.textContent = L.toolNameCheckFailed + ": " + errText(res);
+            return;
+          }
+          toolNameState.className = "mt-2 text-ui-xs/relaxed " + (res.warnings && res.warnings.length ? "text-amber-500" : "text-foreground-subtle");
+          toolNameState.textContent = res.summary || "";
+        };
+        let toolNameAutoOn = config.toolNameAuto !== false;
+        const toolNameAutoWrap = h("div", { class: "ml-auto flex shrink-0 items-center gap-1.5" });
+        const renderToolNameAuto = () => {
+          const toggle2 = async () => {
+            const next = !toolNameAutoOn;
+            const res = await rpc("/config", { method: "POST", body: { toolNameAuto: next } });
+            if (!res.ok) {
+              showToast(L.failed + ": " + errText(res), "error");
+              return;
+            }
+            toolNameAutoOn = res.config && typeof res.config.toolNameAuto === "boolean" ? res.config.toolNameAuto : next;
+            renderToolNameAuto();
+          };
+          toolNameAutoWrap.replaceChildren(
+            h("span", { class: "text-ui-xs text-foreground-subtle", title: L.toolNameAutoDesc }, L.toolNameAuto),
+            h("button", {
+              type: "button",
+              role: "switch",
+              "aria-checked": String(toolNameAutoOn),
+              class: "relative inline-flex shrink-0 cursor-pointer items-center",
+              title: L.toolNameAutoDesc,
+              onClick: () => {
+                void toggle2();
+              }
+            }, h(
+              "span",
+              { class: "zcodepro-switch", "data-zcodepro-switch": "", "data-state": toolNameAutoOn ? "on" : "off" },
+              h("span", { class: "zcodepro-switch-knob" })
+            ))
+          );
+        };
+        renderToolNameAuto();
+        const addVendorWrap = h("div", { class: "mt-2" });
+        const renderAddVendor = () => {
+          const available = vendorProviders.filter((p) => !vendorProxyState[p.id]);
+          if (!available.length) {
+            addVendorWrap.replaceChildren();
+            return;
+          }
+          const sel = h(
+            "select",
+            {
+              class: "h-7 w-full rounded-lg border border-border bg-input px-2 text-ui-xs text-foreground outline-none"
+            },
+            h("option", { value: "" }, "+ " + L.proxyVendorAdd),
+            ...available.map((p) => h("option", { value: p.id }, p.name || p.id))
+          );
+          sel.addEventListener("change", async () => {
+            const id = sel.value;
+            if (!id) return;
+            await addVendorProxy(id);
+            renderAddVendor();
+          });
+          addVendorWrap.replaceChildren(sel);
+        };
+        refreshVendorView = () => {
+          renderVendorRows();
+          renderAddVendor();
+        };
+        paneProxyVendor.append(
+          h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.proxyVendorDesc),
+          vendorListWrap,
+          addVendorWrap,
+          vendorStatusText,
+          h(
+            "div",
+            { class: "mt-4 rounded-xl border border-border p-3" },
+            h("div", { class: "text-ui-sm font-medium text-foreground" }, L.toolNameCheckTitle),
+            h("p", { class: "mt-1 text-ui-xs/relaxed text-foreground-subtle" }, L.toolNameCheckDesc),
+            h("div", { class: "mt-2 flex items-center gap-2" }, toolNameBtn, toolNameAutoWrap),
+            toolNameState
+          )
+        );
+        void (async () => {
+          const [provRes] = await Promise.all([rpc("/title-gen/providers")]);
+          if (provRes.ok && Array.isArray(provRes.providers)) vendorProviders = provRes.providers;
+          vendorProxyState = config.providerProxies && typeof config.providerProxies === "object" ? { ...config.providerProxies } : {};
+          refreshVendorView();
+        })();
         const perfToggleWrap = h("div");
         const renderPerfToggle = () => {
           const f = config.features || {};
@@ -13387,6 +14726,224 @@
             visionTestPre
           );
         };
+        const TR_INPUT_CLS = "h-7 w-full rounded-lg border border-border bg-input px-2 text-ui-xs text-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40";
+        const TR_MT_FIELDS = {
+          youdao: [["appKey", "App Key"], ["key", "Secret"]],
+          baidu: [["appId", "App ID"], ["secret", "Secret"]],
+          caiyun: [["token", "Token"]],
+          deepl: [["authKey", "Auth Key"]],
+          deeplx: [["apiUrl", "API URL"], ["token", "Token"]],
+          niu: [["apiKey", "API Key"]],
+          tencent: [["secretId", "Secret ID"], ["secretKey", "Secret Key"]],
+          aliyun: [["accessKeyId", "Access Key ID"], ["accessKeySecret", "Access Key Secret"]],
+          volc: [["accessKeyId", "Access Key ID"], ["secretAccessKey", "Secret Access Key"]]
+        };
+        const TR_MT_IDS = Object.keys(TR_MT_FIELDS);
+        const TR_MT_URLS = {
+          youdao: "https://ai.youdao.com/",
+          baidu: "https://api.fanyi.baidu.com/api/trans/product/prodinfo",
+          caiyun: "https://fanyi.caiyunapp.com/#/api",
+          deepl: "https://www.deepl.com/pro-api",
+          deeplx: "https://github.com/OwO-Network/DeepLX",
+          niu: "https://niutrans.com/documents/contents/trans_detection",
+          tencent: "https://console.cloud.tencent.com/tmt",
+          aliyun: "https://help.aliyun.com/zh/machine-translation/developer-reference/api-alimt-2018-10-12-overview",
+          volc: "https://www.volcengine.com/docs/4640/65067"
+        };
+        const trSvcStatus = translateProvidersRes.ok && Array.isArray(translateProvidersRes.services) ? translateProvidersRes.services : [];
+        const renderTranslate = () => {
+          const field = (labelText, node) => h(
+            "label",
+            { class: "block min-w-0" },
+            h("span", { class: "mb-1 block text-ui-xs font-medium text-foreground-subtle" }, labelText),
+            node
+          );
+          if (!translateRes.ok) {
+            paneTranslate.replaceChildren(
+              h("p", { class: "text-ui-sm/relaxed text-foreground-subtle" }, L.translateDesc),
+              h("p", { class: "mt-2 text-ui-sm text-destructive" }, L.failed + ": " + errText(translateRes))
+            );
+            return;
+          }
+          const tr = translateRes.config || {};
+          let saveTimer2 = null;
+          let pendingCfg = {};
+          const persist = (partial) => {
+            Object.assign(pendingCfg, partial);
+            clearTimeout(saveTimer2);
+            saveTimer2 = setTimeout(async () => {
+              const body2 = pendingCfg;
+              pendingCfg = {};
+              const res = await rpc("/translate", { method: "POST", body: { config: body2 } });
+              if (res.ok && res.config) {
+                translateRes.config = res.config;
+                showToast(L.translateSaved, "success");
+                window.dispatchEvent(new CustomEvent("zcodepro:config-changed"));
+              } else {
+                showToast(L.failed + ": " + errText(res), "error");
+              }
+            }, 400);
+          };
+          const selIn = (value, options, onPick, title = "") => {
+            const n = h("select", {
+              class: "h-7 w-40 rounded-lg border border-border bg-input px-2 text-ui-xs text-foreground outline-none",
+              ...title ? { title, disabled: true } : {}
+            });
+            for (const [v, label] of options) {
+              const o = h("option", { value: v }, label);
+              if (v === value) o.selected = true;
+              n.append(o);
+            }
+            n.addEventListener("change", () => onPick(n.value));
+            return n;
+          };
+          const numIn = (value, dflt, min, max, onCommit) => {
+            const n = h("input", { type: "number", min: String(min), max: String(max), class: TR_INPUT_CLS, style: "width:7rem" });
+            n.value = String(Number.isFinite(value) ? value : dflt);
+            n.addEventListener("change", () => onCommit(Math.max(min, Math.min(max, Math.round(Number(n.value) || dflt)))));
+            return n;
+          };
+          const testBtn = btnSmall(L.translateTest, async () => {
+            const ch = translateRes.config && translateRes.config.channel || {};
+            const res = await rpc("/translate/test", { method: "POST", body: { channel: ch } });
+            if (res.ok) showToast(res.output || "\u2713", "success");
+            else showToast(L.failed + ": " + errText(res), "error");
+          });
+          const panel0 = tr.panel || {};
+          const history0 = tr.history || {};
+          const chNow = () => translateRes.config && translateRes.config.channel || {};
+          const providerField = field(L.translateProvider, comboField(
+            chNow().provider || "session",
+            [{ value: "session", label: L.titleGenProviderSession }, ...titleGenProviders.map((p) => ({ value: p.id, label: p.name }))],
+            (v, src) => {
+              const c = chNow();
+              persist({ channel: { ...c, type: "llm", provider: v, model: v === "session" ? "" : c.model } });
+              if (src === "select") renderTranslate();
+            },
+            { staleLabel: L.titleGenProviderDeleted }
+          ));
+          const modelField = field(L.translateModelLabel, comboField(
+            chNow().model || "",
+            modelOptionsOf(chNow().provider || "session", titleGenProviders, {
+              followSession: (chNow().provider || "session") === "session",
+              followSessionLabel: L.titleGenModelFollowSession
+            }),
+            (v, src) => {
+              const cur = chNow();
+              translateRes.config = { ...translateRes.config, channel: { ...cur, model: v.trim() } };
+              persist({ channel: { ...cur, model: v.trim() } });
+              if (src === "select") renderTranslate();
+            },
+            { placeholder: modelPlaceholderOf(chNow().provider || "session", L) }
+          ));
+          const ch0 = chNow();
+          const isLlm = ch0.type !== "mt";
+          const setChannel = (patch) => {
+            const merged = { ...chNow(), ...patch };
+            if (merged.type !== "mt") {
+              const opts = resolveThinkingOptions(titleGenProviders, merged, translateSessionRes.ok ? translateSessionRes.session : null);
+              merged.thinking = opts.current;
+            }
+            translateRes.config = { ...translateRes.config, channel: merged };
+            persist({ channel: merged });
+            renderTranslate();
+          };
+          const mtServiceName = (id) => L["translateMt" + id.charAt(0).toUpperCase() + id.slice(1)] || id;
+          const mtSvc = ch0.service && TR_MT_FIELDS[ch0.service] ? ch0.service : "deepl";
+          const serviceSel = selIn(isLlm ? "llm" : mtSvc, [
+            ["llm", L.translateEngineLlm],
+            ...TR_MT_IDS.map((id) => {
+              const s2 = trSvcStatus.find((s) => s.id === id);
+              return [id, mtServiceName(id) + (s2 && !s2.configured ? "\uFF08" + L.translateUnconfigured + "\uFF09" : "")];
+            })
+          ], (v) => {
+            if (v === "llm") setChannel({ type: "llm" });
+            else setChannel({ type: "mt", service: v });
+          });
+          const engineArea = isLlm ? h(
+            "div",
+            { class: "mt-2 grid grid-cols-1 gap-3 sm:grid-cols-3" },
+            providerField,
+            modelField,
+            field(L.translateThinking, (() => {
+              const smi = translateSessionRes.ok ? translateSessionRes.session : null;
+              const opts = resolveThinkingOptions(titleGenProviders, ch0, smi);
+              return selIn(
+                opts.display,
+                opts.variants.map((k) => [k, thinkingLabel(k, L)]),
+                (v) => setChannel({ type: "llm", thinking: v }),
+                opts.unsupported ? L.translateThinkingUnsupported : ""
+              );
+            })())
+          ) : (() => {
+            const mtCur = tr.mt && tr.mt.services && tr.mt.services[mtSvc] || {};
+            return h(
+              "div",
+              { class: "mt-2 flex flex-wrap gap-2" },
+              ...TR_MT_FIELDS[mtSvc].map(([k, label]) => {
+                const inp = h("input", { type: "text", value: mtCur[k] || "", placeholder: label, class: TR_INPUT_CLS, style: "width:12rem" });
+                inp.addEventListener("change", () => {
+                  mtCur[k] = inp.value.trim();
+                  persist({ mt: { services: { ...tr.mt && tr.mt.services || {}, [mtSvc]: { ...mtCur } } } });
+                });
+                return inp;
+              })
+            );
+          })();
+          paneTranslate.replaceChildren(
+            h(
+              "div",
+              { class: "flex flex-wrap items-center justify-between gap-2" },
+              h("p", { class: "min-w-0 flex-1 text-ui-sm/relaxed text-foreground-subtle" }, L.translateDesc),
+              testBtn
+            ),
+            h(
+              "div",
+              { class: "mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3" },
+              field(L.translateTrigger, selIn(tr.trigger && tr.trigger.mode || "ctrl-drag", [
+                ["ctrl-drag", L.translateTriggerCtrlDrag],
+                ["ctrl-tap", L.translateTriggerCtrlTap],
+                ["alt-drag", L.translateTriggerAltDrag]
+              ], (v) => persist({ trigger: { mode: v } }))),
+              field(L.translateTargetLang, selIn(tr.targetLang || "zh", [
+                ["zh", "\u7B80\u4F53\u4E2D\u6587"],
+                ["en", "English"],
+                ["ja", "\u65E5\u672C\u8A9E"],
+                ["ko", "\uD55C\uAD6D\uC5B4"],
+                ["fr", "Fran\xE7ais"],
+                ["de", "Deutsch"],
+                ["ru", "\u0420\u0443\u0441\u0441\u043A\u0438\u0439"],
+                ["es", "Espa\xF1ol"]
+              ], (v) => persist({ targetLang: v }))),
+              field(L.translatePanelWidth, numIn(panel0.width, 450, 280, 800, (v) => persist({ panel: { ...panel0, width: v } })))
+            ),
+            h(
+              "div",
+              { class: "mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3" },
+              field(L.translatePanelHeight, numIn(panel0.maxHeightPct, 80, 40, 95, (v) => persist({ panel: { ...panel0, maxHeightPct: v } }))),
+              field(L.translateTheme, selIn(panel0.theme || "follow", [
+                ["follow", L.translateThemeFollow],
+                ["light", L.translateThemeLight],
+                ["dark", L.translateThemeDark]
+              ], (v) => persist({ panel: { ...panel0, theme: v } }))),
+              field(L.translateHistoryLimit, numIn(history0.limit, 100, 10, 1e3, (v) => persist({ history: { ...history0, limit: v } })))
+            ),
+            h(
+              "div",
+              { class: "mt-4 flex flex-wrap items-center gap-2" },
+              h("span", { class: "text-ui-sm font-medium" }, L.translateEngine),
+              serviceSel,
+              // 机翻时紧挨下拉放“获取密钥”入口，不另起一行
+              isLlm ? null : h("span", {
+                class: "cursor-pointer text-ui-xs underline-offset-4 hover:underline",
+                title: TR_MT_URLS[mtSvc],
+                onClick: () => openExternal(TR_MT_URLS[mtSvc])
+              }, "\u2197 " + L.translateGetKey)
+            ),
+            engineArea
+          );
+        };
+        renderTranslate();
         renderVision();
         let rtkCfg = rtkRes.ok ? {
           installed: rtkRes.installed !== false,
@@ -14381,6 +15938,7 @@
           panePerf,
           paneProxy,
           paneSync,
+          paneTranslate,
           paneImport,
           paneVision,
           paneHeadroom,
@@ -14551,19 +16109,19 @@
     if (bridgeMissAt && Date.now() - bridgeMissAt < 6e4) return null;
     let holder = null;
     const seen2 = /* @__PURE__ */ new Set();
-    const scan6 = (o) => {
+    const scan7 = (o) => {
       if (!o || typeof o !== "object" || seen2.has(o) || holder) return;
       seen2.add(o);
       if (typeof o.pluginUiBridgeService === "object" && o.pluginUiBridgeService) {
         holder = o.pluginUiBridgeService;
         return;
       }
-      for (const v of Object.values(o)) if (v && typeof v === "object") scan6(v);
+      for (const v of Object.values(o)) if (v && typeof v === "object") scan7(v);
     };
     eachFiber((f) => {
       for (const h2 of [f.memoizedProps, f.memoizedState]) {
         if (!h2 || typeof h2 !== "object") continue;
-        scan6(h2);
+        scan7(h2);
         if (holder) return true;
       }
       return false;
@@ -14600,28 +16158,27 @@
     return s.pluginName || s.id;
   }
   var PANEL_ICON_PATHS = ['<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>'];
-  function findNewTabGrid() {
-    const item = document.querySelector("[data-side-pane-open-tab-item]");
-    if (!item || item.offsetParent === null) return null;
-    const grid = item.parentElement;
-    if (!grid || grid === document.body) return null;
-    const text = grid.textContent || "";
-    return GRID_HINTS.some((h2) => text.includes(h2)) ? grid : null;
+  function findNewTabGrids() {
+    const grids = /* @__PURE__ */ new Set();
+    for (const item of document.querySelectorAll("[data-side-pane-open-tab-item]")) {
+      const grid = item.parentElement;
+      if (!grid || grid === document.body) continue;
+      const text = grid.textContent || "";
+      if (GRID_HINTS.some((h2) => text.includes(h2))) grids.add(grid);
+    }
+    return [...grids];
   }
-  async function injectPanels(grid) {
+  var inflight2 = /* @__PURE__ */ new WeakSet();
+  function injectCards(grid, surfaces) {
     if (grid.dataset.zcodeproPanels) return;
     const template = grid.querySelector("[data-side-pane-open-tab-item]");
     if (!template) return;
-    const scope = sessionScope();
-    if (!scope) return;
-    const bridge = findBridge();
-    if (!bridge) return;
-    const surfaces = await thirdPartySurfaces(bridge, scope.workspacePath);
     if (!surfaces.length) {
       grid.dataset.zcodeproPanels = "1";
       return;
     }
     grid.dataset.zcodeproPanels = "1";
+    for (const old of grid.querySelectorAll("[data-zcodepro-panel]")) old.remove();
     const L = t();
     const locale = uiLocale();
     for (const s of surfaces) {
@@ -14674,25 +16231,50 @@
       grid.append(card);
     }
   }
+  var roundInflight = false;
+  async function injectAll(grids) {
+    const todo = grids.filter((g) => !g.dataset.zcodeproPanels && !inflight2.has(g));
+    if (!todo.length || roundInflight) return;
+    if (!todo.some((g) => g.querySelector("[data-side-pane-open-tab-item]"))) return;
+    const scope = sessionScope();
+    if (!scope) return;
+    const bridge = findBridge();
+    if (!bridge) return;
+    roundInflight = true;
+    for (const g of todo) inflight2.add(g);
+    let surfaces;
+    try {
+      surfaces = await thirdPartySurfaces(bridge, scope.workspacePath);
+    } finally {
+      roundInflight = false;
+      for (const g of todo) inflight2.delete(g);
+    }
+    for (const g of todo) {
+      if (!g.isConnected) continue;
+      injectCards(g, surfaces);
+    }
+  }
   function tryInject() {
     if (!enabled3 || document.hidden) return;
-    const grid = findNewTabGrid();
-    if (!grid) return;
-    if (grid.dataset.zcodeproPanels && !grid.querySelector("[data-zcodepro-panel]")) {
-      delete grid.dataset.zcodeproPanels;
+    const grids = findNewTabGrids();
+    if (!grids.length) return;
+    for (const grid of grids) {
+      if (grid.dataset.zcodeproPanels && !grid.querySelector("[data-zcodepro-panel]")) {
+        delete grid.dataset.zcodeproPanels;
+      }
     }
-    void injectPanels(grid);
+    void injectAll(grids);
   }
   function startNewtabPanels() {
     ensureStyle();
-    const refreshEnabled = () => {
-      void getConfig().then((cfg) => {
-        enabled3 = cfg.features ? cfg.features.newtabPanels !== false : true;
+    const refreshEnabled2 = () => {
+      void getConfig().then((cfg2) => {
+        enabled3 = cfg2.features ? cfg2.features.newtabPanels !== false : true;
       }).catch(() => {
       });
     };
-    refreshEnabled();
-    window.addEventListener("zcodepro:config-changed", refreshEnabled);
+    refreshEnabled2();
+    window.addEventListener("zcodepro:config-changed", refreshEnabled2);
     const observer2 = new MutationObserver(() => {
       if (injectTimer) return;
       injectTimer = setTimeout(() => {
@@ -14810,19 +16392,19 @@
   function findUsageService() {
     let found = null;
     const seen2 = /* @__PURE__ */ new Set();
-    const scan6 = (o) => {
+    const scan7 = (o) => {
       if (!o || typeof o !== "object" || seen2.has(o) || found) return;
       seen2.add(o);
       if (typeof o.usageStatsService === "object" && o.usageStatsService) {
         found = o.usageStatsService;
         return;
       }
-      for (const v of Object.values(o)) if (v && typeof v === "object") scan6(v);
+      for (const v of Object.values(o)) if (v && typeof v === "object") scan7(v);
     };
     eachFiber2((f) => {
       for (const h2 of [f.memoizedProps, f.memoizedState]) {
         if (!h2 || typeof h2 !== "object") continue;
-        scan6(h2);
+        scan7(h2);
         if (found) return true;
       }
       return false;
@@ -15093,9 +16675,9 @@
   function startStatusBar() {
     ensureStyle();
     const refreshCfg = () => {
-      void getConfig().then((cfg) => {
-        enabled4 = cfg.features ? cfg.features.statusBar !== false : true;
-        const saved = cfg.statusBar && Array.isArray(cfg.statusBar.items) ? cfg.statusBar.items : null;
+      void getConfig().then((cfg2) => {
+        enabled4 = cfg2.features ? cfg2.features.statusBar !== false : true;
+        const saved = cfg2.statusBar && Array.isArray(cfg2.statusBar.items) ? cfg2.statusBar.items : null;
         if (saved) {
           const list = saved.filter((x) => DEFAULT_STATUS_ITEMS.some((d) => d.id === x.id)).map((x) => ({ ...x, on: x.on !== false }));
           const known = new Set(list.map((x) => x.id));
@@ -15146,8 +16728,8 @@
     { id: "turnCache", on: true }
   ];
   var refreshTurnItems = () => {
-    void getConfig().then((cfg) => {
-      const saved = cfg.statusBar && Array.isArray(cfg.statusBar.turnItems) ? cfg.statusBar.turnItems : null;
+    void getConfig().then((cfg2) => {
+      const saved = cfg2.statusBar && Array.isArray(cfg2.statusBar.turnItems) ? cfg2.statusBar.turnItems : null;
       if (!saved) return;
       const known = new Set(turnCfg.map((x) => x.id));
       const list = saved.filter((x) => x && known.has(x.id)).map((x) => ({ id: x.id, on: x.on !== false }));
@@ -15403,14 +16985,14 @@
     }
   }
   function startTurnUsage() {
-    void getConfig().then((cfg) => {
-      enabled5 = cfg.features ? cfg.features.statusBar !== false : true;
+    void getConfig().then((cfg2) => {
+      enabled5 = cfg2.features ? cfg2.features.statusBar !== false : true;
     }).catch(() => {
     });
     refreshTurnItems();
     window.addEventListener("zcodepro:config-changed", () => {
-      void getConfig().then((cfg) => {
-        enabled5 = cfg.features ? cfg.features.statusBar !== false : true;
+      void getConfig().then((cfg2) => {
+        enabled5 = cfg2.features ? cfg2.features.statusBar !== false : true;
         scan3();
       }).catch(() => {
       });
@@ -15584,9 +17166,9 @@
   var mapRefreshTimer = 0;
   function refreshMapSoon() {
     if (mapRefreshTimer) return;
-    const tick8 = () => {
+    const tick9 = () => {
       if (document.hidden) {
-        mapRefreshTimer = setTimeout(tick8, 1e4);
+        mapRefreshTimer = setTimeout(tick9, 1e4);
         return;
       }
       mapRefreshTimer = 0;
@@ -15594,7 +17176,7 @@
         if (m) scan4();
       });
     };
-    mapRefreshTimer = setTimeout(tick8, MAP_REFRESH_MS);
+    mapRefreshTimer = setTimeout(tick9, MAP_REFRESH_MS);
   }
   var editingKey = null;
   var bootDelay = 0;
@@ -15743,8 +17325,8 @@
     return stripped.length < raw.length / 3;
   }
   async function onNewTaskRow(key) {
-    const cfg = await getConfig().catch(() => null);
-    if (!cfg || !cfg.titleGen || cfg.titleGen.enabled !== true) return;
+    const cfg2 = await getConfig().catch(() => null);
+    if (!cfg2 || !cfg2.titleGen || cfg2.titleGen.enabled !== true) return;
     const selDeadline = Date.now() + SELECT_WAIT_MS;
     while (currentKey() !== key && Date.now() < selDeadline) await sleep3(200);
     if (currentKey() !== key) return;
@@ -15922,13 +17504,13 @@
     return svg;
   }
   async function injectHoverButtons() {
-    const cfg = await getConfig();
-    if (!cfg || !cfg.titleGen) return;
-    const enabled16 = cfg.titleGen.hoverBtn !== false;
+    const cfg2 = await getConfig();
+    if (!cfg2 || !cfg2.titleGen) return;
+    const enabled17 = cfg2.titleGen.hoverBtn !== false;
     const L = t();
     for (const area of document.querySelectorAll(ACTIONS_SEL)) {
       const existing = area.querySelector('[data-zcodepro-item="auto-rename"]');
-      if (!enabled16) {
+      if (!enabled17) {
         existing?.remove();
         continue;
       }
@@ -15963,8 +17545,8 @@
     const anchor = itemsOf(content).find((el) => isRenameLabel(itemText(el)));
     if (!anchor) return;
     const key = ctxKey;
-    void getConfig().then((cfg) => {
-      if (!cfg || !cfg.titleGen || cfg.titleGen.menuEntry === false) return;
+    void getConfig().then((cfg2) => {
+      if (!cfg2 || !cfg2.titleGen || cfg2.titleGen.menuEntry === false) return;
       if (content.querySelector('[data-zcodepro-item="auto-rename"]')) return;
       const L = t();
       const item = anchor.cloneNode(false);
@@ -16250,8 +17832,8 @@
       ticking = false;
     }, TICK_GUARD_MS);
     try {
-      const services = findServices();
-      const ag = services && services.zcodeAgentService;
+      const services2 = findServices();
+      const ag = services2 && services2.zcodeAgentService;
       if (!ag) return;
       const candidates = /* @__PURE__ */ new Map();
       for (const el of document.querySelectorAll(TASK_SEL5)) {
@@ -16427,10 +18009,10 @@
   }
   async function refreshConfig2() {
     try {
-      const cfg = await withTimeout(getConfig(), CALL_TIMEOUT_MS, null);
-      if (!cfg || Object.keys(cfg).length <= 1) return false;
-      const next = !!(cfg.features && cfg.features.subagentIcon !== false);
-      const mins = Number(cfg.subagentFreshMinutes);
+      const cfg2 = await withTimeout(getConfig(), CALL_TIMEOUT_MS, null);
+      if (!cfg2 || Object.keys(cfg2).length <= 1) return false;
+      const next = !!(cfg2.features && cfg2.features.subagentIcon !== false);
+      const mins = Number(cfg2.subagentFreshMinutes);
       const nextFresh = Number.isFinite(mins) && mins >= 1 ? Math.min(1440, Math.round(mins)) * 6e4 : DEFAULT_FRESH_MS;
       if (nextFresh !== freshMs) {
         endedSeen.clear();
@@ -16524,13 +18106,13 @@
     return at > 0 && Date.now() - at <= windowMs;
   }
   async function reclaim(ws) {
-    const services = findServices();
-    if (!services) {
+    const services2 = findServices();
+    if (!services2) {
       console.info("[zcodepro] idle-reclaim: \u4F1A\u8BDD\u670D\u52A1\u4E0D\u53EF\u7528\uFF0C\u672C\u8F6E\u4E0D\u56DE\u6536 " + ws);
       return false;
     }
     try {
-      await services.zcodeTaskService.releaseWorkspacePreparation({
+      await services2.zcodeTaskService.releaseWorkspacePreparation({
         workspacePath: ws.endsWith("/") ? ws : ws + "/"
       });
       console.info("[zcodepro] idle-reclaim: \u5DF2\u91CA\u653E\u7A7A\u95F2\u9879\u76EE\u8FDB\u7A0B " + ws);
@@ -16597,17 +18179,17 @@
       idleSince.clear();
       return;
     }
-    const cfg = await getConfig();
-    enabled8 = !cfg.features || cfg.features.idleReclaim !== false;
+    const cfg2 = await getConfig();
+    enabled8 = !cfg2.features || cfg2.features.idleReclaim !== false;
     if (!enabled8) {
       idleSince.clear();
       return;
     }
-    const minutes = Math.min(MAX_MINUTES, Math.max(MIN_MINUTES, Number(cfg.idleReclaimMinutes) || 10));
+    const minutes = Math.min(MAX_MINUTES, Math.max(MIN_MINUTES, Number(cfg2.idleReclaimMinutes) || 10));
     const threshold = minutes * 6e4;
-    const freshMinutes = Number(cfg.subagentFreshMinutes);
+    const freshMinutes = Number(cfg2.subagentFreshMinutes);
     const subagentGuardMs = (Number.isFinite(freshMinutes) && freshMinutes >= 1 ? Math.min(1440, Math.round(freshMinutes)) : 60) * 6e4;
-    let startupMinutes = Number(cfg.idleReclaimStartupMinutes);
+    let startupMinutes = Number(cfg2.idleReclaimStartupMinutes);
     if (!Number.isFinite(startupMinutes)) startupMinutes = 5;
     startupMinutes = Math.min(MAX_MINUTES, Math.max(0, startupMinutes));
     const snap = wsRunningSnapshot();
@@ -16657,8 +18239,8 @@
   }
   function startIdleReclaim() {
     window.addEventListener("zcodepro:config-changed", () => {
-      void getConfig(true).then((cfg) => {
-        enabled8 = !cfg.features || cfg.features.idleReclaim !== false;
+      void getConfig(true).then((cfg2) => {
+        enabled8 = !cfg2.features || cfg2.features.idleReclaim !== false;
         if (!enabled8) idleSince.clear();
       }).catch(() => {
       });
@@ -16725,8 +18307,8 @@
       seen.clear();
       return;
     }
-    const cfg = await getConfig();
-    enabled9 = !cfg.features || cfg.features.sandboxReclaim !== false;
+    const cfg2 = await getConfig();
+    enabled9 = !cfg2.features || cfg2.features.sandboxReclaim !== false;
     if (!enabled9) {
       seen.clear();
       return;
@@ -16739,7 +18321,7 @@
       }
       return;
     }
-    let budget = Number(cfg.sandboxReclaimBudget);
+    let budget = Number(cfg2.sandboxReclaimBudget);
     if (!Number.isFinite(budget)) budget = 60;
     budget = Math.min(MAX_BUDGET, Math.max(MIN_BUDGET, budget));
     const now = Date.now();
@@ -16783,8 +18365,8 @@
     loadSeen();
     window.addEventListener("message", onPortsMessage);
     window.addEventListener("zcodepro:config-changed", () => {
-      void getConfig(true).then((cfg) => {
-        enabled9 = !cfg.features || cfg.features.sandboxReclaim !== false;
+      void getConfig(true).then((cfg2) => {
+        enabled9 = !cfg2.features || cfg2.features.sandboxReclaim !== false;
         if (!enabled9) seen.clear();
       }).catch(() => {
       });
@@ -16822,8 +18404,8 @@
     return out;
   }
   async function tick7() {
-    const cfg = await getConfig();
-    if ((cfg.features || {}).pluginCardRetry === false) return;
+    const cfg2 = await getConfig();
+    if ((cfg2.features || {}).pluginCardRetry === false) return;
     const now = Date.now();
     if (now - lastClickAt < CLICK_INTERVAL_MS) return;
     if (!cardHint()) return;
@@ -17052,8 +18634,8 @@
     }
   }
   async function refreshConfig3() {
-    const cfg = await getConfig(true).catch(() => null);
-    enabled10 = !cfg || !cfg.features || cfg.features.toolbarIcons !== false;
+    const cfg2 = await getConfig(true).catch(() => null);
+    enabled10 = !cfg2 || !cfg2.features || cfg2.features.toolbarIcons !== false;
     if (enabled10) sync();
     else teardown();
   }
@@ -17188,8 +18770,8 @@
     }
   }
   async function refreshConfig4() {
-    const cfg = await getConfig(true).catch(() => null);
-    enabled11 = !cfg || !cfg.features || cfg.features.pinnedCollapse !== false;
+    const cfg2 = await getConfig(true).catch(() => null);
+    enabled11 = !cfg2 || !cfg2.features || cfg2.features.pinnedCollapse !== false;
     if (enabled11) sync2();
     else teardown2();
   }
@@ -17326,17 +18908,17 @@
         void copyTable(table);
       }));
     };
-    const scan6 = () => {
+    const scan7 = () => {
       for (const bar of document.querySelectorAll("[data-markdown-table-toolbar]")) enhance(bar);
     };
-    scan6();
-    void getConfig().then((cfg) => {
-      enabled12 = cfg.features ? cfg.features.tableCopy !== false : true;
+    scan7();
+    void getConfig().then((cfg2) => {
+      enabled12 = cfg2.features ? cfg2.features.tableCopy !== false : true;
     }).catch(() => {
     });
     window.addEventListener("zcodepro:config-changed", () => {
-      void getConfig(true).then((cfg) => {
-        enabled12 = cfg.features ? cfg.features.tableCopy !== false : true;
+      void getConfig(true).then((cfg2) => {
+        enabled12 = cfg2.features ? cfg2.features.tableCopy !== false : true;
       }).catch(() => {
       });
     });
@@ -17345,7 +18927,7 @@
       if (scanTimer2) return;
       scanTimer2 = setTimeout(() => {
         scanTimer2 = 0;
-        if (enabled12) scan6();
+        if (enabled12) scan7();
       }, 300);
     };
     const maybeTable = (muts) => {
@@ -17363,6 +18945,1011 @@
     observer2.observe(document.body, { childList: true, subtree: true });
   }
 
+  // src/inject/features/translate-panel.js
+  init_core();
+  init_ui();
+  var installed8 = false;
+  var featureOn2 = true;
+  var cfg = null;
+  var providers = [];
+  var services = [];
+  var panel = null;
+  var pinned2 = false;
+  var ctrlDown = false;
+  var altDown = false;
+  var ctrlTapUsed = false;
+  var currentAbort = null;
+  var speakAudio = null;
+  var sessionInfo = null;
+  var lastAnchor = null;
+  var selfDragging = false;
+  var MT_IDS = ["youdao", "baidu", "caiyun", "deepl", "deeplx", "niu", "tencent", "aliyun", "volc"];
+  function mtName(id) {
+    const L = t();
+    return L["translateMt" + id.charAt(0).toUpperCase() + id.slice(1)] || id;
+  }
+  async function loadState() {
+    const c = await getConfig();
+    featureOn2 = !(c && c.features && c.features.translate === false);
+    const res = await rpc("/translate");
+    if (res.ok && res.config) cfg = res.config;
+    const sm = await rpc("/translate/session-model");
+    if (sm.ok) sessionInfo = sm.session || null;
+    const prov = await rpc("/translate/providers");
+    if (prov.ok) {
+      providers = Array.isArray(prov.providers) ? prov.providers : [];
+      services = Array.isArray(prov.services) ? prov.services : [];
+    }
+  }
+  function startTranslatePanel() {
+    if (installed8) return;
+    installed8 = true;
+    void loadState();
+    window.addEventListener("zcodepro:config-changed", () => {
+      void loadState();
+    });
+    document.addEventListener("keydown", onKeyDown, true);
+    document.addEventListener("keyup", onKeyUp, true);
+    document.addEventListener("mousedown", onMouseDown, true);
+    document.addEventListener("mouseup", onMouseUp, true);
+    window.addEventListener("blur", () => {
+      ctrlDown = altDown = false;
+    });
+  }
+  function onKeyDown(e) {
+    if (e.isComposing) return;
+    if (e.key === "Control") {
+      ctrlDown = true;
+      ctrlTapUsed = false;
+      return;
+    }
+    if (e.key === "Alt") altDown = true;
+    if (ctrlDown) ctrlTapUsed = true;
+    if (e.key === "Escape" && panel) {
+      if (document.querySelector(".zcodepro-overlay")) return;
+      e.preventDefault();
+      hidePanel();
+    }
+  }
+  function onKeyUp(e) {
+    if (e.key === "Control") {
+      ctrlDown = false;
+      if (ctrlTapUsed || !cfg || cfg.trigger?.mode !== "ctrl-tap" || !featureOn2) return;
+      const sel = window.getSelection();
+      const text = sel ? String(sel.toString()).trim() : "";
+      const inPanel = sel && sel.anchorNode && panel && panel.contains(sel.anchorNode);
+      if (text && !inPanel) triggerFromSelection(sel);
+      return;
+    }
+    if (e.key === "Alt") altDown = false;
+  }
+  function onMouseDown(e) {
+    if (e.button !== 0) return;
+    if (ctrlDown) ctrlTapUsed = true;
+  }
+  function onMouseUp(e) {
+    if (e.button !== 0) return;
+    if (!featureOn2 || !cfg) return;
+    if (panel && panel.contains(e.target)) return;
+    if (document.querySelector(".zcodepro-overlay")) return;
+    const mode = cfg.trigger?.mode || "ctrl-drag";
+    if (mode === "ctrl-tap") {
+      hideIfNotPinned();
+      return;
+    }
+    const sel = window.getSelection();
+    const text = sel ? String(sel.toString()).trim() : "";
+    if (!text) {
+      hideIfNotPinned();
+      return;
+    }
+    if (mode === "ctrl-drag" && !ctrlDown) return;
+    if (mode === "alt-drag" && !altDown) return;
+    triggerFromSelection(sel);
+  }
+  function dismissSelectionToolbar() {
+    const once = () => {
+      try {
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount) sel.removeAllRanges();
+        document.dispatchEvent(new Event("selectionchange", { bubbles: true }));
+      } catch {
+      }
+    };
+    once();
+    requestAnimationFrame(() => {
+      once();
+      requestAnimationFrame(once);
+    });
+    setTimeout(once, 120);
+  }
+  function triggerFromSelection(sel) {
+    const text = String(sel.toString()).trim();
+    if (!text || [...text].length > 8e3) return;
+    if (!sel.rangeCount) return;
+    const rect = sel.getRangeAt(0).getBoundingClientRect();
+    if (!rect || !rect.width && !rect.height) return;
+    if (rect.bottom < 0 || rect.top > window.innerHeight) return;
+    ensurePanel(rect, text);
+    dismissSelectionToolbar();
+  }
+  function hideIfNotPinned() {
+    if (!pinned2) hidePanel();
+  }
+  function hidePanel() {
+    pinned2 = false;
+    lastAnchor = null;
+    selfDragging = false;
+    if (currentAbort) currentAbort.abort();
+    if (panel) {
+      try {
+        panel.__ro?.disconnect();
+      } catch {
+      }
+      panel.remove();
+      panel = null;
+    }
+  }
+  function openTranslatePanelAt(anchor, text) {
+    if (!text) return;
+    ensurePanel(anchor, text);
+  }
+  function closeTranslatePanel() {
+    hidePanel();
+  }
+  function ensurePanel(anchor, text) {
+    ensureStyle();
+    void loadState().then(() => {
+      if (!panel) return;
+      const old = panel.querySelector(".zcodepro-tr-toolbar");
+      if (old) old.replaceWith(buildToolbar());
+    });
+    if (!panel) {
+      panel = buildPanel();
+      document.body.append(panel);
+      lastAnchor = anchor || null;
+      const ro = new ResizeObserver(() => {
+        if (selfDragging || !lastAnchor || !panel) return;
+        positionPanel(lastAnchor);
+      });
+      ro.observe(panel);
+      panel.__ro = ro;
+    }
+    if (anchor) lastAnchor = anchor;
+    positionPanel(lastAnchor);
+    setInput(text);
+    void runTranslation(text);
+  }
+  var ARROW_H = 8;
+  var MIN_CLEARANCE = 10;
+  var MAX_LINE_H = 32;
+  function selectionGap(anchor) {
+    const lineH = Math.min(anchor.height || 16, MAX_LINE_H);
+    const clearance = Math.max(MIN_CLEARANCE, Math.round(lineH * 0.7));
+    return { gap: ARROW_H + clearance, clearance };
+  }
+  function positionPanel(anchor) {
+    if (!panel || !anchor) return;
+    const ok = (v) => Number.isFinite(v);
+    if (!ok(anchor.left) || !ok(anchor.top) || !ok(anchor.width)) return;
+    panel.style.visibility = "hidden";
+    requestAnimationFrame(() => {
+      if (!panel) return;
+      const r = panel.getBoundingClientRect();
+      const margin = 8;
+      const { gap } = selectionGap(anchor);
+      const centerX = anchor.left + anchor.width / 2;
+      const spaceAbove = anchor.top - margin;
+      const spaceBelow = window.innerHeight - anchor.bottom - margin;
+      const placeAbove = spaceAbove >= r.height + gap || spaceAbove >= spaceBelow;
+      const top = placeAbove ? Math.max(margin, anchor.top - gap - r.height) : Math.min(window.innerHeight - r.height - margin, anchor.bottom + gap);
+      let left = centerX - r.width / 2;
+      left = Math.max(margin, Math.min(left, window.innerWidth - r.width - margin));
+      panel.style.left = left + "px";
+      panel.style.top = top + "px";
+      panel.dataset.placement = placeAbove ? "top" : "bottom";
+      delete panel.dataset.dragged;
+      const arrowX = Math.max(16, Math.min(centerX - left, r.width - 16));
+      panel.style.setProperty("--tr-arrow-x", arrowX + "px");
+      panel.style.visibility = "";
+    });
+  }
+  var TR_ICONS = {
+    pin: '<path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/>',
+    history: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>',
+    settings: '<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
+    close: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+    edit: '<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/>',
+    enter: '<path d="M20 4v7a4 4 0 0 1-4 4H4"/><path d="m9 10-5 5 5 5"/>',
+    volume: '<path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/><path d="M16 9a5 5 0 0 1 0 6"/><path d="M19.364 18.364a9 9 0 0 0 0-12.728"/>',
+    book: '<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/>',
+    text: '<path d="M15 18H3"/><path d="M17 6H3"/><path d="M21 12H3"/>'
+  };
+  function trIcon(name, size = 14) {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor");
+    svg.setAttribute("stroke-width", "2");
+    svg.setAttribute("stroke-linecap", "round");
+    svg.setAttribute("stroke-linejoin", "round");
+    svg.setAttribute("width", String(size));
+    svg.setAttribute("height", String(size));
+    svg.setAttribute("aria-hidden", "true");
+    svg.style.flexShrink = "0";
+    svg.innerHTML = TR_ICONS[name] || "";
+    return svg;
+  }
+  function iconBtn(icon2, title, onClick) {
+    return h("button", { type: "button", class: "zcodepro-tr-ibtn", title, "aria-label": title, onClick }, trIcon(icon2));
+  }
+  function buildPanel() {
+    const L = t();
+    pinned2 = false;
+    const root = h("div", {
+      class: "zcodepro-translate-panel",
+      role: "dialog",
+      "data-theme": cfg?.panel?.theme || "follow",
+      // follow=跟随宿主主题，light/dark 强制
+      // 尺寸：宽度用设置值；高度优先用用户拖拽记住的像素值，没设过才按 maxHeightPct 自适应
+      style: (() => {
+        const pw = cfg?.panel?.width || 450;
+        const ph = Number(cfg?.panel?.height) || 0;
+        const mh = cfg?.panel?.maxHeightPct || 80;
+        return ph > 0 ? `width:${pw}px;height:${ph}px;max-height:${mh}vh` : `width:${pw}px;max-height:${mh}vh`;
+      })()
+    });
+    const head = h(
+      "div",
+      { class: "zcodepro-tr-head" },
+      h("span", { class: "zcodepro-tr-title" }, L.translateTitle),
+      h(
+        "div",
+        { class: "zcodepro-tr-headbtns" },
+        iconBtn("pin", L.translatePin, () => {
+          pinned2 = !pinned2;
+          showToast(pinned2 ? L.translatePinned : L.translateUnpinned, "info");
+        }),
+        iconBtn("history", L.translateHistory, () => {
+          void showHistory();
+        }),
+        iconBtn("settings", L.translateSettings, () => {
+          if (panel) {
+            panel.style.zIndex = "40";
+            const restore = () => {
+              if (panel) panel.style.zIndex = "";
+              window.removeEventListener("zcodepro:settings-closed", restore);
+            };
+            window.addEventListener("zcodepro:settings-closed", restore);
+          }
+          openSettingsDialog("translate");
+        }),
+        iconBtn("close", L.close, () => {
+          hidePanel();
+        })
+      )
+    );
+    head.addEventListener("pointerdown", (e) => {
+      if (e.target.closest("button")) return;
+      const r = root.getBoundingClientRect();
+      const ox = e.clientX - r.left;
+      const oy = e.clientY - r.top;
+      selfDragging = true;
+      const move = (ev) => {
+        root.style.left = Math.max(0, Math.min(ev.clientX - ox, window.innerWidth - 60)) + "px";
+        root.style.top = Math.max(0, Math.min(ev.clientY - oy, window.innerHeight - 40)) + "px";
+        root.dataset.dragged = "1";
+      };
+      const up = () => {
+        window.removeEventListener("pointermove", move);
+        window.removeEventListener("pointerup", up);
+        selfDragging = false;
+        lastAnchor = null;
+      };
+      window.addEventListener("pointermove", move);
+      window.addEventListener("pointerup", up);
+      e.preventDefault();
+    });
+    const arrow = h("div", { class: "zcodepro-tr-arrow", "aria-hidden": "true" });
+    const edges = [
+      ["n", "top:0;left:8px;right:8px;height:5px;cursor:ns-resize"],
+      ["s", "bottom:0;left:8px;right:8px;height:5px;cursor:ns-resize"],
+      ["w", "left:0;top:8px;bottom:8px;width:5px;cursor:ew-resize"],
+      ["e", "right:0;top:8px;bottom:8px;width:5px;cursor:ew-resize"],
+      ["nw", "left:0;top:0;width:12px;height:12px;cursor:nwse-resize"],
+      ["ne", "right:0;top:0;width:12px;height:12px;cursor:nesw-resize"],
+      ["sw", "left:0;bottom:0;width:12px;height:12px;cursor:nesw-resize"],
+      ["se", "right:0;bottom:0;width:12px;height:12px;cursor:nwse-resize"]
+    ];
+    const MIN_W = 240;
+    const MIN_H = 140;
+    const edgeEls = edges.map(([dir, css]) => {
+      const el = h("div", { class: "zcodepro-tr-edge", "data-dir": dir, "aria-hidden": "true", style: css + ";z-index:3" });
+      el.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const r = root.getBoundingClientRect();
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const startW = r.width;
+        const startH = r.height;
+        const startLeft = r.left;
+        const startTop = r.top;
+        const hasN = dir.includes("n");
+        const hasS = dir.includes("s");
+        const hasW = dir.includes("w");
+        const hasE = dir.includes("e");
+        selfDragging = true;
+        let w = startW;
+        let h2 = startH;
+        let left = startLeft;
+        let top = startTop;
+        const move = (ev) => {
+          const dx = ev.clientX - startX;
+          const dy = ev.clientY - startY;
+          if (hasE) w = Math.max(MIN_W, Math.min(startW + dx, window.innerWidth - startLeft - 8));
+          if (hasS) h2 = Math.max(MIN_H, Math.min(startH + dy, window.innerHeight - startTop - 8));
+          if (hasW) {
+            const maxDx = startW - MIN_W;
+            const clampedDx = Math.min(dx, maxDx);
+            left = Math.max(8, startLeft + clampedDx);
+            w = startW - (left - startLeft);
+          }
+          if (hasN) {
+            const maxDy = startH - MIN_H;
+            const clampedDy = Math.min(dy, maxDy);
+            top = Math.max(8, startTop + clampedDy);
+            h2 = startH - (top - startTop);
+          }
+          root.style.left = left + "px";
+          root.style.top = top + "px";
+          root.style.width = w + "px";
+          root.style.height = h2 + "px";
+          root.dataset.dragged = "1";
+        };
+        const up = () => {
+          window.removeEventListener("pointermove", move);
+          window.removeEventListener("pointerup", up);
+          selfDragging = false;
+          lastAnchor = null;
+          void rpc("/translate", { method: "POST", body: { config: { panel: { ...cfg?.panel || {}, width: Math.round(w), height: Math.round(h2) } } } }).then((res) => {
+            if (res.ok && res.config) cfg = res.config;
+          });
+        };
+        window.addEventListener("pointermove", move);
+        window.addEventListener("pointerup", up);
+      });
+      return el;
+    });
+    root.append(arrow, head, buildToolbar(), buildInputRow(), h("div", { class: "zcodepro-tr-body" }), ...edgeEls);
+    return root;
+  }
+  function buildToolbar() {
+    const L = t();
+    const ch = cfg?.channel || {};
+    const box = h("div", { class: "zcodepro-tr-toolbar" });
+    const channelSel = h(
+      "select",
+      { class: "zcodepro-tr-select" },
+      h(
+        "optgroup",
+        { label: L.translateChannelLlm },
+        h("option", { value: "session", selected: ch.type === "llm" && (!ch.provider || ch.provider === "session") }, L.translateChannelSession),
+        ...providers.map((p) => h("option", { value: p.id, selected: ch.type === "llm" && ch.provider === p.id }, p.name || p.id))
+      ),
+      h(
+        "optgroup",
+        { label: L.translateChannelMt },
+        ...MT_IDS.map((id) => {
+          const st = services.find((s) => s.id === id);
+          return h(
+            "option",
+            { value: "mt:" + id, selected: ch.type === "mt" && ch.service === id },
+            mtName(id) + (st && !st.configured ? "\uFF08" + L.translateUnconfigured + "\uFF09" : "")
+          );
+        })
+      )
+    );
+    channelSel.addEventListener("change", () => {
+      const v = channelSel.value;
+      const next = v.startsWith("mt:") ? { type: "mt", provider: "session", model: "", thinking: "off", service: v.slice(3) } : { type: "llm", provider: v, model: "", thinking: ch.thinking || "off", service: ch.service || "deepl" };
+      void persistChannel(next, true);
+    });
+    const items2 = [channelSel];
+    if (ch.type === "llm" && ch.provider && ch.provider !== "session") {
+      const entry = providers.find((p) => p.id === ch.provider);
+      const models = entry && Array.isArray(entry.models) ? entry.models : [];
+      if (models.length) {
+        const modelSel = h(
+          "select",
+          { class: "zcodepro-tr-select" },
+          ...models.map((m) => h("option", { value: m, selected: ch.model === m }, m))
+        );
+        modelSel.addEventListener("change", () => {
+          void persistChannel({ ...ch, model: modelSel.value }, true);
+        });
+        items2.push(modelSel);
+      } else {
+        const modelIn = h("input", { type: "text", class: "zcodepro-tr-input", value: ch.model || "", placeholder: L.translateModelEmpty, style: "max-width:150px" });
+        modelIn.addEventListener("change", () => {
+          void persistChannel({ ...ch, model: modelIn.value.trim() }, true);
+        });
+        items2.push(modelIn);
+      }
+    }
+    if (ch.type !== "mt") {
+      const opts = resolveThinkingOptions(providers, ch, sessionInfo);
+      const thinkSel = h(
+        "select",
+        {
+          class: "zcodepro-tr-select",
+          title: opts.unsupported ? L.translateThinkingUnsupported : opts.sessionModelId ? L.translateThinkingFollowSession.replaceAll("{model}", opts.sessionModelId) : L.translateThinking,
+          disabled: opts.unsupported ? true : void 0
+        },
+        ...opts.variants.map((k) => h("option", { value: k, selected: opts.display === k }, thinkingLabel(k, L)))
+      );
+      thinkSel.addEventListener("change", () => {
+        void persistChannel({ ...ch, thinking: thinkSel.value });
+      });
+      items2.push(thinkSel);
+      const promptSel = h(
+        "select",
+        { class: "zcodepro-tr-select", title: L.translatePrompt },
+        ...(cfg?.prompts || []).map((p) => h("option", { value: p.id, selected: cfg?.promptId === p.id }, p.name || p.id))
+      );
+      promptSel.addEventListener("change", async () => {
+        const res = await rpc("/translate", { method: "POST", body: { config: { promptId: promptSel.value } } });
+        if (res.ok && res.config) cfg = res.config;
+        retryCurrent();
+      });
+      items2.push(promptSel);
+      items2.push(h("button", { type: "button", class: "zcodepro-tr-ibtn", title: L.translatePromptEdit, onClick: () => {
+        void editPrompt();
+      } }, trIcon("edit")));
+    }
+    box.replaceChildren(...items2);
+    return box;
+  }
+  function buildInputRow() {
+    const L = t();
+    const input = h("input", { type: "text", class: "zcodepro-tr-input", placeholder: L.translateInputPh });
+    input.addEventListener("keydown", (e) => {
+      e.stopPropagation();
+      if (e.key === "Enter" && input.value.trim()) {
+        ensurePanelOpenNearInput(input);
+        void runTranslation(input.value.trim());
+      }
+    });
+    const row = h(
+      "div",
+      { class: "zcodepro-tr-inputrow" },
+      input,
+      h("button", { type: "button", class: "zcodepro-tr-ibtn", title: L.translateGo, onClick: () => {
+        if (input.value.trim()) {
+          ensurePanelOpenNearInput(input);
+          void runTranslation(input.value.trim());
+        }
+      } }, trIcon("enter"))
+    );
+    return row;
+  }
+  function ensurePanelOpenNearInput(input) {
+    if (!panel) return;
+    const r = input.getBoundingClientRect();
+    if (r.top < 0 || r.bottom > window.innerHeight) panel.scrollIntoView({ block: "nearest" });
+  }
+  function setInput(text) {
+    const input = panel?.querySelector(".zcodepro-tr-inputrow input");
+    if (input) input.value = text;
+  }
+  function currentText() {
+    const input = panel?.querySelector(".zcodepro-tr-inputrow input");
+    return input ? String(input.value || "").trim() : "";
+  }
+  function retryCurrent() {
+    const text = currentText();
+    if (text) void runTranslation(text);
+  }
+  async function persistChannel(next, rerender) {
+    let toSave = next;
+    if (next && next.type !== "mt") {
+      const opts = resolveThinkingOptions(providers, next, sessionInfo);
+      if (opts.current !== next.thinking) toSave = { ...next, thinking: opts.current };
+    }
+    const res = await rpc("/translate", { method: "POST", body: { config: { channel: toSave } } });
+    if (res.ok && res.config) cfg = res.config;
+    else showToast(t().failed + ": " + errText(res), "error");
+    if (rerender && panel) {
+      const old = panel.querySelector(".zcodepro-tr-toolbar");
+      const fresh = buildToolbar();
+      if (old) old.replaceWith(fresh);
+      retryCurrent();
+    }
+  }
+  async function editPrompt() {
+    const L = t();
+    const current2 = (cfg?.prompts || []).find((p) => p.id === cfg?.promptId) || { id: "", name: "", prompt: "" };
+    openDialog({
+      title: L.translatePromptEditTitle,
+      width: "sm:max-w-lg",
+      onMount: async ({ body, close }) => {
+        const nameIn = h("input", { type: "text", value: current2.name || "", placeholder: L.translatePromptName, class: "zcodepro-tr-input" });
+        const textIn = h("textarea", { class: "zcodepro-tr-textarea", rows: "8" });
+        textIn.value = current2.prompt || "";
+        const hint = h("div", { class: "zcodepro-tr-hint" }, L.translatePromptHint);
+        body.append(
+          h("div", { class: "mb-2" }, nameIn),
+          textIn,
+          hint,
+          h(
+            "div",
+            { class: "mt-3 flex justify-end gap-2" },
+            h("button", { type: "button", class: "zcodepro-tr-ibtn", onClick: () => close() }, L.cancel),
+            h("button", {
+              type: "button",
+              class: "zcodepro-tr-ibtn zcodepro-tr-ibtn-primary",
+              onClick: async () => {
+                const name = nameIn.value.trim();
+                const prompt = textIn.value.trim();
+                if (!name || !prompt) {
+                  showToast(L.translatePromptRequired, "warning");
+                  return;
+                }
+                const prompts = (cfg?.prompts || []).slice();
+                const renamed = !!current2.id && name !== current2.name;
+                const id = renamed || !current2.id ? "c" + Date.now().toString(36) : current2.id;
+                const idx = prompts.findIndex((p) => p.id === id);
+                if (idx >= 0) prompts[idx] = { ...prompts[idx], name, prompt };
+                else prompts.push({ id, name, prompt });
+                const res = await rpc("/translate", { method: "POST", body: { config: { prompts, promptId: id } } });
+                if (res.ok && res.config) {
+                  cfg = res.config;
+                  if (panel) {
+                    const old = panel.querySelector(".zcodepro-tr-toolbar");
+                    if (old) old.replaceWith(buildToolbar());
+                  }
+                  close();
+                  retryCurrent();
+                } else {
+                  showToast(L.failed + ": " + errText(res), "error");
+                }
+              }
+            }, L.translateSave)
+          )
+        );
+      }
+    });
+  }
+  function bodyEl() {
+    return panel?.querySelector(".zcodepro-tr-body");
+  }
+  function renderLoading() {
+    const L = t();
+    const el = bodyEl();
+    if (el) el.replaceChildren(h("div", { class: "zcodepro-tr-loading" }, L.translateLoading));
+  }
+  function renderError(msg) {
+    const L = t();
+    const el = bodyEl();
+    if (el) el.replaceChildren(
+      h("div", { class: "zcodepro-tr-err" }, msg || L.translateFailed),
+      h(
+        "div",
+        { class: "zcodepro-tr-actions" },
+        h("button", { type: "button", class: "zcodepro-tr-ibtn", onClick: () => {
+          retryCurrent();
+        } }, L.translateRetry)
+      )
+    );
+  }
+  function copyBtn(text) {
+    const L = t();
+    return h("button", {
+      type: "button",
+      class: "zcodepro-tr-ibtn",
+      onClick: async () => {
+        if (await copyToClipboard(text)) showToast(L.translateCopied, "success");
+      }
+    }, L.translateCopy);
+  }
+  function speakBtn(text, ttsUrl) {
+    const L = t();
+    return h("button", { type: "button", class: "zcodepro-tr-ibtn", title: L.translateSpeak, onClick: () => speak(text, ttsUrl) }, trIcon("volume"));
+  }
+  function speak(text, ttsUrl) {
+    try {
+      if (ttsUrl) {
+        if (speakAudio) speakAudio.pause();
+        speakAudio = new Audio(ttsUrl);
+        void speakAudio.play();
+        return;
+      }
+      if (!text || !("speechSynthesis" in window)) return;
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = /[\u4e00-\u9fff]/.test(text) ? "zh-CN" : "en-US";
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(u);
+    } catch {
+    }
+  }
+  function renderDict(dict) {
+    const L = t();
+    const el = bodyEl();
+    if (!el || !dict) return;
+    const hasContent = (dict.senses || []).length || (dict.examples || []).length || (dict.forms || []).length;
+    if (!hasContent) {
+      el.replaceChildren(
+        h("div", { class: "zcodepro-tr-empty" }, L.translateEmpty),
+        h(
+          "div",
+          { class: "zcodepro-tr-actions" },
+          h("button", { type: "button", class: "zcodepro-tr-ibtn", onClick: () => {
+            retryCurrent();
+          } }, L.translateRetry)
+        )
+      );
+      return;
+    }
+    const head = h(
+      "div",
+      { class: "zcodepro-tr-wordrow" },
+      h("span", { class: "zcodepro-tr-word" }, dict.word || ""),
+      dict.phonetic?.uk ? h("span", { class: "zcodepro-tr-phon" }, "uk /" + dict.phonetic.uk + "/") : null,
+      dict.phonetic?.us ? h("span", { class: "zcodepro-tr-phon" }, "us /" + dict.phonetic.us + "/") : null,
+      speakBtn(dict.word || "", dict.tts || "")
+    );
+    const parts = [head];
+    for (const s of dict.senses || []) {
+      parts.push(h(
+        "div",
+        { class: "zcodepro-tr-defs" },
+        s.pos ? h("span", { class: "zcodepro-tr-pos" }, s.pos) : null,
+        h("span", {}, (s.defs || []).join("\uFF1B"))
+      ));
+    }
+    for (const ex of dict.examples || []) {
+      parts.push(h(
+        "div",
+        { class: "zcodepro-tr-example" },
+        h("div", {}, ex.src || ""),
+        ex.dst ? h("div", { class: "zcodepro-tr-example-dst" }, ex.dst) : null
+      ));
+    }
+    if ((dict.forms || []).length) {
+      parts.push(h("div", { class: "zcodepro-tr-forms" }, (dict.forms || []).join(" \xB7 ")));
+    }
+    const dictText = [
+      dict.word,
+      dict.phonetic?.uk ? "/" + dict.phonetic.uk + "/" : "",
+      ...(dict.senses || []).map((s) => (s.pos ? s.pos + " " : "") + (s.defs || []).join("\uFF1B")),
+      ...(dict.examples || []).map((e) => e.src + (e.dst ? "\n" + e.dst : ""))
+    ].filter(Boolean).join("\n");
+    parts.push(h("div", { class: "zcodepro-tr-actions" }, copyBtn(dictText)));
+    el.replaceChildren(...parts);
+  }
+  function renderTransShell() {
+    const L = t();
+    const el = bodyEl();
+    if (!el) return null;
+    const src = h("div", { class: "zcodepro-tr-src" });
+    const out = h("div", { class: "zcodepro-tr-out" });
+    const meta = h("span", { class: "zcodepro-tr-meta" });
+    el.replaceChildren(
+      src,
+      out,
+      h(
+        "div",
+        { class: "zcodepro-tr-actions" },
+        meta,
+        h("button", { type: "button", class: "zcodepro-tr-ibtn", onClick: () => {
+          retryCurrent();
+        } }, L.translateRetry),
+        h("button", { type: "button", class: "zcodepro-tr-ibtn", title: L.translateSpeak, onClick: () => speak(out.textContent, "") }, trIcon("volume")),
+        h("button", {
+          type: "button",
+          class: "zcodepro-tr-ibtn",
+          onClick: async () => {
+            const text = String(out.textContent || "").trim();
+            if (text && await copyToClipboard(text)) showToast(L.translateCopied, "success");
+          }
+        }, L.translateCopy)
+      )
+    );
+    return { src, out, meta };
+  }
+  async function runTranslation(text) {
+    const L = t();
+    if (!cfg) await loadState();
+    if (!cfg) {
+      renderError("config unavailable");
+      return;
+    }
+    if (currentAbort) currentAbort.abort();
+    const abort = new AbortController();
+    currentAbort = abort;
+    const ch = cfg.channel || {};
+    const label = ch.type === "mt" ? mtName(ch.service) : !ch.provider || ch.provider === "session" ? L.translateChannelSession + " \xB7 " + (ch.model || "") : ch.provider + " \xB7 " + (ch.model || "");
+    const reqBody = {
+      text,
+      channel: { type: ch.type, provider: ch.provider, model: ch.model, thinking: ch.thinking, service: ch.service },
+      promptId: cfg.promptId,
+      stream: ch.type !== "mt"
+    };
+    renderLoading();
+    const finish = async (kind) => {
+      if (abort.signal.aborted) return;
+      if (cfg.history?.enabled !== false) {
+        void rpc("/translate/history", { method: "POST", body: { text, kind, label } });
+      }
+    };
+    try {
+      if (reqBody.stream) {
+        const ui = renderTransShell();
+        let full = "";
+        let handled = false;
+        await rpcStream("/translate/do", reqBody, abort.signal, (evt) => {
+          if (!ui || abort.signal.aborted) return;
+          if (evt.type === "meta") {
+            ui.out.textContent = "";
+            if (evt.sourceLang) ui.meta.textContent = evt.sourceLang;
+          } else if (evt.type === "delta") {
+            full += evt.text || "";
+            ui.out.textContent = full;
+          } else if (evt.type === "done") {
+            full = evt.text || full;
+            ui.out.textContent = full;
+            wireTransActions(ui, { srcText: text, sourceLang: evt.sourceLang || "" });
+          } else if (evt.type === "result") {
+            const p = evt.payload || {};
+            if (p.kind === "dict") {
+              handled = true;
+              renderDict(p.dict);
+              void finish("dict");
+              return;
+            }
+            full = p.trans && p.trans.text || "";
+            ui.out.textContent = full;
+            wireTransActions(ui, { srcText: text, sourceLang: p.trans && p.trans.sourceLang || "" });
+          } else if (evt.type === "error") {
+            throw new Error(evt.error || "translate failed");
+          }
+        });
+        if (!handled && !full.trim() && !abort.signal.aborted) throw new Error(L.translateEmpty);
+        if (!handled) void finish("trans");
+      } else {
+        const res = await rpc("/translate/do", { method: "POST", body: { ...reqBody, stream: false } });
+        if (!res.ok) throw new Error(errText(res));
+        if (res.kind === "dict") {
+          renderDict(res.dict);
+          void finish("dict");
+        } else {
+          const ui = renderTransShell();
+          if (ui) {
+            ui.out.textContent = res.trans && res.trans.text || "";
+            wireTransActions(ui, { srcText: text, sourceLang: res.trans && res.trans.sourceLang || "" });
+          }
+          void finish("trans");
+        }
+      }
+    } catch (err) {
+      if (abort.signal.aborted) return;
+      if (err && err.name === "AbortError") return;
+      renderError(String(err && err.message || err));
+    }
+  }
+  function wireTransActions(ui, { srcText, sourceLang }) {
+    const L = t();
+    if (!ui) return;
+    ui.src.replaceChildren(
+      h(
+        "details",
+        { class: "zcodepro-tr-details" },
+        h("summary", {}, L.translateShowSource),
+        h("div", { class: "zcodepro-tr-src-text" }, srcText)
+      )
+    );
+    if (sourceLang) ui.meta.textContent = sourceLang;
+  }
+  async function rpcStream(path, body, signal, onEvent) {
+    const boot = liveBoot();
+    const resp = await fetch((boot.helperUrl || "http://127.0.0.1:47889") + path, {
+      method: "POST",
+      signal,
+      headers: { "Content-Type": "application/json", "X-ZCodePro-Token": boot.token || "" },
+      body: JSON.stringify(body)
+    });
+    if (!resp.ok) {
+      const j = await resp.json().catch(() => ({}));
+      throw new Error(j && j.error || "HTTP " + resp.status);
+    }
+    if (!(resp.headers.get("content-type") || "").includes("text/event-stream")) {
+      const j = await resp.json().catch(() => ({}));
+      if (j && j.ok === false) throw new Error(j.error || "translate failed");
+      onEvent({ type: "result", payload: j });
+      return;
+    }
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = "";
+    for (; ; ) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      let idx;
+      while ((idx = buf.indexOf("\n\n")) >= 0) {
+        const chunk = buf.slice(0, idx);
+        buf = buf.slice(idx + 2);
+        for (const line of chunk.split("\n")) {
+          if (!line.startsWith("data:")) continue;
+          const payload = line.slice(5).trim();
+          if (!payload) continue;
+          try {
+            onEvent(JSON.parse(payload));
+          } catch {
+          }
+        }
+      }
+    }
+  }
+  async function showHistory() {
+    const L = t();
+    const el = bodyEl();
+    if (!el) return;
+    const res = await rpc("/translate/history");
+    const items2 = res.ok && Array.isArray(res.items) ? res.items : [];
+    if (!items2.length) {
+      el.replaceChildren(h("div", { class: "zcodepro-tr-empty" }, L.translateNoHistory));
+      return;
+    }
+    el.replaceChildren(...items2.slice(0, 50).map((it) => h(
+      "div",
+      {
+        class: "zcodepro-tr-histitem",
+        title: it.text || "",
+        onClick: () => {
+          setInput(it.text || "");
+          void runTranslation(String(it.text || ""));
+        }
+      },
+      h("span", { class: "zcodepro-tr-histtime" }, new Date(it.t || Date.now()).toLocaleTimeString()),
+      h("span", { class: "zcodepro-tr-histtext" }, trIcon(it.kind === "dict" ? "book" : "text", 12), " ", it.text || "")
+    )));
+  }
+
+  // src/inject/features/selection-toolbar-translate.js
+  init_core();
+  init_ui();
+  var installed9 = false;
+  var enabled13 = true;
+  var MARK = "data-zcodepro-translate-btn";
+  async function refreshEnabled() {
+    try {
+      const cfg2 = await getConfig();
+      enabled13 = !(cfg2 && cfg2.features && cfg2.features.translate === false);
+    } catch {
+    }
+  }
+  function currentSelection() {
+    const sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return { text: "", rect: null };
+    const text = String(sel.toString()).trim();
+    const rect = text ? sel.getRangeAt(0).getBoundingClientRect() : null;
+    return { text, rect };
+  }
+  function svgIcon(paths, cls) {
+    const ns = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("xmlns", ns);
+    svg.setAttribute("width", "24");
+    svg.setAttribute("height", "24");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke", "currentColor");
+    svg.setAttribute("stroke-width", "1.5");
+    svg.setAttribute("stroke-linecap", "round");
+    svg.setAttribute("stroke-linejoin", "round");
+    svg.setAttribute("class", cls);
+    svg.setAttribute("aria-hidden", "true");
+    for (const d of paths) {
+      const p = document.createElementNS(ns, "path");
+      p.setAttribute("d", d);
+      svg.append(p);
+    }
+    return svg;
+  }
+  function dismissToolbar() {
+    const once = () => {
+      try {
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount) sel.removeAllRanges();
+        document.dispatchEvent(new Event("selectionchange", { bubbles: true }));
+      } catch {
+      }
+    };
+    once();
+    requestAnimationFrame(() => {
+      once();
+      requestAnimationFrame(once);
+    });
+    setTimeout(once, 120);
+  }
+  function injectButton(tooltip) {
+    if (!enabled13) return;
+    if (tooltip.querySelector("[" + MARK + "]")) return;
+    const anchor = tooltip.querySelector('[data-conversation-selection-action="comment"]');
+    if (!anchor) return;
+    const btn = h(
+      "button",
+      {
+        type: "button",
+        [MARK]: "1",
+        // 复刻官方「注释」按钮的排版（padding/gap/hover 用官方同款工具类）
+        class: "flex min-w-0 items-center gap-1 px-2.5 py-1.5 hover:bg-menu-hover",
+        title: t().translateToolbarTitle
+      },
+      // 图标与文字间不留空档：图标存在时用官方同款 gap-1；无图标只剩文字
+      svgIcon(["m5 8 6 6", "m4 14 6-6 2-3", "M2 5h12", "M7 2h1", "m22 22-5-10-5 10", "M14 18h6"], "size-3.5 shrink-0 text-foreground-subtle"),
+      h("span", {}, t().translateToolbarLabel)
+    );
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const cur = currentSelection();
+      const text = cur.text;
+      const raw = cur.rect;
+      if (!text) return;
+      let rect = raw ? { left: raw.left, right: raw.right, top: raw.top, bottom: raw.bottom, width: raw.width, height: raw.height } : null;
+      if (rect) {
+        const top = Math.max(0, Math.min(rect.top, window.innerHeight - 1));
+        const bottom = Math.max(top, Math.min(rect.bottom, window.innerHeight));
+        if (bottom <= 0 || top >= window.innerHeight) {
+          const tr = tooltip.getBoundingClientRect();
+          rect = { left: tr.left, right: tr.right, top: tr.top, bottom: tr.bottom, width: tr.width, height: tr.height };
+        } else {
+          rect = { ...rect, top, bottom, height: Math.max(1, bottom - top) };
+        }
+      }
+      closeTranslatePanel();
+      openTranslatePanelAt(rect, text);
+      dismissToolbar();
+    }, true);
+    btn.addEventListener("pointerdown", (e) => e.stopPropagation(), true);
+    const sep = h("div", { class: "w-px shrink-0 bg-border" });
+    anchor.after(sep);
+    sep.after(btn);
+  }
+  var TIP_SEL = "[data-conversation-selection-tooltip]";
+  var lastTip = null;
+  function scan5(records) {
+    let maybe = false;
+    for (const rec of records || []) {
+      for (const node of rec.addedNodes) {
+        if (node.nodeType !== 1) continue;
+        if (node.matches?.(TIP_SEL) || node.querySelector?.(TIP_SEL)) {
+          maybe = true;
+          break;
+        }
+      }
+      if (maybe) break;
+    }
+    const cur = document.querySelector(TIP_SEL);
+    if (cur !== lastTip) lastTip = cur;
+    if (!maybe && !cur) return;
+    if (!cur) return;
+    injectButton(cur);
+  }
+  function startSelectionToolbarTranslate() {
+    if (installed9) return;
+    installed9 = true;
+    void refreshEnabled();
+    window.addEventListener("zcodepro:config-changed", () => {
+      void refreshEnabled();
+    });
+    const mo = new MutationObserver((records) => scan5(records));
+    mo.observe(document.body, { childList: true, subtree: true });
+    scan5([]);
+  }
+
   // src/inject/features/session-link.js
   init_core();
   init_ui();
@@ -17377,8 +19964,8 @@
     }
     return out;
   }
-  var installed8 = false;
-  var enabled13 = true;
+  var installed10 = false;
+  var enabled14 = true;
   var titleCache = /* @__PURE__ */ new Map();
   var TITLE_CACHE_MAX = 500;
   var pendingIds = /* @__PURE__ */ new Set();
@@ -17445,7 +20032,7 @@
     }
     for (const n of nodes) processTextNode(n);
   }
-  function scan5() {
+  function scan6() {
     const nodes = [];
     for (const conv of document.querySelectorAll(CONV3)) walkTexts(conv, nodes);
     for (const n of nodes) processTextNode(n);
@@ -17481,16 +20068,16 @@
       span.replaceWith(document.createTextNode(span.getAttribute("data-zcodepro-sess") || ""));
     }
   }
-  function setEnabled(cfg) {
-    const next = cfg.features ? cfg.features.sessionLink !== false : true;
-    if (enabled13 && !next) unwrapAll();
-    enabled13 = next;
-    if (next) scan5();
+  function setEnabled(cfg2) {
+    const next = cfg2.features ? cfg2.features.sessionLink !== false : true;
+    if (enabled14 && !next) unwrapAll();
+    enabled14 = next;
+    if (next) scan6();
   }
   var inConv = (el) => !!(el && el.closest && el.closest(CONV3));
   function startSessionLink() {
-    if (installed8 || typeof document === "undefined") return;
-    installed8 = true;
+    if (installed10 || typeof document === "undefined") return;
+    installed10 = true;
     ensureStyle();
     void getConfig().then(setEnabled).catch(() => {
     });
@@ -17498,18 +20085,18 @@
       void getConfig(true).then(setEnabled).catch(() => {
       });
     });
-    scan5();
+    scan6();
     new MutationObserver((muts) => {
       const texts = [];
       let structural = false;
       for (const m of muts) {
         if (m.type === "characterData") {
           doneNodes.delete(m.target);
-          if (enabled13 && inConv(m.target.parentElement)) texts.push(m.target);
+          if (enabled14 && inConv(m.target.parentElement)) texts.push(m.target);
           continue;
         }
         for (const n of m.addedNodes) {
-          if (!enabled13) continue;
+          if (!enabled14) continue;
           if (n.nodeType === Node.TEXT_NODE) {
             if (inConv(n.parentElement)) texts.push(n);
             continue;
@@ -17522,9 +20109,9 @@
           if (inConv(n) && !n.closest(SKIP_SEL)) walkTexts(n, texts);
         }
       }
-      if (!enabled13) return;
+      if (!enabled14) return;
       if (structural) {
-        scan5();
+        scan6();
         return;
       }
       for (const t2 of texts) processTextNode(t2);
@@ -17533,7 +20120,7 @@
     }).observe(document.body, { childList: true, subtree: true, characterData: true });
     document.addEventListener("click", (e) => {
       const span = e.target instanceof Element && e.target.closest("[data-zcodepro-sess]");
-      if (!span || !enabled13) return;
+      if (!span || !enabled14) return;
       e.preventDefault();
       e.stopPropagation();
       const id = span.getAttribute("data-zcodepro-sess") || "";
@@ -17547,8 +20134,8 @@
 
   // src/inject/features/composer-provider.js
   init_core();
-  var installed9 = false;
-  var enabled14 = true;
+  var installed11 = false;
+  var enabled15 = true;
   var TRIGGER_SEL = '[data-testid="chat-model-select-trigger"]';
   function labelParts(label) {
     const text = (label || "").trim();
@@ -17584,7 +20171,7 @@
       const parts = labelParts(btn.getAttribute("aria-label") || "");
       if (!parts) continue;
       const holders = holdersOf(btn, parts.model);
-      if (enabled14) {
+      if (enabled15) {
         if (!parts.provider || !holders.length) continue;
         const target = `${parts.provider} / ${parts.model}`;
         for (const el of holders) {
@@ -17604,8 +20191,8 @@
     }
   }
   function startComposerProvider() {
-    if (installed9 || typeof document === "undefined") return;
-    installed9 = true;
+    if (installed11 || typeof document === "undefined") return;
+    installed11 = true;
     const COMPOSER_SEL = '[data-composer-layout], [data-composer-leading-actions], [data-composer-leading-content], [data-testid="chat-model-select-trigger"]';
     const relevant2 = (muts) => {
       for (const m of muts) {
@@ -17626,22 +20213,22 @@
       clearTimeout(schedule.t);
       schedule.t = setTimeout(apply4, 120);
     };
-    void getConfig().then((cfg) => {
-      enabled14 = cfg.features ? cfg.features.composerProvider !== false : true;
+    void getConfig().then((cfg2) => {
+      enabled15 = cfg2.features ? cfg2.features.composerProvider !== false : true;
     }).catch(() => {
     });
     window.addEventListener("zcodepro:config-changed", () => {
-      void getConfig(true).then((cfg) => {
-        const next = cfg.features ? cfg.features.composerProvider !== false : true;
-        if (next !== enabled14) {
-          enabled14 = next;
+      void getConfig(true).then((cfg2) => {
+        const next = cfg2.features ? cfg2.features.composerProvider !== false : true;
+        if (next !== enabled15) {
+          enabled15 = next;
           apply4();
         }
       }).catch(() => {
       });
     });
     const observer2 = new MutationObserver((muts) => {
-      if (enabled14 && relevant2(muts)) schedule();
+      if (enabled15 && relevant2(muts)) schedule();
     });
     observer2.observe(document.body, {
       childList: true,
@@ -17662,8 +20249,8 @@
   var EDIT_BTN_PREFIX = "v4-edit-";
   var ITEM_PREFIX = "chat-model-select-item-";
   var GROUP_PREFIX = "chat-model-select-group-";
-  var installed10 = false;
-  var enabled15 = true;
+  var installed12 = false;
+  var enabled16 = true;
   var modelBeforeEdit = null;
   var pendingEdit = false;
   var editRequestAt = 0;
@@ -17774,7 +20361,7 @@
       return;
     }
     setTimeout(() => {
-      if (!enabled15 || !document.querySelector(EDIT_BAR_SEL)) return;
+      if (!enabled16 || !document.querySelector(EDIT_BAR_SEL)) return;
       if (currentModelValue() !== value) selectModel(value);
     }, 300);
   }
@@ -17794,13 +20381,13 @@
     document.body.dispatchEvent(new MouseEvent("click", { ...base, buttons: 0 }));
   }
   function selectModel(value) {
-    if (applying || !enabled15) return;
+    if (applying || !enabled16) return;
     if (currentModelValue() === value) return;
     applying = true;
     let attempts = 0;
     let groupOpened = false;
     const step = () => {
-      if (!enabled15 || currentModelValue() === value) {
+      if (!enabled16 || currentModelValue() === value) {
         applying = false;
         return;
       }
@@ -17847,7 +20434,7 @@
     setTimeout(step, 80);
   }
   function onEditClick(event) {
-    if (!enabled15) return;
+    if (!enabled16) return;
     const target = event.target;
     if (!(target instanceof Element)) return;
     if (!target.closest(`[data-testid^="${EDIT_BTN_PREFIX}"]`)) return;
@@ -17859,7 +20446,7 @@
     editRequestAt = Date.now();
   }
   function onMutate() {
-    if (!enabled15) return;
+    if (!enabled16) return;
     const bar = document.querySelector(EDIT_BAR_SEL);
     if (!bar) {
       if (!pendingEdit || Date.now() - editRequestAt > 3e3) {
@@ -17878,14 +20465,14 @@
     pendingEdit = false;
     const target = modelBeforeEdit;
     let checks = 0;
-    const tick8 = () => {
-      if (!enabled15 || !document.querySelector(EDIT_BAR_SEL)) return;
+    const tick9 = () => {
+      if (!enabled16 || !document.querySelector(EDIT_BAR_SEL)) return;
       const current2 = currentModelValue();
       if (current2 && current2 !== target) {
         const official2 = current2;
         applyModel(target);
         const watch = (left) => {
-          if (!enabled15 || !document.querySelector(EDIT_BAR_SEL)) return;
+          if (!enabled16 || !document.querySelector(EDIT_BAR_SEL)) return;
           if (currentModelValue() === official2 && left > 0) {
             applyModel(target);
             setTimeout(() => watch(left - 1), 400);
@@ -17895,21 +20482,21 @@
         return;
       }
       checks += 1;
-      if (checks < 16) setTimeout(tick8, 50);
+      if (checks < 16) setTimeout(tick9, 50);
     };
-    setTimeout(tick8, 60);
+    setTimeout(tick9, 60);
   }
   function startComposerEditModel() {
-    if (installed10 || typeof document === "undefined") return;
-    installed10 = true;
-    void getConfig().then((cfg) => {
-      enabled15 = cfg.features ? cfg.features.composerEditModel !== false : true;
+    if (installed12 || typeof document === "undefined") return;
+    installed12 = true;
+    void getConfig().then((cfg2) => {
+      enabled16 = cfg2.features ? cfg2.features.composerEditModel !== false : true;
     }).catch(() => {
     });
     window.addEventListener("zcodepro:config-changed", () => {
-      void getConfig(true).then((cfg) => {
-        enabled15 = cfg.features ? cfg.features.composerEditModel !== false : true;
-        if (!enabled15) {
+      void getConfig(true).then((cfg2) => {
+        enabled16 = cfg2.features ? cfg2.features.composerEditModel !== false : true;
+        if (!enabled16) {
           pendingEdit = false;
           modelBeforeEdit = null;
         }
@@ -17919,6 +20506,75 @@
     document.addEventListener("click", onEditClick, true);
     new MutationObserver(onMutate).observe(document.body, { childList: true, subtree: true });
     onMutate();
+  }
+
+  // src/inject/features/hr-notice.js
+  init_core();
+  init_ui();
+  var POLL_MS2 = 15e3;
+  var SEEN_KEY2 = "zcodeproHrNoticeSeen";
+  var MAX_AGE_MS = 10 * 60 * 1e3;
+  function seenAt() {
+    try {
+      return String(sessionStorage.getItem(SEEN_KEY2) || "");
+    } catch {
+      return "";
+    }
+  }
+  function markSeen(at) {
+    try {
+      sessionStorage.setItem(SEEN_KEY2, String(at || ""));
+    } catch {
+    }
+  }
+  function cardOf(notice) {
+    const fixed = Array.isArray(notice?.fixed) ? notice.fixed : [];
+    const pending = Array.isArray(notice?.pending) ? notice.pending : [];
+    if (!fixed.length && !pending.length) return null;
+    const parts = [];
+    if (fixed.length) {
+      const items2 = fixed.map((x) => x.action === "key" ? `${x.name}\uFF1A\u66F4\u65B0\u5BC6\u94A5` : `${x.name}\uFF1A\u8865\u767B\u8BB0`);
+      parts.push(`\u5DF2\u81EA\u52A8\u540C\u6B65\u4F9B\u5E94\u5546\u767B\u8BB0\uFF1A${items2.join("\uFF1B")}`);
+    }
+    if (pending.length) {
+      parts.push(`${pending.map((x) => x.name).join("\u3001")} \u6307\u5411\u672C\u5730\u538B\u7F29\u8DEF\u7531\u4F46\u672A\u767B\u8BB0\uFF0C\u4E14\u65E0\u6CD5\u63A8\u65AD\u539F\u4E0A\u6E38\u5730\u5740\u3002\u8BF7\u8FD0\u884C /hr-join \u63A5\u5165\uFF0C\u5426\u5219\u8FD9\u4E9B\u4F9B\u5E94\u5546\u7684\u8BF7\u6C42\u4F1A\u88AB\u62D2\u7EDD\u3002`);
+    }
+    return {
+      kind: pending.length ? "warning" : "success",
+      title: pending.length ? "headroom \u4F9B\u5E94\u5546\u767B\u8BB0\u9700\u8981\u5904\u7406" : "headroom \u4F9B\u5E94\u5546\u767B\u8BB0\u5DF2\u540C\u6B65",
+      desc: parts.join("\n\n")
+    };
+  }
+  var shownAt = null;
+  async function tick8() {
+    const cfg2 = await getConfig();
+    if ((cfg2.features || {}).hrNotice === false) return;
+    const res = await rpc("/headroom/reconcile-notice");
+    if (!res || res.ok === false) return;
+    const notice = res.notice;
+    if (!notice || !notice.at) return;
+    const at = Date.parse(notice.at);
+    if (!Number.isFinite(at) || Date.now() - at > MAX_AGE_MS) return;
+    if (notice.at === shownAt || notice.at === seenAt()) return;
+    const card = cardOf(notice);
+    if (!card) return;
+    shownAt = notice.at;
+    markSeen(notice.at);
+    showCornerCard({ position: "bl", ...card, actions: [{ label: "\u77E5\u9053\u4E86", primary: true, onClick: () => closeCornerCard("bl") }] });
+  }
+  function startHrNotice() {
+    const run = () => {
+      tick8().catch(() => {
+      });
+    };
+    run();
+    setInterval(() => {
+      if (document.hidden) return;
+      run();
+    }, POLL_MS2);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) run();
+    });
   }
 
   // src/inject/index.js
@@ -18062,6 +20718,14 @@
       } catch {
       }
       try {
+        startTranslatePanel();
+      } catch {
+      }
+      try {
+        startSelectionToolbarTranslate();
+      } catch {
+      }
+      try {
         startSessionLink();
       } catch {
       }
@@ -18075,6 +20739,10 @@
       }
       try {
         startSettingsEntry();
+      } catch {
+      }
+      try {
+        startHrNotice();
       } catch {
       }
       try {

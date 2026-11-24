@@ -35,7 +35,7 @@ if (process.platform === 'win32' && (process.stdout.isTTY || process.stdin.isTTY
 }
 
 function usage() {
-  return `ZCode Pro — ZCode 桌面版增强启动器（壁纸引擎与界面增强）
+  return `ZCode Pro — ZCode 桌面版增强包：壁纸引擎、皮肤主题等三十余项增强，不修改客户端文件
 
 用法: zcode-pro [选项]
 
