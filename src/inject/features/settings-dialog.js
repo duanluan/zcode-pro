@@ -153,7 +153,28 @@ function makeUpgradeControls({ endpoint, metaRefresh, idleText }) {
   return { btn, state, stop: stopPoll };
 }
 
-export function openSettingsDialog(initialTab = 'features') {
+// 记住上次停留的标签页（一级 + 各级二级），下次打开恢复到原位。
+// 存 localStorage 而不是配置文件：属于纯界面状态，不需要同步到别的机器。
+// initialTab 显式指定时（如翻译面板的 ⚙ 直达“翻译”）优先用它，不读记忆值。
+const SETTINGS_TAB_KEY = 'zcodepro-settings-tab';
+const SETTINGS_SUBTAB_KEY = 'zcodepro-settings-subtab';
+function readTabMemory(key) {
+  try {
+    const v = JSON.parse(localStorage.getItem(key) || 'null');
+    return v && typeof v === 'object' ? v : {};
+  } catch { return {}; }
+}
+function writeTabMemory(key, patch) {
+  try {
+    const cur = readTabMemory(key);
+    localStorage.setItem(key, JSON.stringify({ ...cur, ...patch }));
+  } catch { /* ignore */ }
+}
+
+// initialTab 默认空串而不是 'features'：要区分“调用方没指定”（回到上次停留的
+// tab）与“调用方明确要求打开功能页”两种意图。之前默认 'features' 会让
+// explicitTab 永远有值，记忆功能失效、每次都停在功能页
+export function openSettingsDialog(initialTab = '') {
   ensureStyle();
   const L = t();
   // Headroom / rtk 升级进度轮询的停止句柄：面板代码在 onMount 里赋值，关弹窗时停掉
@@ -512,10 +533,17 @@ export function openSettingsDialog(initialTab = 'features') {
           }));
 
       // 标签页切换：功能（现有内容）/ 外观 / 全局提示词 / 视觉代理
-      // initialTab 供面板等入口直达指定标签（如翻译面板的 ⚙ 打开“翻译”页）
-      let activeTab = typeof initialTab === 'string' && initialTab ? initialTab : 'features';
+      // initialTab 供面板等入口直达指定标签（如翻译面板的 ⚙ 打开“翻译”页）；
+      // 未显式指定时恢复上次停留的一级 tab（tabDefs 建好后再校验合法性）
+      const explicitTab = typeof initialTab === 'string' && initialTab ? initialTab : '';
+      const tabMemory = readTabMemory(SETTINGS_TAB_KEY);
+      let activeTab = explicitTab || (typeof tabMemory.last === 'string' ? tabMemory.last : '') || 'features';
       // 二级 tab 栏（外观 / 行为各一条）：登记后统一放到滚动区上方的固定区
       const subTabBars = {};
+// 二级 tab 记忆：每页一条 key（styles / agents / proxy），默认值保持原行为
+      const subMemory = readTabMemory(SETTINGS_SUBTAB_KEY);
+      const savedSub = (key, fallback) => (typeof subMemory[key] === 'string' && subMemory[key]) || fallback;
+      const rememberSub = (key, value) => writeTabMemory(SETTINGS_SUBTAB_KEY, { [key]: value });
       // 插件更新卡片：显示 duanluan-zcode-plugins 市场状态，一键更新（helper /plugins/* 端点）；
       // 状态异步加载，打开弹窗不等待
 
@@ -733,6 +761,8 @@ export function openSettingsDialog(initialTab = 'features') {
       });
       const switchTab = (name) => {
         activeTab = name;
+        // 记住一级 tab，下次打开回到这里
+        writeTabMemory(SETTINGS_TAB_KEY, { last: name });
         // 切走“快捷键”标签页时结束键位录制：否则在其它标签页打字会被录制监听吞掉
         if (name !== 'shortcuts' && hkRecording) stopHkRecording();
         for (const [id, pane] of Object.entries(panes)) pane.style.display = id === name ? '' : 'none';
@@ -745,11 +775,10 @@ export function openSettingsDialog(initialTab = 'features') {
           el?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
         } catch { /* ignore */ }
       };
-      // 初始标签页：所有 pane 默认 display:none、只有“功能”页不带该样式。指定了
-      // 别的初始页（如翻译面板的 ⚙ 直达“翻译”）时，必须真正切一次，否则只高亮
-      // tab 按钮、内容区空着——这就是“点了设置但没切到翻译页”的原因
-      if (activeTab === 'features') renderTabs();
-      else switchTab(activeTab);
+      // 记忆的 tab 可能已不存在（版本升级删了某页、导入会话被关掉等）：退回“功能”
+      activeTab = tabDefs.some(([id]) => id === activeTab) ? activeTab : 'features';
+      // 注意：真正的首次切换推迟到 onMount 末尾（所有 pane 都建好并 append 之后）。
+      // 这里只渲染一次 tab 按钮，避免内容区在 pane 未就绪时切过去留下空白。
 
       // “样式”：一行两项、相关项同行；无描述文字，悬停名称显示 tip；
       // 数字框滚轮/手输调节，改完即存即生效
@@ -1578,7 +1607,8 @@ export function openSettingsDialog(initialTab = 'features') {
       void refreshBgFiles();
       void refreshFolderInfo();
 
-      let stylesSubTab = 'bgimg'; // 默认停在第一个子页（壁纸）
+      const STYLES_SUBS = ['bgimg', 'colors', 'styles', 'status'];
+      let stylesSubTab = STYLES_SUBS.includes(savedSub('styles', '')) ? savedSub('styles', '') : 'bgimg';
       const stylesSubTablist = h('div', { role: 'tablist', 'aria-orientation': 'horizontal', class: 'zcodepro-tablist' });
       const renderStylesSubTabs = () => stylesSubTablist.replaceChildren(...[
         ['bgimg', L.themeBgPane],
@@ -1591,6 +1621,7 @@ export function openSettingsDialog(initialTab = 'features') {
         'data-state': stylesSubTab === id ? 'active' : 'inactive',
         onClick: () => {
           stylesSubTab = id;
+          rememberSub('styles', id);
           paneStylesSub1.style.display = id === 'styles' ? '' : 'none';
           paneStylesSub2.style.display = id === 'status' ? '' : 'none';
           paneStylesSub3.style.display = id === 'colors' ? '' : 'none';
@@ -1598,6 +1629,11 @@ export function openSettingsDialog(initialTab = 'features') {
           renderStylesSubTabs();
         },
       }, label)));
+      // 按记住的子页设置初始可见性（首次打开时四个 pane 都会显示，必须显式关掉）
+      paneStylesSub1.style.display = stylesSubTab === 'styles' ? '' : 'none';
+      paneStylesSub2.style.display = stylesSubTab === 'status' ? '' : 'none';
+      paneStylesSub3.style.display = stylesSubTab === 'colors' ? '' : 'none';
+      paneStylesSub4.style.display = stylesSubTab === 'bgimg' ? '' : 'none';
       renderStylesSubTabs();
       subTabBars.styles = stylesSubTablist;
       paneStyles.append(paneStylesSub1, paneStylesSub2, paneStylesSub3, paneStylesSub4);
@@ -1872,6 +1908,7 @@ export function openSettingsDialog(initialTab = 'features') {
           piSaveBtn),
         piSubRow,
         piStatusLine));
+
       const agentsPromptPane = h('div', { class: 'mt-2' });
       agentsPromptPane.append(
         h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.agentsDesc),
@@ -1882,7 +1919,8 @@ export function openSettingsDialog(initialTab = 'features') {
         h('div', { class: 'mt-3 flex justify-end' }, agentsSaveBtn),
         h('div', { class: 'mt-5' }, injectBlock),
       );
-      let agentsSubTab = 'zcode';
+      const AGENTS_SUBS = ['zcode', 'prompt', 'titleGen', 'autoContinue'];
+      let agentsSubTab = AGENTS_SUBS.includes(savedSub('agents', '')) ? savedSub('agents', '') : 'zcode';
       const agentsSubPanes = { zcode: paneZcode, prompt: agentsPromptPane, titleGen: paneTitleGen, autoContinue: paneAutoContinue };
       const agentsSubList = h('div', { role: 'tablist', 'aria-orientation': 'horizontal', class: 'zcodepro-tablist' });
       const renderAgentsSubTabs = () => {
@@ -1897,6 +1935,7 @@ export function openSettingsDialog(initialTab = 'features') {
           'data-state': agentsSubTab === id ? 'active' : 'inactive',
           onClick: () => {
             agentsSubTab = id;
+            rememberSub('agents', id);
             for (const [pid, pane] of Object.entries(agentsSubPanes)) pane.style.display = pid === id ? '' : 'none';
             renderAgentsSubTabs();
           },
@@ -1990,7 +2029,8 @@ export function openSettingsDialog(initialTab = 'features') {
       };
       renderProxyScopes();
       // 两级 tab：软件代理（原有界面）/ 供应商代理（按供应商转发 + 工具名检查）
-      let proxySubTab = 'software';
+      const PROXY_SUBS = ['software', 'vendor'];
+      let proxySubTab = PROXY_SUBS.includes(savedSub('proxy', '')) ? savedSub('proxy', '') : 'software';
       const proxySubTablist = h('div', { role: 'tablist', 'aria-orientation': 'horizontal', class: 'zcodepro-tablist' });
       // mt-2 与“行为”二级 tab 保持一致：内容面板与上方 tab 栏之间留出间距
       const paneProxySoftware = h('div', { class: 'mt-2' });
@@ -2004,6 +2044,7 @@ export function openSettingsDialog(initialTab = 'features') {
         'data-state': proxySubTab === id ? 'active' : 'inactive',
         onClick: () => {
           proxySubTab = id;
+          rememberSub('proxy', id);
           paneProxySoftware.style.display = id === 'software' ? '' : 'none';
           paneProxyVendor.style.display = id === 'vendor' ? '' : 'none';
           if (id === 'vendor') void refreshVendorProxyStatus();
@@ -2013,7 +2054,11 @@ export function openSettingsDialog(initialTab = 'features') {
       renderProxySubTabs();
       subTabBars.proxy = proxySubTablist;
       paneProxy.append(proxySubTablist, paneProxySoftware, paneProxyVendor);
-      paneProxyVendor.style.display = 'none';
+      // 按记住的子页设置初始可见性。refreshVendorProxyStatus 定义在本段之后
+      // （const 有暂时性死区），这里不能直接调；延到下一个微任务再触发
+      paneProxySoftware.style.display = proxySubTab === 'software' ? '' : 'none';
+      paneProxyVendor.style.display = proxySubTab === 'vendor' ? '' : 'none';
+      if (proxySubTab === 'vendor') queueMicrotask(() => { try { void refreshVendorProxyStatus(); } catch { /* ignore */ } });
       paneProxySoftware.append(
         h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.proxyDesc),
         h('div', { class: 'mt-3 flex items-center gap-2' },
@@ -4153,6 +4198,9 @@ export function openSettingsDialog(initialTab = 'features') {
         paneRtk,
         paneDebug,
       );
+      // 所有 pane 就绪后再切到目标 tab：pane 与二级 pane 的初始可见性都已在上面
+      // 设好，此后 switchTab 只会调整显示，不会出现“内容区空白”
+      switchTab(activeTab);
     },
   });
 }
