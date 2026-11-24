@@ -5,7 +5,7 @@
 import { createServer } from 'node:http';
 import { execFile, spawn, spawnSync } from 'node:child_process';
 import { createDecipheriv, createHash, randomBytes } from 'node:crypto';
-import { appendFileSync, chmodSync, closeSync, copyFileSync, createReadStream, createWriteStream, existsSync, mkdirSync, openSync, readdirSync, readFileSync, readlinkSync, readSync, realpathSync, renameSync, rmSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
+import { appendFileSync, chmodSync, closeSync, copyFileSync, createReadStream, createWriteStream, existsSync, mkdirSync, openSync, readdirSync, readFileSync, readlinkSync, readSync, realpathSync, renameSync, rmSync, statSync, unlinkSync, watch, writeFileSync } from 'node:fs';
 import { mkdtemp } from 'node:fs/promises'; // 注意：fs 的 mkdtemp 是回调版，await 它会把 undefined 当回调
 import { basename, delimiter, dirname, isAbsolute, join, resolve, sep } from 'node:path';
 import { homedir, tmpdir, userInfo } from 'node:os';
@@ -19,6 +19,7 @@ import { resolveZcodeExecutable, resolveDataRootDir } from './paths.mjs';
 import { skillStats, DEFAULT_METADATA_BUDGET } from './skill-stats.mjs';
 import { listImportSessions, runImport } from './session-import/index.mjs';
 import { ProviderProxyManager } from './provider-proxy.mjs';
+import { rewriteRequest } from './prompt-inject.mjs';
 import { applyToolNameMaps, toolNameCheckSummary } from './tool-name-check.mjs';
 import { defaultTranslateFile, readTranslateConfig, writeTranslateConfig, validateTranslateConfig, translateServicesStatus, translateMt, translateJson, streamTranslateText, isWordText, targetLangFor, renderTranslatePrompt, TRANSLATE_MAX_TEXT, isValidThinking, readTranslateHistory, appendTranslateHistory } from './translate-lib.mjs';
 
@@ -313,6 +314,12 @@ function cliPluginsDir() {
   return join(resolveDataRootDir(), 'cli', 'plugins');
 }
 
+// 提示词注入的默认正文：只给一个标题行，用户在这行下面接着写规则。
+// 标题跟官方 system 里其它段（# Identity、# Harness）同一种写法，也说明它是全局的、
+// 每轮都带，不是某个项目的规则。
+// 定义在 defaultConfig 之前：defaultConfig 会引用它，放后面会踩 const 的暂时性死区。
+const DEFAULT_INJECT_TEXT = '# Global System Prompt\n';
+
 export function defaultConfig() {
   return {
     version: VERSION,
@@ -407,6 +414,11 @@ export function defaultConfig() {
     // （zcode-pro 起的 127.0.0.1 转发进程再用指定的上游 HTTP 代理发出）。
     // 不动 ZCode 自身的全局代理，也不走 headroom 路由——只改 baseUrl 指向转发地址。
     providerProxies: {},
+    // 提示词注入（设置页“行为 → 全局提示词”下半块）：转发前把 text 追加到请求体
+    // 已有的 system 内容末尾。只对开了供应商代理的供应商生效。
+    // subagents=true 时子代理的请求也带（默认只给主对话）。
+    // 默认正文只放一个标题行：让用户看出“这是分节的写法”，往标题下面接着写规则即可。
+    promptInjection: { enabled: false, text: DEFAULT_INJECT_TEXT, subagents: false },
     // headroom 上游代理：headroom 插件拉起实例时带 HEADROOM_HTTP_PROXY，
     // 实例连上游（BigModel/MiMo/Command Code 等）走它。空 = 不走代理（旧行为）。
     headroomProxy: '',
@@ -511,6 +523,7 @@ export function loadConfig(configFile) {
       theme: mergeThemeConfig(saved.theme),
       proxyScopes: mergeProxyScopes(saved.proxyScopes),
       providerProxies: mergeProviderProxies(saved.providerProxies),
+      promptInjection: mergePromptInjection(saved.promptInjection),
       headroomProxy: typeof saved.headroomProxy === 'string' ? saved.headroomProxy.trim().slice(0, 300) : '',
       toolNameMaps: mergeToolNameMaps(saved.toolNameMaps),
       toolNameAuto: saved.toolNameAuto !== false,
@@ -691,6 +704,9 @@ let systemProxyCache = { url: '', at: 0 };
 // headroom 上游代理（HEADROOM_HTTP_PROXY）：随 zcodepro.json 的 headroomProxy
 // 保存即时更新；runHeadroomHook 拉起实例时带上。
 let activeHeadroomProxy = '';
+// 提示词注入的运行时快照：每次请求转发时读这里，所以保存后下一次请求就生效，
+// 不用重启转发器。
+let activePromptInjection = { enabled: false, text: '', subagents: false };
 // 供应商代理转发器单例：正常挂 state（跨热替换实例共享——helper 热替换后旧转发器
 // 继续跑，端口不变、供应商地址不用重写）；单测直调不传 state 时退回模块级一份。
 let providerProxyManager = null;
@@ -806,6 +822,8 @@ export async function ensureProviderProxies({ dataRoot, configFile, state = {}, 
     const proxies = (config.providerProxies && typeof config.providerProxies === 'object') ? config.providerProxies : {};
     const ids = Object.keys(proxies).filter((id) => id !== '__proto__' && id !== 'constructor' && id !== 'prototype');
     const manager = getProviderProxyManager(state);
+    // 提示词注入钩子：只有开着注入时才挂，关着时请求体保持原样的流式转发
+    manager.setInjector(promptInjector(state));
     // 已开启条目声明的端口：关条目停端口时跳过这些，避免把在用的转发器掐掉
     const enabledPorts = new Set();
     for (const id of ids) {
@@ -891,23 +909,32 @@ export async function ensureProviderProxies({ dataRoot, configFile, state = {}, 
         }
       }
     } catch { /* 状态查询失败不影响 */ }
-    // 配置写回（补上的上游、换过的端口）：锁内重读，只改这几个字段
+    // 配置写回（补上的上游、换过的端口）：锁内重读，只改这几个字段。
+    // 顺带清理孤儿条目：供应商已被用户在界面里删掉（不在 providerRules 里）时，
+    // 它那条转发记录没有任何用处，留着只会在状态里一直报错。
     const persistIds = Object.keys(persist);
-    if (persistIds.length) {
-      try {
-        await withConfigLock(configFile, () => {
-          const fresh = loadConfig(configFile);
-          if (configUnreadable) return;
-          const table = { ...(fresh.providerProxies || {}) };
-          for (const id of persistIds) {
-            if (!table[id] || typeof table[id] !== 'object') continue;
-            table[id] = { ...table[id], ...persist[id] };
+    const knownIds = knownProviderIdSet(dataRoot);
+    try {
+      await withConfigLock(configFile, () => {
+        const fresh = loadConfig(configFile);
+        if (configUnreadable) return;
+        const table = { ...(fresh.providerProxies || {}) };
+        let dirty = false;
+        for (const id of persistIds) {
+          if (!table[id] || typeof table[id] !== 'object') continue;
+          table[id] = { ...table[id], ...persist[id] };
+          dirty = true;
+        }
+        if (knownIds) {
+          for (const id of Object.keys(table)) {
+            if (!knownIds.has(id)) { delete table[id]; dirty = true; }
           }
-          fresh.providerProxies = table;
-          saveConfig(configFile, fresh);
-        });
-      } catch (err) { errors.push(`配置写回失败（${err?.message || err}）`); }
-    }
+        }
+        if (!dirty) return;
+        fresh.providerProxies = table;
+        saveConfig(configFile, fresh);
+      });
+    } catch (err) { errors.push(`配置写回失败（${err?.message || err}）`); }
   } catch (err) {
     errors.push(String(err?.message || err));
   }
@@ -915,6 +942,96 @@ export async function ensureProviderProxies({ dataRoot, configFile, state = {}, 
   try { state.providerProxyLastRun = result; } catch { /* state 不可写不影响 */ }
   for (const e of errors) console.error(`[zcodepro] 供应商代理：${e}`);
   return result;
+}
+
+// 提示词注入钩子：每次请求都读实时快照，所以改完正文保存后下一次请求就带上。
+// 关着（或正文为空）时返回 null，转发器据此保持纯流式转发。
+function promptInjector(state) {
+  return ({ url, headers, rawBody }) => {
+    const pi = activePromptInjection;
+    if (!pi || pi.enabled !== true || !pi.text || !pi.text.trim()) return { buffer: rawBody, changed: false };
+    const r = rewriteRequest({ url, headers, rawBody, text: pi.text, includeSubagents: pi.subagents === true });
+    if (r.changed) {
+      try {
+        if (state && typeof state === 'object') {
+          state.injectStats = state.injectStats || { count: 0, lastAt: 0 };
+          state.injectStats.count += 1;
+          state.injectStats.lastAt = Date.now();
+        }
+      } catch { /* 统计失败不影响转发 */ }
+    }
+    return r;
+  };
+}
+
+// providerRules 里登记的全部供应商 id（含已停用的）：用来判断某条转发记录是不是
+// 供应商已经被用户删掉了。文件读不到时返回 null，调用方跳过清理（不误删）。
+function knownProviderIdSet(dataRoot) {
+  const pc = readJsonFile(join(dataRoot, 'v2', 'provider_config.json'));
+  if (!pc) return null;
+  const ids = new Set();
+  const rules = pc?.config?.providerConfigRules?.providerRules;
+  if (Array.isArray(rules)) {
+    for (const r of rules) {
+      if (r && typeof r.providerId === 'string' && r.providerId) ids.add(r.providerId);
+    }
+  }
+  const v2 = readJsonFile(join(dataRoot, 'v2', 'config.json'));
+  if (v2?.provider && typeof v2.provider === 'object') {
+    for (const id of Object.keys(v2.provider)) ids.add(id);
+  }
+  return ids;
+}
+
+// 已启用的供应商 id：以 v2/provider_config.json 的 providerRules 为“确实配置过”的
+// 依据，再用 v2/config.json 的 enabled 字段排除显式关掉的（enabled 缺省视为启用）。
+function enabledProviderIds(dataRoot) {
+  const v2 = readJsonFile(join(dataRoot, 'v2', 'config.json'));
+  const table = (v2?.provider && typeof v2.provider === 'object') ? v2.provider : {};
+  const ids = new Set();
+  const rules = readJsonFile(join(dataRoot, 'v2', 'provider_config.json'))
+    ?.config?.providerConfigRules?.providerRules;
+  if (Array.isArray(rules)) {
+    for (const r of rules) {
+      if (!r || typeof r.providerId !== 'string' || !r.providerId) continue;
+      const entry = table[r.providerId];
+      if (entry && typeof entry === 'object' && entry.enabled === false) continue;
+      if (entry && typeof entry === 'object' && entry.systemDisabledReason) continue;
+      ids.add(r.providerId);
+    }
+  }
+  return ids;
+}
+
+// 打开提示词注入时为全部已启用供应商开转发：用户随时可能切模型，只给当前供应商开
+// 会造成“切一下就不生效”。已有的条目保留原来的代理与端口设置，只把 enabled 置真。
+async function enableProxiesForInjection({ dataRoot, configFile, state }) {
+  const ids = enabledProviderIds(dataRoot);
+  if (!ids.size) return;
+  await withConfigLock(configFile, () => {
+    const fresh = loadConfig(configFile);
+    if (configUnreadable) return;
+    const table = { ...(fresh.providerProxies || {}) };
+    let changed = false;
+    let port = PROVIDER_PROXY_PORT_MIN;
+    for (const id of ids) {
+      const prev = table[id];
+      if (prev && prev.enabled === true) continue;
+      // 新条目分配段内第一个空闲端口（已有的端口集合先占住）
+      while (Object.values(table).some((e) => e && Number(e.port) === port)) port += 1;
+      table[id] = {
+        enabled: true,
+        proxy: (prev && typeof prev.proxy === 'string') ? prev.proxy : '',
+        port: (prev && Number.isFinite(Number(prev.port))) ? Number(prev.port) : port,
+        upstream: (prev && typeof prev.upstream === 'string' && prev.upstream) ? prev.upstream : null,
+      };
+      changed = true;
+    }
+    if (!changed) return;
+    fresh.providerProxies = table;
+    saveConfig(configFile, fresh);
+  });
+  await ensureProviderProxies({ dataRoot, configFile, state, reason: 'prompt-injection' });
 }
 
 // 启动兜底：helper 就绪后延迟几秒对齐一次（避开启动高峰）；标志挂 state，
@@ -927,6 +1044,34 @@ function ensureProviderProxiesAtStartup(state = {}, ctx = {}) {
     ensureProviderProxies({ ...ctx, state, reason: 'startup' }).catch(() => { /* 兜底失败不影响启动 */ });
   }, 3000);
   timer.unref?.();
+}
+
+// 盯住两个官方供应商配置文件：用户在 ZCode 界面里新增/删除/改地址（或切换模型）
+// 时重新对齐转发器。fs.watch 每个文件只占一个 inotify watch；官方写这两个文件很
+// 频繁（切模型也会写），所以必须防抖，否则一次操作会触发多轮对齐。
+// 我们自己的写入也会触发，但 ensureProviderProxies 幂等：没有实际变化就不写盘，
+// 不会自己刷自己。
+function watchProviderConfigs({ dataRoot, configFile, state }) {
+  if (!state || typeof state !== 'object' || state.providerProxyWatchStarted) return;
+  state.providerProxyWatchStarted = true;
+  let timer = null;
+  const schedule = () => {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => {
+      timer = null;
+      ensureProviderProxies({ dataRoot, configFile, state, reason: 'watch' }).catch(() => { /* 尽力而为 */ });
+    }, 1500);
+    timer.unref?.();
+  };
+  for (const name of [join('v2', 'config.json'), join('v2', 'provider_config.json')]) {
+    const file = join(dataRoot, name);
+    try {
+      const w = watch(file, { persistent: false }, schedule);
+      w.on('error', () => { /* 文件被删/目录变化时停止监听，下次启动再挂 */ });
+      state.providerProxyWatchers = state.providerProxyWatchers || [];
+      state.providerProxyWatchers.push(w);
+    } catch { /* 文件还不存在：等它出现后下次启动再挂 */ }
+  }
 }
 
 // ProxyServer 的值有两种写法：host:port，或 http=host:port;https=host:port。
@@ -1073,6 +1218,7 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
   activeProxyUrl = String(bootConfig.proxy || '').trim();
   activeProxyScopes = { ...bootConfig.proxyScopes };
   activeHeadroomProxy = String(bootConfig.headroomProxy || '').trim();
+  activePromptInjection = mergePromptInjection(bootConfig.promptInjection);
 
   const server = createServer(async (req, res) => {
     const url = new URL(req.url, `http://127.0.0.1:${port}`);
@@ -1285,6 +1431,18 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
             current.headroomProxy = v;
             activeHeadroomProxy = v;
           }
+          // 提示词注入（设置页“行为 → 全局提示词”下半块）：正文只在传了 text 时覆盖，
+          // 开关与“也注入子代理”各自独立提交。正文不设长度上限——截断会造成“保存成功
+          // 但注入不全”，比报错难查得多
+          if (body && typeof body === 'object' && body.promptInjection && typeof body.promptInjection === 'object') {
+            const pi = body.promptInjection;
+            const next = { ...(current.promptInjection || { enabled: false, text: DEFAULT_INJECT_TEXT, subagents: false }) };
+            if (typeof pi.text === 'string') next.text = pi.text;
+            if (typeof pi.enabled === 'boolean') next.enabled = pi.enabled;
+            if (typeof pi.subagents === 'boolean') next.subagents = pi.subagents;
+            current.promptInjection = next;
+            activePromptInjection = mergePromptInjection(next);
+          }
           // 工具名映射（服务器键名 → 短键名）：整表覆盖，按合法键过滤
           if (body && typeof body === 'object' && body.toolNameMaps && typeof body.toolNameMaps === 'object') {
             current.toolNameMaps = mergeToolNameMaps(body.toolNameMaps);
@@ -1404,12 +1562,43 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
             return;
           }
           // 供应商代理/全局代理变了就对齐转发器：发完不管，不拖慢保存响应；
-          // 结果进 state.providerProxyLastRun，状态端点可查
+          // 结果进 state.providerProxyLastRun，状态端点可查。
+          // 提示词注入只对走转发的供应商生效：打开注入时顺带为全部供应商开转发
           if (body && typeof body === 'object'
               && (body.providerProxies !== undefined || typeof body.proxy === 'string')) {
             ensureProviderProxies({ dataRoot, configFile, state, reason: 'config' }).catch(() => {});
           }
+          if (body && typeof body === 'object' && body.promptInjection && typeof body.promptInjection === 'object') {
+            // 注入钩子立即换新的（不用重启转发器）；关掉时钩子返回原样
+            try { getProviderProxyManager(state).setInjector(promptInjector(state)); } catch { /* 单例异常不影响保存 */ }
+            if (current.promptInjection.enabled === true) {
+              enableProxiesForInjection({ dataRoot, configFile, state }).catch(() => { /* 尽力而为 */ });
+            }
+          }
           json(res, 200, { ok: true, config: current });
+        });
+        return;
+      }
+      // —— 提示词注入状态（设置页“行为 → 全局提示词”下半块的一行汇总）——
+      if (req.method === 'GET' && url.pathname === '/prompt-injection/status') {
+        const cfg = loadConfig(configFile);
+        const pi = cfg.promptInjection;
+        const enabledIds = enabledProviderIds(dataRoot);
+        let running = [];
+        try { running = getProviderProxyManager(state).status(); } catch { /* 单例异常按空表 */ }
+        // 能生效的供应商：既在已启用清单里、又真的开着转发（转发器在跑）
+        const proxied = new Set(Object.entries(cfg.providerProxies || {})
+          .filter(([, e]) => e && e.enabled === true).map(([id]) => id));
+        const activeCount = [...enabledIds].filter((id) => proxied.has(id)).length;
+        json(res, 200, {
+          ok: true,
+          enabled: pi.enabled === true,
+          chars: (pi.text || '').length,
+          subagents: pi.subagents === true,
+          providers: enabledIds.size, // 已启用的供应商总数
+          active: activeCount, // 其中开着转发、注入能生效的
+          forwarders: running.filter((f) => f.listening).length,
+          injected: state.injectStats ? state.injectStats.count : 0,
         });
         return;
       }
@@ -3215,6 +3404,7 @@ export function startHelper({ port, token, dataRoot, state, agentsFile = default
         ensureHeadroomAtStartup(state);
         ensureProviderProxiesAtStartup(state, { dataRoot, configFile });
         ensureToolNamesAtStartup(state, { dataRoot, configFile });
+        watchProviderConfigs({ dataRoot, configFile, state });
         resolveStarted(server);
       });
     };
@@ -3578,8 +3768,18 @@ function mergeProxyScopes(saved) {
   };
 }
 
-// providerProxies 归一：供应商 id → { enabled, proxy, port, upstream }；
-// 只收合法值（非法项整条丢弃，不阻断整份配置）。
+// 提示词注入配置归一化：没存过 text 时用默认标题行（不是空串——空串会让
+// 默认值在每次读盘时被覆盖掉）；存过空串就是用户主动清空，保持空。
+// 正文不设产品层上限（长度交给模型上下文预算），enabled/subagents 只认 true。
+export function mergePromptInjection(saved) {
+  const s = (saved && typeof saved === 'object' && !Array.isArray(saved)) ? saved : {};
+  return {
+    enabled: s.enabled === true,
+    text: typeof s.text === 'string' ? s.text : DEFAULT_INJECT_TEXT,
+    subagents: s.subagents === true,
+  };
+}
+
 // proxy 留空 = 跟随全局代理（解析在运行时按 effectiveProxyUrl() 兜底）。
 // upstream 落盘：None 值保留为 null（新机器上 helper 重新补），空串非法丢弃。
 export function mergeProviderProxies(saved) {
@@ -4095,6 +4295,10 @@ export function applySyncDocs({ docs, dataRoot, configFile, config, sync }) {
       if (rz.toolNameMaps && typeof rz.toolNameMaps === 'object' && !Array.isArray(rz.toolNameMaps)) {
         next.toolNameMaps = { ...(next.toolNameMaps || {}), ...mergeToolNameMaps(rz.toolNameMaps) };
       }
+      // 提示词注入：云端有就用云端的（正文与开关整段覆盖），没有则保留本机
+      if (rz.promptInjection && typeof rz.promptInjection === 'object') {
+        next.promptInjection = mergePromptInjection(rz.promptInjection);
+      }
       next.sync = { ...next.sync, lastPullAt: sync.lastPullAt }; // 保留本机 sync 配置与凭据，只记本次拉取时间
       backupFile(configFile);
       if (!saveConfig(configFile, next)) {
@@ -4104,6 +4308,11 @@ export function applySyncDocs({ docs, dataRoot, configFile, config, sync }) {
     });
     if (rzErr) return rzErr;
     applied.push('zcodepro');
+    // 提示词注入的正文与开关跟着落进运行时快照，拉完就生效
+    try {
+      activePromptInjection = mergePromptInjection(loadConfig(configFile).promptInjection);
+      getProviderProxyManager().setInjector(promptInjector());
+    } catch { /* 尽力而为 */ }
     // 供应商代理开关变了就对齐转发器（拉起/停掉、改写供应商地址）；
     // 工具名映射变了就把短键名打回去。都尽力而为，失败不影响同步结果。
     if (providerProxiesChanged) {

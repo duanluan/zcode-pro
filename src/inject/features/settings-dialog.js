@@ -1771,6 +1771,107 @@ export function openSettingsDialog(initialTab = 'features') {
       // “行为”标签页：二级标签切换“ZCode / 全局提示词 / 任务名”。全局提示词编辑
       // ~/.zcode/AGENTS.md；任务名（智能起名）面板复用 paneTitleGen（原本是
       // 一级标签页，收进来后不再单独出现在顶部标签栏）
+      // 提示词注入：与上面的 AGENTS.md 并排放在同一页，用户能直接看出两者的差别
+      // （一个进对话层、一个进系统层）。正文只在点保存时提交；开关与“也注入子代理”
+      // 立即生效。长度不截断，超过 20000 字符只给一句提醒。
+      const piCfg = (config && config.promptInjection) || { enabled: false, text: '', subagents: false };
+      let piText = typeof piCfg.text === 'string' ? piCfg.text : '';
+      let piEnabled = piCfg.enabled === true;
+      let piSubagents = piCfg.subagents === true;
+      const piStatusLine = h('p', { class: 'mt-2 text-ui-xs/relaxed text-foreground-subtle' });
+      // 开关与卡片都用功能页同款样式，这里各自定义一份（主题页里的同名函数是局部作用域）
+      const piSwitch = (checked) => h('button', {
+        type: 'button', role: 'switch', 'aria-checked': String(checked),
+        class: 'relative inline-flex shrink-0 cursor-pointer items-center',
+      }, h('span', { class: 'zcodepro-switch', 'data-zcodepro-switch': '', 'data-state': checked ? 'on' : 'off' },
+        h('span', { class: 'zcodepro-switch-knob' })));
+      const piCard = (titleText, body) => h('div', { class: 'rounded-xl border border-border p-3' },
+        h('div', { class: 'text-ui-sm font-medium text-foreground' }, titleText),
+        body);
+      const piCount = h('span', { class: 'text-ui-xs text-foreground-subtle' });
+      const piLongHint = h('span', { class: 'text-ui-xs text-foreground-subtle' }, L.injectLongHint);
+      const piArea = h('textarea', {
+        class: 'zcodepro-textarea zcodepro-textarea-lg',
+        placeholder: L.injectPlaceholder,
+        spellcheck: 'false',
+      });
+      piArea.value = piText;
+      const piSaveBtn = btnSmall(L.agentsSave, () => { void saveInjectionText(); }, '', 'primary');
+      const renderPiMeta = () => {
+        piCount.textContent = L.injectChars.replace('{n}', String(piArea.value.length));
+        piLongHint.style.display = piArea.value.length > 20000 ? '' : 'none';
+        piSaveBtn.disabled = piArea.value === piText;
+      };
+      piArea.addEventListener('input', renderPiMeta);
+      renderPiMeta();
+      // 状态行：问一次 helper 当前有多少已启用供应商真的在走转发
+      const refreshPiStatus = async () => {
+        const st = await rpc('/prompt-injection/status');
+        if (!st.ok) { piStatusLine.textContent = ''; return; }
+        if (!piEnabled) { piStatusLine.textContent = L.injectDisabled; return; }
+        if (!st.providers) { piStatusLine.textContent = L.injectStatusNone; return; }
+        piStatusLine.textContent = L.injectStatus
+          .replace('{active}', String(st.active || 0))
+          .replace('{providers}', String(st.providers));
+      };
+      const saveInjection = async (patch) => {
+        const res = await rpc('/config', { method: 'POST', body: { promptInjection: patch } });
+        if (!res.ok) { showToast(L.failed + ': ' + errText(res), 'error'); return false; }
+        clearConfigCache();
+        if (res.config && res.config.promptInjection) {
+          piText = typeof res.config.promptInjection.text === 'string' ? res.config.promptInjection.text : piText;
+          piEnabled = res.config.promptInjection.enabled === true;
+          piSubagents = res.config.promptInjection.subagents === true;
+        }
+        // 对齐转发器要一点时间（拉起新端口、改写供应商地址），稍等再看状态
+        setTimeout(() => { void refreshPiStatus(); }, 1200);
+        return true;
+      };
+      const saveInjectionText = async () => {
+        piSaveBtn.disabled = true;
+        if (await saveInjection({ text: piArea.value })) {
+          piText = piArea.value;
+          showToast(L.injectSaved, 'success');
+        }
+        renderPiMeta();
+      };
+      // 开关行：标签与开关各自留一个固定容器，点整行切换（只重绘容器内容，
+      // 不重建行本身，避免重复绑定点击）
+      const piToggleLabel = h('span', {}, piEnabled ? L.injectEnabled : L.injectDisabled);
+      const piToggleKnob = h('span', {}, piSwitch(piEnabled));
+      const renderPiToggle = () => {
+        piToggleLabel.textContent = piEnabled ? L.injectEnabled : L.injectDisabled;
+        piToggleKnob.replaceChildren(piSwitch(piEnabled));
+      };
+      const piToggleRow = h('div', {
+        class: 'flex cursor-pointer items-center gap-2 text-ui-sm text-foreground-subtle',
+        onClick: () => {
+          piEnabled = !piEnabled;
+          renderPiToggle();
+          void saveInjection({ enabled: piEnabled }).then(() => { void refreshPiStatus(); });
+        },
+      }, piToggleLabel, piToggleKnob);
+      const piSubLabel = h('span', {}, L.injectSubagents);
+      const piSubKnob = h('span', {}, piSwitch(piSubagents));
+      const renderPiSub = () => piSubKnob.replaceChildren(piSwitch(piSubagents));
+      const piSubRow = h('div', {
+        class: 'mt-2 flex cursor-pointer items-center gap-2 text-ui-sm text-foreground-subtle',
+        onClick: () => {
+          piSubagents = !piSubagents;
+          renderPiSub();
+          void saveInjection({ subagents: piSubagents });
+        },
+      }, piSubLabel, piSubKnob);
+      void refreshPiStatus();
+      const injectBlock = piCard(L.injectTitle, h('div', { class: 'mt-1' },
+        h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.injectDesc),
+        h('div', { class: 'mt-2 flex items-center justify-between gap-2' }, piToggleRow),
+        h('div', { class: 'mt-3' }, piArea),
+        h('div', { class: 'mt-2 flex items-center justify-between gap-2' },
+          h('div', { class: 'flex items-center gap-2' }, piCount, piLongHint),
+          piSaveBtn),
+        piSubRow,
+        piStatusLine));
       const agentsPromptPane = h('div', { class: 'mt-2' });
       agentsPromptPane.append(
         h('p', { class: 'text-ui-sm/relaxed text-foreground-subtle' }, L.agentsDesc),
@@ -1779,6 +1880,7 @@ export function openSettingsDialog(initialTab = 'features') {
           : []),
         h('div', { class: 'mt-3' }, agentsArea),
         h('div', { class: 'mt-3 flex justify-end' }, agentsSaveBtn),
+        h('div', { class: 'mt-5' }, injectBlock),
       );
       let agentsSubTab = 'zcode';
       const agentsSubPanes = { zcode: paneZcode, prompt: agentsPromptPane, titleGen: paneTitleGen, autoContinue: paneAutoContinue };

@@ -35,6 +35,7 @@ Grouped by topic: the category column is a settings tab, entries with `·` (e.g.
 | Shortcuts | Shortcut customization | Rebind the five session quick switch trigger keys (`alt+z` / `x` / `c` / `e` / `r` by default) one by one: click "Change" and press a new key (a single letter or digit only, conflicts rejected); reset all to defaults in one click |
 | Behavior · ZCode CLI | ZCode CLI | Skill listing check: counts the full listing against the listing budget, warns when it degrades to names and file paths only and suggests a budget; configure the skill system, listing budget, extra skill directories and feature switches; workspace memory stays in the official settings under Settings → Agent capabilities → Memory; changes apply to new sessions |
 | Behavior · Global prompt | Global prompt | Edit default instructions shared by all projects; applies to new sessions |
+| | Prompt injection | Appends a block of text to the end of the system prompt on every turn; saving takes effect on the next turn. Unlike the global prompt, this lands in the system layer rather than the conversation layer, so later messages cannot dilute it. Only providers forwarded locally are covered, and enabling injection turns forwarding on for every enabled provider; can be set to reach subagents as well; no product-level length cap, with a hint once the text passes 20,000 characters that it eats into the conversation context |
 | Behavior · Auto rename | Auto rename | When a new session starts answering, generates the task name with a provider and prompt you choose (provider follows the current session, model defaults to glm-5.3-flash; every question sent before the first answer counts), saved as a manual rename the built-in auto title never overrides; provider, model and prompt are editable in settings, with a test button; a hover button on task rows and a context-menu entry under "Rename task" rename manually from the recent Q&A, with toggles for each entry point and the round count in settings |
 | Appearance · Styles | Sidebar menu in the top bar | Turns "New task / Search / Automations / Plugin store" into icon buttons in the top navigation bar, highlighted while its view is open |
 | | Font adjustment | Custom UI font (all interface text except the terminal), question font and answer font |
@@ -201,7 +202,7 @@ Configuration and data locations:
 | --- | --- |
 | Feature switches, appearance (theme / wallpaper / styles), shortcuts, proxy and sync settings | `~/.zcode/zcodepro.json` |
 | Startup diagnostics log | `~/.zcode/zcodepro.log` |
-| Global prompt | `~/.zcode/AGENTS.md` |
+| Global prompt, prompt injection | `~/.zcode/AGENTS.md`, `~/.zcode/zcodepro.json` |
 | ZCode behavior settings (skill listing budget etc.) | `~/.zcode/cli/config.json` |
 | Wallpaper library | `~/.zcode/backgrounds/` |
 | Vision proxy (zcode-vision plugin) | `~/.zcode/zcode-vision.json` |

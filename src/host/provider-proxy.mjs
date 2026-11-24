@@ -1,13 +1,16 @@
 // 供应商代理转发器：为单个供应商在本机开一个 127.0.0.1 监听端口，
 // 请求先到这里，转发器再连上真实上游（例如 https://api.meta.ai/v1），
-// 经由调用方指定的上游 HTTP 代理发出（或直连转发）。中间不做任何改写——
-// 请求行、请求头、请求体都原样转发；SSE 等长时间响应也不截断。
+// 经由调用方指定的上游 HTTP 代理发出（或直连转发）。
+// 默认不做任何改写：请求行、请求头、请求体都原样转发；SSE 等长时间响应也不截断。
+// 唯一例外是提示词注入（见 prompt-inject.mjs）：开了注入才读全请求体并按需追加文字。
 
 import http from 'node:http';
 import https from 'node:https';
 import net from 'node:net';
 import tls from 'node:tls';
 import { URL } from 'node:url';
+
+import { MAX_BODY_BYTES as MAX_INJECT_BODY_BYTES } from './prompt-inject.mjs';
 
 // hop 头不转发（与本地转发器同款约定）
 const HOP_HEADERS = new Set(['connection', 'keep-alive', 'te', 'trailer', 'transfer-encoding', 'upgrade', 'proxy-authenticate', 'proxy-authorization']);
@@ -136,10 +139,14 @@ class ProviderForwarder {
     this.proxyUrl = String(proxyUrl || '').trim();
     this.server = null;
     this.conns = new Set();
+    // 提示词注入钩子：({ url, headers, rawBody }) => { buffer, changed }。
+    // 未设置时保持原来的纯流式转发（req.pipe）。
+    this.injector = null;
   }
 
   setUpstream(url) { this.upstream = String(url || '').trim(); }
   setProxyUrl(v) { this.proxyUrl = String(v || '').trim(); }
+  setInjector(fn) { this.injector = typeof fn === 'function' ? fn : null; }
 
   async start(port) {
     if (this.server) await this.stop();
@@ -239,10 +246,51 @@ class ProviderForwarder {
     this.conns.add(tunnel);
     tunnel.once('close', () => this.conns.delete(tunnel));
 
-    // 用 http/https 客户端发请求：它负责拼请求字节、解析响应状态行与响应头、
-    // 处理分块编码；SSE 等流式响应照样逐块透出。
+    // 转发请求头（去掉 hop-by-hop 与 host，host 换成上游的）
     const headers = stripHopHeaders(req.headers);
     delete headers.host;
+
+    // 提示词注入：先读全请求体再决定发什么。有钩子且真的改了内容，才换成新体、
+    // 去掉编码相关头；否则原样把读到的字节发出去。
+    // 读全之后 req 已被消费，无法退回流式转发——所以“要不要读全”必须提前定：
+    // 只有带 content-length 且不超过上限的请求才读全，其余维持流式原样转发。
+    let consumed = null; // 读全后的原始字节
+    let rewritten = null; // 改写后的字节
+    const declaredLength = Number(headers['content-length']);
+    const canReadWhole = Number.isFinite(declaredLength) && declaredLength > 0
+      && declaredLength <= MAX_INJECT_BODY_BYTES;
+    if (this.injector && canReadWhole && (req.method === 'POST' || req.method === 'PUT')) {
+      const injector = this.injector;
+      const injectUrl = req.url || '/';
+      const r = await new Promise((resolve) => {
+        const chunks = [];
+        let size = 0;
+        req.on('data', (c) => { size += c.length; chunks.push(c); });
+        req.on('end', () => {
+          const raw = Buffer.concat(chunks);
+          // 实际字节超限就不改写，原样转发
+          if (size > MAX_INJECT_BODY_BYTES) { resolve({ raw, out: null }); return; }
+          try {
+            const out = injector({ url: injectUrl, headers: req.headers, rawBody: raw });
+            resolve({ raw, out: out && out.changed && Buffer.isBuffer(out.buffer) ? out.buffer : null });
+          } catch {
+            resolve({ raw, out: null }); // 注入失败按原样转发，不能把请求搞坏
+          }
+        });
+        req.on('error', () => resolve({ raw: null, out: null }));
+      });
+      consumed = r.raw;
+      rewritten = r.out;
+    }
+
+    // 用 http/https 客户端发请求：它负责拼请求字节、解析响应状态行与响应头、
+    // 处理分块编码；SSE 等流式响应照样逐块透出。
+    if (rewritten) {
+      // 内容变了：长度重算，内容编码与分块相关头一并去掉（发的是未压缩字节）
+      headers['content-length'] = String(rewritten.length);
+      delete headers['content-encoding'];
+      delete headers['transfer-encoding'];
+    }
     const path = upstreamPrefix + (req.url || '/');
     const client = secureFirst ? https : http;
     const agent = new client.Agent({ keepAlive: false });
@@ -266,7 +314,9 @@ class ProviderForwarder {
     });
     req.once('aborted', () => { try { upReq.destroy(); } catch { /* ignore */ } });
     res.once('close', () => { try { upReq.destroy(); } catch { /* ignore */ } });
-    req.pipe(upReq, { end: true });
+    if (rewritten) upReq.end(rewritten);
+    else if (consumed) upReq.end(consumed);
+    else req.pipe(upReq, { end: true });
   }
 }
 
@@ -274,16 +324,21 @@ class ProviderForwarder {
 export class ProviderProxyManager {
   constructor() {
     this.forwarders = new Map(); // port → ProviderForwarder
+    this.injector = null; // 注入钩子：ensure 没显式传时沿用它
   }
 
-  async ensure({ upstream, port, proxyUrl = '' }) {
+  async ensure({ upstream, port, proxyUrl = '', injector }) {
     upstream = String(upstream || '').trim();
     proxyUrl = String(proxyUrl || '').trim();
     if (!upstream) throw new Error('未配置上游地址');
+    // 没显式传 injector 就沿用管理器当前的钩子：ensure 会被反复调用（配置变化、
+    // 启动兜底、文件监听都会触发），不能因为某次没传就把已挂的注入清掉。
+    const hook = injector === undefined ? this.injector : injector;
     // 按端口复用：同端口的上游/代理都没变就直接用；变了原地重启（不留双实例）。
     // 不按上游找——两个供应商可能共用一个上游地址，按上游找会互抢。
     const existing = this.forwarders.get(port);
     if (existing) {
+      existing.setInjector(hook);
       if (existing.upstream === upstream && existing.proxyUrl === proxyUrl && existing.alive()) return port;
       existing.setUpstream(upstream);
       existing.setProxyUrl(proxyUrl);
@@ -292,6 +347,7 @@ export class ProviderProxyManager {
       return port;
     }
     const fw = new ProviderForwarder({ upstream, proxyUrl });
+    fw.setInjector(hook);
     await fw.start(port);
     this.forwarders.set(port, fw);
     return port;
@@ -303,6 +359,13 @@ export class ProviderProxyManager {
     await fw.stop();
     this.forwarders.delete(port);
     return true;
+  }
+
+  // 给所有在跑的转发器换注入钩子（提示词注入开关变化时立即生效，不用重启转发器）；
+  // 同时记在管理器上，后续新拉起的转发器也自带这个钩子
+  setInjector(fn) {
+    this.injector = typeof fn === 'function' ? fn : null;
+    for (const fw of this.forwarders.values()) fw.setInjector(this.injector);
   }
 
   async freePort(preferred) {
