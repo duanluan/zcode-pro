@@ -134,27 +134,36 @@ function surfaceTitle(s, locale) {
 const PANEL_ICON_PATHS = ['<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>'];
 
 // 找“新标签页”的模块网格：官方卡片按钮带 data-side-pane-open-tab-item
-// （3.16.1 实测标识），其父容器即网格；文本特征兜底校验（终端模块描述）
-function findNewTabGrid() {
-  const item = document.querySelector('[data-side-pane-open-tab-item]');
-  if (!item || item.offsetParent === null) return null;
-  const grid = item.parentElement;
-  if (!grid || grid === document.body) return null;
-  const text = grid.textContent || '';
-  return GRID_HINTS.some((h) => text.includes(h)) ? grid : null;
+// （3.16.1 实测标识），其父容器即网格；文本特征兜底校验（终端模块描述）。
+// 返回全部网格，不只看第一个：侧边面板每开一个“新标签页”标签就多一份网格，
+// 未激活的标签只是 display:none，DOM 里仍然在，且通常排在活动标签前面。
+// 只取第一个会落在隐藏网格上（offsetParent 为 null）而整轮放弃注入。
+function findNewTabGrids() {
+  const grids = new Set();
+  for (const item of document.querySelectorAll('[data-side-pane-open-tab-item]')) {
+    const grid = item.parentElement;
+    if (!grid || grid === document.body) continue;
+    const text = grid.textContent || '';
+    if (GRID_HINTS.some((h) => text.includes(h))) grids.add(grid);
+  }
+  return [...grids];
 }
 
-async function injectPanels(grid) {
+// 正在注入的网格：await listSurfaces 期间挡住第二次进入。去重标记要等列表
+// 回来才写，MutationObserver（防抖 300ms）与 5 秒定时器都能在这个空档里再进
+// 一次，各追加一份卡片，界面上就成对重复了
+const inflight = new WeakSet();
+
+// 把已取回的面板清单画进一个网格。清单在轮次内共用：多标签页时有几份网格就
+// 有几个网格要注入，逐网格各查一次 listSurfaces 没必要
+function injectCards(grid, surfaces) {
   if (grid.dataset.zcodeproPanels) return;
   const template = grid.querySelector('[data-side-pane-open-tab-item]');
   if (!template) return;
-  const scope = sessionScope();
-  if (!scope) return; // 没有任何会话时暂不注入，下次 DOM 变动再试
-  const bridge = findBridge();
-  if (!bridge) return;
-  const surfaces = await thirdPartySurfaces(bridge, scope.workspacePath);
   if (!surfaces.length) { grid.dataset.zcodeproPanels = '1'; return; }
   grid.dataset.zcodeproPanels = '1';
+  // 兜底：残留的旧卡片先清掉，保证每次注入只留一份
+  for (const old of grid.querySelectorAll('[data-zcodepro-panel]')) old.remove();
   const L = t();
   const locale = uiLocale();
   for (const s of surfaces) {
@@ -212,15 +221,46 @@ async function injectPanels(grid) {
   }
 }
 
+// 一轮注入：先按网格过滤出真正要注入的，再只查一次面板清单，最后逐个网格画。
+// 正在注入的网格记进 inflight，避免 await 期间 MutationObserver 与 5 秒定时器
+// 再进一轮、各追加一份卡片
+let roundInflight = false;
+
+async function injectAll(grids) {
+  const todo = grids.filter((g) => !g.dataset.zcodeproPanels && !inflight.has(g));
+  if (!todo.length || roundInflight) return;
+  if (!todo.some((g) => g.querySelector('[data-side-pane-open-tab-item]'))) return;
+  const scope = sessionScope();
+  if (!scope) return; // 没有任何会话时暂不注入，下次 DOM 变动再试
+  const bridge = findBridge();
+  if (!bridge) return;
+  roundInflight = true;
+  for (const g of todo) inflight.add(g);
+  let surfaces;
+  try {
+    surfaces = await thirdPartySurfaces(bridge, scope.workspacePath);
+  } finally {
+    roundInflight = false;
+    for (const g of todo) inflight.delete(g);
+  }
+  for (const g of todo) {
+    // 等待期间网格可能已被 React 换掉（脱离文档），或本轮已画过
+    if (!g.isConnected) continue;
+    injectCards(g, surfaces);
+  }
+}
+
 function tryInject() {
   if (!enabled || document.hidden) return;
-  const grid = findNewTabGrid();
-  if (!grid) return;
-  // React 重渲染可能冲掉注入的卡片：标记还在但卡片没了时清标记重注
-  if (grid.dataset.zcodeproPanels && !grid.querySelector('[data-zcodepro-panel]')) {
-    delete grid.dataset.zcodeproPanels;
+  const grids = findNewTabGrids();
+  if (!grids.length) return;
+  for (const grid of grids) {
+    // React 重渲染可能冲掉注入的卡片：标记还在但卡片没了时清标记重注
+    if (grid.dataset.zcodeproPanels && !grid.querySelector('[data-zcodepro-panel]')) {
+      delete grid.dataset.zcodeproPanels;
+    }
   }
-  void injectPanels(grid);
+  void injectAll(grids);
 }
 
 export function startNewtabPanels() {
