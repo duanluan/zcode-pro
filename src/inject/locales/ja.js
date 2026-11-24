@@ -85,7 +85,7 @@ const ja = {
   "toolNameAuto": "起動時に自動書き換え",
   "toolNameAutoDesc": "ZCode のアップグレードやプラグインの更新でサーバーキーが長い名前に戻ることがあります。オンのときは起動のたびに自動で短くします。オフのときは上のボタンでのみ実行します。",
   "tabSync": "同期",
-  "tabImport": "セッションのインポート",
+  "tabImport": "インポート",
   "tabDebug": "デバッグ",
   "importDesc": "Codex、Claude Code、dsh、pi の履歴セッションを ZCode のタスクとしてコピーします。インポートはスナップショットであり、元のセッションの以降の変更は同期されません。",
   "importSearch": "タイトルまたはフォルダーを検索",

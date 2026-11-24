@@ -169,6 +169,9 @@ export function openSettingsDialog(initialTab = 'features') {
     overlay: 'none',
     draggable: true,
     posKey: 'settings',
+    // 与翻译面板一致：四边/四角可拖动改尺寸，尺寸单独记住（不影响已存的拖动位置）
+    resizable: true,
+    sizeKey: 'settings',
     dismissOnOutside: false,
     onClose: () => {
       if (hrUpgradePollStop) hrUpgradePollStop();
@@ -648,7 +651,74 @@ export function openSettingsDialog(initialTab = 'features') {
         // 普通用户不可见
         ...(config.devMode === true || config.devActive === true ? [['debug', L.tabDebug]] : []),
       ];
-      const tablist = h('div', { role: 'tablist', 'aria-orientation': 'horizontal', class: 'zcodepro-tablist mt-1' });
+      // 一级 tab 加 scrollable：tab 数量多时横向滚动而不是被裁掉（二级 tab 栏不加）
+      const tablist = h('div', { role: 'tablist', 'aria-orientation': 'horizontal', class: 'zcodepro-tablist zcodepro-tablist-scroll mt-1' });
+      // 一级 tab 栏的滚动增强：
+      // - 只在内容真正溢出时给数据属性（控制两端渐隐），能全部显示时无遮罩
+      // - 滚到某一端时那端不再渐隐
+      // - 鼠标滚轮（含纵向滚轮）在 tab 栏上转为横向滚动
+      // - 按住 tab 左右拖动滚动（click 会被抑制，避免拖动误切页）
+      const bindTabScroll = () => {
+        const updateOverflow = () => {
+          const overflow = tablist.scrollWidth - tablist.clientWidth;
+          if (overflow <= 1) {
+            delete tablist.dataset.overflow;
+            return;
+          }
+          const atStart = tablist.scrollLeft <= 1;
+          const atEnd = tablist.scrollLeft >= overflow - 1;
+          tablist.dataset.overflow = atStart ? 'start' : atEnd ? 'end' : '1';
+        };
+        tablist.addEventListener('scroll', updateOverflow, { passive: true });
+        new ResizeObserver(updateOverflow).observe(tablist);
+        // 纵向滚轮转横向
+        tablist.addEventListener('wheel', (e) => {
+          if (tablist.scrollWidth <= tablist.clientWidth + 1) return;
+          const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+          if (!delta) return;
+          e.preventDefault();
+          tablist.scrollLeft += delta;
+        }, { passive: false });
+        // 按住拖动滚动
+        let drag = null;
+        let suppressClick = false;
+        tablist.addEventListener('pointerdown', (e) => {
+          if (e.button !== 0) return;
+          if (tablist.scrollWidth <= tablist.clientWidth + 1) return;
+          drag = { x: e.clientX, left: tablist.scrollLeft, moved: false };
+          suppressClick = false;
+        });
+        tablist.addEventListener('pointermove', (e) => {
+          if (!drag) return;
+          const dx = e.clientX - drag.x;
+          if (!drag.moved && Math.abs(dx) < 4) return; // 小抖动不算拖动
+          if (!drag.moved) {
+            drag.moved = true;
+            tablist.dataset.dragging = '1';
+          }
+          tablist.scrollLeft = drag.left - dx;
+          e.preventDefault();
+        });
+        const endDrag = () => {
+          if (!drag) return;
+          suppressClick = drag.moved;
+          drag = null;
+          delete tablist.dataset.dragging;
+        };
+        tablist.addEventListener('pointerup', endDrag);
+        tablist.addEventListener('pointercancel', endDrag);
+        tablist.addEventListener('pointerleave', endDrag);
+        // 拖动结束后紧跟的 click 要吞掉，否则会误切到松手位置的 tab
+        tablist.addEventListener('click', (e) => {
+          if (!suppressClick) return;
+          suppressClick = false;
+          e.stopPropagation();
+          e.preventDefault();
+        }, true);
+        updateOverflow();
+      };
+      bindTabScroll();
+
       const renderTabs = () => tablist.replaceChildren(...tabDefs.map(([id, label]) =>
         h('button', {
           type: 'button', role: 'tab', class: 'zcodepro-tab',
@@ -656,6 +726,11 @@ export function openSettingsDialog(initialTab = 'features') {
           'data-state': activeTab === id ? 'active' : 'inactive',
           onClick: () => switchTab(id),
         }, label)));
+      // 重建按钮后重算是否需要渐隐
+      requestAnimationFrame(() => {
+        const overflow = tablist.scrollWidth - tablist.clientWidth;
+        if (overflow <= 1) delete tablist.dataset.overflow;
+      });
       const switchTab = (name) => {
         activeTab = name;
         // 切走“快捷键”标签页时结束键位录制：否则在其它标签页打字会被录制监听吞掉
@@ -664,6 +739,11 @@ export function openSettingsDialog(initialTab = 'features') {
         for (const [id, bar] of Object.entries(subTabBars)) bar.style.display = id === name ? '' : 'none';
         if (name === 'import') paneImport.__onShow?.();
         renderTabs();
+        // 激活的 tab 滚进视野：横向滚动后，从外部直达的 tab 可能在可视区外
+        try {
+          const el = tablist.querySelector('[data-state="active"]');
+          el?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        } catch { /* ignore */ }
       };
       // 初始标签页：所有 pane 默认 display:none、只有“功能”页不带该样式。指定了
       // 别的初始页（如翻译面板的 ⚙ 直达“翻译”）时，必须真正切一次，否则只高亮

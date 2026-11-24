@@ -126,11 +126,13 @@ const contentClass = 'w-full sm:max-w-md rounded-2xl border-none bg-popover/98 p
 // dismissOnOutside: 点弹窗外部是否关闭（默认 true）。为 false 时遮罩不再拦截鼠标，
 // 可以直接操作弹窗后面的会话（滚动/选中），弹窗只通过关闭按钮或 Esc 关闭。
 // draggable: 允许按住标题栏拖动弹窗。posKey: 记住拖动位置（localStorage）。
+// resizable: 允许拖左右两边改变宽度（高度始终随内容自适应，避免各标签页
+//   内容多少不同时留大片空白）。sizeKey: 记住宽度（localStorage，与位置分开存）。
 // 弹窗栈：同时打开多层弹窗（如“切换文件夹”上叠二次确认）时，
 // Esc 只关最上层，避免一次 Esc 把两层一起关掉
 let dialogStack = [];
 
-export function openDialog({ title, description, onMount, onClose, width = 'sm:max-w-md', overlay = 'dim', draggable = false, posKey = '', dismissOnOutside = true, bodyClass = '', closable = false }) {
+export function openDialog({ title, description, onMount, onClose, width = 'sm:max-w-md', overlay = 'dim', draggable = false, posKey = '', resizable = false, sizeKey = '', dismissOnOutside = true, bodyClass = '', closable = false }) {
   const L = t();
   const prevActive = document.activeElement;
   let cleanupDrag = null;
@@ -143,6 +145,7 @@ export function openDialog({ title, description, onMount, onClose, width = 'sm:m
     dialogStack = dialogStack.filter((e) => e !== overlayEl);
     document.removeEventListener('keydown', onKey);
     if (cleanupDrag) cleanupDrag();
+    if (cleanupResize) cleanupResize();
     if (prevActive && prevActive.focus) { try { prevActive.focus(); } catch { /* ignore */ } }
     onClose && onClose();
   };
@@ -192,6 +195,7 @@ export function openDialog({ title, description, onMount, onClose, width = 'sm:m
   const body = h('div', { class: 'zcodepro-dialog-body ' + (bodyClass || 'mt-4') });
   content.append(body);
   let restorePos = null;
+  let cleanupResize = null;
   if (draggable) {
     titleEl.style.cursor = 'move';
     titleEl.style.userSelect = 'none';
@@ -282,6 +286,76 @@ export function openDialog({ title, description, onMount, onClose, width = 'sm:m
       window.removeEventListener('resize', reclamp);
     };
     restorePos = restore;
+  }
+  // 缩放：四边与四角各一条透明热区，拖动改尺寸，松开写 localStorage。
+  // 与起始尺寸一起记下，下次打开在恢复位置之前先应用尺寸
+  // 只支持改宽度：高度保持内容自适应（各标签页内容多少差别大，固定高度会
+  // 留下大片空白）。左右两条透明热区，拖动改宽度，松开写 localStorage 记住
+  if (resizable) {
+    const MIN_W = 320;
+    const edges = [
+      ['w', 'left:0;top:10px;bottom:10px;width:6px;cursor:ew-resize'],
+      ['e', 'right:0;top:10px;bottom:10px;width:6px;cursor:ew-resize'],
+    ];
+    // 宽度以整卡当前宽度为起点；拖左边时同步平移 margin-left，右边界不动
+    const baseMarginLeft = () => parseFloat(getComputedStyle(content).marginLeft) || 0;
+    const edgeEls = edges.map(([dir, css]) => {
+      const el = h('div', { class: 'zcodepro-dialog-edge', 'data-dir': dir, 'aria-hidden': 'true', style: css });
+      el.addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const r = content.getBoundingClientRect();
+        const sx = e.clientX;
+        const sw = r.width;
+        const sl = r.left;
+        const hasW = dir.includes('w');
+        const ml0 = baseMarginLeft();
+        let w = sw;
+        const onMove = (ev) => {
+          const dx = ev.clientX - sx;
+          if (hasW) {
+            // 拖左边：宽度反向变化，左边界跟鼠标走，右边界不动
+            const clamped = Math.max(dx, MIN_W - sw);     // 不让宽度小于下限
+            const newLeft = Math.max(8, sl + clamped);
+            w = sw + (sl - newLeft);                      // 左边界左移则变宽
+            w = Math.max(MIN_W, Math.min(w, window.innerWidth - newLeft - 8));
+            const shift = newLeft - sl;
+            content.style.marginLeft = (ml0 + shift) + 'px';
+          } else {
+            // 拖右边：左边界不动，宽度跟鼠标走
+            w = Math.max(MIN_W, Math.min(sw + dx, window.innerWidth - sl - 8));
+          }
+          content.style.width = w + 'px';
+          content.style.maxWidth = 'none';
+        };
+        const onUp = () => {
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup', onUp);
+          if (sizeKey) {
+            try { localStorage.setItem('zcodepro-dialog-size:' + sizeKey, JSON.stringify({ w: Math.round(w) })); } catch { /* ignore */ }
+          }
+        };
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+      });
+      return el;
+    });
+    content.style.position = 'relative';
+    content.append(...edgeEls);
+    // 恢复上次宽度（只存宽度；高度始终由内容决定）
+    if (sizeKey) {
+      try {
+        const saved = JSON.parse(localStorage.getItem('zcodepro-dialog-size:' + sizeKey) || 'null');
+        if (saved && Number.isFinite(saved.w)) {
+          content.style.width = Math.max(MIN_W, Math.min(saved.w, window.innerWidth - 16)) + 'px';
+          content.style.maxWidth = 'none';
+        }
+      } catch { /* ignore */ }
+    }
+    cleanupResize = () => {
+      // 热区跟着 content 一起被移除，无需单独摘监听
+    };
   }
   document.addEventListener('keydown', onKey, true);
   document.body.append(overlayEl);
@@ -524,6 +598,8 @@ export function ensureStyle() {
     .zcodepro-toast-info .zcodepro-toast-glyph { color: var(--color-foreground-subtle, #999); }
     /* 弹窗遮罩/面板兜底：不依赖应用 Tailwind 类是否仍存在；主题色走 --color-* 变量，缺失时回退字面量 */
     .zcodepro-overlay { background-color: rgba(0, 0, 0, 0.6); }
+    /* 弹窗缩放热区：四边四角透明细条，没有可见图标 */
+    .zcodepro-dialog-edge { position: absolute; touch-action: none; z-index: 5; }
     .zcodepro-overlay[data-overlay="none"] { background-color: transparent; }
     .zcodepro-card {
       background-color: var(--color-popover, #fff);
@@ -585,6 +661,36 @@ export function ensureStyle() {
       padding: 2px;
       border-radius: 9999px;
       background-color: color-mix(in oklab, var(--color-foreground, #888) 8%, transparent);
+    }
+    /* 一级 tab 栏可横向滚动：tab 多、弹窗窄时不被裁掉。
+       滚动条默认隐藏（保持胶囊外观），但内容溢出时鼠标滚轮可横向滚、
+       按住 tab 可拖动滚动（见 settings-dialog.js 的 bindTabDragScroll）。
+       边缘渐隐只在“确实还有内容被挡住”时由 JS 加 data-overflow 才出现，
+       全部能显示时不加任何遮罩 */
+    .zcodepro-tablist.zcodepro-tablist-scroll {
+      max-width: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scrollbar-width: none;          /* Firefox */
+      -ms-overflow-style: none;       /* 旧 Edge */
+      cursor: grab;
+      user-select: none;              /* 拖动时不要选中 tab 文字 */
+    }
+    .zcodepro-tablist.zcodepro-tablist-scroll[data-dragging="1"] { cursor: grabbing; }
+    .zcodepro-tablist.zcodepro-tablist-scroll::-webkit-scrollbar { display: none; }
+    .zcodepro-tablist.zcodepro-tablist-scroll > * { flex-shrink: 0; }
+    /* 内容溢出时两端渐隐；滚到某一端时该端不再渐隐（该侧已无内容） */
+    .zcodepro-tablist.zcodepro-tablist-scroll[data-overflow="1"] {
+      -webkit-mask-image: linear-gradient(to right, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
+      mask-image: linear-gradient(to right, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
+    }
+    .zcodepro-tablist.zcodepro-tablist-scroll[data-overflow="start"] {
+      -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 14px), transparent 100%);
+      mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 14px), transparent 100%);
+    }
+    .zcodepro-tablist.zcodepro-tablist-scroll[data-overflow="end"] {
+      -webkit-mask-image: linear-gradient(to right, transparent 0, #000 14px, #000 100%);
+      mask-image: linear-gradient(to right, transparent 0, #000 14px, #000 100%);
     }
     .zcodepro-tab {
       display: inline-flex;

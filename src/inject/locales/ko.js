@@ -85,7 +85,7 @@ const ko = {
   "toolNameAuto": "시작 시 자동 재작성",
   "toolNameAutoDesc": "ZCode 업그레이드나 플러그인 업데이트로 서버 키가 긴 이름으로 되돌아갈 수 있습니다. 켜면 시작할 때마다 자동으로 짧게 바꿉니다. 끄면 위 버튼으로만 실행합니다.",
   "tabSync": "동기화",
-  "tabImport": "세션 가져오기",
+  "tabImport": "가져오기",
   "tabDebug": "디버그",
   "importDesc": "Codex, Claude Code, dsh, pi의 이전 세션을 ZCode 작업으로 복사합니다. 가져오기는 스냅샷이며, 이후 원본 세션의 변경 사항은 동기화되지 않습니다.",
   "importSearch": "제목 또는 폴더 검색",
