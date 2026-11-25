@@ -14,6 +14,7 @@ import {
 } from '../src/host/translate-lib.mjs';
 import { startHelper } from '../src/host/helper.mjs';
 import { thinkingVariantsOf, normalizeThinking, thinkingLabel, ALL_THINKING_VARIANTS, adaptThinking, resolveThinkingOptions } from '../src/inject/thinking-levels.js';
+import { applyThinking } from '../src/host/translate-lib.mjs';
 
 const root = mkdtempSync(join(tmpdir(), 'zcodepro-translate-test-'));
 const fakeHome = join(root, 'fake-home');
@@ -244,6 +245,31 @@ assert(guessSourceLang('12345') === '', '纯数字猜不出返回空串');
   // 没拿到会话信息时退回按供应商查
   const r3 = resolveThinkingOptions(providers, { type: 'llm', provider: 'glm', model: 'glm-5.3', thinking: 'max' }, null);
   assert(r3.variants.join() === 'low,high,max' && r3.current === 'max', '无会话信息时按供应商档位');
+}
+
+// ———— 思考参数注入请求体（titleGen / vision 共用 applyThinking） ————
+{
+  // anthropic：档位换算成思考预算，且 max_tokens 必须大于预算
+  const a = { model: 'm', max_tokens: 2048, messages: [] };
+  applyThinking(a, 'anthropic', 'https://api.anthropic.com', 'high');
+  assert(a.thinking?.type === 'enabled' && a.thinking.budget_tokens === 12288, 'anthropic 高档位 → 预算 12288');
+  assert(a.max_tokens > a.thinking.budget_tokens, 'max_tokens 大于思考预算');
+  // off 不写键（非智谱）
+  const b = { model: 'm', max_tokens: 2048, messages: [] };
+  applyThinking(b, 'anthropic', 'https://api.anthropic.com', 'off');
+  assert(b.thinking === undefined, 'anthropic off 时不写思考键');
+  // 智谱 anthropic：off 要显式 disabled（GLM-4.5+ 默认开）
+  const c = { model: 'm', max_tokens: 2048, messages: [] };
+  applyThinking(c, 'anthropic', 'https://open.bigmodel.cn/api/anthropic', 'off');
+  assert(c.thinking?.type === 'disabled', '智谱 off 时显式发 disabled');
+  // openai 兼容：reasoning_effort 原样
+  const d = { model: 'm', messages: [] };
+  applyThinking(d, 'openai', 'https://api.openai.com', 'low');
+  assert(d.reasoning_effort === 'low', 'openai 档位原样发 reasoning_effort');
+  // 智谱 openai：只发开/关
+  const e = { model: 'm', messages: [] };
+  applyThinking(e, 'openai', 'https://open.bigmodel.cn/api/paas/v4', 'high');
+  assert(e.thinking?.type === 'enabled' && !e.reasoning_effort, '智谱 openai 只发 thinking.type');
 }
 
 // ———— 思考档位：智能配置（内置模型推荐规则） ————

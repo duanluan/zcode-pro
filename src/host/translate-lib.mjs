@@ -325,7 +325,7 @@ function openaiUrl(baseUrl) {
 // - anthropic 协议：换算成思考预算（max_tokens 必须大于预算）
 // - 智谱 openai 兼容端点：只认思考开/关，任何非 off 档位都发 enabled
 // - 其他 openai 兼容端点：原样发 reasoning_effort（low/high/max 等由厂商定义）
-function applyThinking(body, format, baseUrl, level) {
+export function applyThinking(body, format, baseUrl, level) {
   const isBigmodel = /bigmodel\.cn/.test(baseUrl);
   const off = !level || level === 'off';
   if (off) {

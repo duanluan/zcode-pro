@@ -21,7 +21,7 @@ import { listImportSessions, runImport } from './session-import/index.mjs';
 import { ProviderProxyManager } from './provider-proxy.mjs';
 import { rewriteRequest } from './prompt-inject.mjs';
 import { applyToolNameMaps, toolNameCheckSummary } from './tool-name-check.mjs';
-import { defaultTranslateFile, readTranslateConfig, writeTranslateConfig, validateTranslateConfig, translateServicesStatus, translateMt, translateJson, streamTranslateText, isWordText, targetLangFor, renderTranslatePrompt, TRANSLATE_MAX_TEXT, isValidThinking, readTranslateHistory, appendTranslateHistory } from './translate-lib.mjs';
+import { defaultTranslateFile, readTranslateConfig, writeTranslateConfig, validateTranslateConfig, translateServicesStatus, translateMt, translateJson, streamTranslateText, isWordText, targetLangFor, renderTranslatePrompt, TRANSLATE_MAX_TEXT, isValidThinking, applyThinking, readTranslateHistory, appendTranslateHistory } from './translate-lib.mjs';
 
 // 会话导入（/import/list、/import/run）：把外部 CLI 的历史会话写成 ZCode 任务。
 
@@ -398,6 +398,9 @@ export function defaultConfig() {
       baseUrl: '',
       apiKey: '',
       format: '',
+      // 思考档位：off/低/中/高… 具体可选值取决于所选模型（见 listTitleGenProviders
+      // 的 modelReasoning）；保存前由前端按模型档位自适应
+      thinking: 'off',
       recentQa: 3,
       hoverBtn: true,
       menuEntry: true,
@@ -3750,6 +3753,7 @@ function mergeTitleGenConfig(saved) {
     apiKey: typeof s.apiKey === 'string' ? s.apiKey.trim().slice(0, 500) : d.apiKey,
     format: s.format === 'openai' ? 'openai' : s.format === 'anthropic' ? 'anthropic' : '',
     recentQa: Number.isFinite(Number(s.recentQa)) ? Math.min(20, Math.max(1, Math.round(Number(s.recentQa)))) : d.recentQa,
+    thinking: isValidThinking(s.thinking) ? s.thinking : 'off',
     hoverBtn: s.hoverBtn !== false,
     menuEntry: s.menuEntry !== false,
     customWritten: written,
@@ -5440,7 +5444,7 @@ export function listTitleGenProviders() {
 // Anthropic Messages 文本调用（无系统提示词，单条用户消息）。max_tokens 给足
 // 2048：glm 系列等推理模型先输出 thinking 块再出正文，给小了会全部耗在
 // 思考上（stop_reason=max_tokens 且没有任何 text 块），起名调用不在意这点额度
-async function callAnthropicText(baseUrl, apiKey, model, content) {
+async function callAnthropicText(baseUrl, apiKey, model, content, thinking = 'off') {
   const url = baseUrl.replace(/\/+$/, '') + '/v1/messages';
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), TITLE_GEN_TIMEOUT_MS);
@@ -5448,7 +5452,12 @@ async function callAnthropicText(baseUrl, apiKey, model, content) {
     const resp = await fetch(url, {
       method: 'POST', signal: ctrl.signal,
       headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model, max_tokens: 2048, messages: [{ role: 'user', content }] }),
+      body: JSON.stringify((() => {
+        const b = { model, max_tokens: 2048, messages: [{ role: 'user', content }] };
+        // 思考档位按所选模型的能力下发（预算随档位变；off 时智谱需显式关闭）
+        applyThinking(b, 'anthropic', baseUrl, thinking);
+        return b;
+      })()),
     });
     const body = await resp.text();
     if (!resp.ok) throw new Error(`HTTP ${resp.status} [model=${model}]: ${body.slice(0, 300)}`);
@@ -5473,7 +5482,7 @@ async function callAnthropicText(baseUrl, apiKey, model, content) {
 }
 
 // OpenAI Chat Completions 文本调用；baseURL 已含 /v1 时不重复拼
-async function callOpenAiText(baseUrl, apiKey, model, content) {
+async function callOpenAiText(baseUrl, apiKey, model, content, thinking = 'off') {
   const base = baseUrl.replace(/\/+$/, '');
   const url = /\/v\d+$/.test(base) ? base + '/chat/completions' : base + '/v1/chat/completions';
   const ctrl = new AbortController();
@@ -5482,7 +5491,12 @@ async function callOpenAiText(baseUrl, apiKey, model, content) {
     const resp = await fetch(url, {
       method: 'POST', signal: ctrl.signal,
       headers: { 'content-type': 'application/json', authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({ model, max_tokens: 2048, messages: [{ role: 'user', content }] }),
+      body: JSON.stringify((() => {
+        const b = { model, max_tokens: 2048, messages: [{ role: 'user', content }] };
+        // openai 兼容端点：reasoning_effort；智谱只认 thinking.type 开/关
+        applyThinking(b, 'openai', baseUrl, thinking);
+        return b;
+      })()),
     });
     const body = await resp.text();
     if (!resp.ok) throw new Error(`HTTP ${resp.status} [model=${model}]: ${body.slice(0, 300)}`);
@@ -5594,9 +5608,11 @@ export async function generateTitleWith(cfg, rawText, dataRoot = '', sessId = ''
   const providerId = (cfg.provider || '').trim();
   const model = (cfg.model || '').trim();
   const conn = await resolveTitleGenConnection(cfg, providerId, model, dataRoot, sessId);
+  // 思考档位：配置里存的档位先按该模型实际支持的范围规整，再下发
+  const thinkLevel = resolveThinkingForChannel({ provider: providerId, model, thinking: cfg.thinking });
   const raw = conn.format === 'anthropic'
-    ? await callAnthropicText(conn.baseUrl, conn.apiKey, conn.model, userContent)
-    : await callOpenAiText(conn.baseUrl, conn.apiKey, conn.model, userContent);
+    ? await callAnthropicText(conn.baseUrl, conn.apiKey, conn.model, userContent, thinkLevel)
+    : await callOpenAiText(conn.baseUrl, conn.apiKey, conn.model, userContent, thinkLevel);
   const title = cleanGeneratedTitle(raw);
   if (!title) {
     const e = new Error('模型未返回可用标题');
@@ -5897,7 +5913,8 @@ export function validateVisionConfig(raw) {
   for (const p of raw.proxies) {
     if (!p || typeof p !== 'object') return [null, '代理必须是对象'];
     const proxy = {};
-    for (const k of ['name', 'baseUrl', 'model', 'apiKey', 'format', 'useProvider', 'prompt']) {
+    // thinking：思考档位，按模型能力下发（zcode-vision ≥1.8 支持；旧版忽略未知键）
+    for (const k of ['name', 'baseUrl', 'model', 'apiKey', 'format', 'useProvider', 'prompt', 'thinking']) {
       const v = p[k];
       if (v === undefined || v === null) continue;
       if (typeof v !== 'string') return [null, `代理字段 ${k} 必须是字符串`];

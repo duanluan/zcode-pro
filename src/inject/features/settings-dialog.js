@@ -2,8 +2,9 @@
 // 顶部标签页切换（视觉参考侧栏“分组/项目”切换）；配置写入 helper（~/.zcode/zcodepro.json）。
 import { h, t, rpc, getConfig, clearConfigCache, errText, HELPER_URL, liveBoot, isZhLocale, uiLocale, isCjkLocale, isNewProjectSidebar, DEFAULT_SHORTCUTS, DEFAULT_STATUS_ITEMS, DEFAULT_TURN_ITEMS, STATUS_SESSION_IDS, STATUS_GLOBAL_IDS } from '../core.js';
 import { openDialog, dialogFooter, btnPrimary, btnSecondary, btnSmall, settingRow, ensureStyle, showToast, numberField, unitField } from '../ui.js';
-import { comboField, providerOptionsOf, modelOptionsOf, modelPlaceholderOf, isManualConn } from '../provider-fields.js';
-import { thinkingLabel, resolveThinkingOptions } from '../thinking-levels.js';
+import { isManualConn } from '../provider-fields.js';
+import { providerModelThinkingFields } from '../provider-model-thinking.js';
+import { resolveThinkingOptions } from '../thinking-levels.js';
 import { refreshAliases } from './alias.js';
 import { migrationCard } from './alias-migration.js';
 import { applyStyles, STYLE_DEFAULTS, showStyleHighlight, hideStyleHighlight } from './styles.js';
@@ -2978,39 +2979,38 @@ export function openSettingsDialog(initialTab = '') {
             }, i === visionCfg.proxies.length - 1 ? 'pointer-events-none opacity-40' : ''),
             smallBtn(L.visionRemove, () => { visionCfg.proxies.splice(i, 1); void persistVision(); renderVision(); }),
           ),
-          h('div', { class: 'mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2' },
-            // 供应商与模型走 provider-fields 共用逻辑：跟随会话时模型下拉为
-            // 全部供应商模型汇总，具体供应商为其模型列表；已删 id 标注“已删除”
-            field(L.visionUseProvider, comboField(p.useProvider || '',
-              providerOptionsOf(titleGenProviders, L),
-              (v, src) => {
-                p.useProvider = v;
+          (() => {
+            // 供应商 + 模型 + 思考级别走统一封装（与翻译页、自动重命名同一实现）
+            const pmt = providerModelThinkingFields({
+              providers: titleGenProviders,
+              L,
+              provider: p.useProvider || '',
+              model: p.model || '',
+              thinking: p.thinking || 'off',
+              sessionInfo: translateSessionRes.ok ? translateSessionRes.session : null,
+              withManual: true,
+              labels: { provider: L.visionUseProvider, model: L.visionModel, thinking: L.translateThinking },
+              onChange: (patch) => {
+                p.useProvider = patch.provider;
+                p.model = patch.model;
+                p.thinking = patch.thinking;
                 saveVisionSoon();
-                // 下拉切换后重渲染整个面板：模型下拉选项随新供应商变化，接口
-                // 地址/API Key 字段按“不跟随或供应商已删才显示”重新显隐
-                if (src === 'select') renderVision();
               },
-              { placeholder: L.titleGenProviderSession, staleLabel: L.titleGenProviderDeleted })),
-            // 跟随会话时模型下拉头部有“跟随当前会话当前模型”（值为空，
-            // 插件 ≥1.6.1 在调用时解析为会话当前模型）；具体供应商为其模型列表
-            field(L.visionModel, comboField(p.model || '',
-              modelOptionsOf(p.useProvider, titleGenProviders, {
-                followSession: (p.useProvider || '').trim() === 'session',
-                followSessionLabel: L.titleGenModelFollowSession,
-              }),
-              (v) => { p.model = v; saveVisionSoon(); },
-              {
-                placeholder: modelPlaceholderOf(p.useProvider, L),
-                emptyLabel: (p.useProvider || '').trim() === 'session'
-                  ? L.titleGenModelFollowSession : L.titleGenModelEmpty,
-              })),
-          ),
+              requestRender: () => renderVision(),
+            });
+            // 三件套一行显示（与自动重命名页一致）：窄屏单列、sm 以上三列
+            return h('div', { class: 'mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3' }, ...pmt.fields);
+          })(),
           ...manualConnCard,
           (() => {
             const n = h('textarea', { class: 'zcodepro-textarea zcodepro-textarea-sm', rows: '3', placeholder: L.visionPrompt });
             n.value = p.prompt || '';
             n.addEventListener('input', () => { p.prompt = n.value; saveVisionSoon(); });
-            return field(L.visionPrompt, n);
+            // 上间距：与上方三件套/手动连接卡之间留出空隙（原来紧贴）。
+            // 加在外层 label 上而不是 textarea，保证标签文字也跟着下移
+            const f = field(L.visionPrompt, n);
+            f.classList.add('mt-2');
+            return f;
           })(),
           ]);
         });
@@ -3198,29 +3198,8 @@ export function openSettingsDialog(initialTab = '') {
         // 默认通道（LLM）：供应商与模型照视觉代理页的接法（下拉+手输），
         // 但不含“不跟随（自填地址）”——翻译通道只认 会话/供应商 两种来源
         const chNow = () => (translateRes.config && translateRes.config.channel) || {};
-        const providerField = field(L.translateProvider, comboField(
-          chNow().provider || 'session',
-          [{ value: 'session', label: L.titleGenProviderSession }, ...titleGenProviders.map((p) => ({ value: p.id, label: p.name }))],
-          (v, src) => {
-            const c = chNow();
-            persist({ channel: { ...c, type: 'llm', provider: v, model: v === 'session' ? '' : c.model } });
-            if (src === 'select') renderTranslate();
-          },
-          { staleLabel: L.titleGenProviderDeleted }));
-        const modelField = field(L.translateModelLabel, comboField(
-          chNow().model || '',
-          modelOptionsOf(chNow().provider || 'session', titleGenProviders, {
-            followSession: (chNow().provider || 'session') === 'session',
-            followSessionLabel: L.titleGenModelFollowSession,
-          }),
-          (v, src) => {
-            const cur = chNow();
-            // 换模型后重绘整页：思考档位跟着所选模型变
-            translateRes.config = { ...translateRes.config, channel: { ...cur, model: v.trim() } };
-            persist({ channel: { ...cur, model: v.trim() } });
-            if (src === 'select') renderTranslate();
-          },
-          { placeholder: modelPlaceholderOf(chNow().provider || 'session', L) }));
+        // 供应商 + 模型 + 思考级别在三处共用同一封装（见 provider-model-thinking.js）
+
         // 通用设置放最前（一行三个）；翻译服务 = AI 翻译或某家机翻，选哪个
         // 出现哪组选项（AI：供应商/模型/思考等级；机翻：该服务的密钥）
         const ch0 = chNow();
@@ -3245,18 +3224,27 @@ export function openSettingsDialog(initialTab = '') {
             return [id, mtServiceName(id) + (s2 && !s2.configured ? '（' + L.translateUnconfigured + '）' : '')];
           }),
         ], (v) => { if (v === 'llm') setChannel({ type: 'llm' }); else setChannel({ type: 'mt', service: v }); });
+        // 三件套：供应商 / 模型 / 思考级别（统一封装，档位随模型自适应）
+        const translatePmt = providerModelThinkingFields({
+          providers: titleGenProviders,
+          L,
+          provider: ch0.provider || 'session',
+          model: ch0.model || '',
+          thinking: ch0.thinking || 'off',
+          sessionInfo: translateSessionRes.ok ? translateSessionRes.session : null,
+          // 翻译通道不提供“不跟随（自填地址）”：只认 会话/供应商 两种来源
+          withManual: false,
+          labels: { provider: L.translateProvider, model: L.translateModelLabel, thinking: L.translateThinking },
+          onChange: (patch) => {
+            const merged = { ...chNow(), type: 'llm', ...patch };
+            translateRes.config = { ...translateRes.config, channel: merged };
+            persist({ channel: merged });
+          },
+          requestRender: () => renderTranslate(),
+        });
         const engineArea = isLlm
           ? h('div', { class: 'mt-2 grid grid-cols-1 gap-3 sm:grid-cols-3' },
-              providerField,
-              modelField,
-              field(L.translateThinking, (() => {
-                // 档位随所选模型变化；跟随会话当前模型时用会话模型的档位，
-                // 并把已存档位自适应映射过去（如 max → enabled）
-                const smi = translateSessionRes.ok ? translateSessionRes.session : null;
-                const opts = resolveThinkingOptions(titleGenProviders, ch0, smi);
-                return selIn(opts.display, opts.variants.map((k) => [k, thinkingLabel(k, L)]),
-                  (v) => setChannel({ type: 'llm', thinking: v }), opts.unsupported ? L.translateThinkingUnsupported : '');
-              })()))
+              ...translatePmt.fields)
           : (() => {
             const mtCur = (tr.mt && tr.mt.services && tr.mt.services[mtSvc]) || {};
             return h('div', { class: 'mt-2 flex flex-wrap gap-2' },
@@ -3954,29 +3942,24 @@ export function openSettingsDialog(initialTab = '') {
         // 手动输入过的模型保留（不在新列表里时显示为“手动输入”项，是否改选
         // 由用户决定）
         const showInlineConn = isManualConn(titleGenCfg.provider, titleGenProviders);
-        const providerCombo = comboField(
-          titleGenCfg.provider || '',
-          providerOptionsOf(titleGenProviders, L),
-          (v, src) => {
-            titleGenCfg.provider = v;
-            if (src === 'select') { void persistTitleGen(); renderTitleGenPane(); }
-            else saveTitleGenSoon();
+        // 供应商 + 模型 + 思考级别走统一封装（与翻译页、视觉代理同一实现）
+        const titleGenPmt = providerModelThinkingFields({
+          providers: titleGenProviders,
+          L,
+          provider: titleGenCfg.provider || '',
+          model: titleGenCfg.model || '',
+          thinking: titleGenCfg.thinking || 'off',
+          sessionInfo: translateSessionRes.ok ? translateSessionRes.session : null,
+          withManual: true,
+          labels: { provider: L.titleGenProvider, model: L.titleGenModel, thinking: L.translateThinking },
+          onChange: (patch) => {
+            titleGenCfg.provider = patch.provider;
+            titleGenCfg.model = patch.model;
+            titleGenCfg.thinking = patch.thinking;
+            saveTitleGenSoon();
           },
-          { placeholder: L.titleGenProviderSession, staleLabel: L.titleGenProviderDeleted });
-        const modelCombo = comboField(
-          titleGenCfg.model || '',
-          // 跟随会话时选项表头部有“跟随当前会话当前模型”（值为空，生成时用
-          // 会话当前模型），选了具体模型后也能再切回它
-          modelOptionsOf(titleGenCfg.provider, titleGenProviders, {
-            followSession: true,
-            followSessionLabel: L.titleGenModelFollowSession,
-          }),
-          (v) => { titleGenCfg.model = v; saveTitleGenSoon(); },
-          {
-            placeholder: modelPlaceholderOf(titleGenCfg.provider, L),
-            emptyLabel: (titleGenCfg.provider || '').trim() === 'session'
-              ? L.titleGenModelFollowSession : L.titleGenModelEmpty,
-          });
+          requestRender: () => { void persistTitleGen(); renderTitleGenPane(); },
+        });
         // 接口地址 / API Key / 协议（显隐见上方 showInlineConn）：不跟随时由
         // 用户填写；供应商被删时展示保存的副本，仍可直连或改填
         const textIn = (value, onInput, { type = 'text', placeholder = '' } = {}) => {
@@ -4050,10 +4033,9 @@ export function openSettingsDialog(initialTab = '') {
               await persistTitleGen();
               renderTitleGenPane();
             }))),
-          // 供应商 + 模型
-          h('div', { class: 'mt-2 grid grid-cols-1 gap-2 rounded-xl border border-border p-2 sm:grid-cols-2' },
-            field(L.titleGenProvider, providerCombo),
-            field(L.titleGenModel, modelCombo)),
+          // 供应商 + 模型 + 思考级别
+          h('div', { class: 'mt-2 grid grid-cols-1 gap-2 rounded-xl border border-border p-2 sm:grid-cols-3' },
+            ...titleGenPmt.fields),
           inlineConnCard,
           // 提示词 + 载入默认
           h('div', { class: 'mt-2 rounded-xl border border-border p-2' },

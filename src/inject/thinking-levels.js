@@ -29,15 +29,21 @@ export function thinkingVariantsOf(providers, providerId, model) {
     return null;
   }
   const entry = (providers || []).find((p) => p && p.id === providerId);
-  // 刚切换供应商时模型还是空的（界面还没选）：用该供应商的第一个模型查档位，
-  // 否则拿不到档位、退化成全能档位列表，用户会看到不该有的档位
-  const effModel = model || (entry && Array.isArray(entry.models) ? entry.models[0] : '');
-  const rr = entry && effModel ? entry.modelReasoning?.[effModel] : null;
+  if (!entry) return null;
+  const models = Array.isArray(entry.models) ? entry.models : [];
+  // 选定的模型优先；但刚换供应商时模型可能还是上一个供应商的名字（界面保留
+  // 原值、等用户再选），它在当前供应商下不存在——此时不能据此判定“不支持思考”，
+  // 要回退到该供应商的首个模型
+  const want = String(model || '').trim();
+  const modelInEntry = want && models.some((m) => String(m).toLowerCase() === want.toLowerCase());
+  const effModel = modelInEntry ? want : (models[0] || want);
+  const rr = effModel ? entry.modelReasoning?.[effModel] : null;
   if (rr && Array.isArray(rr.variants) && rr.variants.length) {
     return { variants: rr.variants.slice(), defaultVariant: rr.defaultVariant || rr.variants[0], supported: true };
   }
-  // 供应商找到了但没有该模型的档位记录：模型不支持思考
-  if (entry && effModel) return { variants: [], defaultVariant: 'off', supported: false };
+  // 供应商找到了、模型也在它的列表里，但没有档位记录：模型不支持思考
+  if (effModel && modelInEntry) return { variants: [], defaultVariant: 'off', supported: false };
+  // 模型不在该供应商下且首个模型也没有档位记录：当作未知（退回全集）
   return null;
 }
 
